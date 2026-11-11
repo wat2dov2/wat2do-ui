@@ -9,6 +9,7 @@ rust/Cargo.lock
 rust/src/lib.rs
 rust/src/bin/wat2do-browser.rs
 rust/src/instagram_notifications
+rust/src/lightpanda
 rust/src/notification_retry.rs
 rust/src/launch_agents.rs
 rust/src/logs.rs
@@ -23,6 +24,7 @@ rust/src/schools.rs
 rust/src/ingestion/items.rs
 backend/controlbox/instagram_browser.json
 backend/controlbox/instagram_digest.json
+backend/controlbox/instagram_lightpanda.json
 backend/controlbox/notification_retry.json
 backend/controlbox/scraping.json
 backend/controlbox/ingestion.json

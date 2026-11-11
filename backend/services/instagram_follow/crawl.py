@@ -22,12 +22,14 @@ reads the clubs the school followed since and finds accounts created since, and 
 the seeds in a new random order, so a crawl the miss streak ends early still reaches
 clubs the last one never did.
 
-The lists are read through the Mac's Brave worker (``wat2do-browser following``), one
-page per job, as whichever account Brave shows: the worker paces the reads, holds only
-them after a 429, a login wall or any other refusal, and stops them alone while
-``wat2do-browser pause-following`` is in force; a hold or a pause simply keeps the
-crawl waiting. The crawl keeps one read outstanding per school, keeps its place in
-local state, and checks on a waiting read from ``crawl_poll_seconds`` apart up to
+The lists are read through the Mac's browser worker (``wat2do-browser following``), one
+page per job: in the school accounts' own Lightpanda sessions, each at its own pace, or
+in Brave as whichever account it shows when no Lightpanda account can read. The worker
+paces the reads, holds only them after a 429, a login wall or any other refusal, and
+stops them alone while ``wat2do-browser pause-following`` is in force; a hold or a
+pause simply keeps the crawl waiting. The crawl keeps one read outstanding per school,
+crawls as many schools at once as the worker has Following readers (its ``status``),
+keeps its place in local state, and checks on a waiting read from ``crawl_poll_seconds`` apart up to
 ``crawl_poll_max_seconds`` apart, from its own thread of the emulator worker's process
 (``run_forever``). A page that fails to read is tried again, up to
 ``crawl_seed_attempts`` times, and never counts as a miss; ``failures_before_rest``
@@ -103,6 +105,9 @@ _rested_until: dict[str, float] = {}
 _known: dict[int, set[str]] = {}
 # When each waiting read is next checked, and the gap after that (time.monotonic).
 _next_check: dict[str, tuple[float, float]] = {}
+# How many Following reads the worker runs at once, and when it was last asked.
+_READERS_SECONDS = 60
+_readers_checked: dict[str, float] = {"at": float("-inf"), "count": 1}
 
 
 class BrowserQueueError(RuntimeError):
@@ -178,33 +183,46 @@ def run_forever(on_found: Callable[[], None]) -> None:
 
 
 def advance() -> int:
-    """Collect what resting crawls' reads returned, then take the next step of the crawl
-    whose turn it is. Returns how many candidates were added."""
-    now = time.monotonic()
+    """Collect what waiting crawls' reads returned, then take the next step of the crawls
+    whose turn it is, as many as the worker has Following readers. Returns how many
+    candidates were added."""
+    schools = next_schools(_readers())
     found = 0
     for school in EMULATOR.android_user_by_school:
-        if _rested_until.get(school, 0) > now and crawl_running(school):
+        if school not in schools and crawl_running(school):
             found += _Crawl(school, _load(school)).step(request=False)
-    school = next_school()
-    if school is not None:
+    for school in schools:
         found += _Crawl(school, _load(school)).step()
     return found
 
 
-def next_school() -> str | None:
-    """A crawl already under way first, so one finishes before the next starts, then
-    schools never crawled, then the one whose last crawl finished longest ago. A crawl
-    resting after failures waits its turn."""
+def next_schools(count: int) -> list[str]:
+    """Up to ``count`` schools to crawl now: crawls already under way first, so each
+    finishes before another starts, then schools never crawled, then the ones whose last
+    crawl finished longest ago. A crawl resting after failures waits its turn."""
     now = time.monotonic()
     ready = [
         school for school in EMULATOR.android_user_by_school if _rested_until.get(school, 0) <= now
     ]
     running = [school for school in ready if crawl_running(school)]
-    if running:
-        return running[0]
+    if len(running) >= count:
+        return running[:count]
     never = datetime.min.replace(tzinfo=timezone.utc)
-    ordered = sorted(ready, key=lambda school: last_crawl_finished(school) or never)
-    return ordered[0] if ordered else None
+    waiting = sorted(
+        (school for school in ready if school not in running),
+        key=lambda school: last_crawl_finished(school) or never,
+    )
+    return running + waiting[: count - len(running)]
+
+
+def _readers() -> int:
+    """How many Following reads the worker runs at once (one per Lightpanda account
+    that can read, else Brave's one), asked again every ``_READERS_SECONDS``."""
+    now = time.monotonic()
+    if now >= _readers_checked["at"] + _READERS_SECONDS:
+        following = _browser("status").get("following") or {}
+        _readers_checked.update(at=now, count=max(1, int(following.get("readers") or 1)))
+    return int(_readers_checked["count"])
 
 
 class _Crawl:

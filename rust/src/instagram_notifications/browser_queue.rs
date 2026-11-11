@@ -990,47 +990,76 @@ impl BrowserJobQueue {
     /// day (`account_login_at:<account>`) and `account_login_daily_limit` a day in all
     /// (`account_login_attempts`). False, recording nothing, when either is spent.
     pub fn reserve_account_login(&self, username: &str, now: f64) -> BrowserResult<bool> {
-        let Some(mut spent) = self.account_logins_if_allowed(username, now)? else {
-            return Ok(false);
-        };
-        spent.push(json!(now));
-        self.set_setting("account_login_attempts", Value::from(spent))?;
-        self.set_setting(&format!("account_login_at:{username}"), json!(now))?;
-        Ok(true)
+        self.reserve_login(username, now, &LoginReservation::default())
+    }
+
+    /// [`reserve_account_login`](Self::reserve_account_login) with `reservation`'s
+    /// extra conditions, all checked and recorded in one transaction, since the
+    /// worker's threads and `wat2do-lightpanda` reserve from the same budget.
+    pub fn reserve_login(
+        &self,
+        username: &str,
+        now: f64,
+        reservation: &LoginReservation,
+    ) -> BrowserResult<bool> {
+        self.retry_storage(|| {
+            self.immediate(|db| {
+                let Some(mut spent) = account_logins_if_allowed(db, username, now)? else {
+                    return Ok(false);
+                };
+                if spent.len() + reservation.keep >= control().account_login_daily_limit {
+                    return Ok(false);
+                }
+                let mut first_logins = None;
+                if let Some((key, limit)) = reservation.first_login {
+                    let recent = recent_timestamps(&stored_setting(db, key)?, now);
+                    if recent.len() >= limit {
+                        return Ok(false);
+                    }
+                    first_logins = Some((key, recent));
+                }
+                spent.push(json!(now));
+                write_setting(db, "account_login_attempts", &Value::from(spent))?;
+                write_setting(db, &format!("account_login_at:{username}"), &json!(now))?;
+                if let Some((key, mut recent)) = first_logins {
+                    recent.push(json!(now));
+                    write_setting(db, key, &Value::from(recent))?;
+                }
+                Ok(true)
+            })
+        })
     }
 
     /// Whether `reserve_account_login` would allow `username` a login at `now`,
     /// recording nothing.
     pub fn account_login_allowed(&self, username: &str, now: f64) -> BrowserResult<bool> {
-        Ok(self.account_logins_if_allowed(username, now)?.is_some())
+        self.retry_storage(|| {
+            Ok(account_logins_if_allowed(&self.connect()?, username, now)?.is_some())
+        })
     }
 
-    /// The day's account logins so far, or None once `username` may not log in again.
-    fn account_logins_if_allowed(
-        &self,
-        username: &str,
-        now: f64,
-    ) -> BrowserResult<Option<Vec<Value>>> {
-        let attempts =
-            recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
-        let key = format!("account_login_at:{username}");
-        let last = pyjson::number(&self.setting_or(&key, json!(0))?).unwrap_or(0.0);
-        Ok(
-            (attempts.len() < control().account_login_daily_limit && now - last >= 86_400.0)
-                .then_some(attempts),
-        )
+    /// How many of the day's `account_login_daily_limit` logins are left at `now`.
+    pub fn account_logins_left(&self, now: f64) -> BrowserResult<usize> {
+        let spent = recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
+        Ok(control()
+            .account_login_daily_limit
+            .saturating_sub(spent.len()))
     }
 
     /// Choose a public bootstrap profile without claiming or switching an account.
+    /// Digests Lightpanda reads never ask Brave for their account.
     pub fn peek_account_username(&self) -> BrowserResult<Option<String>> {
         self.retry_storage(|| {
             let db = self.connect()?;
+            let lightpanda = lane_digest_arguments(&db, self.host.time())?;
             db.query_row(
                 &format!(
                     "SELECT account_username FROM jobs WHERE state IN ('pending','running') \
-                     AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+                     AND {AVAILABLE_ACCOUNT_SQL} \
+                     AND NOT (kind='digest' AND NOT {BRAVE_DIGEST_SQL}) \
+                     ORDER BY created_at,id LIMIT 1"
                 ),
-                [],
+                params_from_iter(lightpanda),
                 |row| row.get(0),
             )
             .optional()
@@ -1267,9 +1296,10 @@ impl BrowserJobQueue {
                     db,
                     &format!(
                         "SELECT * FROM jobs WHERE state='pending' AND kind='digest' \
-                         AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+                         AND {AVAILABLE_ACCOUNT_SQL} AND {BRAVE_DIGEST_SQL} \
+                         ORDER BY created_at,id LIMIT 1"
                     ),
-                    &[],
+                    &lane_digest_arguments(db, now)?,
                 )?;
                 if row.is_none() && allow_engagement {
                     row = select_engagement(db, now, true)?;
@@ -1346,9 +1376,9 @@ impl BrowserJobQueue {
                             .query_row(
                                 &format!(
                                     "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' \
-                                     AND {AVAILABLE_ACCOUNT_SQL} LIMIT 1"
+                                     AND {AVAILABLE_ACCOUNT_SQL} AND {BRAVE_DIGEST_SQL} LIMIT 1"
                                 ),
-                                [],
+                                params_from_iter(lane_digest_arguments(db, now)?),
                                 |_| Ok(()),
                             )
                             .optional()
@@ -1384,7 +1414,7 @@ impl BrowserJobQueue {
 
     /// Complete a claim or atomically schedule a safe read retry.
     pub fn finish(&self, claim: &BrowserJob, outcome: Finish) -> BrowserResult<()> {
-        let finished = self.retry_storage(|| self.finish_once(claim, &outcome));
+        let finished = self.retry_storage(|| self.finish_once(claim, &outcome, None));
         if claim.kind == "retrieval" {
             // Queues a listed profile's posts without a polling loop.
             self.retrieval_finished.set();
@@ -1392,7 +1422,15 @@ impl BrowserJobQueue {
         finished
     }
 
-    fn finish_once(&self, claim: &BrowserJob, outcome: &Finish) -> BrowserResult<()> {
+    /// With `lane`, the claim is the Lightpanda lane's (`lightpanda::LaneRead`): it
+    /// leaves the lane's running jobs, and its account's pace and hold are recorded in
+    /// the same transaction instead of Brave's.
+    fn finish_once(
+        &self,
+        claim: &BrowserJob,
+        outcome: &Finish,
+        lane: Option<&LaneRead>,
+    ) -> BrowserResult<()> {
         let Finish {
             result,
             error,
@@ -1427,6 +1465,9 @@ impl BrowserJobQueue {
             "succeeded"
         };
         let retried = self.immediate(|db| {
+            if let Some(lane) = lane {
+                lane.record(db, claim, self.host.time())?;
+            }
             let Some(stored_job) = db
                 .query_row("SELECT * FROM jobs WHERE id=?", [&claim.id], BrowserJob::from_row)
                 .optional()
@@ -1473,9 +1514,14 @@ impl BrowserJobQueue {
                 )
                 .map_err(storage)?;
             if changed > 0 && stored_job.kind == "following" {
-                pace_following(db, now)?;
+                delete_collected_following(db, now)?;
+                if lane.is_none() {
+                    pace_following(db, now)?;
+                }
             }
+            // The lane's reads pace and hold their own accounts, never Brave's.
             if changed > 0
+                && lane.is_none()
                 && state == "succeeded"
                 && (read_only_kind(&stored_job.kind)
                     || (stored_job.kind == "engagement" && !stored_job.dry_run()))
@@ -1557,8 +1603,12 @@ impl BrowserJobQueue {
                     .map_err(storage)?;
                     newly_paused = true;
                 }
-                db.execute_batch(
-                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval','following') AND state='running'",
+                // The lane's reads run on in its own thread; requeueing one would drop its
+                // finish and read the page twice.
+                db.execute(
+                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval','following') AND state='running' \
+                     AND id NOT IN (SELECT value FROM json_each(?))",
+                    [lane_running_jobs(db, self.host.time())?],
                 )
                 .map_err(storage)?;
                 db.execute(
@@ -1683,6 +1733,7 @@ impl BrowserJobQueue {
             let db = self.connect()?;
             recent_following_reads(&db, self.host.time())?.len()
         };
+        let lightpanda = self.lightpanda_status(self.host.time())?;
         Ok(json!({
             "queues": groups,
             "recent_failures": recent,
@@ -1697,7 +1748,9 @@ impl BrowserJobQueue {
                 "paused": self.setting_or(FOLLOWING_PAUSED, json!(false))?,
                 "held_until": if pyjson::truthy(&following_until) { following_until } else { Value::Null },
                 "reads_last_hour": following_reads,
+                "readers": self.following_readers(self.host.time())?,
             },
+            "lightpanda": lightpanda,
             "source": self.get_setting("source_status")?,
             "profile_queue": self.get_setting("profile_queue_status")?,
         }))
@@ -2011,9 +2064,17 @@ fn select_following(db: &Connection, now: f64) -> BrowserResult<Option<BrowserJo
     {
         return Ok(None);
     }
+    let lane = if lane_reads_following(db, now)? {
+        format!("AND NOT {KNOWN_LIST_SQL}")
+    } else {
+        String::new()
+    };
     let Some(job) = select_optional_job(
         db,
-        "SELECT * FROM jobs WHERE state='pending' AND kind='following' ORDER BY created_at,id LIMIT 1",
+        &format!(
+            "SELECT * FROM jobs WHERE state='pending' AND kind='following' {lane} \
+             ORDER BY created_at,id LIMIT 1"
+        ),
         &[],
     )?
     else {
@@ -2039,27 +2100,67 @@ fn recent_following_reads(db: &Connection, now: f64) -> BrowserResult<Vec<Value>
     })
 }
 
-/// After a Following read: draw the pauses before the next page and the next list, and
-/// delete finished reads the crawl has had time to collect.
+/// After Brave's Following read: draw its pauses before the next page and the next list.
 fn pace_following(db: &Connection, now: f64) -> BrowserResult<()> {
-    let control = control();
-    let between = |low: f64, high: f64| low + fastrand::f64() * (high - low);
-    let page = between(
-        control.following_page_delay_min_seconds,
-        control.following_page_delay_max_seconds,
-    );
-    let list = between(
-        control.following_list_delay_min_seconds,
-        control.following_list_delay_max_seconds,
-    );
-    write_setting(db, "following_next_page_at", &json!(now + page))?;
-    write_setting(db, "following_next_list_at", &json!(now + list))?;
+    let (page_at, list_at) = following_pauses(now);
+    write_setting(db, "following_next_page_at", &json!(page_at))?;
+    write_setting(db, "following_next_list_at", &json!(list_at))?;
+    Ok(())
+}
+
+/// Delete finished Following reads the crawl has had time to collect.
+fn delete_collected_following(db: &Connection, now: f64) -> BrowserResult<()> {
     db.execute(
         &format!("DELETE FROM jobs WHERE {FINISHED_FOLLOWING_SQL} AND finished_at<?"),
-        [now - control.following_result_retention_seconds],
+        [now - control().following_result_retention_seconds],
     )
     .map_err(storage)?;
     Ok(())
+}
+
+/// The day's account logins so far, or None once `username` may not log in again.
+fn account_logins_if_allowed(
+    db: &Connection,
+    username: &str,
+    now: f64,
+) -> BrowserResult<Option<Vec<Value>>> {
+    let attempts = recent_timestamps(&stored_setting(db, "account_login_attempts")?, now);
+    let last = pyjson::number(&stored_setting(
+        db,
+        &format!("account_login_at:{username}"),
+    )?)
+    .unwrap_or(0.0);
+    Ok(
+        (attempts.len() < control().account_login_daily_limit && now - last >= 86_400.0)
+            .then_some(attempts),
+    )
+}
+
+/// Extra conditions on a login reservation.
+#[derive(Debug, Default)]
+pub struct LoginReservation {
+    /// Leave at least this many of the day's logins unspent (for Brave's relogins).
+    pub keep: usize,
+    /// A first login on a new device also needs a place among the last day's
+    /// timestamps in this setting, fewer than this many.
+    pub first_login: Option<(&'static str, usize)>,
+}
+
+/// When the next page of a list, and the next list, may be read after a Following
+/// read that finished at `now`: each a random pause in `following_*_delay_*` later.
+fn following_pauses(now: f64) -> (f64, f64) {
+    let control = control();
+    let between = |low: f64, high: f64| low + fastrand::f64() * (high - low);
+    (
+        now + between(
+            control.following_page_delay_min_seconds,
+            control.following_page_delay_max_seconds,
+        ),
+        now + between(
+            control.following_list_delay_min_seconds,
+            control.following_list_delay_max_seconds,
+        ),
+    )
 }
 
 /// A setting read inside a transaction: its JSON value, null when unset or invalid.
@@ -2140,6 +2241,14 @@ fn rows_as_objects(db: &Connection, sql: &str) -> BrowserResult<Vec<Value>> {
         .map_err(storage)?;
     Ok(rows)
 }
+
+#[path = "browser_queue_lightpanda.rs"]
+mod lightpanda;
+pub use lightpanda::{AccountPace, LanePending, LaneRead};
+use lightpanda::{
+    BRAVE_DIGEST_SQL, KNOWN_LIST_SQL, lane_digest_arguments, lane_reads_following,
+    lane_running_jobs,
+};
 
 /// The Python suite's cases, ported.
 #[cfg(test)]

@@ -19,6 +19,7 @@ pub use bridge::{
 pub use runner::{JavascriptRunner, PinnedRunner};
 pub use session::{
     ACCOUNT_UNAVAILABLE, BrowserInstagramSession, CANCELLATION_UNCONFIRMED, LOGGED_OUT_PAUSE,
+    request_result,
 };
 pub use tab_pool::{BrowserTabPool, TabPool};
 

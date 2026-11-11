@@ -42,7 +42,7 @@
    return body;
   };
   try {
-   if ((@@CURRENT_ACCOUNT_USERNAME@@) !== @@ACCOUNT@@) throw failed("account_changed");
+   if (!(@@ACCOUNT_IS_ACTIVE@@)) throw failed("account_changed");
    let userId = @@USER_ID@@;
    if (userId === null) {
     const profile = await read(`/api/v1/users/web_profile_info/?username=${encodeURIComponent(@@USERNAME@@)}`);
@@ -57,7 +57,7 @@
    const maxId = @@MAX_ID@@;
    if (maxId !== null) query.set("max_id", maxId);
    const body = await read(`/api/v1/friendships/${userId}/following/?${query}`);
-   if ((@@CURRENT_ACCOUNT_USERNAME@@) !== @@ACCOUNT@@) throw failed("account_changed");
+   if (!(@@ACCOUNT_IS_ACTIVE@@)) throw failed("account_changed");
    if (body === null) {
     request.result = {state: "succeeded", hidden: true};
     return;

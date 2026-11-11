@@ -91,6 +91,7 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "_rested_until", {})
     monkeypatch.setattr(module, "_known", {})
     monkeypatch.setattr(module, "_next_check", {})
+    monkeypatch.setattr(module, "_readers_checked", {"at": float("-inf"), "count": 1})
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
     monkeypatch.setattr(
         module.school_service,
@@ -352,7 +353,7 @@ def test_reads_failing_in_a_row_rest_the_schools_crawl(world):
 
     assert len(brave.reads) == 2
     assert module._rested_until["utm"] > 0
-    assert module.next_school() != "utm"
+    assert "utm" not in module.next_schools(4)
     assert _state()["reading"]["seed"] == "wat2do.utm"
 
 
@@ -544,11 +545,46 @@ def test_crawling_goes_round_every_school_in_turn(world, monkeypatch):
     monkeypatch.setattr(module, "last_crawl_finished", finished.get)
     world({})
     # Never crawled first, then the crawl that finished longest ago.
-    assert module.next_school() == "utm"
+    assert module.next_schools(1) == ["utm"]
+    assert module.next_schools(4) == ["utm", "sfu", "ubc"]
     module._save("ubc", {"running": True})
-    assert module.next_school() == "ubc"
+    assert module.next_schools(1) == ["ubc"]
+    assert module.next_schools(2) == ["ubc", "utm"]
     module._rested_until["ubc"] = module.time.monotonic() + 600
-    assert module.next_school() == "utm"
+    assert module.next_schools(1) == ["utm"]
+
+
+def test_schools_crawl_at_once_as_many_as_the_worker_has_readers(world, monkeypatch):
+    monkeypatch.setattr(
+        module,
+        "EMULATOR",
+        module.EMULATOR.model_copy(
+            update={"android_user_by_school": {"ubc": 0, "sfu": 0, "utm": 0}}
+        ),
+    )
+    lists = {f"wat2do.{school}": [[_user(f"{school}club")]] for school in ("ubc", "sfu", "utm")}
+    brave, _, _ = world(lists)
+    brave.holding = True
+
+    module.advance()
+    assert [username for username, _, _ in brave.reads] == ["wat2do.ubc"]
+
+    # Two Lightpanda accounts read: a second school starts while the first one waits.
+    brave.status["following"]["readers"] = 2
+    module._readers_checked["at"] = float("-inf")
+    module._next_check.clear()
+    module.advance()
+    assert [username for username, _, _ in brave.reads] == ["wat2do.ubc", "wat2do.sfu"]
+
+    # A read that finishes while its school is not stepped is still collected.
+    brave.holding = False
+    brave.jobs["job-1"] = brave._finish("wat2do.ubc", None)
+    brave.status["following"]["readers"] = 1
+    module._readers_checked["at"] = float("-inf")
+    module._next_check.clear()
+    module.advance()
+    assert json.loads(module._state_path("ubc").read_text())["seeded"]
+    assert json.loads(module._state_path("sfu").read_text())["job"] == "job-2"
 
 
 def test_the_crawl_thread_scores_after_new_accounts_and_rests_after_a_failure(world, monkeypatch):

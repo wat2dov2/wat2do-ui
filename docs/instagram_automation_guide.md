@@ -253,6 +253,7 @@ An HTTP 429, a login wall, a feedback or spam block, a failed status or any othe
 `wat2do-browser pause-following` stops Following reads alone (the crawl simply waits) and `resume-following` lets them run again; `status` shows `following.paused`, `held_until` and `reads_last_hour`.
 A cancelled Following read stays cancelled: queueing the same page again returns it, and only `retry --job-id` reruns it.
 `excluded_accounts` never holds a Following read, since it never runs as the school's account.
+While the worker's Lightpanda lane serves any account, it reads these pages in those accounts' sessions instead, each account at this pace (see Lightpanda sessions below).
 Finished reads are deleted after `following_result_retention_seconds`, since each page carries a list of accounts the crawl takes within seconds.
 
 ### Eligible event posts
@@ -510,7 +511,7 @@ Admins keep the song list in the Songs tab of the Instagram publishing admin pag
 Publishing stores the live post's `permalink` and sets the batch's `music_status` to `pending`.
 The emulator worker (`io.wat2do.instagram.worker`, `jobs/run_instagram_worker.py install-schedule`) visits a school's account first, at any hour, when one of its published batches has waited `music_delay_minutes` and is younger than `music_max_age_hours`. While any carousel waits for its song, visits add songs and nothing else (no DMs or follows), and unfollows and follows already under way stop before their next profile.
 A carousel whose account the app cannot switch to rests with its account and holds up nothing else.
-The follow crawl (`services/instagram_follow/crawl.py`) runs around the clock in its own thread of the same process, restarted after `rest_seconds` if it ever stops, and never touches the emulator: it reads Following lists through the Brave worker's Following reads (above), one read outstanding per school, checking on a waiting read `crawl_poll_seconds` after queueing it and doubling the gap up to `crawl_poll_max_seconds` (1 and 2 seconds since 2026-11-11, so each read is collected within about two seconds of finishing).
+The follow crawl (`services/instagram_follow/crawl.py`) runs around the clock in its own thread of the same process, restarted after `rest_seconds` if it ever stops, and never touches the emulator: it reads Following lists through the browser worker's Following reads (above), one read outstanding per school and as many schools at once as `wat2do-browser status` reports `following.readers` (one per Lightpanda account that can read, up to `max_sessions`, else Brave's one), checking on a waiting read `crawl_poll_seconds` after queueing it and doubling the gap up to `crawl_poll_max_seconds` (1 and 2 seconds since 2026-11-11, so each read is collected within about two seconds of finishing).
 A school's crawl first reads the school account's own Following list to its end (by its `recipient_id`, or its name when that is unset); every public account it follows is a seed.
 It then reads each seed's whole list, at most `crawl_list_page_limit` pages deep, until `crawl_miss_streak` seeds in a row add no new candidate, and an account whose follow failed is retried only after `follow_retry_hours`.
 A public account the school does not follow and has no row for becomes a pending `crawl` candidate when its handle or name carries one of `school_names` as a word, or once `crawl_mutual_follow_threshold` of the school's followed clubs follow it; `found_via` names those clubs.
@@ -612,3 +613,55 @@ Each typed reply is confirmed by seeing it appear in the thread.
 A reply or story repost that cannot be confirmed pauses the worker for a person to check the thread and story, and it is never sent twice.
 DM text is never logged.
 
+
+## Lightpanda sessions: digests and Following reads
+
+Lightpanda is a light headless browser (about 250 MB per session instead of Brave's 1.4 GB, with no window, AppleScript or Automation approval).
+Each school account logged in to it has its own owner-only cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/<account>.json` and its own `lightpanda serve` process, driven over CDP on an owner-only Unix socket (`rust/src/lightpanda`).
+At most `max_sessions` (`controlbox/instagram_lightpanda.json`) of these processes run on the Mac at once, across the worker and any `wat2do-lightpanda` command, and no two ever drive the same account (lock files in the jars' `locks/` directory).
+
+### The worker's lane
+
+The `wat2do-browser` worker runs a Lightpanda lane in its own thread (`rust/src/lightpanda/lane.rs`), beside Brave and untouched by Brave's pauses and holds.
+It serves every account whose jar holds a login, unless that account is paused for a person (`lightpanda_paused:<account>`), in `excluded_accounts`, or held:
+
+- With `controlbox/instagram_digest.json` `digest_engine` `"lightpanda"`, a digest for a served account is read in that account's own session, with the same query, paging, checks and `maximum_pages` as Brave. Every other digest (an account not logged in to Lightpanda, or not served right now) is read in Brave as before, switching accounts as usual. With `"brave"` (the setting today, while the lane serves the follow crawl first), Brave reads every digest; switching is a one-value change.
+- A lane digest gets `lane_digest_timeout_seconds` in all, opening its session included, and Brave takes any lane digest left waiting `lane_digest_wait_seconds`, so a digest always leaves Brave time within the workflow's 300 s wait. A Following read gets `lane_following_timeout_seconds`, so a stuck one never holds its account's digests for long.
+- Following reads with a known list owner ID go to whichever served account is free, each account at its own pace: at most `following_requests_per_hour` reads an hour and the same page and list pauses as Brave (`controlbox/instagram_browser.json`). Brave reads Following lists only while the lane serves no account, and the few reads whose owner must first be looked up by name, which Instagram answers only to a full browser.
+
+The lane says what it serves in the worker's `lightpanda_lane` setting with a heartbeat; once that heartbeat is `lane_stale_seconds` old (the worker stopped, or the lane failed), Brave takes everything back.
+The jobs it is running are listed in `lightpanda_jobs`: Brave's queue recovery (after a storage hiccup) leaves them to the lane while its heartbeat is fresh, and the worker forgets an earlier lane at start, so its reads are recovered then.
+The lane's reads pace and hold only their own accounts (`lightpanda_account:<account>`), never Brave's Following pauses or backoff.
+A session stays open while its account has work and closes after `session_idle_seconds` without a job or once `session_max_seconds` old; a waiting digest closes the longest-idle session to make room.
+A 429, a login wall or any other refusal on an account's read holds that account alone, starting at `rate_limit_backoff_seconds` and doubling while it repeats, up to `rate_limit_max_backoff_seconds`.
+A digest the lane cannot read holds its account the same way and goes back to Brave without spending an attempt.
+When Instagram ends a session's login (its `sessionid` cookie is gone), the jar forgets the login, the account drops out of the lane, and the ramp below logs it in again.
+`wat2do-browser status` shows the lane (`lightpanda.lane`, `lightpanda.held_until`) and `following.readers`, the number of Following reads that can run at once, which the follow crawl reads to decide how many schools to crawl at a time.
+
+### Logins and the ramp
+
+A login types the account's Keychain password (`instagram_browser.json` `login_keychain_service`) and, when Instagram asks, the code it emailed to `login_code_email`.
+It spends the account's login for the day from the budget Brave uses (`account_login_daily_limit`, one per account a day, kept in the worker's `jobs.sqlite3`), and a first login, a new device to Instagram, also spends one of `new_login_daily_limit` places a day.
+Each login's budget check and its record happen in one queue transaction, since the worker's Brave, its lane and `wat2do-lightpanda` all reserve from the same budget.
+From the first keystroke of the password on, the login counts as sent: any failure, a wrong password, a security check or a page the login does not recognise pauses the account (`lightpanda_paused:<account>`) until a person runs `resume`; nothing is retried blindly.
+The lane logs one more account in at most every `ramp_interval_minutes` (its next turn is kept in `lightpanda_ramp_at`, so a restart never brings it forward), and only while more than `ramp_reserved_logins` of the day's logins are left, so Brave's own relogins always have some: accounts whose Lightpanda login Instagram ended first, then the accounts with the most digests in the last `ramp_lookback_days`, then `ramp_last_accounts` in their listed order.
+An account whose login could not even be tried (no Keychain password, no login form) is skipped for a day.
+
+### Commands
+
+```bash
+cd backend
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- install
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- ramp
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- login --account wat2do.<school>
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- resume --account wat2do.<school>
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- shadow [--hours 96]
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- following --account wat2do.<school> --username <handle> --user-id <id>
+```
+
+`install` puts the release pinned in `controlbox/instagram_lightpanda.json` at `~/.local/libexec/wat2do/lightpanda` and creates the jars' directory; the lane starts once both are there, and every command refuses a binary whose version differs from the pin.
+`ramp` lists the accounts logged in and the order the worker logs the rest in, and `login` logs one in by hand within the same budget.
+`shadow` reads the worker's recent succeeded digest jobs read-only, replays the newest `shadow_jobs_per_account` per account (within `shadow_lookback_hours`, or `--hours`) one account at a time with pauses between them, compares the media IDs with Brave's, and saves a report under `~/.local/state/wat2do/instagram-browser/lightpanda/shadow/`.
+It does not start while the worker holds Instagram requests after a 429, and a 429 stops it.
+An older digest can lose a post Instagram has since removed, so compare fresh digests.
+`following` reads one page of a Following list in an account's session and prints how many accounts it listed and how long it took, never the list.

@@ -332,6 +332,8 @@ pub struct InstagramDigest {
     pub client_doc_id: String,
     pub web_app_id: String,
     pub maximum_pages: i64,
+    /// Which browser the worker reads digests with.
+    pub digest_engine: DigestEngine,
 }
 
 /// `controlbox/notification_retry.json`, every field.
@@ -347,6 +349,55 @@ pub struct NotificationRetry {
     pub login_first_school: String,
     pub reruns_per_day: usize,
     pub max_reruns_per_run: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DigestEngine {
+    Brave,
+    Lightpanda,
+}
+
+/// `controlbox/instagram_lightpanda.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramLightpanda {
+    /// The pinned release, its download and the SHA-256 of that download.
+    pub version: String,
+    pub download_url: String,
+    pub sha256: String,
+    pub startup_timeout_seconds: f64,
+    pub navigation_timeout_seconds: f64,
+    pub shutdown_timeout_seconds: f64,
+    pub login_wait_seconds: f64,
+    pub login_poll_seconds: f64,
+    /// At most this many accounts log in to Lightpanda for the first time a day.
+    pub new_login_daily_limit: usize,
+    /// Most Lightpanda processes open at once on the Mac, across every wat2do process.
+    pub max_sessions: usize,
+    /// A worker session closes after this long without a job, or this long after it opened.
+    pub session_idle_seconds: f64,
+    pub session_max_seconds: f64,
+    /// Brave reads what the Lightpanda lane claimed once its heartbeat is this old.
+    pub lane_stale_seconds: f64,
+    /// A lane digest's whole deadline, opening its session included; Brave takes a
+    /// digest the lane has left waiting `lane_digest_wait_seconds`.
+    pub lane_digest_timeout_seconds: f64,
+    pub lane_digest_wait_seconds: f64,
+    /// A lane Following read's whole deadline, opening its session included.
+    pub lane_following_timeout_seconds: f64,
+    /// The worker logs one more account in to Lightpanda at most this often: the
+    /// accounts with the most digests in the last `ramp_lookback_days` first, and
+    /// `ramp_last_accounts` last.
+    pub ramp_interval_minutes: f64,
+    pub ramp_lookback_days: f64,
+    /// The ramp leaves the day's last this many logins to Brave.
+    pub ramp_reserved_logins: usize,
+    pub ramp_last_accounts: Vec<String>,
+    pub shadow_lookback_hours: f64,
+    pub shadow_jobs_per_account: usize,
+    pub shadow_digest_pause_seconds: f64,
+    pub shadow_account_pause_seconds: f64,
 }
 
 /// The campus seasons, map views and map geocoding in `controlbox/event_discovery.json`.
@@ -675,6 +726,12 @@ pub static NOTIFICATION_RETRY: LazyLock<NotificationRetry> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/notification_retry.json"),
     )
 });
+pub static INSTAGRAM_LIGHTPANDA: LazyLock<InstagramLightpanda> = LazyLock::new(|| {
+    parse(
+        "instagram_lightpanda",
+        include_str!("../../backend/controlbox/instagram_lightpanda.json"),
+    )
+});
 pub static EVENT_DISCOVERY: LazyLock<EventDiscovery> = LazyLock::new(|| {
     parse(
         "event_discovery",
@@ -888,5 +945,6 @@ mod tests {
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
         assert!(PUBLIC_ATTENDANCE.maximum_display_names > 0);
         assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
+        assert_eq!(INSTAGRAM_LIGHTPANDA.sha256.len(), 64);
     }
 }

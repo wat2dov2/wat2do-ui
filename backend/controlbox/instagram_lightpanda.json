@@ -1,0 +1,31 @@
+{
+  "version": "1.0.2",
+  "download_url": "https://github.com/lightpanda-io/browser/releases/download/1.0.2/lightpanda-aarch64-macos",
+  "sha256": "9f3ee749a55d1abc5f8fdda0d9559c3b2abcec5bff5bfe902bc06c0a89538ec4",
+  "startup_timeout_seconds": 15,
+  "navigation_timeout_seconds": 45,
+  "shutdown_timeout_seconds": 10,
+  "login_wait_seconds": 45,
+  "login_poll_seconds": 1.5,
+  "new_login_daily_limit": 4,
+  "max_sessions": 4,
+  "session_idle_seconds": 120,
+  "session_max_seconds": 3600,
+  "lane_stale_seconds": 30,
+  "lane_digest_timeout_seconds": 75,
+  "lane_digest_wait_seconds": 60,
+  "lane_following_timeout_seconds": 30,
+  "ramp_interval_minutes": 120,
+  "ramp_lookback_days": 14,
+  "ramp_reserved_logins": 3,
+  "ramp_last_accounts": [
+    "wat2do.guelph",
+    "wat2do.berkeley",
+    "wat2do.ontariotech",
+    "wat2do.utm"
+  ],
+  "shadow_lookback_hours": 72,
+  "shadow_jobs_per_account": 3,
+  "shadow_digest_pause_seconds": 3,
+  "shadow_account_pause_seconds": 30
+}

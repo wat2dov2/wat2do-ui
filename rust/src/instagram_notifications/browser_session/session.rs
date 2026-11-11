@@ -343,38 +343,11 @@ impl BrowserInstagramSession {
             self.run(source)?;
             self.poll_until(|session| {
                 let raw = session.read(scripts::REQUEST_STATE)?;
-                let invalid =
-                    || BrowserError::session("Instagram browser returned invalid request state");
-                let value: Value = serde_json::from_str(&raw).map_err(|_| invalid())?;
-                let Value::Object(value) = value else {
-                    if value.is_null() {
-                        return Ok(false);
-                    }
-                    return Err(invalid());
-                };
-                let (Some(result), Some(Value::Bool(settled))) =
-                    (value.get("result"), value.get("settled"))
-                else {
-                    return Err(invalid());
-                };
-                if value.len() != 2 {
-                    return Err(invalid());
-                }
-                if result.is_null() {
+                let Some((result, settled)) = request_result(&raw)? else {
                     return Ok(false);
-                }
-                let Value::Object(result) = result else {
-                    return Err(invalid());
                 };
-                let state = result.get("state").and_then(Value::as_str);
-                if !matches!(state, Some("pending" | "succeeded" | "failed")) {
-                    return Err(invalid());
-                }
-                if state == Some("pending") {
-                    return Ok(false);
-                }
-                payload = Some(result.clone());
-                completion_settled = *settled;
+                payload = Some(result);
+                completion_settled = settled;
                 Ok(completion_settled)
             })
         })();
@@ -766,4 +739,39 @@ fn submitted_login(username: &str, error: &BrowserError) -> BrowserError {
             }
         ),
     )
+}
+
+/// The finished result in a page's request state (what `scripts::REQUEST_STATE`
+/// returns) and whether its request has settled; None while it still runs. Any other
+/// shape is an invalid state.
+pub fn request_result(raw: &str) -> BrowserResult<Option<(serde_json::Map<String, Value>, bool)>> {
+    let invalid = || BrowserError::session("Instagram browser returned invalid request state");
+    let value: Value = serde_json::from_str(raw).map_err(|_| invalid())?;
+    let Value::Object(value) = value else {
+        if value.is_null() {
+            return Ok(None);
+        }
+        return Err(invalid());
+    };
+    let (Some(result), Some(Value::Bool(settled))) = (value.get("result"), value.get("settled"))
+    else {
+        return Err(invalid());
+    };
+    if value.len() != 2 {
+        return Err(invalid());
+    }
+    if result.is_null() {
+        return Ok(None);
+    }
+    let Value::Object(result) = result else {
+        return Err(invalid());
+    };
+    let state = result.get("state").and_then(Value::as_str);
+    if !matches!(state, Some("pending" | "succeeded" | "failed")) {
+        return Err(invalid());
+    }
+    if state == Some("pending") {
+        return Ok(None);
+    }
+    Ok(Some((result.clone(), *settled)))
 }

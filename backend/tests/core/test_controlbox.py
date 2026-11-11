@@ -169,6 +169,9 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
+    assert controlbox.instagram_digest.digest_engine == "brave"
+    assert controlbox.instagram_lightpanda.new_login_daily_limit == 4
+    assert controlbox.instagram_lightpanda.max_sessions == 4
     assert controlbox.workflow_failure_alerts.discord_admin_role_ids == ("1506447680287674469",)
     assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
@@ -315,6 +318,44 @@ def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must use i.instagram.com"):
+        load_controlbox(path)
+
+
+def test_unknown_digest_engine_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path, "instagram_digest", lambda payload: payload.update({"digest_engine": "chrome"})
+    )
+
+    with pytest.raises(ValidationError, match="digest_engine"):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        (
+            {"download_url": "https://example.com/releases/download/1.0.2/lightpanda"},
+            "GitHub releases",
+        ),
+        (
+            {
+                "download_url": "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-aarch64-macos"
+            },
+            "pinned version",
+        ),
+        ({"sha256": "not-a-checksum"}, "sha256"),
+        ({"new_login_daily_limit": -1}, "new_login_daily_limit"),
+        ({"max_sessions": 0}, "max_sessions"),
+        ({"max_sessions": 9}, "max_sessions"),
+        ({"session_idle_seconds": 7200, "session_max_seconds": 3600}, "session_idle_seconds"),
+        ({"ramp_last_accounts": ["guelph"]}, "ramp_last_accounts"),
+        ({"lane_digest_timeout_seconds": 150, "lane_digest_wait_seconds": 60}, "lane digest"),
+    ],
+)
+def test_unsafe_lightpanda_controls_are_rejected(tmp_path: Path, patch, message) -> None:
+    path = _write_control(tmp_path, "instagram_lightpanda", lambda payload: payload.update(patch))
+
+    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 

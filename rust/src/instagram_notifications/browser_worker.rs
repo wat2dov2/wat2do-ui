@@ -630,6 +630,8 @@ impl Worker {
             ));
         }
         make_interruptible();
+        // A lane from an earlier run is gone: its running jobs are this recovery's.
+        self.queue.reset_lightpanda_lane()?;
         let stopping = Arc::new(Event::default());
         let mut threads: Vec<JoinHandle<()>> = vec![self.keep_worker_alive(stopping.clone())];
         let mut collecting = false;
@@ -750,6 +752,10 @@ impl Worker {
         // Starts set: on startup the worker queues profiles it listed while stopping.
         self.queue.retrieval_finished.set();
         let mut threads = Vec::new();
+        let (queue, bridge, stop) = (self.queue.clone(), self.bridge.clone(), stopping.clone());
+        threads.push(spawn_named("instagram-browser-lightpanda", move || {
+            crate::lightpanda::lane::run(queue, bridge, stop);
+        }));
         let worker = self.clone();
         let stop = stopping.clone();
         threads.push(spawn_named("instagram-browser-profile-queue", move || {

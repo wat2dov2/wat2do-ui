@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -751,6 +752,8 @@ class InstagramDigestControl(_ControlModel):
     client_doc_id: str = Field(pattern=r"^[0-9]{20,40}$")
     web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
     maximum_pages: int = Field(gt=0, le=100)
+    # The browser the worker reads digests with; Lightpanda runs in shadow mode first.
+    digest_engine: Literal["brave", "lightpanda"]
 
     @model_validator(mode="after")
     def validate_endpoint(self) -> "InstagramDigestControl":
@@ -758,6 +761,68 @@ class InstagramDigestControl(_ControlModel):
             raise ValueError("Instagram digest endpoint must use i.instagram.com")
         if self.endpoint_url.path != "/graphql/query":
             raise ValueError("Instagram digest endpoint must use /graphql/query")
+        return self
+
+
+class InstagramLightpandaControl(_ControlModel):
+    """Lightpanda, the light headless browser that reads Instagram digests per account.
+
+    The worker installs the pinned release (its download must match ``sha256``) and runs
+    one process per school account with that account's own cookie jar.
+    """
+
+    version: str = Field(pattern=r"^[0-9]+[.][0-9]+[.][0-9]+$")
+    download_url: HttpUrl
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    startup_timeout_seconds: float = Field(gt=0, le=120)
+    navigation_timeout_seconds: float = Field(gt=0, le=300)
+    shutdown_timeout_seconds: float = Field(gt=0, le=60)
+    login_wait_seconds: float = Field(gt=0, le=300)
+    login_poll_seconds: float = Field(gt=0, le=30)
+    # Accounts logging in to Lightpanda for the first time, a new device to Instagram, per day.
+    new_login_daily_limit: int = Field(ge=0, le=50)
+    # Most Lightpanda processes open at once on the Mac (about 250 MB each), across the
+    # worker's sessions and any wat2do-lightpanda command.
+    max_sessions: int = Field(ge=1, le=8)
+    # A worker session closes after this long without a job, or this long after it opened.
+    session_idle_seconds: float = Field(gt=0, le=3600)
+    session_max_seconds: float = Field(gt=0, le=86400)
+    # Brave stops leaving an account's digests and the Following reads to Lightpanda when
+    # the worker's Lightpanda lane has not said it is running for this long.
+    lane_stale_seconds: float = Field(ge=5, le=600)
+    # A lane digest gets this long in all, opening its session included, and Brave takes
+    # one the lane has left waiting this long, so a digest always meets the workflow's
+    # deadline. A lane Following read (about a second) gets the third.
+    lane_digest_timeout_seconds: float = Field(gt=0, le=150)
+    lane_digest_wait_seconds: float = Field(gt=0, le=120)
+    lane_following_timeout_seconds: float = Field(gt=0, le=120)
+    # The worker logs one more account in to Lightpanda at most this often, the accounts
+    # with the most digests in the last ramp_lookback_days first, ramp_last_accounts last.
+    ramp_interval_minutes: float = Field(ge=10, le=1440)
+    ramp_lookback_days: int = Field(ge=1, le=60)
+    # The ramp never spends the day's last ramp_reserved_logins logins, which Brave needs.
+    ramp_reserved_logins: int = Field(ge=0, le=50)
+    ramp_last_accounts: tuple[str, ...]
+    # Shadow mode replays Brave's recent digests in Lightpanda and compares the media IDs.
+    shadow_lookback_hours: float = Field(gt=0, le=168)
+    shadow_jobs_per_account: int = Field(ge=1, le=50)
+    shadow_digest_pause_seconds: float = Field(ge=0, le=600)
+    shadow_account_pause_seconds: float = Field(ge=0, le=3600)
+
+    @model_validator(mode="after")
+    def validate_download(self) -> "InstagramLightpandaControl":
+        if self.lane_digest_wait_seconds + self.lane_digest_timeout_seconds > 180:
+            # Brave still needs time for a digest the lane hands back within the
+            # workflow's 300 s wait.
+            raise ValueError("lane digest wait and timeout cannot exceed 180 seconds together")
+        if self.session_idle_seconds > self.session_max_seconds:
+            raise ValueError("session_idle_seconds cannot exceed session_max_seconds")
+        if any(not re.fullmatch(r"wat2do[.][a-z0-9_]+", name) for name in self.ramp_last_accounts):
+            raise ValueError("ramp_last_accounts must name wat2do school accounts")
+        if self.download_url.host != "github.com":
+            raise ValueError("Lightpanda downloads must come from its GitHub releases")
+        if f"/releases/download/{self.version}/" not in (self.download_url.path or ""):
+            raise ValueError("Lightpanda's download must be the pinned version's release")
         return self
 
 
@@ -1435,6 +1500,7 @@ class ControlBox(_ControlModel):
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
+    instagram_lightpanda: InstagramLightpandaControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl

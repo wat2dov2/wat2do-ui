@@ -245,10 +245,34 @@ pub fn public_media_query(endpoint: &str, username: &str, profile: bool) -> Stri
     )
 }
 
-/// One page of `username`'s Following list, read as `account`: the page `max_id` names,
-/// or the first. Without `user_id` the account's ID is looked up from its name first.
+/// One page of `username`'s Following list, read as `account` (the account Brave
+/// shows): the page `max_id` names, or the first. Without `user_id` the account's ID is
+/// looked up from its name first.
 pub fn following_query(
     account: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let check = format!("({CURRENT_ACCOUNT_USERNAME}) === {}", json(account));
+    following(&check, username, user_id, max_id)
+}
+
+/// [`following_query`] in a page logged in as the Instagram user `recipient_id`, which
+/// it checks by its `ds_user_id` cookie rather than the page's navigation (Lightpanda's
+/// sessions hold one account each and lay nothing out).
+pub fn following_query_as_recipient(
+    recipient_id: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let check = format!("({}) === \"true\"", recipient_is_active(recipient_id));
+    following(&check, username, user_id, max_id)
+}
+
+fn following(
+    account_is_active: &str,
     username: &str,
     user_id: Option<&str>,
     max_id: Option<&str>,
@@ -258,8 +282,7 @@ pub fn following_query(
         FOLLOWING_QUERY,
         &[
             ("REQUEST_KEY", &json(REQUEST_KEY)),
-            ("CURRENT_ACCOUNT_USERNAME", CURRENT_ACCOUNT_USERNAME),
-            ("ACCOUNT", &json(account)),
+            ("ACCOUNT_IS_ACTIVE", account_is_active),
             ("USERNAME", &json(username)),
             ("USER_ID", &optional(user_id)),
             ("MAX_ID", &optional(max_id)),
