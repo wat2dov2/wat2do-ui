@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Drive the Instagram app on the emulator: one account at a time, everything it needs.
 
-``run`` keeps visiting school accounts: songs for new carousels, DMs, follows and
-Following-list crawls (``services/instagram_worker.py``). ``resume-dms`` clears the
+``run`` keeps visiting school accounts: songs for new carousels, DMs and follows
+(``services/instagram_worker.py``), and runs the follow crawl, which reads Following
+lists through the Brave worker, in its own thread. ``resume-dms`` clears the
 pause left by a reply or repost that could not be confirmed, once a person has
 checked it. ``install-schedule`` keeps ``run`` alive through a macOS LaunchAgent that
 keeps no logs.

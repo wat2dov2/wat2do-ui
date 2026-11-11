@@ -16,6 +16,11 @@ CLAUDE_CODE_PATH = (
     f"{Path.home() / '.local/bin'}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 )
 
+# Where `wat2do-browser install` keeps the Brave worker's binary
+# (`rust/src/launch_agents.rs` `installed_binary_path`); other jobs reach its queue
+# through it.
+INSTAGRAM_BROWSER_BINARY = Path.home() / ".local/libexec/wat2do/wat2do-browser"
+
 
 class LaunchAgentRecoveryError(RuntimeError):
     """A service replacement could not confirm recovery of the previous agent."""

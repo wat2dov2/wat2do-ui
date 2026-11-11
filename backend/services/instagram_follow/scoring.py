@@ -29,7 +29,7 @@ from core.controlbox import controlbox
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_profile
 from services.instagram_follow import candidates
-from services.instagram_follow.crawl import search_terms
+from services.instagram_follow.crawl import names_school
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_follow
@@ -111,9 +111,8 @@ def decision(
     if score["verdict"] == "approve":
         return candidates.FOLLOW_CANDIDATE_APPROVED
     if profile["read"] == "failed":
-        text = f"{row['handle']} {profile.get('name') or row.get('name') or ''}".casefold()
-        names_school = any(term.casefold() in text for term in search_terms(school))
-        if score["verdict"] == "review" and names_school:
+        name = profile.get("name") or row.get("name")
+        if score["verdict"] == "review" and names_school(school, row["handle"], name):
             return candidates.FOLLOW_CANDIDATE_APPROVED
         return candidates.FOLLOW_CANDIDATE_REJECTED
     posts = profile.get("posts") or []

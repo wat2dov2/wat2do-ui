@@ -3,7 +3,9 @@
 //! (`backend/scripts/instagram_browser.py` and `backend/jobs/process_notification.py`).
 //!
 //! `install` keeps `worker` alive as the LaunchAgent `io.wat2do.instagram-browser.worker`;
-//! the `process-notification` GitHub workflow runs `process-notification` and `retrieve`.
+//! the `process-notification` GitHub workflow runs `process-notification` and `retrieve`,
+//! and the follow crawl queues its Following reads with `following` and collects them
+//! with `status --job-id`.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -16,7 +18,7 @@ use serde_json::{Value, json};
 use tracing::Level;
 
 use super::browser_ingestion::canonical_target_url;
-use super::browser_queue::{BrowserJobQueue, WORKER_INSTALLATION_PAUSE};
+use super::browser_queue::{BrowserJobQueue, FOLLOWING_PAUSED, WORKER_INSTALLATION_PAUSE};
 use super::browser_session::{Bridge, canonical_post_url, school_account_username};
 use super::browser_worker::{Worker, handle_stop_signals};
 use super::carousel_engagement::{self, PublishingStore};
@@ -232,6 +234,27 @@ pub enum Command {
         #[arg(long, default_value_t = 1)]
         cutoff_days: i64,
     },
+    /// Queue one page of an account's Following list for the follow crawl
+    Following {
+        #[arg(long)]
+        school: String,
+        /// The crawl reading it, so each crawl reads every list afresh
+        #[arg(long)]
+        crawl: String,
+        /// The account whose list is read
+        #[arg(long)]
+        username: String,
+        /// The account's Instagram ID; looked up from its name when left out
+        #[arg(long)]
+        user_id: Option<String>,
+        /// The page the previous page pointed to; the first page without it
+        #[arg(long)]
+        max_id: Option<String>,
+    },
+    /// Stop Following reads alone, so the follow crawl waits; every other job runs on
+    PauseFollowing,
+    /// Let Following reads run again
+    ResumeFollowing,
     /// Install this binary and start the macOS worker LaunchAgent
     Install,
     /// Install this binary and the daily LaunchAgent that reruns failed notification runs
@@ -410,6 +433,35 @@ fn operate(cli: Cli, services: &dyn CliServices) -> anyhow::Result<Option<Value>
                 queue.set_setting(&format!("profile_request:{job_id}"), Value::Bool(true))?;
                 json!({"job_id": job_id})
             }
+        }
+        Command::Following {
+            school,
+            crawl,
+            username,
+            user_id,
+            max_id,
+        } => {
+            let account = school_account_username(&school).map_err(BrowserError::Value)?;
+            let job = queue.enqueue_following(
+                &school,
+                &account,
+                &crawl,
+                &username,
+                user_id.as_deref(),
+                max_id.as_deref(),
+            )?;
+            json!({"job_id": job.id})
+        }
+        Command::PauseFollowing => {
+            queue.set_setting(
+                FOLLOWING_PAUSED,
+                json!("Following reads stopped by an operator"),
+            )?;
+            json!({"following_paused": queue.get_setting(FOLLOWING_PAUSED)?})
+        }
+        Command::ResumeFollowing => {
+            queue.set_setting(FOLLOWING_PAUSED, Value::Bool(false))?;
+            json!({"following_paused": queue.get_setting(FOLLOWING_PAUSED)?})
         }
         Command::Sync => {
             carousel_engagement::sync_published_carousels(&queue, services.publishing()?, None)?
