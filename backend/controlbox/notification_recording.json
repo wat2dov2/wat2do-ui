@@ -13,6 +13,7 @@
   "log_max_bytes": 1048576,
   "log_backup_count": 3,
   "launch_agent_timeout_seconds": 30,
+  "start_users_every_seconds": 60,
   "dispatch_push_categories": [
     "post",
     "subscription_daily_digest"

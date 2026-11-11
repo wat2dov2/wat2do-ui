@@ -1253,6 +1253,9 @@ class NotificationRecordingControl(_ControlModel):
     log_max_bytes: int = Field(ge=65536, le=67_108_864)
     log_backup_count: int = Field(ge=1, le=10)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # This often, each Android user that holds a school account and has stopped is started
+    # again in the background: a stopped user gets no notifications.
+    start_users_every_seconds: float = Field(ge=10, le=3600, allow_inf_nan=False)
     # Each new notification in these Instagram push categories starts the workflow through
     # this repository dispatch, as the phones' Automate flow does.
     dispatch_push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z_]{2,60}$")], ...] = Field(

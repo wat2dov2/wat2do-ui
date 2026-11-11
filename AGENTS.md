@@ -46,7 +46,8 @@ Android phone running Automate, whose `NotificationListenerService` flow trigger
 the GitHub `process-notification` workflow directly, and on the Mac's emulator.
 `backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each notification the emulator gets to `~/.local/state/wat2do/notification-log/notifications.jsonl` and sends each new `post` and `subscription_daily_digest` one as the same `new_instagram_post` repository dispatch the phones send (`services/notification_dispatch.py`, `controlbox/notification_recording.json`).
 It does not check whether a phone already sent a notification; the workflow records each recipient and push ID once.
-Beyond that it only listens: no tap, no Android user started or stopped, never the emulator's lock.
+A stopped Android user gets no notifications, so every `start_users_every_seconds` it starts each user that holds an account and has stopped, in the background (`am start-user -w`, never switched to the front).
+Beyond that it only listens: no tap, never the emulator's lock.
 It keeps only a direct message's push category, Android user, recipient and times, never its sender or text, and never dispatches one.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
