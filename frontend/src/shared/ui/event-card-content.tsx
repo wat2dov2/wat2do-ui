@@ -158,6 +158,11 @@ interface EventCardContentProps {
   /** Popularity line, e.g. "12 clicks · 3 going". */
   statsLabel?: string;
   /**
+   * Hold two title lines even for a one-line title, so a card is exactly as tall
+   * as its loading placeholder, which draws two.
+   */
+  reserveTitleLines?: boolean;
+  /**
    * Keep the popularity line's height while its stats load or when there are
    * none, so cards in a live grid never grow when the stats arrive.
    */
@@ -180,6 +185,7 @@ export function EventCardContent({
   badges = EMPTY_BADGES,
   interactive = true,
   statsLabel,
+  reserveTitleLines = false,
   reserveStatsLine = false,
   className,
   textClassName = "text-foreground",
@@ -198,7 +204,7 @@ export function EventCardContent({
     >
       <div className={CONTENT_STACK_CLASS}>
         <div className="min-w-0" data-skeleton-key="card-title">
-          <h3 className={cn(TITLE_CLASS, textClassName)}>
+          <h3 className={cn(TITLE_CLASS, reserveTitleLines && "min-h-[2lh]", textClassName)}>
             {titleHref ? (
               <Link variant="navigation" href={titleHref} prefetch={false}>
                 {title}

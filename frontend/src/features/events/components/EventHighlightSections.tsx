@@ -9,6 +9,7 @@ import { EventsBrowseViews } from "@/features/events/components/EventsBrowseView
 import { EventViewSkeleton } from "@/features/events/components/EventViewSurface";
 import { FeaturedEventCard, FeaturedEventCardSkeleton } from "@/features/events/components/FeaturedEventCard";
 import type { EventHighlights } from "@/features/events/lib/eventHighlights";
+import { controlBox } from "@/shared/config/controlBox";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { Section, Stack } from "@/shared/layout";
 import { CardCarousel } from "@/shared/layout/card-carousel";
@@ -16,8 +17,8 @@ import type { Event } from "@/shared/types";
 
 /** MapLibre and its tiles are heavy, so the map starts loading only as it nears the screen. */
 const MAP_LOAD_MARGIN = "300px";
-/** Placeholders while a row loads: more than any screen shows at once. */
-const ROW_PLACEHOLDER_COUNT = 6;
+/** Placeholders while a row loads: as many as the row holds, so the row is the same length loaded. */
+const ROW_PLACEHOLDER_COUNT = controlBox.eventDiscovery.highlights.rowCardCount;
 const FEATURED_PLACEHOLDER_COUNT = 4;
 /** The map fills its container, so the container has a height of its own. */
 const MAP_FRAME_CLASS = "flex h-96 w-full flex-col sm:h-[32rem]";
@@ -163,7 +164,8 @@ export function EventHighlightSectionsSkeleton({ school, highlights, withMap }: 
   return (
     <Stack gap={8} data-slot="event-highlights" className={SECTIONS_CLASS}>
       {highlights === null || highlights.featured.length > 0 ? <FeaturedRow events={null} onEventClick={ignoreEvent} /> : null}
-      {highlights && highlights.fresh.length > 0 ? (
+      {/* Unknown highlights still hold the new row's place: any upcoming event beyond the featured ones fills it. */}
+      {highlights === null || highlights.fresh.length > 0 ? (
         <EventCarouselRow title={t("events.highlights.fresh")} events={null} eventStats={null} onEventClick={ignoreEvent} />
       ) : null}
       {highlights && highlights.networking.length > 0 ? (

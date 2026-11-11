@@ -69,6 +69,7 @@ function EventCardBody({
         badges={badges}
         interactive={interactive}
         statsLabel={buildEventStatsLabel(t, stats)}
+        reserveTitleLines
         reserveStatsLine
         textClassName="text-foreground"
         secondaryTextClassName="text-muted-foreground"

@@ -396,6 +396,13 @@ async function settle(page: Page) {
   await page.waitForTimeout(300);
 }
 
+/** The events page opens on its map; tests of the event list switch to the grid the way a reader does. */
+async function showGrid(page: Page) {
+  await page.getByRole("combobox", { name: "Event view" }).click();
+  await page.getByRole("option", { name: "Grid", exact: true }).click();
+  await page.locator("main [data-event-card]").first().waitFor();
+}
+
 /** A name or school runs as wide as its text, which no placeholder can know; everything else is exact. */
 const TEXT_WIDTH_KEYS = new Set(["page-title", "page-description"]);
 
@@ -593,7 +600,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=club-details] [data-event-card]", name, viewport.height);
       await report(name, comparison, cls, shifts);
       // The first screen's logos load with the page instead of popping in after it.
-      await expect(page.locator("img[src*='wat2do-logo-nav']").first()).toHaveAttribute("loading", "eager");
+      await expect(page.locator("img[src*='wat2do-mark-colour']").first()).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-slot=page-header] [data-slot=avatar-stack] img")).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=avatar-stack] img").first()).toHaveAttribute("loading", "eager");
       // A first-row poster that has arrived appears with the page, never as a placeholder first.
@@ -625,6 +632,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await page.goto(`${BASE}/events`);
       await completeFeed.requested;
       await page.locator("[data-event-card]").first().waitFor();
+      await showGrid(page);
       await settle(page);
       const header = await landmarks(page, "[data-slot=page-header]");
 
@@ -635,7 +643,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       // The first screen cannot answer a search, so the results wait for the feed and say so.
       await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-busy", "true");
       await expect(page.locator("main [aria-busy=true]").first()).toBeVisible();
-      await expect(page.locator("[data-event-card]")).toHaveCount(0);
+      await expect(page.locator("main [data-event-card]")).toHaveCount(0);
       await settle(page);
       const waiting = compare(header, await landmarks(page, "[data-slot=page-header]"), viewport.height);
       expect(waiting.mismatched, "the header holds still while the search waits").toEqual([]);
@@ -643,7 +651,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       expect((await shiftsSince(page)).cls, "waiting for the feed moves nothing").toBe(0);
 
       gates.data.open();
-      await expect(page.locator("[data-event-card]")).toHaveCount(7);
+      await expect(page.locator("main [data-event-card]")).toHaveCount(7);
       await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-label", /^7 /);
     });
 
@@ -655,17 +663,19 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await page.addInitScript(OBSERVE_SHIFTS);
       await page.goto(`${BASE}/events`);
       await page.locator("[data-event-card]").first().waitFor();
+      await showGrid(page);
       // The row still waiting for the rest of the list is where the notice will appear.
       await page.locator("[data-testid=event-list-sentinel]").scrollIntoViewIfNeeded();
       await settle(page);
       const waiting = await landmarks(page);
 
       // The first read and each retry (about 1, 2 and 4 seconds apart) fail before the page says so.
-      const notice = page.locator("[data-slot=load-failure-notice]");
+      // The highlights' map says so too; this test follows the list's own notice.
+      const notice = page.locator("main [data-slot=load-failure-notice]");
       await expect(notice).toBeVisible({ timeout: 20_000 });
       expect(completeFeed.attempts()).toBe(4);
       await expect(page.locator("[data-slot=empty-state]")).toHaveCount(0);
-      await expect(page.locator("[data-event-card]")).toHaveCount(16);
+      await expect(page.locator("main [data-event-card]")).toHaveCount(16);
       await settle(page);
       const name = `events-feed-failed-${viewportName}`;
       const { cls, shifts } = await shiftsSince(page);
@@ -675,14 +685,14 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const search = page.locator("[data-search-input]");
       await search.fill("Varsity");
       await search.press("Enter");
-      await expect(page.locator("[data-event-card]")).toHaveCount(0);
+      await expect(page.locator("main [data-event-card]")).toHaveCount(0);
       await expect(page.locator("main [data-event-card-skeleton]").first()).toBeVisible();
       await expect(notice).toBeVisible();
 
       // Try again reads the feed again, and the search runs on all of it.
       completeFeed.recover();
       await notice.getByRole("button").click();
-      await expect(page.locator("[data-event-card]")).toHaveCount(7);
+      await expect(page.locator("main [data-event-card]")).toHaveCount(7);
       await expect(notice).toHaveCount(0);
       await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-label", /^7 /);
     });
@@ -716,11 +726,12 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await page.goto(`${BASE}/events`);
       await page.locator("[data-event-card]").first().waitFor();
       await completeFeed;
+      await showGrid(page);
       await settle(page);
 
       const openedAt = await page.evaluate(() => {
         // Cards open on mouse down with a mouse and on click with touch; send both, untrusted, like a script would.
-        const card = document.querySelector<HTMLElement>("[data-event-card][data-event-id='1']");
+        const card = document.querySelector<HTMLElement>("main [data-event-card][data-event-id='1']");
         card?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
         card?.click();
         return performance.now();
