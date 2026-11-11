@@ -16,7 +16,7 @@ use crate::instagram_notifications::browser_session::request_result;
 use crate::instagram_notifications::errors::{BrowserError, BrowserResult};
 use crate::instagram_notifications::scripts;
 
-const NOT_SETTLED: &str = "Instagram digest did not settle before the job timed out";
+const NOT_SETTLED: &str = "Instagram request did not settle before the job timed out";
 
 /// Resolve one digest in `page`, which is on Instagram as `recipient_id`.
 pub async fn resolve(
@@ -38,13 +38,14 @@ pub async fn resolve(
 }
 
 /// Lightpanda failing is a transient browser failure: the read can run again.
-fn lightpanda(error: anyhow::Error) -> BrowserError {
+pub(super) fn lightpanda(error: anyhow::Error) -> BrowserError {
     BrowserError::transient(format!("Lightpanda failed: {error:#}"))
 }
 
 /// Start the page's request, poll it every `poll` until it settles (cancelling it
-/// after `timeout`) and clear it, reading its state as the Brave session does.
-async fn query(
+/// after `timeout`) and clear it, reading its state as the Brave session does. The
+/// settled result is returned whether the request succeeded or failed.
+pub(super) async fn query(
     page: &mut impl Page,
     source: &str,
     poll: Duration,
@@ -53,7 +54,7 @@ async fn query(
     let started = page.evaluate(source).await.map_err(lightpanda)?;
     if started != "started" {
         return Err(BrowserError::transient(
-            "Lightpanda did not start the digest query",
+            "Lightpanda did not start the request",
         ));
     }
     let deadline = Instant::now() + timeout;

@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use tokio::process::{Child, Command};
 use tokio::sync::broadcast::error::RecvError;
 
+use super::Lease;
 use super::cdp::{Cdp, CdpError};
 use super::jar::{CookieJar, SESSION_COOKIE, holds_login};
 use crate::controlbox::INSTAGRAM_LIGHTPANDA as CONTROL;
@@ -32,11 +33,13 @@ pub struct Browser {
     peak_rss_kib: u64,
     /// Holds the CDP socket; removed when the browser is dropped.
     _runtime: tempfile::TempDir,
+    /// The account and the session place, released when the browser is dropped.
+    _lease: Lease,
 }
 
 impl Browser {
     /// Start Lightpanda with the account's jar and open a blank page.
-    pub async fn launch(binary: &Path, jar: CookieJar) -> anyhow::Result<Self> {
+    pub async fn launch(binary: &Path, jar: CookieJar, lease: Lease) -> anyhow::Result<Self> {
         // Beside the jars: owner-only, and short enough for a socket path.
         let runtime = tempfile::Builder::new()
             .prefix("run-")
@@ -87,6 +90,7 @@ impl Browser {
             session_id,
             peak_rss_kib: 0,
             _runtime: runtime,
+            _lease: lease,
         };
         browser.sample_memory();
         Ok(browser)
@@ -149,6 +153,15 @@ impl Browser {
             .await?;
         let cookies = reply.get("cookies").and_then(Value::as_array);
         Ok(cookies.is_some_and(|cookies| holds_login(cookies)))
+    }
+
+    /// The Instagram user ID the page is logged in as (its `ds_user_id` cookie, which
+    /// names the account and grants nothing), or None when it is logged out.
+    pub async fn user_id(&mut self) -> anyhow::Result<Option<String>> {
+        let id = self.evaluate(super::scripts::USER_ID).await?;
+        Ok(id
+            .as_str()
+            .and_then(|id| crate::schools::validate_recipient_id(id).ok()))
     }
 
     /// Forget the session cookie, so a login starts from the device cookies alone.

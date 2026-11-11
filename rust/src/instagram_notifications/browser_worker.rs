@@ -750,6 +750,10 @@ impl Worker {
         // Starts set: on startup the worker queues profiles it listed while stopping.
         self.queue.retrieval_finished.set();
         let mut threads = Vec::new();
+        let (queue, bridge, stop) = (self.queue.clone(), self.bridge.clone(), stopping.clone());
+        threads.push(spawn_named("instagram-browser-lightpanda", move || {
+            crate::lightpanda::lane::run(queue, bridge, stop);
+        }));
         let worker = self.clone();
         let stop = stopping.clone();
         threads.push(spawn_named("instagram-browser-profile-queue", move || {

@@ -373,6 +373,19 @@ pub struct InstagramLightpanda {
     pub login_poll_seconds: f64,
     /// At most this many accounts log in to Lightpanda for the first time a day.
     pub new_login_daily_limit: usize,
+    /// Most Lightpanda processes open at once on the Mac, across every wat2do process.
+    pub max_sessions: usize,
+    /// A worker session closes after this long without a job, or this long after it opened.
+    pub session_idle_seconds: f64,
+    pub session_max_seconds: f64,
+    /// Brave reads what the Lightpanda lane claimed once its heartbeat is this old.
+    pub lane_stale_seconds: f64,
+    /// The worker logs one more account in to Lightpanda at most this often: the
+    /// accounts with the most digests in the last `ramp_lookback_days` first, and
+    /// `ramp_last_accounts` last.
+    pub ramp_interval_minutes: f64,
+    pub ramp_lookback_days: f64,
+    pub ramp_last_accounts: Vec<String>,
     pub shadow_lookback_hours: f64,
     pub shadow_jobs_per_account: usize,
     pub shadow_digest_pause_seconds: f64,

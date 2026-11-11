@@ -73,6 +73,17 @@ pub fn read_page(
             "Instagram browser account changed during a Following read",
         ));
     }
+    page(&result, &account, &username, user_id)
+}
+
+/// The settled page `result` of `username`'s list, read as `account`, with only the
+/// fields the crawl keeps.
+pub fn page(
+    result: &Map<String, Value>,
+    account: &str,
+    username: &str,
+    user_id: Option<&str>,
+) -> BrowserResult<Value> {
     if result.get("hidden") == Some(&json!(true)) {
         return Ok(json!({"account_username": account, "username": username, "hidden": true}));
     }
@@ -126,7 +137,7 @@ fn listed_account(user: &Value) -> Option<Value> {
 }
 
 /// A failed read's sanitized error: only the page's fixed reason and HTTP status.
-fn response_failure(payload: &Map<String, Value>) -> BrowserError {
+pub fn response_failure(payload: &Map<String, Value>) -> BrowserError {
     let status = payload
         .get("http_status")
         .filter(|status| status.is_i64() || status.is_u64())

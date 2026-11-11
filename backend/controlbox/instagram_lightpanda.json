@@ -8,6 +8,18 @@
   "login_wait_seconds": 45,
   "login_poll_seconds": 1.5,
   "new_login_daily_limit": 4,
+  "max_sessions": 4,
+  "session_idle_seconds": 120,
+  "session_max_seconds": 3600,
+  "lane_stale_seconds": 30,
+  "ramp_interval_minutes": 120,
+  "ramp_lookback_days": 14,
+  "ramp_last_accounts": [
+    "wat2do.guelph",
+    "wat2do.berkeley",
+    "wat2do.ontariotech",
+    "wat2do.utm"
+  ],
   "shadow_lookback_hours": 72,
   "shadow_jobs_per_account": 3,
   "shadow_digest_pause_seconds": 3,

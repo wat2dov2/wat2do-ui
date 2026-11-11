@@ -1,16 +1,18 @@
-//! `wat2do-lightpanda`: read Instagram digests with Lightpanda instead of Brave.
+//! `wat2do-lightpanda`: look after the school accounts' Lightpanda sessions, which the
+//! `wat2do-browser` worker reads digests and Following lists in (`lightpanda::lane`).
 //!
 //! `install` puts the pinned Lightpanda at `~/.local/libexec/wat2do/lightpanda`.
 //! `login` logs one school account in to its own Lightpanda jar, within the daily
-//! login budget it shares with Brave. `shadow` replays the digests Brave resolved
-//! and compares the media IDs; nothing in production switches until
-//! `instagram_digest.json`'s `digest_engine` says `"lightpanda"`.
+//! login budget it shares with Brave, and `ramp` lists the order the worker logs the
+//! rest in. `shadow` replays the digests Brave resolved and compares the media IDs,
+//! and `following` reads one page of a Following list, to check a session by hand.
 
 use clap::{Parser, Subcommand};
+use wat2do::controlbox::INSTAGRAM_LIGHTPANDA;
 use wat2do::instagram_notifications::browser_queue::{BrowserJobQueue, default_state_directory};
 use wat2do::instagram_notifications::browser_session::Bridge;
 use wat2do::lightpanda::login::{self, LoginResult};
-use wat2do::lightpanda::{Lightpanda, install, shadow};
+use wat2do::lightpanda::{Lightpanda, following, install, ramp, shadow};
 
 #[derive(Parser)]
 #[command(about = "Read Instagram digests with Lightpanda")]
@@ -41,6 +43,25 @@ enum Command {
         /// Log accounts in first when their jar holds no login
         #[arg(long)]
         log_in: bool,
+        /// How far back to take Brave's digests (default: `shadow_lookback_hours`)
+        #[arg(long)]
+        hours: Option<f64>,
+    },
+    /// List the accounts the worker's ramp logs in next, in order
+    Ramp,
+    /// Read one page of an account's Following list in a session, and time it
+    Following {
+        /// The school account whose session reads
+        #[arg(long)]
+        account: String,
+        /// The account whose list is read, and its Instagram ID (Instagram answers a
+        /// lookup by name only to a full browser)
+        #[arg(long)]
+        username: String,
+        #[arg(long)]
+        user_id: String,
+        #[arg(long)]
+        max_id: Option<String>,
     },
 }
 
@@ -52,7 +73,11 @@ async fn main() -> anyhow::Result<()> {
     // the commands that may write them.
     let queue = || BrowserJobQueue::open(None, bridge.host.clone());
     match Cli::parse().command {
-        Command::Install => println!("{}", install::install().await?),
+        Command::Install => {
+            println!("{}", install::install().await?);
+            // The worker's lane starts once the binary and its jars' directory exist.
+            Lightpanda::installed().await?;
+        }
         Command::Login { account } => {
             let lightpanda = Lightpanda::installed().await?;
             let result = login::log_in(&lightpanda, &*queue()?, bridge.clone(), &account).await?;
@@ -71,16 +96,90 @@ async fn main() -> anyhow::Result<()> {
             login::resume(&*queue()?, &account)?;
             println!("{account} may log in to Lightpanda again");
         }
-        Command::Shadow { accounts, log_in } => {
+        Command::Shadow {
+            accounts,
+            log_in,
+            hours,
+        } => {
             let lightpanda = Lightpanda::installed().await?;
             let queue = if log_in { Some(queue()?) } else { None };
             let login = queue.as_deref().map(|queue| (queue, bridge.clone()));
             let database = default_state_directory().join("jobs.sqlite3");
-            let report =
-                shadow::run(&lightpanda, &database, &accounts, login, &|| bridge.time()).await?;
+            let hours = hours.unwrap_or(INSTAGRAM_LIGHTPANDA.shadow_lookback_hours);
+            let report = shadow::run(&lightpanda, &database, &accounts, hours, login, &|| {
+                bridge.time()
+            })
+            .await?;
             let saved = shadow::save(&report)?;
             print!("{}", shadow::summary(&report));
             println!("Report: {}", saved.display());
+        }
+        Command::Ramp => {
+            let lightpanda = Lightpanda::installed().await?;
+            let queue = queue()?;
+            let now = bridge.time();
+            let next = ramp::next(&queue, &lightpanda, now)?;
+            println!("Logged in: {}", lightpanda.logged_in_accounts()?.join(", "));
+            println!(
+                "Next: {}",
+                next.map_or("none today".to_owned(), |next| next.account)
+            );
+            for candidate in ramp::plan(&queue, &lightpanda, now)? {
+                println!(
+                    "  {} ({} digests{})",
+                    candidate.account,
+                    candidate.digests,
+                    if candidate.relogin {
+                        ", logs in again"
+                    } else {
+                        ""
+                    }
+                );
+            }
+        }
+        Command::Following {
+            account,
+            username,
+            user_id,
+            max_id,
+        } => {
+            let lightpanda = Lightpanda::installed().await?;
+            let started = std::time::Instant::now();
+            let mut browser = lightpanda.open(&account).await?;
+            let opened = started.elapsed().as_secs_f64();
+            let read = match browser.user_id().await? {
+                Some(session_user) => {
+                    let started = std::time::Instant::now();
+                    let page = following::read_page(
+                        &mut browser,
+                        &account,
+                        &session_user,
+                        &username,
+                        Some(&user_id),
+                        max_id.as_deref(),
+                    )
+                    .await;
+                    page.map(|page| (page, started.elapsed().as_secs_f64()))
+                        .map_err(anyhow::Error::from)
+                }
+                None => Err(anyhow::anyhow!("{account} is not logged in to Lightpanda")),
+            };
+            let peak = browser.peak_rss_kib() as f64 / 1024.0;
+            browser.close().await?;
+            let (page, seconds) = read?;
+            let users = page["users"].as_array().map_or(0, Vec::len);
+            let private = page["users"].as_array().map_or(0, |users| {
+                users
+                    .iter()
+                    .filter(|user| user["is_private"] == true)
+                    .count()
+            });
+            println!(
+                "{username}: {users} accounts ({private} private), hidden {}, next page {}; \
+                 startup {opened:.1} s, read {seconds:.1} s, peak {peak:.0} MB",
+                page["hidden"] == true,
+                !page["next_max_id"].is_null()
+            );
         }
     }
     Ok(())

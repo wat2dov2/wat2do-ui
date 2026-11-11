@@ -1,5 +1,5 @@
 //! Shadow mode: replay the digests Brave resolved in each account's Lightpanda and
-//! compare the media IDs, one account at a time, before anything switches over.
+//! compare the media IDs, one account at a time, to check the sessions by hand.
 //!
 //! It reads the worker's jobs database read-only, sends only the digest query Brave
 //! already sent, and records nothing in the worker's queue; only a login it is asked
@@ -169,13 +169,15 @@ pub struct ShadowReport {
 /// ramp and the pauses) and the Mac's Keychain and Gmail.
 pub type Login<'a> = (&'a BrowserJobQueue, Arc<Bridge>);
 
-/// Compare `accounts` (empty: every account with recent Brave digests whose jar holds
-/// a login) against the worker's database at `database`. With `login`, an account
-/// whose jar holds no login is logged in first, within the budget and ramp.
+/// Compare `accounts` (empty: every account with Brave digests from the last
+/// `lookback_hours` whose jar holds a login) against the worker's database at
+/// `database`. With `login`, an account whose jar holds no login is logged in first,
+/// within the budget and ramp.
 pub async fn run(
     lightpanda: &Lightpanda,
     database: &Path,
     accounts: &[String],
+    lookback_hours: f64,
     login: Option<Login<'_>>,
     now: &dyn Fn() -> f64,
 ) -> anyhow::Result<ShadowReport> {
@@ -189,7 +191,7 @@ pub async fn run(
         report.stopped = Some("the worker is holding Instagram requests after a 429".into());
         return Ok(report);
     }
-    let since = started_at - CONTROL.shadow_lookback_hours * 3_600.0;
+    let since = started_at - lookback_hours * 3_600.0;
     let by_account = by_account(recent_digests(database, since)?);
     let accounts: Vec<String> = if accounts.is_empty() {
         by_account
@@ -211,8 +213,15 @@ pub async fn run(
             .get(account)
             .map(Vec::as_slice)
             .unwrap_or_default();
-        let (account_report, stop) =
-            compare_account(lightpanda, login.clone(), account, jobs, now).await?;
+        let (account_report, stop) = compare_account(
+            lightpanda,
+            login.clone(),
+            account,
+            jobs,
+            lookback_hours,
+            now,
+        )
+        .await?;
         report.accounts.push(account_report);
         if stop.is_some() {
             report.stopped = stop;
@@ -319,6 +328,7 @@ async fn compare_account(
     login: Option<Login<'_>>,
     account: &str,
     jobs: &[BraveDigest],
+    lookback_hours: f64,
     now: &dyn Fn() -> f64,
 ) -> anyhow::Result<(AccountReport, Option<String>)> {
     let mut report = AccountReport {
@@ -327,8 +337,7 @@ async fn compare_account(
     };
     if jobs.is_empty() {
         report.login = format!(
-            "not compared: Brave resolved no digests for it in the last {} h",
-            CONTROL.shadow_lookback_hours
+            "not compared: Brave resolved no digests for it in the last {lookback_hours} h"
         );
         return Ok((report, None));
     }

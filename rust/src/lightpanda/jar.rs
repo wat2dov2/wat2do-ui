@@ -81,6 +81,23 @@ impl CookieJar {
         }
         Ok(())
     }
+
+    /// Drop the login from the saved jar, keeping the device's other cookies, once
+    /// Instagram has logged the session out: the account then counts as logged out
+    /// until it logs in again. The jar is rewritten owner-only.
+    pub fn forget_login(&self) -> anyhow::Result<()> {
+        let Ok(cookies) = read(&self.path) else {
+            return Ok(());
+        };
+        let kept: Vec<Value> = cookies
+            .into_iter()
+            .filter(|cookie| cookie.get("name").and_then(Value::as_str) != Some(SESSION_COOKIE))
+            .collect();
+        let next = self.next_path();
+        fs::write(&next, Value::from(kept).to_string())?;
+        fs::set_permissions(&next, fs::Permissions::from_mode(0o600))?;
+        fs::rename(&next, &self.path).context("the cookie jar could not be replaced")
+    }
 }
 
 /// Create the jars' directory, owner-only.
@@ -199,6 +216,26 @@ mod tests {
         jar.keep_next().unwrap();
         assert!(jar.holds_session());
         assert!(!jar.next_path().exists());
+    }
+
+    #[test]
+    fn a_forgotten_login_keeps_the_device() {
+        let state = tempfile::tempdir().unwrap();
+        let jar = CookieJar::for_account(state.path(), "wat2do.mun").unwrap();
+        write(&jar.path, logged_in());
+        jar.forget_login().unwrap();
+        assert!(!jar.holds_session());
+        assert!(!jar.is_new_device());
+        assert_eq!(
+            read(&jar.path).unwrap(),
+            device().as_array().unwrap().clone()
+        );
+        let mode = fs::metadata(&jar.path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+        // No jar: nothing to forget.
+        let missing = CookieJar::for_account(state.path(), "wat2do.sfu").unwrap();
+        missing.forget_login().unwrap();
+        assert!(missing.is_new_device());
     }
 
     #[test]

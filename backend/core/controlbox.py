@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -780,6 +781,20 @@ class InstagramLightpandaControl(_ControlModel):
     login_poll_seconds: float = Field(gt=0, le=30)
     # Accounts logging in to Lightpanda for the first time, a new device to Instagram, per day.
     new_login_daily_limit: int = Field(ge=0, le=50)
+    # Most Lightpanda processes open at once on the Mac (about 250 MB each), across the
+    # worker's sessions and any wat2do-lightpanda command.
+    max_sessions: int = Field(ge=1, le=8)
+    # A worker session closes after this long without a job, or this long after it opened.
+    session_idle_seconds: float = Field(gt=0, le=3600)
+    session_max_seconds: float = Field(gt=0, le=86400)
+    # Brave stops leaving an account's digests and the Following reads to Lightpanda when
+    # the worker's Lightpanda lane has not said it is running for this long.
+    lane_stale_seconds: float = Field(ge=5, le=600)
+    # The worker logs one more account in to Lightpanda at most this often, the accounts
+    # with the most digests in the last ramp_lookback_days first, ramp_last_accounts last.
+    ramp_interval_minutes: float = Field(ge=10, le=1440)
+    ramp_lookback_days: int = Field(ge=1, le=60)
+    ramp_last_accounts: tuple[str, ...]
     # Shadow mode replays Brave's recent digests in Lightpanda and compares the media IDs.
     shadow_lookback_hours: float = Field(gt=0, le=168)
     shadow_jobs_per_account: int = Field(ge=1, le=50)
@@ -788,6 +803,10 @@ class InstagramLightpandaControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_download(self) -> "InstagramLightpandaControl":
+        if self.session_idle_seconds > self.session_max_seconds:
+            raise ValueError("session_idle_seconds cannot exceed session_max_seconds")
+        if any(not re.fullmatch(r"wat2do[.][a-z0-9_]+", name) for name in self.ramp_last_accounts):
+            raise ValueError("ramp_last_accounts must name wat2do school accounts")
         if self.download_url.host != "github.com":
             raise ValueError("Lightpanda downloads must come from its GitHub releases")
         if f"/releases/download/{self.version}/" not in (self.download_url.path or ""):
