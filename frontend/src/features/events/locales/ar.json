@@ -198,7 +198,6 @@
     "highlights": {
       "mustKnow": "لا تفوّتها",
       "slide": "{{current}} من {{total}}",
-      "showSlide": "عرض الفعالية {{current}} من {{total}} التي لا تفوّت",
       "play": "تشغيل العرض",
       "pause": "إيقاف العرض مؤقتًا",
       "previous": "الفعالية السابقة",

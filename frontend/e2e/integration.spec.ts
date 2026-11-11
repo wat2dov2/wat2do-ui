@@ -2211,20 +2211,26 @@ test.describe("Events Page", () => {
     await expect(scrollRoot).toHaveCSS("padding-top", "0px");
     await expect(header).toHaveCSS("margin-top", "0px");
     await expect(header).toHaveCSS("padding-top", "20px");
-    expect(Math.abs((await header.boundingBox())!.y - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
-    await scrollRoot.evaluate(element => { element.scrollTop = 400; });
-    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
+    // The highlights sit above the header, which rests below them until it pins.
+    const resultsStart = await header.evaluate((element, root) => element.getBoundingClientRect().top - root!.getBoundingClientRect().top, await scrollRoot.elementHandle());
+    expect(resultsStart).toBeGreaterThan(0);
+    await scrollRoot.evaluate((element, top) => { element.scrollTop = top; }, resultsStart);
     const pinnedTop = (await header.boundingBox())!.y;
-    await scrollRoot.evaluate(element => { element.scrollTop = 700; });
+    expect(Math.abs(pinnedTop - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
+    await scrollRoot.evaluate((element, top) => { element.scrollTop = top + 700; }, resultsStart);
     await expect.poll(async () => Math.abs((await header.boundingBox())!.y - pinnedTop)).toBeLessThan(1);
+    // Turning a filter on or off brings its results' start into view under the
+    // pinned header, never the top of the page: the highlights stay a scroll up away.
     const category = header.getByRole("button", { name: "Career", exact: true });
     await category.click();
     await expect(category).toHaveAttribute("aria-pressed", "true");
-    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
-    await scrollRoot.evaluate(element => { element.scrollTop = 400; });
-    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
+    await expect.poll(() => scrollRoot.evaluate(element => Math.round(element.scrollTop))).toBe(Math.round(resultsStart));
+    await expect(page.locator('[data-slot="event-highlights"]')).toHaveCount(1);
+    await scrollRoot.evaluate(element => { element.scrollTop += 400; });
     await category.click();
-    await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBe(0);
+    await expect(category).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => scrollRoot.evaluate(element => Math.round(element.scrollTop))).toBe(Math.round(resultsStart));
+    await expect(page.locator('[data-slot="event-highlights"]')).toHaveCount(1);
     await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
     const drawer = page.getByRole("dialog");
     await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();

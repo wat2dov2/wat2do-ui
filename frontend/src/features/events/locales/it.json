@@ -174,7 +174,6 @@
     "highlights": {
       "mustKnow": "Da non perdere",
       "slide": "{{current}} di {{total}}",
-      "showSlide": "Mostra l'evento da non perdere {{current}} di {{total}}",
       "play": "Avvia la presentazione",
       "pause": "Metti in pausa la presentazione",
       "previous": "Evento precedente",

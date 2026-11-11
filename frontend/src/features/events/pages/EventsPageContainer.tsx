@@ -6,7 +6,7 @@ import { EventHighlightSections } from "@/features/events/components/EventHighli
 import type { EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
-import type { Event, Position } from "@/shared/types";
+import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
@@ -19,14 +19,11 @@ const NO_EVENTS: Event[] = [];
 interface EventsPageContainerProps {
   /** The server's first screen of the feed, or null when it could not read the feed. */
   firstScreen: EventFeedFirstScreen | null;
-  /** The open positions row's positions, or null when the server could not read them. */
-  openPositions: Position[] | null;
   initialSchool: string;
 }
 
 export function EventsPageContainer({
   firstScreen,
-  openPositions,
   initialSchool,
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
@@ -88,11 +85,13 @@ export function EventsPageContainer({
   // Lifts the start filter alone; the search and every other filter stay.
   const showPastEvents = useCallback(() => setStartFrom(""), [setStartFrom]);
 
-  // A start moved off its default counts in `filterCount`, so it collapses the highlights too.
   const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
-  // A search or filter collapses the highlights, so its results start right
-  // under the search box; so does the map or calendar view, which fill the page.
-  const showHighlights = view === "grid" && !hasActiveFilters && !error;
+  // The highlights stay above the grid through any search or filter (the filter
+  // bar keeps the results in view), so the reader can always scroll back up to
+  // them. The map and calendar views leave them out: the map view fills the
+  // screen and holds every event the highlights' own map would, and both are
+  // whole other ways of browsing the list rather than narrowing it.
+  const showHighlights = view === "grid" && !error;
   // Everything waiting for the rest of the feed says so the same way, with a way to try again.
   const loadFailureNotice = restLoadFailed ? (
     <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
@@ -106,7 +105,6 @@ export function EventsPageContainer({
             school={initialSchool}
             highlights={highlights}
             mapEvents={listing?.complete ? upcomingEvents : null}
-            openPositions={openPositions}
             loadFailureNotice={loadFailureNotice}
             eventStats={eventStats}
             onEventClick={handleEventClick}

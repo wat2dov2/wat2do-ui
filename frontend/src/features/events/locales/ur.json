@@ -166,7 +166,6 @@
     "highlights": {
       "mustKnow": "ضرور جانیں",
       "slide": "{{total}} میں سے {{current}}",
-      "showSlide": "{{total}} میں سے ضروری ایونٹ {{current}} دکھائیں",
       "play": "سلائیڈ شو چلائیں",
       "pause": "سلائیڈ شو روکیں",
       "previous": "پچھلا ایونٹ",

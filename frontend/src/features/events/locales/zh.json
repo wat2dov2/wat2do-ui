@@ -158,7 +158,6 @@
     "highlights": {
       "mustKnow": "必看活动",
       "slide": "第 {{current}} 个，共 {{total}} 个",
-      "showSlide": "显示第 {{current}} 个必看活动，共 {{total}} 个",
       "play": "播放轮播",
       "pause": "暂停轮播",
       "previous": "上一个活动",

@@ -166,7 +166,6 @@
     "highlights": {
       "mustKnow": "ਜ਼ਰੂਰ ਜਾਣੋ",
       "slide": "{{total}} ਵਿੱਚੋਂ {{current}}",
-      "showSlide": "{{total}} ਵਿੱਚੋਂ ਜ਼ਰੂਰੀ ਇਵੈਂਟ {{current}} ਦਿਖਾਓ",
       "play": "ਸਲਾਈਡਸ਼ੋ ਚਲਾਓ",
       "pause": "ਸਲਾਈਡਸ਼ੋ ਰੋਕੋ",
       "previous": "ਪਿਛਲਾ ਇਵੈਂਟ",

@@ -161,7 +161,6 @@
     "highlights": {
       "mustKnow": "Must know",
       "slide": "{{current}} of {{total}}",
-      "showSlide": "Show must-know event {{current}} of {{total}}",
       "play": "Play slideshow",
       "pause": "Pause slideshow",
       "previous": "Previous event",

@@ -182,7 +182,6 @@
     "highlights": {
       "mustKnow": "Nie przegap",
       "slide": "{{current}} z {{total}}",
-      "showSlide": "Pokaż wydarzenie {{current}} z {{total}}, którego nie można przegapić",
       "play": "Odtwórz pokaz slajdów",
       "pause": "Wstrzymaj pokaz slajdów",
       "previous": "Poprzednie wydarzenie",

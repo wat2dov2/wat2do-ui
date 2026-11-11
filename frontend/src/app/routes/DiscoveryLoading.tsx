@@ -12,7 +12,6 @@ import { buildEventHighlights } from "@/features/events/lib/eventHighlights";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
 import { ClubList } from "@/features/clubs/components/ClubList";
 import { ClubsPageHeader, type ClubsHeaderState } from "@/features/clubs/components/ClubsPageHeader";
-import { positionDirectoryQueryOptions } from "@/features/positions/api/positions.api";
 import { PositionListSkeleton } from "@/features/positions/components/PositionList";
 import { PositionsPageHeader, type PositionsHeaderState } from "@/features/positions/components/PositionsPageHeader";
 import { useSearch } from "@/features/search";
@@ -55,14 +54,11 @@ function EventsLoading() {
   const campusSeasonOptions = feed ? search.campusSeasonOptions : resolveCampusSeasonFilters(
     schoolBySlug.get(school), currentTimeMs, i18n.resolvedLanguage ?? i18n.language, [], feedFilterAvailability(NO_EVENTS, school),
   ).options;
-  // The page shows its highlights only before a search or filter, and so does its stand-in.
-  // A feed and directory this visit already holds decide which of them hold places.
-  const showHighlights = search.filterCount === 0 && search.searchQuery.trim().length === 0;
+  // A feed and directory this visit already holds decide which highlights hold places.
   const highlights = useMemo(() => feed ? buildEventHighlights(feed.items, currentTimeMs) : null, [feed, currentTimeMs]);
-  const { data: positions } = useQuery({ ...positionDirectoryQueryOptions(school), enabled: false });
   return (
     <>
-      {showHighlights ? <EventHighlightSectionsSkeleton school={school} highlights={highlights} hasOpenPositions={positions ? positions.items.length > 0 : null} /> : null}
+      <EventHighlightSectionsSkeleton school={school} highlights={highlights} />
       <EventsPageHeader
         filters={{ ...search, campusSeasonOptions }}
         school={school}

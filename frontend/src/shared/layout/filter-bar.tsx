@@ -15,18 +15,45 @@ interface FilterBarProps {
   "data-testid"?: string;
 }
 
+/** The sticky listing header a filter bar sits in, which pins at the top of the page's scroller. */
+const LISTING_HEADER_SELECTOR = '[data-slot="page-header"]';
+
+/**
+ * Where an element would sit in its scroller if nothing pinned it. A sticky
+ * element reports where it is pinned, so it is measured as a plain one for a moment.
+ */
+function restingOffset(element: HTMLElement, root: HTMLElement): number {
+  const { position } = element.style;
+  element.style.position = "relative";
+  const offset = element.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
+  element.style.position = position;
+  return Math.round(offset);
+}
+
+/**
+ * Brings a new search or filter's results into view: the scroller moves to
+ * where the header pins, so the results start right under it. It never goes to
+ * the top of the page, so whatever sits above the header (a page's highlights)
+ * stays where it was, a scroll up away.
+ */
+function showNewResults(bar: HTMLElement) {
+  const root = bar.closest<HTMLElement>(MAIN_CONTENT_SCROLL_ROOT_SELECTOR);
+  if (!root) return;
+  root.scrollTo({ top: restingOffset(bar.closest<HTMLElement>(LISTING_HEADER_SELECTOR) ?? bar, root), behavior: "instant" });
+}
+
 const subscribeToHydration = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
 
 /** One scrolling filter row, with optional controls pinned outside its fade. */
 export function FilterBar({ children, trailing, refreshKey, appliedQueryKey, disabled = false, ...props }: FilterBarProps) {
+  const barRef = useRef<HTMLFieldSetElement>(null);
   const previousQueryKey = useRef(appliedQueryKey);
   useEffect(() => {
     if (previousQueryKey.current === appliedQueryKey) return;
     previousQueryKey.current = appliedQueryKey;
-    document.querySelector<HTMLElement>(MAIN_CONTENT_SCROLL_ROOT_SELECTOR)
-      ?.scrollTo({ top: 0, behavior: "instant" });
+    if (barRef.current) showNewResults(barRef.current);
   }, [appliedQueryKey]);
 
   const hydrated = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
@@ -34,7 +61,7 @@ export function FilterBar({ children, trailing, refreshKey, appliedQueryKey, dis
   const { scrollRef, scrollEndRef, showScrollFade, syncScrollFade,
     syncScrollFadeAfterWheel, dragScrollProps } = useHorizontalScrollFade({ refreshKey });
   return (
-    <fieldset data-skeleton-key="filter-bar" data-activation="click" disabled={unavailable} aria-busy={unavailable} className="min-w-0 border-0 p-0 disabled:pointer-events-none in-data-[page-layout=viewport]:px-2 in-data-[page-layout=viewport]:pt-2">
+    <fieldset ref={barRef} data-skeleton-key="filter-bar" data-activation="click" disabled={unavailable} aria-busy={unavailable} className="min-w-0 border-0 p-0 disabled:pointer-events-none in-data-[page-layout=viewport]:px-2 in-data-[page-layout=viewport]:pt-2">
       <Stack direction="horizontal" align="center" gap={2}>
         <div className="relative min-w-0 flex-1">
           <HorizontalScrollFade

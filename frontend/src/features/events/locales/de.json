@@ -166,7 +166,6 @@
     "highlights": {
       "mustKnow": "Nicht verpassen",
       "slide": "{{current}} von {{total}}",
-      "showSlide": "Highlight {{current}} von {{total}} anzeigen",
       "play": "Diashow abspielen",
       "pause": "Diashow pausieren",
       "previous": "Vorheriges Event",

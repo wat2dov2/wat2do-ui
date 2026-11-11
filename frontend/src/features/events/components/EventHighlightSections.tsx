@@ -9,11 +9,10 @@ import { EventsBrowseViews } from "@/features/events/components/EventsBrowseView
 import { EventViewSkeleton } from "@/features/events/components/EventViewSurface";
 import { MustKnowHero, MustKnowHeroSkeleton } from "@/features/events/components/MustKnowHero";
 import type { EventHighlights } from "@/features/events/lib/eventHighlights";
-import { OpenPositionsCarousel, OpenPositionsCarouselSkeleton } from "@/features/positions/components/OpenPositionsCarousel";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { Section, Stack } from "@/shared/layout";
 import { CardCarousel } from "@/shared/layout/card-carousel";
-import type { Event, Position } from "@/shared/types";
+import type { Event } from "@/shared/types";
 
 /** MapLibre and its tiles are heavy, so the map starts loading only as it nears the screen. */
 const MAP_LOAD_MARGIN = "300px";
@@ -87,8 +86,6 @@ interface EventHighlightSectionsProps {
   highlights: EventHighlights | null;
   /** Every event still on; null until the complete feed arrives. */
   mapEvents: Event[] | null;
-  /** The open positions row's positions; null or empty leaves the row out. */
-  openPositions: Position[] | null;
   eventStats: Record<string, EventStats> | null;
   onEventClick: (event: Event) => void;
   /** See all featured events: the feed's Featured filter. */
@@ -100,13 +97,12 @@ interface EventHighlightSectionsProps {
 /**
  * What the events page shows above its search and grid, top to bottom: the
  * must-know banner, the campus map, then rows of networking opportunities,
- * featured events and open positions.
+ * featured events.
  */
 export function EventHighlightSections({
   school,
   highlights,
   mapEvents,
-  openPositions,
   eventStats,
   onEventClick,
   onSeeAllFeatured,
@@ -134,7 +130,6 @@ export function EventHighlightSections({
           seeAll={{ onSelect: onSeeAllFeatured }}
         />
       </> : null}
-      {openPositions && openPositions.length > 0 ? <OpenPositionsCarousel school={school} positions={openPositions} /> : null}
     </Stack>
   );
 }
@@ -143,8 +138,6 @@ interface EventHighlightSectionsSkeletonProps {
   school: string;
   /** Highlights this visit already holds (a cached feed), or null when unknown. */
   highlights: EventHighlights | null;
-  /** Whether the school has open positions, or null when unknown. */
-  hasOpenPositions: boolean | null;
 }
 
 /**
@@ -152,7 +145,7 @@ interface EventHighlightSectionsSkeletonProps {
  * What this visit already knows decides which sections hold places; a section
  * that might turn out empty reserves nothing, as on the page itself.
  */
-export function EventHighlightSectionsSkeleton({ school, highlights, hasOpenPositions }: EventHighlightSectionsSkeletonProps) {
+export function EventHighlightSectionsSkeleton({ school, highlights }: EventHighlightSectionsSkeletonProps) {
   const { t } = useTranslation();
   return (
     <Stack gap={8} data-slot="event-highlights" className={SECTIONS_CLASS}>
@@ -164,7 +157,6 @@ export function EventHighlightSectionsSkeleton({ school, highlights, hasOpenPosi
       {highlights && highlights.featured.length > 0 ? (
         <EventCarouselRow title={t("filters.featured")} events={null} eventStats={null} onEventClick={ignoreEvent} />
       ) : null}
-      {hasOpenPositions ? <OpenPositionsCarouselSkeleton /> : null}
     </Stack>
   );
 }

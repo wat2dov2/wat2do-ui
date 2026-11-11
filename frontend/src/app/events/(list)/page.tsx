@@ -7,9 +7,6 @@ import {
   getSchoolBrowseSnapshot,
 } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
-import { controlBox } from "@/shared/config/controlBox";
-import type { Position } from "@/shared/types";
 import {
   buildSchoolShareCard,
   buildSchoolShareImage,
@@ -33,21 +30,6 @@ const loadInitialSnapshot = cache(async (
     return null;
   }
 });
-
-/**
- * The open positions row's positions. The page draws them with its first paint, so
- * the row never stands in placeholders that turn out to be empty; without them it
- * has no row.
- */
-async function loadOpenPositions(school: string): Promise<Position[] | null> {
-  try {
-    const directory = await getPositionDirectorySnapshot(school);
-    return directory.items.slice(0, controlBox.eventDiscovery.highlights.rowCardCount);
-  } catch (err) {
-    console.error("Initial position directory fetch failed:", err);
-    return null;
-  }
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   const school = await getRequestSchool();
@@ -84,8 +66,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function EventsPage() {
   const school = await getRequestSchool();
-  const [snapshot, openPositions] = await Promise.all([loadInitialSnapshot(school), loadOpenPositions(school)]);
+  const snapshot = await loadInitialSnapshot(school);
   const firstScreen = snapshot && await getEventFeedFirstScreen(snapshot, school);
 
-  return <EventRoutePage firstScreen={firstScreen} openPositions={openPositions} initialSchool={school} />;
+  return <EventRoutePage firstScreen={firstScreen} initialSchool={school} />;
 }

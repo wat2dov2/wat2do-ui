@@ -174,7 +174,6 @@
     "highlights": {
       "mustKnow": "Imperdíveis",
       "slide": "{{current}} de {{total}}",
-      "showSlide": "Mostrar o evento imperdível {{current}} de {{total}}",
       "play": "Reproduzir apresentação",
       "pause": "Pausar apresentação",
       "previous": "Evento anterior",

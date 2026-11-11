@@ -494,25 +494,42 @@ test("catalog arrival timestamps show an absolute school-local date and omit mis
 });
 
 
-test("applied queries reset the main scroller without resetting initial or unchanged renders", () => {
+test("applied queries bring the results into view at the pinned header, never the top of the page", () => {
   const filename = new URL("../src/shared/layout/filter-bar.tsx", import.meta.url);
   const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   });
-  let effect = () => {};
-  let previous: { current: string | undefined } | undefined;
+  // The scroller sits 48px down the screen; the header rests 2400px into it, under the page's highlights.
   const calls: ScrollToOptions[] = [];
+  const root = {
+    scrollTop: 3600,
+    getBoundingClientRect: () => ({ top: 48 }),
+    scrollTo: (options: ScrollToOptions) => { calls.push(options); root.scrollTop = options.top!; },
+  };
+  const positionsMeasured: string[] = [];
+  const header = {
+    style: { position: "" },
+    // Pinned, a sticky header reports the top of the scroller; at rest, where it sits in the page.
+    getBoundingClientRect: () => {
+      positionsMeasured.push(header.style.position);
+      return { top: header.style.position === "relative" ? 48 + 2400 - root.scrollTop : 48 };
+    },
+  };
   let rootAvailable = true;
+  const bar = {
+    closest: (selector: string) => selector === ".main-content-grid"
+      ? rootAvailable ? root : null
+      : selector === '[data-slot="page-header"]' ? header : null,
+  };
+  let effect = () => {};
+  let refs: { current: unknown }[] = [];
+  let refIndex = 0;
   const componentModule = { exports: {} as typeof import("../src/shared/layout/filter-bar") };
   runInNewContext(outputText, {
     exports: componentModule.exports,
-    document: { querySelector: (selector: string) => {
-      expect(selector).toBe(".main-content-grid");
-      return rootAvailable ? { scrollTo: (options: ScrollToOptions) => calls.push(options) } : null;
-    } },
     require: (id: string) => {
       if (id === "react") return {
-        useRef: (initial: string | undefined) => previous ??= { current: initial },
+        useRef: (initial: unknown) => refs[refIndex++] ??= { current: initial },
         useEffect: (callback: () => void) => { effect = callback; },
         useSyncExternalStore: () => true,
       };
@@ -523,20 +540,28 @@ test("applied queries reset the main scroller without resetting initial or uncha
     },
   });
   const render = (appliedQueryKey?: string) => {
+    refIndex = 0;
     componentModule.exports.FilterBar({ children: null, appliedQueryKey });
+    refs[0].current = bar;
     effect();
   };
   render("initial");
   render("initial");
   expect(calls).toHaveLength(0);
+  // Deep in the results, a filter takes the reader back to their start, not to the highlights above.
   render("category");
-  expect(calls).toEqual([{ top: 0, behavior: "instant" }]);
+  expect(calls).toEqual([{ top: 2400, behavior: "instant" }]);
+  expect(header.style.position).toBe("");
+  expect(positionsMeasured).toEqual(["relative"]);
   render("category");
   expect(calls).toHaveLength(1);
+  // Up among the highlights, the results are brought into view the same way.
+  root.scrollTop = 900;
   render("cleared");
-  expect(calls).toHaveLength(2);
+  expect(calls.at(-1)).toEqual({ top: 2400, behavior: "instant" });
   rootAvailable = false;
   expect(() => render("search")).not.toThrow();
+  expect(calls).toHaveLength(2);
 });
 
 for (const [minPrice, maxPrice, selected] of [["", "", false], ["", "0", true], ["0", "", true], ["5", "10", true]] as const) {
