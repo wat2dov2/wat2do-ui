@@ -75,7 +75,7 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
         loading="eager"
         decoding="sync"
         className="size-7 object-contain"
-        src="/brand/wat2do-mark-colour.svg"
+        src="/images/brand/wat2do-mark-colour.svg"
       />
     </Link>
   );

@@ -30,7 +30,7 @@ export function AuthCard({ heading, description, back, children }: AuthCardProps
           width={104}
           height={28}
           className="h-7 w-[104px] object-contain"
-          src="/brand/wat2do-secondary.svg"
+          src="/images/brand/wat2do-secondary.svg"
         />
 
         <div className="space-y-2">

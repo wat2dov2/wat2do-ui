@@ -59,7 +59,7 @@ export function SiteFooter() {
                   width={32}
                   height={32}
                   className="size-8 select-none object-contain"
-                  src="/brand/wat2do-mark-colour.svg"
+                  src="/images/brand/wat2do-mark-colour.svg"
                 />
                 <Link
                   href={instagramHref}
