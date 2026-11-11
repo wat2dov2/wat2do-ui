@@ -62,6 +62,34 @@ def test_invalid_notification_retry_schedule_hour_is_rejected(tmp_path) -> None:
         load_controlbox(directory)
 
 
+def test_notification_recording_keeps_direct_messages_redacted() -> None:
+    control = controlbox.notification_recording
+    assert "direct" in control.direct_message_markers
+    assert control.reconnect_first_seconds <= control.reconnect_longest_seconds
+    # A replayed notification is remembered past the emulator's daily restart.
+    assert control.remember_days >= 1
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"direct_message_markers": ["message"]},
+        {"direct_message_markers": []},
+        {"direct_message_markers": ["direct", "Direct V2"]},
+        {"reconnect_first_seconds": 600, "reconnect_longest_seconds": 60},
+        {"file_max_bytes": 1024},
+        {"file_backup_count": 0},
+        {"unknown_setting": 1},
+    ],
+)
+def test_unsafe_notification_recording_is_rejected(tmp_path, change) -> None:
+    directory = _write_control(
+        tmp_path, "notification_recording", lambda payload: payload.update(change)
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
 def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     directory = _write_control(
         tmp_path,

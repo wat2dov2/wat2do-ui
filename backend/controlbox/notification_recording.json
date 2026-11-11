@@ -1,0 +1,13 @@
+{
+  "direct_message_markers": ["direct", "message"],
+  "listen_seconds": 5,
+  "quiet_restart_minutes": 60,
+  "reconnect_first_seconds": 5,
+  "reconnect_longest_seconds": 60,
+  "remember_days": 3,
+  "file_max_bytes": 16777216,
+  "file_backup_count": 5,
+  "log_max_bytes": 1048576,
+  "log_backup_count": 3,
+  "launch_agent_timeout_seconds": 30
+}

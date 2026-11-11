@@ -1,10 +1,10 @@
 import subprocess
 import sys
-import zipfile
 
 import pytest
 
 from services.instagram_emulator import screen_reader as module
+from services.instagram_emulator.device_program import SCREEN_READER
 
 SCREEN = '<?xml version="1.0" ?><hierarchy rotation="0"><node text="Edit" bounds="[0,0][9,9]" /></hierarchy>'
 END = module.END.decode()
@@ -57,13 +57,6 @@ def _reader(*scripts, timeout_seconds=10.0):
     return reader, started, adb_calls
 
 
-def test_the_committed_jar_is_built_from_the_current_source():
-    with zipfile.ZipFile(module.JAR) as jar:
-        assert "classes.dex" in jar.namelist()
-        # Rebuild with scripts/build_screen_reader.py after changing ScreenReader.java.
-        assert jar.read(module.SOURCE_HASH_ENTRY).decode() == module.source_hash()
-
-
 def test_one_reader_answers_every_read_until_it_is_stopped():
     reader, started, adb_calls = _reader(SERVING)
     try:
@@ -74,8 +67,8 @@ def test_one_reader_answers_every_read_until_it_is_stopped():
         assert "app_process" in command and "io.wat2do.ScreenReader 1000 5000" in command
         # A reader left behind is ended, then the jar is copied before the reader starts.
         assert adb_calls == [
-            ("shell", "pkill", "-f", module.PROCESS_NAME),
-            ("push", str(module.JAR), module.REMOTE_JAR),
+            ("shell", "pkill", "-f", SCREEN_READER.process_name),
+            ("push", str(SCREEN_READER.jar), SCREEN_READER.remote_jar),
         ]
     finally:
         reader.stop()

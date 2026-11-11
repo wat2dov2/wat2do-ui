@@ -124,7 +124,7 @@ def _sdk_tool(name: str, folder: str) -> str:
     return str(sdk / folder / name)
 
 
-def _adb_path() -> str:
+def adb_path() -> str:
     return _sdk_tool("adb", "platform-tools")
 
 
@@ -155,7 +155,7 @@ class EmulatorDevice:
         self._sleep = sleep
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
-        self._adb = _adb_path()
+        self._adb = adb_path()
         self._reader = reader or ScreenReader(
             self._adb,
             CONTROL.serial,
@@ -463,14 +463,14 @@ class EmulatorDevice:
             # The old emulator answers until it exits; only a new one's boot counts.
             if not stopped:
                 stopped = not self.is_online()
-            elif self._booted():
+            elif self.booted():
                 self._sleep(CONTROL.screen_wait_seconds)
                 self.wake()
                 return
             self._sleep(_RESTART_POLL_SECONDS)
         raise EmulatorError("The emulator did not come back after a restart")
 
-    def _booted(self) -> bool:
+    def booted(self) -> bool:
         try:
             return self.adb("shell", "getprop", "sys.boot_completed").strip() == "1"
         except EmulatorError:

@@ -45,6 +45,8 @@ Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
 the GitHub `process-notification` workflow directly.
 Do not use Android emulators for notification collection.
+The Mac's emulator only records the Instagram notifications it gets, for a person to inspect: `backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each one to `~/.local/state/wat2do/notification-log/notifications.jsonl` and triggers nothing (no workflow, no ingestion, no tap, no Android user started or stopped, never the emulator's lock).
+It keeps only a direct message's push category, Android user, recipient and times, never its sender or text.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the notification ledger, and a
@@ -142,7 +144,7 @@ the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
-It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_screen_reader.py`.
+It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`, which builds the notification recorder's `notification-reader.jar` too.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
 publishes them, since the API can do none of these: on the school's next visit the
