@@ -33,6 +33,7 @@ COPY rust/ .
 COPY backend/controlbox/ /src/backend/controlbox/
 COPY backend/schemas/event_discovery_fields.json /src/backend/schemas/event_discovery_fields.json
 COPY backend/services/ingestion/prompt.md /src/backend/services/ingestion/prompt.md
+COPY backend/services/ingestion/title_svg_rules.md /src/backend/services/ingestion/title_svg_rules.md
 COPY backend/services/ingestion/directory_prompt.md /src/backend/services/ingestion/directory_prompt.md
 COPY backend/services/ingestion/club_directory_prompt.md /src/backend/services/ingestion/club_directory_prompt.md
 COPY backend/services/scraper/extraction_prompt.txt /src/backend/services/scraper/extraction_prompt.txt
