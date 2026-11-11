@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import navLogo from "@/assets/wat2do-logo-nav.webp";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
 import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
@@ -56,10 +57,10 @@ export function SiteFooter() {
               <Stack direction="horizontal" gap={2} align="center">
                 <Image
                   alt={t("common.logo")}
-                  width={32}
-                  height={32}
-                  className="size-8 select-none object-contain"
-                  src="/images/brand/wat2do-mark-colour.svg"
+                  width={34}
+                  height={24}
+                  className="h-6 w-[34px] select-none object-contain"
+                  src={navLogo}
                 />
                 <Link
                   href={instagramHref}

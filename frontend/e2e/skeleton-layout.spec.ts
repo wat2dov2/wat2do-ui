@@ -600,7 +600,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=club-details] [data-event-card]", name, viewport.height);
       await report(name, comparison, cls, shifts);
       // The first screen's logos load with the page instead of popping in after it.
-      await expect(page.locator("img[src*='wat2do-mark-colour']").first()).toHaveAttribute("loading", "eager");
+      await expect(page.locator("img[src*='wat2do-logo-nav']").first()).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-slot=page-header] [data-slot=avatar-stack] img")).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=avatar-stack] img").first()).toHaveAttribute("loading", "eager");
       // A first-row poster that has arrived appears with the page, never as a placeholder first.

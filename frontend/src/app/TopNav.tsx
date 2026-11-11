@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import navLogo from "@/assets/wat2do-logo-nav.webp";
 import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,12 +71,12 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
           paint, and an async decode leaves it out of the frame that shows the bar. */}
       <Image
         alt=""
-        width={28}
-        height={28}
+        width={34}
+        height={24}
         loading="eager"
         decoding="sync"
-        className="size-7 object-contain"
-        src="/images/brand/wat2do-mark-colour.svg"
+        className="h-6 w-[34px] object-contain"
+        src={navLogo}
       />
     </Link>
   );
