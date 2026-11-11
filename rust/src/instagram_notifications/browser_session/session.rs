@@ -583,10 +583,12 @@ impl BrowserInstagramSession {
         self.poll_until_within(window, |session| {
             state = session.login_state()?;
             if state == "save_info" {
-                // One click; the page then navigates away on its own.
+                // One click; the page then navigates away on its own. The prompt's
+                // button can render a moment after its page, so a click that found no
+                // button is tried again on the next poll instead of waiting out the
+                // deadline on a login that already succeeded.
                 if !save_clicked {
-                    session.run(scripts::SAVE_LOGIN)?;
-                    save_clicked = true;
+                    save_clicked = session.run(scripts::SAVE_LOGIN)?.trim() == "clicked";
                 }
                 return Ok(false);
             }

@@ -4599,6 +4599,8 @@ enum LoginFault {
     SecretFails,
     /// The page stops answering after the password was submitted.
     PageStops,
+    /// The one-tap prompt's Save button has not rendered on the first click.
+    SaveButtonLate,
 }
 
 fn login_session_with(
@@ -4653,6 +4655,17 @@ fn login_session_with(
             return ok(&page.account);
         }
         page.clicked.push(source.to_owned());
+        if fault == LoginFault::SaveButtonLate
+            && source == scripts::SAVE_LOGIN
+            && page
+                .clicked
+                .iter()
+                .filter(|clicked| **clicked == source)
+                .count()
+                == 1
+        {
+            return ok("missing");
+        }
         ok(if source.contains("verificationCode") {
             "submitted"
         } else {
@@ -4753,6 +4766,29 @@ fn test_log_in_clicks_save_info_once_while_the_page_stays_on_it() {
             .filter(|source| **source == save)
             .count(),
         1
+    );
+}
+
+#[test]
+fn test_log_in_clicks_save_again_when_its_button_was_not_there_yet() {
+    setup();
+    let (page, mut session) = login_session_with(
+        &["save_info", "save_info", "save_info", "done"],
+        Vec::new(),
+        LoginFault::SaveButtonLate,
+        Some(30.0),
+    );
+    session.log_in("wat2do.ucalgary", "s3cret").unwrap();
+    let save = scripts::SAVE_LOGIN.to_owned();
+    // Missing the first time, clicked the second, then never again.
+    assert_eq!(
+        page.lock()
+            .unwrap()
+            .clicked
+            .iter()
+            .filter(|source| **source == save)
+            .count(),
+        2
     );
 }
 
@@ -5189,6 +5225,16 @@ fn test_save_login_accepts_instagrams_save_button_under_either_label() {
         assert_eq!(result["status"], json!("clicked"), "{label}");
         assert_eq!(result["clicks"], json!(["save"]), "{label}");
     }
+    // A button wrapped in a role="button" element with the same label is one control.
+    let Some(result) = evaluate_on_page(
+        "<main><div role='dialog'><div role='button' id='wrap'><button id='save'>Save</button></div>\
+         <button id='later'>Not now</button></div></main>",
+        scripts::SAVE_LOGIN,
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("clicked"));
+    assert_eq!(result["clicks"], json!(["save"]));
     let Some(result) = evaluate_on_page(
         "<main><button id='later'>Not now</button></main>",
         scripts::SAVE_LOGIN,
