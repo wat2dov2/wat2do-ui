@@ -2,11 +2,13 @@
 
 import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
-import { useRequireSignIn } from "@/features/auth/hooks/useSignInGate";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { useTitleFont } from "@/features/events/hooks/useTitleFont";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Stack } from "@/shared/layout";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -35,7 +37,11 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
   const titleFont = useTitleFont(event.title_font);
   const timezone = getSchoolTimezone(event.school);
   const language = i18n.language || "en-US";
-  const clubs = [event.club, ...(event.cohosts ?? []).map(club => club.club_name)].filter(Boolean).join(", ");
+  const hosts = [
+    { name: event.club ?? "", src: event.club_logo_url ?? "" },
+    ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
+  ].filter(host => host.name);
+  const clubs = hosts.map(host => host.name).join(", ");
   const facts = [
     `${formatCardDate(event, timezone, language)}, ${formatCardTime(event, timezone, language)}`,
     event.location?.trim(),
@@ -70,7 +76,12 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
         </h3>
         <Stack gap={1} align="center" className="w-full">
           <p className="line-clamp-1 text-sm font-medium">{facts.join(" · ")}</p>
-          {clubs ? <p className="line-clamp-1 text-sm text-on-media-muted">{clubs}</p> : null}
+          {clubs ? (
+            <Stack direction="horizontal" gap={2} align="center" justify="center" className="max-w-full">
+              <AvatarStack avatars={hosts} decorative loading={priority ? "eager" : "lazy"} />
+              <p className="line-clamp-1 min-w-0 text-left text-sm text-on-media-muted">{clubs}</p>
+            </Stack>
+          ) : null}
         </Stack>
         <Stack direction="horizontal" gap={2} justify="center" className="pointer-events-auto pt-1">
           <FeaturedGoingButton event={event} onEventClick={onEventClick} />
@@ -84,10 +95,12 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
 /**
  * Going in one tap for an event with one date to pick; an event with several
  * dates, or with registration or tickets, opens so the reader chooses there.
+ * A signed-out reader is sent to log in instead, so it is never disabled for them.
  */
 function FeaturedGoingButton({ event, onEventClick }: { event: Event; onEventClick: (event: Event) => void }) {
   const { t } = useTranslation();
-  const requireSignIn = useRequireSignIn();
+  const { isAuthenticated } = useAuthState();
+  const signedInAction = useSignedInAction();
   const going = useGoingEventSelection(event, event.school);
   const [only] = going.selectableOccurrences;
   const oneTap = going.selectableOccurrences.length === 1 && !event.registration;
@@ -97,7 +110,6 @@ function FeaturedGoingButton({ event, onEventClick }: { event: Event; onEventCli
       onEventClick(event);
       return;
     }
-    if (!(await requireSignIn())) return;
     await going.saveSelection(going.isActive ? [] : [only.id]).catch(() => undefined);
   };
 
@@ -105,8 +117,8 @@ function FeaturedGoingButton({ event, onEventClick }: { event: Event; onEventCli
     <Button
       variant="primary"
       aria-pressed={oneTap ? going.isActive : undefined}
-      disabled={going.isPending || going.isTimeUnavailable}
-      onClick={() => void toggle()}
+      disabled={isAuthenticated && (going.isPending || going.isTimeUnavailable)}
+      onClick={() => signedInAction(() => void toggle())}
     >
       {going.isActive ? <Check aria-hidden="true" /> : null}
       {t("events.going")}
