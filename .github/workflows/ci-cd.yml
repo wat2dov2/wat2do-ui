@@ -100,7 +100,8 @@ jobs:
 
   frontend-layout:
     name: Loading states keep their layout
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 on 2026-11-10 and Playwright cannot install Chromium there yet.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
