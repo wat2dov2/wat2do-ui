@@ -246,7 +246,8 @@ Without a user ID it first looks the account up with `/api/v1/users/web_profile_
 Only each listed account's username, display name, ID and privacy leave the tab, with the next page's cursor; a listed account without a valid name and ID is dropped and counted in the page's `invalid`.
 Only a plain answer that the account is gone or private to this viewer (HTTP 404, "user not found", "not authorized to view user") makes a list `hidden`.
 Following reads run one at a time, never more often than an hour divided by `following_requests_per_hour`, so the hour's reads are spread evenly: a list's next page also waits a random pause between `following_page_delay_min_seconds` and `following_page_delay_max_seconds` after the last read, and a new list one between `following_list_delay_min_seconds` and `following_list_delay_max_seconds` (`controlbox/instagram_browser.json`).
-They start at 60 reads an hour of 50 accounts each, the size the October prototype read safely; raise them only after a clean day.
+They read 50 accounts a page (the size the October prototype read safely), up to 900 reads an hour, at least four seconds apart (raised from 60 on 2026-11-11 at Tony's request).
+A refusal or login wall holds only these reads and backs off, and `wat2do-browser pause-following` stops them alone.
 They skip the logged-out page check other batches make, so each read is one request to Instagram.
 An HTTP 429, a login wall, a feedback or spam block, a failed status or any other 4xx on a Following read holds only Following reads, with the same doubling backoff as other holds, which only a success after a quiet recovery window resets; digests, listings and engagement go on, and a real logout still pauses everything through their own checks.
 `wat2do-browser pause-following` stops Following reads alone (the crawl simply waits) and `resume-following` lets them run again; `status` shows `following.paused`, `held_until` and `reads_last_hour`.
