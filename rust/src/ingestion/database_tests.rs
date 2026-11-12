@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use super::agent::ingest;
 use super::club_directories::queue;
-use super::title_svgs::{Checked, featured_to_draw};
+use super::title_svgs::{Checked, events_to_draw};
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
 
@@ -263,8 +263,7 @@ async fn a_directory_club_is_queued_once_and_linked_to_its_club() {
 }
 
 #[tokio::test]
-async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders_cleanly()
-{
+async fn events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders_cleanly() {
     let Some(db) = database() else { return };
     let (school, slug) = school(&db).await;
     let event = |starts_in: TimeDelta, title_svg: Option<&'static str>| {
@@ -306,6 +305,9 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     let drawn = event(day, Some(spelled)).await;
     let over = event(-day, None).await;
     let unposted = event(day, None).await;
+    // Past the window: drawn only when featured.
+    let far = event(day * 40, None).await;
+    let far_featured = event(day * 40, None).await;
     // A club that asked to stay out of carousels is not featured, even for a slide posted before.
     let opted_out = event(day * 2, None).await;
     let handle = format!("optout{}", &Uuid::new_v4().simple().to_string()[..10]);
@@ -331,9 +333,17 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     .fetch_one(&db)
     .await
     .unwrap();
-    for (position, event) in [undrawn, wrong, drawn, over, unshapely, opted_out]
-        .into_iter()
-        .enumerate()
+    for (position, event) in [
+        undrawn,
+        wrong,
+        drawn,
+        over,
+        unshapely,
+        opted_out,
+        far_featured,
+    ]
+    .into_iter()
+    .enumerate()
     {
         sqlx::query(
             "INSERT INTO public.instagram_publish_items \
@@ -350,7 +360,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     }
     sqlx::query(
         "INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position) \
-         VALUES ($1, $2, $3, 7)",
+         VALUES ($1, $2, $3, 8)",
     )
     .bind(carousel)
     .bind(&slug)
@@ -359,21 +369,38 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     .await
     .unwrap();
 
-    let ours = [undrawn, wrong, drawn, over, unposted, unshapely, opted_out].map(i64::from);
-    let due: Vec<(i64, Option<String>)> = featured_to_draw(&db, &mut Checked::default())
+    let ours = [
+        undrawn,
+        wrong,
+        drawn,
+        over,
+        unposted,
+        unshapely,
+        opted_out,
+        far,
+        far_featured,
+    ]
+    .map(i64::from);
+    let due: Vec<(i64, bool)> = events_to_draw(&db, &mut Checked::default())
         .await
         .unwrap()
         .into_iter()
         .filter(|(event, _)| ours.contains(&event.id))
-        .map(|(event, svg)| (event.id, svg))
+        .map(|(event, drawing)| (event.id, drawing.is_some()))
         .collect();
-    // Soonest first, each with the drawing a new one replaces.
+    // Featured first, then the rest starting within the window, soonest first in each,
+    // each with whether it has a drawing a new one replaces. The opted-out club's
+    // event is drawn as any other, but not as a featured one.
+    let i = i64::from;
     assert_eq!(
         due,
         [
-            (i64::from(wrong), Some(misspelled.to_owned())),
-            (i64::from(undrawn), None),
-            (i64::from(unshapely), Some(flat.to_owned())),
+            (i(wrong), true),
+            (i(undrawn), false),
+            (i(unshapely), true),
+            (i(far_featured), false),
+            (i(unposted), false),
+            (i(opted_out), false),
         ]
     );
 }

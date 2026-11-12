@@ -54,6 +54,6 @@ if ! checksum_matches "$cache/$archive"; then
 fi
 tar -xzf "$cache/$archive" -C "$temporary" actionlint
 if [[ $# == 0 ]]; then
-  set -- .github/workflows/process-notification.yml .github/workflows/ci-cd.yml .github/workflows/backfill-title-svgs.yml
+  set -- .github/workflows/process-notification.yml .github/workflows/ci-cd.yml
 fi
 "$temporary/actionlint" -shellcheck= -pyflakes= "$@"

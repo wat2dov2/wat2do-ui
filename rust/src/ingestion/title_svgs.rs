@@ -1,21 +1,17 @@
-//! Drawing `events.title_svg` for events the ingestion agent did not draw.
+//! Keeping events' title drawings (`events.title_svg`) complete.
 //!
 //! The ingestion agent draws an event's title SVG when it reads the event's
-//! post. This draws it the same way, from the event's stored poster and the same
-//! rules (`backend/services/ingestion/title_svg_rules.md`), and writes only
-//! `title_svg`, keeping a drawing only when it spells the event's title and
-//! renders cleanly on a card (`title_svg_rendering`).
-//!
-//! The API server's worker ([`run`]) keeps every featured event to come drawn,
-//! so an event an admin features or a carousel posts shows its poster's
-//! lettering on its featured card soon after. The backfill ([`backfill`]) draws
-//! soon events listed before the agent drew titles; it tries each event once,
-//! remembering the ones Claude left plain in the state directory, so a second
-//! run picks up only what the first did not reach.
+//! post. The API server's worker ([`run`]) draws it the same way, from the
+//! event's stored poster and the same rules
+//! (`backend/services/ingestion/title_svg_rules.md`), for every event to come
+//! whose drawing is missing, does not spell its title, or would render badly
+//! on a card (`title_svg_rendering`): every featured event first (one an admin
+//! features or a carousel posts shows its poster's lettering on its featured
+//! card soon after), then each event starting within `title_svg_days`,
+//! soonest first. It writes only `title_svg`.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
@@ -23,14 +19,12 @@ use anyhow::{Result, bail};
 use chrono::Utc;
 use futures_util::{StreamExt, stream};
 use regex::{Captures, Regex};
-use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tokio::sync::watch;
 use unicode_normalization::UnicodeNormalization;
 
 use super::agent::extension;
-use super::state_directory;
 use super::title_svg_rendering::rendering_problem;
 use crate::api::events::store::featuring_slides;
 use crate::claude::{self, Agent, Limited};
@@ -40,8 +34,7 @@ use crate::ingestion::prompt::TITLE_SVG_RULES;
 use crate::launch_agents::claude_code_path;
 use crate::revalidation::revalidate_schools;
 
-const STATE_FILE: &str = "title-svgs.json";
-/// Drawings between refreshes of their schools' event feeds, so a long run shows as it goes.
+/// Drawings between refreshes of their schools' event feeds, so a long pass shows as it goes.
 const REFRESH_EVERY: usize = 25;
 const WORKDIR_PREFIX: &str = "wat2do-title-svg-";
 /// The longest SVG the `events_title_svg_shape` check accepts.
@@ -123,22 +116,6 @@ pub fn spells_title(svg: &str, title: &str) -> bool {
         .all(|word| drawn.contains(&word))
 }
 
-#[derive(Debug, Default, Serialize)]
-pub struct Backfill {
-    /// Events that start within the window and have no title SVG yet.
-    pub waiting: usize,
-    pub drawn: usize,
-    /// Claude left the title plain (or unreadable); the page sets it as text.
-    pub plain: usize,
-    /// Claude's drawing broke the database's shape rule, left words of the title
-    /// out, or would render badly on a card.
-    pub rejected: usize,
-    /// The poster could not be fetched or the agent failed; tried again next run.
-    pub failed: usize,
-    /// Set when Claude's usage limit stopped the run early.
-    pub limited: Option<String>,
-}
-
 pub(super) struct Waiting {
     pub id: i64,
     title: String,
@@ -151,126 +128,26 @@ enum Drawn {
     Rejected,
 }
 
-/// Draw the missing title SVGs of events starting within `days`, soonest first,
-/// at most `limit` of them, `lanes` at a time; with `ids`, only those events
-/// (such as the ones the featured rows show). With `redraw`, those events are
-/// drawn again by the current rules even if drawn or tried before, and a title
-/// Claude now leaves plain loses its old drawing. With `dry_run` only counts them.
-pub async fn backfill(
-    pool: &PgPool,
-    days: i32,
-    ids: &[i64],
-    redraw: bool,
-    limit: usize,
-    lanes: usize,
-    dry_run: bool,
-) -> Result<Backfill> {
-    if redraw && ids.is_empty() {
-        bail!("--redraw redraws only the events named with --ids");
-    }
-    let mut tried = load_tried();
-    let waiting: Vec<Waiting> = sqlx::query_as::<_, (i64, String, String)>(
-        "SELECT e.id::bigint, e.title, e.source_image_url FROM public.events e \
-         JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d \
-             WHERE d.event_id = e.id AND d.dtstart_utc >= now()) next ON true \
-         WHERE ($3 OR e.title_svg IS NULL) AND NOT e.cancelled \
-           AND e.source_image_url LIKE 'https://%' \
-           AND next.starts < now() + make_interval(days => $1) \
-           AND (cardinality($2::bigint[]) = 0 OR e.id::bigint = ANY($2)) \
-         ORDER BY next.starts, e.id",
-    )
-    .bind(days)
-    .bind(ids)
-    .bind(redraw)
-    .fetch_all(pool)
-    .await?
-    .into_iter()
-    .filter(|(id, ..)| redraw || !tried.contains(id))
-    .map(|(id, title, poster)| Waiting { id, title, poster })
-    .collect();
-    let mut report = Backfill {
-        waiting: waiting.len(),
-        ..Backfill::default()
-    };
-    if dry_run {
-        return Ok(report);
-    }
-
-    let mut results = stream::iter(waiting.into_iter().take(limit))
-        .map(|event| async move {
-            let drawn = draw(&event).await;
-            (event, drawn)
-        })
-        .buffer_unordered(lanes.max(1));
-    // Drawn since the feeds were last refreshed.
-    let mut unrefreshed: Vec<i64> = Vec::new();
-    while let Some((event, drawn)) = results.next().await {
-        let outcome = match drawn {
-            Ok(Drawn::Svg(svg)) => Some((Some(svg), &mut report.drawn)),
-            Ok(Drawn::Plain) => Some((None, &mut report.plain)),
-            Ok(Drawn::Rejected) => Some((None, &mut report.rejected)),
-            Err(error) => {
-                if let Some(limited) = error.downcast_ref::<Limited>() {
-                    // Every run fails the same way until the limit resets; stop here.
-                    report.limited = Some(limited.message.clone());
-                    break;
-                }
-                tracing::warn!(event = event.id, "Title SVG not drawn: {error:#}");
-                report.failed += 1;
-                None
-            }
-        };
-        if let Some((svg, count)) = outcome {
-            *count += 1;
-            tried.insert(event.id);
-            // A drawing is written over nothing; a redraw also replaces an old one,
-            // or clears it when the title now stays plain.
-            if svg.is_some() || redraw {
-                sqlx::query(
-                    "UPDATE public.events SET title_svg = $1 WHERE id = $2 AND ($3 OR title_svg IS NULL)",
-                )
-                .bind(&svg)
-                .bind(event.id)
-                .bind(redraw)
-                .execute(pool)
-                .await?;
-                unrefreshed.push(event.id);
-                if unrefreshed.len() >= REFRESH_EVERY {
-                    refresh_feeds(pool, &std::mem::take(&mut unrefreshed)).await?;
-                }
-            }
-        }
-        save_tried(&tried)?;
-    }
-    save_tried(&tried)?;
-    refresh_feeds(pool, &unrefreshed).await?;
-    Ok(report)
-}
-
-/// Keep every featured event to come drawn ([`featured_to_draw`]): one with no
-/// drawing, or one that does not spell its title or render cleanly, is drawn `title_svg_lanes` at a time, soonest
-/// first, and an event none of whose drawings spelled it waits
-/// `title_svg_retry_hours` before it is drawn again. Featured events are looked
-/// for every `title_svg_poll_seconds`, and Claude's usage limit pauses the
+/// Keep every event to come drawn ([`events_to_draw`]), `title_svg_lanes` at
+/// a time; an event none of whose drawings was kept waits
+/// `title_svg_retry_hours` before it is drawn again. Events are looked for
+/// every `title_svg_poll_seconds`, and Claude's usage limit pauses the
 /// drawings until it lifts.
 pub async fn run(db: PgPool, mut stopping: watch::Receiver<bool>) {
     let mut tried: HashMap<i64, Instant> = HashMap::new();
     let mut checked = Checked::default();
     while !*stopping.borrow() {
-        let pause = match draw_featured(&db, &mut tried, &mut checked, &stopping).await {
+        let pause = match draw_due(&db, &mut tried, &mut checked, &stopping).await {
             Ok(None) => Duration::from_secs(INGESTION.title_svg_poll_seconds),
             Ok(Some(limited)) => {
-                tracing::warn!(
-                    "Featured title drawings wait for Claude: {}",
-                    limited.message
-                );
+                tracing::warn!("Title drawings wait for Claude: {}", limited.message);
                 limited
                     .resets_at
                     .and_then(|resets_at| (resets_at - Utc::now()).to_std().ok())
                     .unwrap_or(Duration::from_secs(INGESTION.agent_pause_seconds))
             }
             Err(error) => {
-                tracing::error!("Featured title drawings failed: {error:#}");
+                tracing::error!("Title drawings failed: {error:#}");
                 Duration::from_secs(INGESTION.title_svg_poll_seconds)
             }
         };
@@ -278,38 +155,38 @@ pub async fn run(db: PgPool, mut stopping: watch::Receiver<bool>) {
     }
 }
 
-/// One pass over the featured events to come; `Some` when Claude's usage limit cut it short.
-async fn draw_featured(
+/// One pass over the events to draw; `Some` when Claude's usage limit cut it short.
+async fn draw_due(
     db: &PgPool,
     tried: &mut HashMap<i64, Instant>,
     checked: &mut Checked,
     stopping: &watch::Receiver<bool>,
 ) -> Result<Option<Limited>> {
     let retry = Duration::from_secs(INGESTION.title_svg_retry_hours * 3600);
-    let due: Vec<(Waiting, Option<String>)> = featured_to_draw(db, checked)
+    let due: Vec<(Waiting, Option<String>)> = events_to_draw(db, checked)
         .await?
         .into_iter()
         .filter(|(event, _)| tried.get(&event.id).is_none_or(|at| at.elapsed() >= retry))
         .collect();
     let mut results = stream::iter(due)
-        .map(|(event, svg)| async move {
+        .map(|(event, drawing)| async move {
             let drawn = draw(&event).await;
-            (event, svg, drawn)
+            (event, drawing, drawn)
         })
         .buffer_unordered(INGESTION.title_svg_lanes.max(1));
     let mut unrefreshed: Vec<i64> = Vec::new();
     let mut limited = None;
-    while let Some((event, svg, drawn)) = results.next().await {
+    while let Some((event, drawing, drawn)) = results.next().await {
         match drawn {
-            Ok(Drawn::Svg(drawing)) => {
+            Ok(Drawn::Svg(svg)) => {
                 // Only over the drawing this pass read, so a newer one is never replaced.
                 sqlx::query(
                     "UPDATE public.events SET title_svg = $1 \
-                     WHERE id = $2 AND title_svg IS NOT DISTINCT FROM $3",
+                     WHERE id = $2 AND md5(title_svg) IS NOT DISTINCT FROM $3",
                 )
-                .bind(&drawing)
-                .bind(event.id)
                 .bind(&svg)
+                .bind(event.id)
+                .bind(&drawing)
                 .execute(db)
                 .await?;
                 unrefreshed.push(event.id);
@@ -336,47 +213,82 @@ async fn draw_featured(
     Ok(limited)
 }
 
-/// Whether each drawing seen renders cleanly, by its hash, so a pass lays out
-/// only the drawings it has not seen.
+/// Whether each drawing seen spells its title and renders cleanly, by its
+/// md5 and the title, so a pass reads and lays out only drawings it has not seen.
 #[derive(Default)]
 pub(super) struct Checked(HashMap<u64, bool>);
 
-impl Checked {
-    fn renders_cleanly(&mut self, svg: &str) -> bool {
-        let mut hasher = DefaultHasher::new();
-        svg.hash(&mut hasher);
-        *self
-            .0
-            .entry(hasher.finish())
-            .or_insert_with(|| rendering_problem(svg).is_none())
-    }
+fn drawing_key(drawing: &str, title: &str) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    (drawing, title).hash(&mut hasher);
+    hasher.finish()
 }
 
-/// The featured events to come (an event Wat2Do posted in a carousel, as the
-/// events feed marks it) with a poster but no drawing that spells their title
-/// and renders cleanly, soonest first, each with the drawing it has.
-pub(super) async fn featured_to_draw(
+/// The events to come with a poster but no drawing that spells their title and
+/// renders cleanly: every featured one (an event Wat2Do posted in a carousel,
+/// as the events feed marks it), then those starting within `title_svg_days`,
+/// soonest first, each with its drawing's md5.
+pub(super) async fn events_to_draw(
     db: &PgPool,
     checked: &mut Checked,
 ) -> Result<Vec<(Waiting, Option<String>)>> {
-    Ok(sqlx::query_as::<_, (i64, String, String, Option<String>)>(concat!(
-        "SELECT e.id::bigint, e.title, e.source_image_url, e.title_svg FROM public.events e ",
+    let events: Vec<(i64, String, String, Option<String>)> = sqlx::query_as(concat!(
+        "SELECT e.id::bigint, e.title, e.source_image_url, md5(e.title_svg) FROM public.events e ",
         "JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d ",
         "WHERE d.event_id = e.id AND coalesce(d.dtend_utc, d.dtstart_utc) >= now()) next ON true ",
-        "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%' ",
-        "AND EXISTS (SELECT 1 ",
+        "CROSS JOIN LATERAL (SELECT EXISTS (SELECT 1 ",
         featuring_slides!(),
-        " AND i.event_id = e.id) ORDER BY next.starts, e.id"
+        " AND i.event_id = e.id) AS yes) featured ",
+        "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%' ",
+        "AND (featured.yes OR next.starts < now() + make_interval(days => $1)) ",
+        "ORDER BY featured.yes DESC, next.starts, e.id"
     ))
+    .bind(INGESTION.title_svg_days as i32)
     .fetch_all(db)
-    .await?
-    .into_iter()
-    .filter(|(_, title, _, svg)| {
-        !svg.as_deref()
-            .is_some_and(|svg| spells_title(svg, title) && checked.renders_cleanly(svg))
-    })
-    .map(|(id, title, poster, svg)| (Waiting { id, title, poster }, svg))
-    .collect())
+    .await?;
+    // Read and lay out only the drawings not seen before, off the async threads.
+    let unseen: Vec<i64> = events
+        .iter()
+        .filter(|(_, title, _, drawing)| {
+            drawing
+                .as_deref()
+                .is_some_and(|drawing| !checked.0.contains_key(&drawing_key(drawing, title)))
+        })
+        .map(|(id, ..)| *id)
+        .collect();
+    if !unseen.is_empty() {
+        let drawings: Vec<(String, String, String)> = sqlx::query_as(
+            "SELECT md5(title_svg), title, title_svg FROM public.events \
+             WHERE id::bigint = ANY($1) AND title_svg IS NOT NULL",
+        )
+        .bind(&unseen)
+        .fetch_all(db)
+        .await?;
+        let verdicts = tokio::task::spawn_blocking(move || {
+            drawings
+                .into_iter()
+                .map(|(drawing, title, svg)| {
+                    let kept = spells_title(&svg, &title) && rendering_problem(&svg).is_none();
+                    (drawing_key(&drawing, &title), kept)
+                })
+                .collect::<Vec<_>>()
+        })
+        .await?;
+        checked.0.extend(verdicts);
+    }
+    Ok(events
+        .into_iter()
+        .filter(|(_, title, _, drawing)| {
+            !drawing.as_deref().is_some_and(|drawing| {
+                checked
+                    .0
+                    .get(&drawing_key(drawing, title))
+                    .copied()
+                    .unwrap_or(false)
+            })
+        })
+        .map(|(id, title, poster, drawing)| (Waiting { id, title, poster }, drawing))
+        .collect())
 }
 
 /// The title is written straight to the event, so its schools' cached event
@@ -396,7 +308,7 @@ async fn refresh_feeds(pool: &PgPool, events: &[i64]) -> Result<()> {
     Ok(())
 }
 
-/// Up to `title_svg_attempts` drawings of the event's title, until one spells it.
+/// Up to `title_svg_attempts` drawings of the event's title, until one is kept.
 async fn draw(event: &Waiting) -> Result<Drawn> {
     let mut drawn = Drawn::Plain;
     for _ in 0..INGESTION.title_svg_attempts.max(1) {
@@ -459,26 +371,6 @@ fn prompt(file: &str, title: &str) -> String {
          `title_svg`: {rules}\n\nAnswer `title_svg` with the SVG text, or null.",
         rules = TITLE_SVG_RULES.trim_end(),
     )
-}
-
-fn state_path() -> PathBuf {
-    state_directory().join(STATE_FILE)
-}
-
-fn load_tried() -> BTreeSet<i64> {
-    std::fs::read(state_path())
-        .ok()
-        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-        .unwrap_or_default()
-}
-
-fn save_tried(tried: &BTreeSet<i64>) -> Result<()> {
-    let path = state_path();
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(path, serde_json::to_vec(tried)?)?;
-    Ok(())
 }
 
 #[cfg(test)]

@@ -1005,9 +1005,11 @@ class IngestionControl(_ControlModel):
     profile_renderer: str = Field(min_length=1, max_length=200)
     profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # The API server draws the title of every featured event to come (title_svgs.rs) this
-    # many at a time, up to this many drawings an event when one does not spell its title,
-    # then again after this many hours; it looks for newly featured events this often.
+    # The API server draws the title of every featured event to come and every event
+    # starting within title_svg_days (title_svgs.rs), this many at a time, up to this many
+    # drawings an event until one is kept, then again after this many hours; it looks for
+    # events to draw this often.
+    title_svg_days: int = Field(ge=1, le=365)
     title_svg_lanes: int = Field(ge=1, le=12)
     title_svg_attempts: int = Field(ge=1, le=10)
     title_svg_retry_hours: int = Field(ge=1, le=168)

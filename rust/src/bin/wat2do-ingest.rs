@@ -4,14 +4,13 @@
 //! Notified Instagram posts join the queue when GitHub records them; `enqueue`
 //! adds one by hand. `process` is the Mac's always-on processor, and
 //! `scrape-directories` runs the Haiku directory agents; `install-schedule`
-//! installs both as macOS LaunchAgents. `backfill-title-svgs` draws the title
-//! SVGs of soon events listed before the agent wrote them.
+//! installs both as macOS LaunchAgents.
 
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use wat2do::ingestion::processor::process_queue;
 use wat2do::ingestion::stop::Stop;
-use wat2do::ingestion::{directories, items, schedule, title_svgs};
+use wat2do::ingestion::{directories, items, schedule};
 
 #[derive(Parser)]
 #[command(about = "Turn queued sources into events and positions")]
@@ -39,27 +38,6 @@ enum Command {
     },
     /// Show queue counts
     Status,
-    /// Draw the missing title SVGs of events starting soon, soonest first
-    BackfillTitleSvgs {
-        /// Events whose next date starts within this many days
-        #[arg(long, default_value_t = 30)]
-        days: i32,
-        /// Only these events, comma-separated (such as the ones the featured rows show)
-        #[arg(long, value_delimiter = ',')]
-        ids: Vec<i64>,
-        /// Draw the --ids events again by the current rules, replacing their drawings
-        #[arg(long)]
-        redraw: bool,
-        /// At most this many events this run
-        #[arg(long, default_value_t = 500)]
-        limit: usize,
-        /// Drawings at once
-        #[arg(long, default_value_t = 2)]
-        lanes: usize,
-        /// Only count the events waiting
-        #[arg(long)]
-        dry_run: bool,
-    },
     /// Install both macOS LaunchAgents
     InstallSchedule,
 }
@@ -108,19 +86,6 @@ async fn main() -> anyhow::Result<()> {
         Command::Status => {
             let pool = wat2do::db::connect(2).await?;
             print_json(&items::counts(&pool).await?)
-        }
-        Command::BackfillTitleSvgs {
-            days,
-            ids,
-            redraw,
-            limit,
-            lanes,
-            dry_run,
-        } => {
-            let pool = wat2do::db::connect(2).await?;
-            print_json(
-                &title_svgs::backfill(&pool, days, &ids, redraw, limit, lanes, dry_run).await?,
-            )
         }
         Command::InstallSchedule => schedule::install_schedule(&schedule::launchctl()?),
     }
