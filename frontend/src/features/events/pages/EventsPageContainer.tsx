@@ -46,7 +46,6 @@ export function EventsPageContainer({
 
     filters,
     allEvents,
-    upcomingEvents,
     highlights,
   } = useEventsPageData({
     firstScreen,
@@ -55,14 +54,17 @@ export function EventsPageContainer({
   const [view, setView] = useState<EventBrowseView>(DEFAULT_EVENT_VIEW);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [hasOpenedDetails, setHasOpenedDetails] = useState(false);
+  // The row an event was opened from (the featured cards), which the drawer's arrows step through.
+  const [openedFromRow, setOpenedFromRow] = useState<readonly Event[] | null>(null);
 
   const selectedEvent = useMemo(() => {
     if (selectedEventId == null) return null;
     return allEvents.find((e) => e.id === selectedEventId) ?? null;
   }, [selectedEventId, allEvents]);
 
-  const handleEventClick = useCallback((event: Event) => {
+  const handleEventClick = useCallback((event: Event, row?: readonly Event[]) => {
     setHasOpenedDetails(true);
+    setOpenedFromRow(row ?? null);
     setSelectedEventId(event.id);
   }, []);
 
@@ -96,15 +98,7 @@ export function EventsPageContainer({
     <>
       <Stack gap={2}>
         {showHighlights ? (
-          <EventHighlightSections
-            school={initialSchool}
-            highlights={highlights}
-            mapEvents={listing?.complete ? upcomingEvents : null}
-            loadFailureNotice={loadFailureNotice}
-            eventStats={eventStats}
-            withMap={view !== "map"}
-            onEventClick={handleEventClick}
-          />
+          <EventHighlightSections highlights={highlights} eventStats={eventStats} onEventClick={handleEventClick} />
         ) : null}
         <EventsPageHeader
           filters={filters}
@@ -158,6 +152,7 @@ export function EventsPageContainer({
           event={selectedEvent}
           onClose={handleCloseEventDetails}
           allEvents={listing?.complete ? listing.events : null}
+          navigationEvents={openedFromRow}
           />
       ) : null}
     </>

@@ -21,14 +21,12 @@ interface UpcomingEvent {
 }
 
 /**
- * Points an event earns toward the featured row, one entry per signal the
- * feed carries. Events Wat2Do featured on Instagram were picked by hand, so
- * they weigh most; employers on campus, competitions and varsity games are the
- * one-off events students regret missing; each co-hosting club (up to two)
- * marks a bigger, joint event.
+ * Points an event earns toward topping up the featured row, one entry per
+ * signal the feed carries: employers on campus weigh most, then competitions
+ * and varsity games, the one-off events students regret missing; each
+ * co-hosting club (up to two) marks a bigger, joint event.
  */
 const FEATURED_SIGNALS: ReadonlyArray<readonly [points: number, earned: (event: Event) => number]> = [
-  [3, event => Number(event.featured === true)],
   [2, event => Number(event.employers_on_campus === true)],
   [1, event => Number(event.competition === true)],
   [1, event => Number(event.sports_game === true)],
@@ -40,28 +38,34 @@ function featuredScore(event: Event): number {
 }
 
 /**
- * The featured row's events: one-off events with a poster that are on now or
- * start within the window, ranked by their signals, then soonest first. A club
- * appears once, so the row shows several clubs' biggest events.
+ * The featured row's events: every event Wat2Do featured that is still on and
+ * has a poster, soonest first. A school with fewer than `featuredCount` of
+ * them tops the row up with one-off events that start within the window,
+ * ranked by their signals, then soonest first, one per club.
  */
 function pickFeaturedEvents(soonestFirst: readonly UpcomingEvent[], nowMs: number): Event[] {
   const { featuredCount, featuredWindowMs } = controlBox.eventDiscovery.highlights;
+  const picked = soonestFirst
+    .map(({ event }) => event)
+    .filter(event => event.featured === true && Boolean(event.source_image_url));
+  if (picked.length >= featuredCount) return picked;
+
+  const clubOf = (event: Event) => event.club_id != null ? `id:${event.club_id}` : `name:${event.club ?? event.id}`;
+  const clubs = new Set(picked.map(clubOf));
   const candidates = soonestFirst
     .filter(({ event, startMs }) =>
-      startMs <= nowMs + featuredWindowMs
+      event.featured !== true
+      && startMs <= nowMs + featuredWindowMs
       && Boolean(event.source_image_url)
       && !recursAtLeastThreeWeeks(event))
     .map(({ event }) => ({ event, score: featuredScore(event) }))
     // Stable: equal scores keep their soonest-first order.
     .sort((a, b) => b.score - a.score);
-  const clubs = new Set<string>();
-  const picked: Event[] = [];
   for (const { event } of candidates) {
-    const club = event.club_id != null ? `id:${event.club_id}` : `name:${event.club ?? event.id}`;
-    if (clubs.has(club)) continue;
-    clubs.add(club);
+    if (picked.length >= featuredCount) break;
+    if (clubs.has(clubOf(event))) continue;
+    clubs.add(clubOf(event));
     picked.push(event);
-    if (picked.length === featuredCount) break;
   }
   return picked;
 }

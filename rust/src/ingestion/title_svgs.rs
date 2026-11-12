@@ -79,21 +79,27 @@ enum Drawn {
 
 /// Draw the missing title SVGs of events starting within `days`, soonest first,
 /// at most `limit` of them, `lanes` at a time; with `ids`, only those events
-/// (such as the ones the featured rows show). With `dry_run` only counts them.
+/// (such as the ones the featured rows show). With `redraw`, those events are
+/// drawn again by the current rules even if drawn or tried before, and a title
+/// Claude now leaves plain loses its old drawing. With `dry_run` only counts them.
 pub async fn backfill(
     pool: &PgPool,
     days: i32,
     ids: &[i64],
+    redraw: bool,
     limit: usize,
     lanes: usize,
     dry_run: bool,
 ) -> Result<Backfill> {
+    if redraw && ids.is_empty() {
+        bail!("--redraw redraws only the events named with --ids");
+    }
     let mut tried = load_tried();
     let waiting: Vec<Waiting> = sqlx::query_as::<_, (i64, String, String)>(
         "SELECT e.id::bigint, e.title, e.source_image_url FROM public.events e \
          JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d \
              WHERE d.event_id = e.id AND d.dtstart_utc >= now()) next ON true \
-         WHERE e.title_svg IS NULL AND NOT e.cancelled \
+         WHERE ($3 OR e.title_svg IS NULL) AND NOT e.cancelled \
            AND e.source_image_url LIKE 'https://%' \
            AND next.starts < now() + make_interval(days => $1) \
            AND (cardinality($2::bigint[]) = 0 OR e.id::bigint = ANY($2)) \
@@ -101,10 +107,11 @@ pub async fn backfill(
     )
     .bind(days)
     .bind(ids)
+    .bind(redraw)
     .fetch_all(pool)
     .await?
     .into_iter()
-    .filter(|(id, ..)| !tried.contains(id))
+    .filter(|(id, ..)| redraw || !tried.contains(id))
     .map(|(id, title, poster)| Waiting { id, title, poster })
     .collect();
     let mut report = Backfill {
@@ -124,30 +131,10 @@ pub async fn backfill(
     // Drawn since the feeds were last refreshed.
     let mut unrefreshed: Vec<i64> = Vec::new();
     while let Some((event, drawn)) = results.next().await {
-        match drawn {
-            Ok(Drawn::Svg(svg)) => {
-                sqlx::query(
-                    "UPDATE public.events SET title_svg = $1 WHERE id = $2 AND title_svg IS NULL",
-                )
-                .bind(&svg)
-                .bind(event.id)
-                .execute(pool)
-                .await?;
-                report.drawn += 1;
-                tried.insert(event.id);
-                unrefreshed.push(event.id);
-                if unrefreshed.len() >= REFRESH_EVERY {
-                    refresh_feeds(pool, &std::mem::take(&mut unrefreshed)).await?;
-                }
-            }
-            Ok(Drawn::Plain) => {
-                report.plain += 1;
-                tried.insert(event.id);
-            }
-            Ok(Drawn::Rejected) => {
-                report.rejected += 1;
-                tried.insert(event.id);
-            }
+        let outcome = match drawn {
+            Ok(Drawn::Svg(svg)) => Some((Some(svg), &mut report.drawn)),
+            Ok(Drawn::Plain) => Some((None, &mut report.plain)),
+            Ok(Drawn::Rejected) => Some((None, &mut report.rejected)),
             Err(error) => {
                 if let Some(limited) = error.downcast_ref::<Limited>() {
                     // Every run fails the same way until the limit resets; stop here.
@@ -156,6 +143,27 @@ pub async fn backfill(
                 }
                 tracing::warn!(event = event.id, "Title SVG not drawn: {error:#}");
                 report.failed += 1;
+                None
+            }
+        };
+        if let Some((svg, count)) = outcome {
+            *count += 1;
+            tried.insert(event.id);
+            // A drawing is written over nothing; a redraw also replaces an old one,
+            // or clears it when the title now stays plain.
+            if svg.is_some() || redraw {
+                sqlx::query(
+                    "UPDATE public.events SET title_svg = $1 WHERE id = $2 AND ($3 OR title_svg IS NULL)",
+                )
+                .bind(&svg)
+                .bind(event.id)
+                .bind(redraw)
+                .execute(pool)
+                .await?;
+                unrefreshed.push(event.id);
+                if unrefreshed.len() >= REFRESH_EVERY {
+                    refresh_feeds(pool, &std::mem::take(&mut unrefreshed)).await?;
+                }
             }
         }
         save_tried(&tried)?;

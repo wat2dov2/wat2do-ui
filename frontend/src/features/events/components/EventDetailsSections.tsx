@@ -39,6 +39,7 @@ import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleto
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { cn } from "@/shared/lib/utils";
 import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
+import { eventTitleSvg } from "@/features/events/lib/titleSvg";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeLink } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
@@ -729,6 +730,7 @@ export function EventDetailsBody({
   useEventView(event.id, event.school);
   const { t } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
+  const titleSvg = eventTitleSvg(event);
   return (
     <div className={EVENT_DETAILS_LAYOUT.grid}>
       <div
@@ -745,8 +747,8 @@ export function EventDetailsBody({
       <div className={EVENT_DETAILS_LAYOUT.details}>
         <Stack gap={2} className="order-1" data-skeleton-key="event-title">
           {/* A title its poster sets is shown as the poster sets it; the heading stays for screen readers. */}
-          {event.title_svg ? <PosterTitleArt svg={event.title_svg} variant="heading" /> : null}
-          <div className={cn(event.title_svg && "sr-only")}>
+          {titleSvg ? <PosterTitleArt svg={titleSvg} variant="heading" /> : null}
+          <div className={cn(titleSvg && "sr-only")}>
             {renderTitle ? (
               renderTitle(event.title)
             ) : (

@@ -7,7 +7,6 @@ import type { MosaicButton, MosaicButtonLayout } from "@/features/landing/lib/ev
 import { Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { Skeleton } from "@/shared/ui/skeleton";
 
 export interface MosaicAction {
   href: string;
@@ -55,8 +54,8 @@ export function useMosaicButtons(actions: readonly MosaicAction[]) {
 /**
  * Where the mosaic spells the buttons, each label in a border of squares. The
  * links lie over them, so they are real links to every pointer, keyboard and
- * screen reader. Until the mosaic has spelled them they are plain skeleton
- * blocks (still links), and where they do not fit they are ordinary buttons.
+ * screen reader. Until the mosaic has spelled them they hold their room unseen
+ * (still links), and where they do not fit they are ordinary buttons.
  */
 export function MosaicButtonRegion({
   actions,
@@ -90,9 +89,12 @@ export function MosaicButtonRegion({
       ) : layout === undefined ? (
         <Stack direction="horizontal" gap={3} wrap justify="center">
           {actions.map((action, index) => (
-            <NextLink key={action.href} href={action.href} aria-label={action.label} className="rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
-              <Skeleton on="muted" className={cn("h-11 rounded-xl", index === 0 ? "w-44" : "w-32")} />
-            </NextLink>
+            <NextLink
+              key={action.href}
+              href={action.href}
+              aria-label={action.label}
+              className={cn("h-11 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", index === 0 ? "w-44" : "w-32")}
+            />
           ))}
         </Stack>
       ) : (

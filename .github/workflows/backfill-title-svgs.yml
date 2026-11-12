@@ -16,6 +16,10 @@ on:
         description: Only these events, comma-separated (empty for every soon event)
         default: ""
         type: string
+      redraw:
+        description: Draw the listed events again by the current rules, replacing their drawings
+        default: false
+        type: boolean
       limit:
         description: At most this many events this run
         default: "500"
@@ -45,6 +49,7 @@ jobs:
           EVENT_IDS: ${{ inputs.event_ids }}
           LIMIT: ${{ inputs.limit }}
           DRY_RUN: ${{ inputs.dry_run }}
+          REDRAW: ${{ inputs.redraw }}
         run: |
           set -euo pipefail
           export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -63,6 +68,7 @@ jobs:
           flags="--days $DAYS --limit $LIMIT"
           if [ -n "$EVENT_IDS" ]; then flags="$flags --ids $EVENT_IDS"; fi
           if [ "$DRY_RUN" = true ]; then flags="$flags --dry-run"; fi
+          if [ "$REDRAW" = true ]; then flags="$flags --redraw"; fi
 
           # Claude Code signs in through the login keychain, which only the user's own
           # session can read, so the backfill runs as a one-off LaunchAgent there, the

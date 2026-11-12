@@ -44,7 +44,7 @@ test("networking means employers on campus or a Business event, the landing page
   expect(isNetworkingEvent({ employers_on_campus: null, category: null })).toBe(false);
 });
 
-test("the featured row ranks events Wat2Do featured, then employer, competition, varsity and co-hosted events", () => {
+test("the featured row leads with every event Wat2Do featured, soonest first, then tops up by employer, competition, varsity and co-hosted events", () => {
   const events = [
     event(1, 3),
     event(2, 4, { competition: true }),
@@ -54,10 +54,11 @@ test("the featured row ranks events Wat2Do featured, then employer, competition,
     event(6, 8, { cohosts: [{ id: 60, club_name: "A" }, { id: 61, club_name: "B" }, { id: 62, club_name: "C" }] } as Partial<Event>),
     event(7, 9, { sports_game: true }),
   ];
-  // 5 scores 5; 3 scores 3; 4 and 6 (two co-hosts count, a third does not) score 2,
-  // the sooner first; then 2 and 7 score 1, the sooner first; then plain 1.
+  // 3 and 5 were featured by Wat2Do, so they lead, the sooner first. The rest top
+  // the row up: 4 and 6 (two co-hosts count, a third does not) score 2, the sooner
+  // first; then 2 and 7 score 1, the sooner first; then plain 1.
   expect(featuredCount).toBe(8);
-  expect(featuredIds(events)).toEqual([5, 3, 4, 6, 2, 7, 1]);
+  expect(featuredIds(events)).toEqual([3, 5, 4, 6, 2, 7, 1]);
 });
 
 test("ties go to the sooner event, and plain events fill the row when few stand out", () => {
@@ -65,7 +66,14 @@ test("ties go to the sooner event, and plain events fill the row when few stand 
   expect(featuredIds(events)).toEqual([3, 2, 1]);
 });
 
-test("the featured row leaves out what ended, was cancelled, starts too late, has no poster or recurs", () => {
+test("every event Wat2Do featured is in the row, past the row's usual length, the window, a club's one place and a weekly series", () => {
+  const many = Array.from({ length: featuredCount + 3 }, (_, index) => event(100 + index, index + 1, { featured: true, club_id: 1, club: "Chess Club" }));
+  expect(featuredIds([...many, event(1, 2)])).toEqual(many.map(item => item.id));
+  const windowHours = featuredWindowMs / HOUR_MS;
+  expect(featuredIds([event(1, windowHours + 24, { featured: true }), weekly(2, { featured: true })])).toEqual([2, 1]);
+});
+
+test("the featured row leaves out what ended, was cancelled or has no poster, and tops up only with soon one-off events", () => {
   const windowHours = featuredWindowMs / HOUR_MS;
   const events = [
     event(1, -3, { featured: true }),
@@ -75,9 +83,13 @@ test("the featured row leaves out what ended, was cancelled, starts too late, ha
     weekly(5, { featured: true }),
     event(6, windowHours - 1),
     event(7, -0.5),
+    event(8, windowHours + 1),
+    weekly(9),
   ];
-  // Event 7 is on now, so it still counts and comes first among the plain ones.
-  expect(featuredIds(events)).toEqual([7, 6]);
+  // 5 (a weekly series) and 3 (past the window) were featured by Wat2Do, so they
+  // lead, the sooner first. Event 7 is on now, so it still counts and comes first
+  // among the plain ones; 8 starts too late and 9 recurs, so neither tops the row up.
+  expect(featuredIds(events)).toEqual([5, 3, 7, 6]);
 });
 
 test("a club appears in the featured row once, with its highest-ranked event", () => {

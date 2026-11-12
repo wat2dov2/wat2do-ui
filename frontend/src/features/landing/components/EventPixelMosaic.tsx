@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import Image from "next/image";
+import navLogo from "@/assets/wat2do-logo-nav.webp";
 import { loadFullAtlas, loadMosaicManifest, loadPreviewAtlas } from "@/features/landing/lib/eventMosaicAtlas";
 import {
   startEventPixelMosaic,
@@ -144,8 +146,14 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
   }, [logoRegion, titleWords, isDarkMode]);
 
   return (
-    // Until the first atlas paints, the face shows the skeleton tone the rest of the app loads with.
+    // Until the first atlas paints, the face is a plain card in the skeleton tone the rest
+    // of the app loads with, with the Wat2Do logo in its centre.
     <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0 overflow-hidden", !ready && "bg-muted")}>
+      {ready ? null : (
+        <div className="absolute inset-0 grid place-items-center">
+          <Image src={navLogo} alt="" width={68} height={48} loading="eager" className="h-12 w-[68px] object-contain" />
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         data-slot="event-pixel-mosaic"

@@ -28,6 +28,8 @@ interface EventDetailsModalProps {
   onClose: () => void;
   /** The list the drawer steps through and draws More events from; null while that list is still loading. */
   allEvents: Event[] | null;
+  /** The row the event was opened from, such as the featured cards, which the arrows step through instead. */
+  navigationEvents?: readonly Event[] | null;
   /** When true, the More events section is hidden (e.g. in admin panel). */
   hideSimilarEvents?: boolean;
 }
@@ -37,6 +39,7 @@ export function EventDetailsModal({
   event,
   onClose,
   allEvents,
+  navigationEvents: row = null,
   hideSimilarEvents = false,
 }: EventDetailsModalProps) {
   const { t } = useTranslation();
@@ -92,7 +95,7 @@ export function EventDetailsModal({
     },
     [onClose],
   );
-  const navigationEvents = allEvents ?? [];
+  const navigationEvents = row ?? allEvents ?? [];
   const navigationIndex = navigationEvents.findIndex((item) => item.id === displayedEvent?.id);
   const previousEvent = navigationIndex > 0 ? navigationEvents[navigationIndex - 1] : undefined;
   const nextEvent = navigationIndex >= 0 ? navigationEvents[navigationIndex + 1] : undefined;

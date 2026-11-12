@@ -60,7 +60,8 @@ export function LandingHero({ events, isLoading }: LandingHeroProps) {
               buttons={buttons.mosaic}
             />
           }
-          corners={{
+          // While the mosaic loads the card stays plain; its badges arrive with it.
+          corners={buttons.region.layout === undefined ? undefined : {
             "bottom-left": <LandingNotchLabel size="hero" tone="free" icon={Check}>{t("landing.hero.badges.free")}</LandingNotchLabel>,
             "bottom-right": <LandingNotchLabel size="hero" tone="new" icon={Instagram}>{t("landing.hero.badges.source")}</LandingNotchLabel>,
           }}

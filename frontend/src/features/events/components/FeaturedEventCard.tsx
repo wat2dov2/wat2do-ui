@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
+import { centerTitleSvg, eventTitleSvg } from "@/features/events/lib/titleSvg";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
@@ -31,6 +32,7 @@ interface FeaturedEventCardProps {
 export function FeaturedEventCard({ event, onEventClick, priority = false }: FeaturedEventCardProps) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
+  const titleSvg = eventTitleSvg(event);
   const posterSrc = event.source_image_url ? posterThumbnailUrl(event.source_image_url) : null;
   const timezone = getSchoolTimezone(event.school);
   const language = i18n.language || "en-US";
@@ -63,7 +65,7 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
       {/* The poster fades to dark under the copy, from well above it, so the copy always sits on a calm, dark base. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-media-scrim from-40% via-media-scrim/75 via-65% to-transparent" />
       <Stack gap={3} align="center" className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-6 text-center text-on-media">
-        {event.title_svg ? <PosterTitle title={event.title} svg={event.title_svg} /> : <TextTitle title={event.title} />}
+        {titleSvg ? <PosterTitle title={event.title} svg={centerTitleSvg(titleSvg)} /> : <TextTitle title={event.title} />}
         <Stack gap={2} align="center" className="w-full">
           {clubs ? (
             <Stack direction="horizontal" gap={2} align="center" justify="center" className="max-w-full">

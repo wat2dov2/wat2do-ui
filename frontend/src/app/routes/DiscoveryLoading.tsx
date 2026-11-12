@@ -60,7 +60,7 @@ function EventsLoading() {
   const highlights = useMemo(() => feed ? buildEventHighlights(feed.items, currentTimeMs) : null, [feed, currentTimeMs]);
   return (
     <>
-      <EventHighlightSectionsSkeleton school={school} highlights={highlights} withMap={DEFAULT_EVENT_VIEW !== "map"} />
+      <EventHighlightSectionsSkeleton highlights={highlights} />
       <EventsPageHeader
         filters={{ ...search, campusSeasonOptions }}
         school={school}

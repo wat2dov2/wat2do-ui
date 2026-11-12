@@ -199,10 +199,8 @@ export function useEventsPageData({
     filters,
     /** Null while the reader's results wait for the complete feed. */
     listing,
-    /** The must-know banner and carousel rows; null while the feed loads with no first screen. */
+    /** The featured and carousel rows; null while the feed loads with no first screen. */
     highlights,
-    /** The snapshot's events still on, for the highlights' map. */
-    upcomingEvents,
     /** Every event the page holds, past events the start filter reached included. */
     allEvents: listedEvents,
   };

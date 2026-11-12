@@ -47,6 +47,9 @@ enum Command {
         /// Only these events, comma-separated (such as the ones the featured rows show)
         #[arg(long, value_delimiter = ',')]
         ids: Vec<i64>,
+        /// Draw the --ids events again by the current rules, replacing their drawings
+        #[arg(long)]
+        redraw: bool,
         /// At most this many events this run
         #[arg(long, default_value_t = 500)]
         limit: usize,
@@ -109,12 +112,15 @@ async fn main() -> anyhow::Result<()> {
         Command::BackfillTitleSvgs {
             days,
             ids,
+            redraw,
             limit,
             lanes,
             dry_run,
         } => {
             let pool = wat2do::db::connect(2).await?;
-            print_json(&title_svgs::backfill(&pool, days, &ids, limit, lanes, dry_run).await?)
+            print_json(
+                &title_svgs::backfill(&pool, days, &ids, redraw, limit, lanes, dry_run).await?,
+            )
         }
         Command::InstallSchedule => schedule::install_schedule(&schedule::launchctl()?),
     }
