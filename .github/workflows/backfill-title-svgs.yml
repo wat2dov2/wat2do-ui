@@ -47,7 +47,9 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          # Claude Code lives in ~/.local/bin, first on the path as in every LaunchAgent (launch_agents::claude_code_path).
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          echo "Claude Code $(claude --version)"
           case "$DAYS$LIMIT" in
             "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
           esac
