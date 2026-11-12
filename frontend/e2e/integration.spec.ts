@@ -5186,22 +5186,32 @@ test.describe("Navigation", () => {
     }
   });
 
-  test("the root is the landing page and the events page owns its own canonical metadata", async ({ request }) => {
-    const rootResponse = await request.get(`${BASE}/`, { maxRedirects: 0 });
-    expect(rootResponse.status()).toBe(200);
-    const rootHtml = await rootResponse.text();
-    expect(rootHtml).toContain('rel="canonical" href="https://uwaterloo.wat2do.io"');
-    expect(rootHtml).not.toMatch(/<meta name="robots" content="[^"]*noindex/);
+  test("the root opens the events page with its query state, and the landing page owns /landing", async ({ request }) => {
+    const params = new URLSearchParams([
+      ["event", "1"], ["school", "uwaterloo"], ["tag", "free food"], ["tag", "new"],
+    ]);
+    const rootResponse = await request.get(`${BASE}/?${params}`, { maxRedirects: 0 });
+    expect(rootResponse.status()).toBe(307);
+    const destination = new URL(rootResponse.headers().location, BASE);
+    expect(destination.origin).toBe(BASE);
+    expect(destination.pathname).toBe("/events");
+    expect([...destination.searchParams]).toEqual([...params]);
 
-    const response = await request.get(`${BASE}/events`);
+    const response = await request.get(destination.toString());
     expect(response.status()).toBe(200);
     const html = await response.text();
     expect(html).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/events"');
     expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
+
+    const landingResponse = await request.get(`${BASE}/landing`, { maxRedirects: 0 });
+    expect(landingResponse.status()).toBe(200);
+    const landingHtml = await landingResponse.text();
+    expect(landingHtml).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/landing"');
+    expect(landingHtml).not.toMatch(/<meta name="robots" content="[^"]*noindex/);
   });
 
   test("the landing page leads with the problem and sends students to the feed", async ({ page }) => {
-    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/landing`, { waitUntil: "domcontentloaded" });
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Every campus event");
     await expect(page.getByRole("heading", { name: "Most campus events never make it to your feed." })).toBeVisible();

@@ -12,7 +12,7 @@ import { QP } from "@/shared/constants/queryParams";
 
 // ── Top-level routes ───────────────────────────────────────────────
 export const ROUTES = {
-  HOME: "/",
+  LANDING: "/landing",
   EVENTS: "/events",
   LOGIN: "/login",
   AUTH_CALLBACK: "/auth/callback",
@@ -132,7 +132,7 @@ function buildDocumentTitle(pageTitle?: string): string {
 }
 
 export function getRouteDocumentTitle(pathname: string): string {
-  const normalizedPathname = pathname.replace(/\/+$/, "") || ROUTES.HOME;
+  const normalizedPathname = pathname.replace(/\/+$/, "") || "/";
 
   if (normalizedPathname.startsWith("/invite/")) {
     return buildDocumentTitle("Club Invite");

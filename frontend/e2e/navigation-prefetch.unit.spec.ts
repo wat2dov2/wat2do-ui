@@ -67,8 +67,24 @@ test.afterEach(() => {
 });
 
 for (const host of ["wat2do.io", "uwaterloo.wat2do.io"]) {
-  test(`the root on ${host} is the landing page, with no redirect or rewrite`, async () => {
-    const response = await unstable_getResponseFromNextConfig({ url: `https://${host}/`, nextConfig });
+  test(`the root on ${host} opens the events page without losing query state`, async () => {
+    const params = new URLSearchParams([
+      ["event", "42"], ["school", "uwaterloo"], ["query", "free food"], ["returnTo", "/events?tab=new"],
+    ]);
+    const response = await unstable_getResponseFromNextConfig({
+      url: `https://${host}/?${params}`,
+      nextConfig,
+    });
+    // Temporary, so browsers never cache where the root goes.
+    expect(response.status).toBe(307);
+    const destination = new URL(getRedirectUrl(response)!);
+    expect(destination.origin).toBe(`https://${host}`);
+    expect(destination.pathname).toBe("/events");
+    expect([...destination.searchParams]).toEqual([...params]);
+  });
+
+  test(`the landing page on ${host} does not redirect or rewrite`, async () => {
+    const response = await unstable_getResponseFromNextConfig({ url: `https://${host}/landing`, nextConfig });
     expect(getRedirectUrl(response)).toBeNull();
     expect(getRewrittenUrl(response)).toBeNull();
   });

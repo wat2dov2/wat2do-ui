@@ -130,6 +130,11 @@ const nextConfig: NextConfig = {
     root: repositoryRoot,
   },
   generateBuildId: () => process.env.APP_VERSION || "development",
+  // The landing page lives at /landing; the root opens the events feed. Temporary, so
+  // browsers never cache where the root goes.
+  async redirects() {
+    return [{ source: "/", destination: "/events", permanent: false }];
+  },
   async rewrites() {
     return [
       ...apiCollectionPaths.map((path) => ({

@@ -48,7 +48,7 @@ const CLUB_PANEL_EVENT_ROUTE = /^\/club-panel\/events\/(\d+)\/?$/;
 
 export function RouteLoading() {
   const pathname = usePathname();
-  if (pathname === ROUTES.HOME) return <Suspense><LandingPage snapshot={null} /></Suspense>;
+  if (pathname === ROUTES.LANDING) return <Suspense><LandingPage snapshot={null} /></Suspense>;
   if (pathname === ROUTES.ABOUT) return <Suspense><AboutPage isLoading /></Suspense>;
   if (pathname === ROUTES.LOGIN) return <Suspense><LoginLoading /></Suspense>;
   if (pathname === ROUTES.ONBOARDING) return <Suspense><OnboardingLoading /></Suspense>;

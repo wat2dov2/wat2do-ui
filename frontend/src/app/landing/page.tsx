@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPublicPageMetadata({
     title: `Every ${schoolName} Event in One Feed | Wat2Do`,
     description: `Club events at ${schoolName} get buried across hundreds of Instagram accounts. Wat2Do finds them and puts every one in a single feed, minutes after clubs post.`,
-    canonicalUrl: getSchoolCanonicalUrl(school, ROUTES.HOME),
+    canonicalUrl: getSchoolCanonicalUrl(school, ROUTES.LANDING),
     image: {
       url: imgContactHero.src,
       alt: `Discover events and student life at ${schoolName} with Wat2Do`,
@@ -31,6 +31,6 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function HomePage() {
+export default async function LandingRoute() {
   return <LandingPage snapshot={await getLandingSnapshot(await getRequestSchool())} />;
 }
