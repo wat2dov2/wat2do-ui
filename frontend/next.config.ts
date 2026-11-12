@@ -1,4 +1,3 @@
-import discoveryCache from "../backend/controlbox/discovery_cache.json" with { type: "json" };
 import eventDiscovery from "../backend/controlbox/event_discovery.json" with { type: "json" };
 import openApi from "./src/shared/generated/openapi.json" with { type: "json" };
 import { getServerApiBaseUrl } from "./src/shared/services/serverApi";
@@ -92,24 +91,6 @@ const apiCollectionPaths = Object.keys(openApi.paths)
   .filter((path) => path !== "/" && path.endsWith("/"))
   .map((path) => path.slice(1, -1));
 
-// Public pages render the same HTML for every visitor of a school's site (the
-// server reads only the host, never cookies or auth), so Vercel's CDN, which
-// keys each copy by host and deployment, keeps one for cdn_ttl_seconds, then
-// answers with it for public_page_stale_while_revalidate_seconds more while it
-// renders a fresh one, so a visitor rarely waits for a render. Revalidation
-// notices do not purge these copies (only the data snapshots behind them): an
-// edit shows once the first view past cdn_ttl_seconds has refreshed the page.
-// Browsers still ask every visit.
-const publicPageCdnCache = `max-age=${discoveryCache.cdn_ttl_seconds}, stale-while-revalidate=${discoveryCache.public_page_stale_while_revalidate_seconds}`;
-const cdnCachedPages = [
-  "/events",
-  "/events/:id(\\d+)",
-  "/clubs",
-  "/clubs/:id(\\d+)",
-  "/positions",
-  "/about",
-  "/support-local",
-];
 
 const nextConfig: NextConfig = {
   experimental: { testProxy: process.env.PLAYWRIGHT_TEST === "1" },
@@ -149,12 +130,6 @@ const nextConfig: NextConfig = {
     root: repositoryRoot,
   },
   generateBuildId: () => process.env.APP_VERSION || "development",
-  async headers() {
-    return cdnCachedPages.map((source) => ({
-      source,
-      headers: [{ key: "Vercel-CDN-Cache-Control", value: publicPageCdnCache }],
-    }));
-  },
   async rewrites() {
     return [
       ...apiCollectionPaths.map((path) => ({

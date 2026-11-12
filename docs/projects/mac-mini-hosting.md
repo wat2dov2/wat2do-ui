@@ -67,8 +67,6 @@ The R2 bucket, `media.wat2do.io`, tiered cache, the CAA record and the certifica
 Per-visitor limits (sign-in codes, reports, interaction caps, QR scan hashes) need the visitor's address, and the API trusts `X-Wat2Do-Viewer-Ip` only from loopback (`rust/src/api/client_ip.rs`), where Caddy is its only caller.
 CloudFront's viewer-request functions set `X-Wat2Do-Viewer-Ip` from the connection, replacing whatever the visitor sent, and the API origin adds `X-Wat2Do-Origin-Verify` (`origin_verify_secret`).
 On `api.wat2do.io`, Caddy keeps `X-Wat2Do-Viewer-Ip` only when `X-Wat2Do-Origin-Verify` matches its `ORIGIN_VERIFY_SECRET` (`~/wat2do-data/config/caddy.env`), and strips the secret before the API; any other request gets `CF-Connecting-IP`, whatever it sent.
-Until the website moves to AWS (below), Vercel serves it, and `frontend/src/proxy.ts` does CloudFront's part: it sends both headers with every `/api` request Vercel forwards, taking the visitor from `CF-Connecting-IP` only when Vercel's `x-real-ip` is a Cloudflare address (`backend/controlbox/viewer_ip.json`).
-Only Vercel's build uses that proxy, its address list and the `.vercelignore` that uploads just `frontend/` and `backend/controlbox`, so they live in `infra/vercel/`, and the CI/CD deploy job copies them into its checkout right before `vercel deploy`, failing when one is missing.
 Server rendering never calls the API on a visitor's behalf (its reads are public snapshots and details), so its requests carry no visitor address.
 
 ### Discovery snapshots

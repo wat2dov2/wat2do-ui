@@ -73,7 +73,7 @@ test("the site with no school moves a club's panel to its school", () => {
 });
 
 test("a host that serves every school (a preview, 127.0.0.1, localhost) keeps the panel where it is", () => {
-  for (const origin of ["https://wat2do-git-branch.vercel.app", "http://127.0.0.1:3000", "http://localhost:3000"]) {
+  for (const origin of ["https://preview.wat2do-web.example", "http://127.0.0.1:3000", "http://localhost:3000"]) {
     openSite(origin);
     expect(clubPanelUrlElsewhere(UTSC_CLUB, "/club-panel"), origin).toBeNull();
   }

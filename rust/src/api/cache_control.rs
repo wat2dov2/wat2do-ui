@@ -1,6 +1,6 @@
 //! Responses that are the same for every visitor, marked so browsers and
 //! shared caches may keep them for as long as `controlbox/api_cache.json`
-//! says. The website reaches the API through Vercel, whose CDN keeps a
+//! says. The website reaches the API through CloudFront, which keeps a
 //! proxied response by its URL and host and answers later requests with it,
 //! signed in or not, so only a response with nothing per visitor may be marked.
 

@@ -217,7 +217,7 @@ class DiscoveryCacheControl(_ControlModel):
     refresh_interval_seconds: int = Field(gt=0)
     # The stale-while-revalidate window of CDN-cached /api/discovery responses.
     snapshot_check_seconds: int = Field(gt=0)
-    # How long after cdn_ttl_seconds Vercel's CDN still answers a public page
+    # How long after cdn_ttl_seconds CloudFront still answers a public page
     # with its last copy while it renders a fresh one (frontend/next.config.ts).
     # Revalidation notices do not purge these copies, so an edit shows once the
     # first view past cdn_ttl_seconds has refreshed the page; no visitor gets a
@@ -375,7 +375,7 @@ class SharedCacheControl(_ControlModel):
 
     # Browsers (Cache-Control max-age).
     max_age_seconds: int = Field(ge=0, le=86400)
-    # Shared caches such as Vercel's CDN, which proxies /api (s-maxage).
+    # Shared caches such as CloudFront, in front of the website and /api (s-maxage).
     shared_max_age_seconds: int = Field(gt=0, le=86400)
     # How much longer a shared cache still answers with it while it fetches the next.
     stale_while_revalidate_seconds: int = Field(ge=0, le=86400)

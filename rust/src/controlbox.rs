@@ -45,7 +45,7 @@ pub struct ApiServer {
 pub struct SharedCache {
     /// Browsers (`max-age`).
     pub max_age_seconds: u32,
-    /// Shared caches such as Vercel's CDN, which proxies `/api` (`s-maxage`).
+    /// Shared caches such as CloudFront, in front of the website and `/api` (`s-maxage`).
     pub shared_max_age_seconds: u32,
     /// How much longer a shared cache still answers with it while it fetches the next.
     pub stale_while_revalidate_seconds: u32,
