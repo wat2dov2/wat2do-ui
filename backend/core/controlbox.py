@@ -1005,6 +1005,13 @@ class IngestionControl(_ControlModel):
     profile_renderer: str = Field(min_length=1, max_length=200)
     profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # The API server draws the title of every featured event to come (title_svgs.rs) this
+    # many at a time, up to this many drawings an event when one does not spell its title,
+    # then again after this many hours; it looks for newly featured events this often.
+    title_svg_lanes: int = Field(ge=1, le=12)
+    title_svg_attempts: int = Field(ge=1, le=10)
+    title_svg_retry_hours: int = Field(ge=1, le=168)
+    title_svg_poll_seconds: int = Field(ge=10, le=3600)
     # Schools whose student clubs post too few events, so their listings also carry the
     # events the university itself runs and their university accounts are followed. The
     # ingestion, directory and follow-scoring prompts read it as {{lists_university_events}}.

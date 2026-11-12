@@ -1,31 +1,40 @@
-//! Backfilling `events.title_svg` for listed events that start soon.
+//! Drawing `events.title_svg` for events the ingestion agent did not draw.
 //!
 //! The ingestion agent draws an event's title SVG when it reads the event's
-//! post, so events listed before it learned to have none. This draws them the
-//! same way, from the event's stored poster and the same rules
-//! (`backend/services/ingestion/title_svg_rules.md`), and writes only
-//! `title_svg`. Each event is tried once: an event whose title Claude leaves
-//! plain is remembered in the state directory, so a second run picks up only
-//! what the first did not reach.
+//! post. This draws it the same way, from the event's stored poster and the same
+//! rules (`backend/services/ingestion/title_svg_rules.md`), and writes only
+//! `title_svg`, keeping a drawing only when it spells the event's title.
+//!
+//! The API server's worker ([`run`]) keeps every featured event to come drawn,
+//! so an event an admin features or a carousel posts shows its poster's
+//! lettering on its featured card soon after. The backfill ([`backfill`]) draws
+//! soon events listed before the agent drew titles; it tries each event once,
+//! remembering the ones Claude left plain in the state directory, so a second
+//! run picks up only what the first did not reach.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::path::PathBuf;
 use std::sync::LazyLock;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
+use chrono::Utc;
 use futures_util::{StreamExt, stream};
-use regex::Regex;
+use regex::{Captures, Regex};
 use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
+use tokio::sync::watch;
+use unicode_normalization::UnicodeNormalization;
 
 use super::agent::extension;
 use super::state_directory;
+use crate::api::events::store::featuring_slides;
 use crate::claude::{self, Agent, Limited};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
 use crate::ingestion::prompt::TITLE_SVG_RULES;
+use crate::launch_agents::claude_code_path;
 use crate::revalidation::revalidate_schools;
 
 const STATE_FILE: &str = "title-svgs.json";
@@ -50,6 +59,67 @@ pub fn is_title_svg(svg: &str) -> bool {
         && !FORBIDDEN.is_match(svg)
 }
 
+/// Short joining words a poster often drops or sets as a symbol.
+const JOINING_WORDS: [&str; 22] = [
+    "a", "an", "and", "at", "by", "de", "des", "du", "en", "et", "for", "in", "la", "le", "les",
+    "of", "on", "the", "to", "vs", "with", "x",
+];
+static DRAWN_TEXT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r">([^<>]*)<").unwrap());
+static ENTITY: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)&#x([0-9a-f]+);|&#(\d+);|&([a-z]+);").unwrap());
+static WORD_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\s/:|]+").unwrap());
+
+/// Letters and digits only, lower-cased and without accents, so "B A S K E T" reads as "basket".
+fn letters(text: &str) -> String {
+    text.nfkd()
+        .flat_map(char::to_lowercase)
+        .filter(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+        .collect()
+}
+
+/// Everything the drawing writes, its text and tspan contents run together.
+fn drawn_letters(svg: &str) -> String {
+    let text = DRAWN_TEXT
+        .captures_iter(svg)
+        .map(|content| content[1].to_owned())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let decoded = ENTITY.replace_all(&text, |entity: &Captures| {
+        let character = if let Some(hex) = entity.get(1) {
+            u32::from_str_radix(hex.as_str(), 16)
+                .ok()
+                .and_then(char::from_u32)
+        } else if let Some(decimal) = entity.get(2) {
+            decimal.as_str().parse().ok().and_then(char::from_u32)
+        } else {
+            match entity[3].to_ascii_lowercase().as_str() {
+                "amp" => Some('&'),
+                "lt" => Some('<'),
+                "gt" => Some('>'),
+                "quot" => Some('"'),
+                "apos" => Some('\''),
+                _ => None,
+            }
+        };
+        character.map_or_else(|| entity[0].to_owned(), String::from)
+    });
+    letters(&decoded)
+}
+
+/// Whether a drawing spells every word of its event's title, the check the
+/// events page (`titleSvgSpellsTitle` in `frontend/src/features/events/lib/titleSvg.ts`)
+/// makes before it shows a drawing in the title's place. A drawing that left a
+/// word out (a sponsor set as a logo) or drew other lettering (a "WEEK AHEAD"
+/// header) would show the wrong title, so it is drawn again instead.
+pub fn spells_title(svg: &str, title: &str) -> bool {
+    let drawn = drawn_letters(svg);
+    WORD_BREAK
+        .split(title)
+        .map(letters)
+        .filter(|word| word.len() > 1 && !JOINING_WORDS.contains(&word.as_str()))
+        .all(|word| drawn.contains(&word))
+}
+
 #[derive(Debug, Default, Serialize)]
 pub struct Backfill {
     /// Events that start within the window and have no title SVG yet.
@@ -57,7 +127,7 @@ pub struct Backfill {
     pub drawn: usize,
     /// Claude left the title plain (or unreadable); the page sets it as text.
     pub plain: usize,
-    /// Claude's drawing broke the database's shape rule.
+    /// Claude's drawing broke the database's shape rule or left words of the title out.
     pub rejected: usize,
     /// The poster could not be fetched or the agent failed; tried again next run.
     pub failed: usize,
@@ -65,8 +135,8 @@ pub struct Backfill {
     pub limited: Option<String>,
 }
 
-struct Waiting {
-    id: i64,
+pub(super) struct Waiting {
+    pub id: i64,
     title: String,
     poster: String,
 }
@@ -173,6 +243,114 @@ pub async fn backfill(
     Ok(report)
 }
 
+/// Keep every featured event to come drawn ([`featured_to_draw`]): one with no
+/// drawing, or one that does not spell its title, is drawn `title_svg_lanes` at a time, soonest
+/// first, and an event none of whose drawings spelled it waits
+/// `title_svg_retry_hours` before it is drawn again. Featured events are looked
+/// for every `title_svg_poll_seconds`, and Claude's usage limit pauses the
+/// drawings until it lifts.
+pub async fn run(db: PgPool, mut stopping: watch::Receiver<bool>) {
+    let mut tried: HashMap<i64, Instant> = HashMap::new();
+    while !*stopping.borrow() {
+        let pause = match draw_featured(&db, &mut tried, &stopping).await {
+            Ok(None) => Duration::from_secs(INGESTION.title_svg_poll_seconds),
+            Ok(Some(limited)) => {
+                tracing::warn!(
+                    "Featured title drawings wait for Claude: {}",
+                    limited.message
+                );
+                limited
+                    .resets_at
+                    .and_then(|resets_at| (resets_at - Utc::now()).to_std().ok())
+                    .unwrap_or(Duration::from_secs(INGESTION.agent_pause_seconds))
+            }
+            Err(error) => {
+                tracing::error!("Featured title drawings failed: {error:#}");
+                Duration::from_secs(INGESTION.title_svg_poll_seconds)
+            }
+        };
+        let _ = tokio::time::timeout(pause, stopping.wait_for(|stop| *stop)).await;
+    }
+}
+
+/// One pass over the featured events to come; `Some` when Claude's usage limit cut it short.
+async fn draw_featured(
+    db: &PgPool,
+    tried: &mut HashMap<i64, Instant>,
+    stopping: &watch::Receiver<bool>,
+) -> Result<Option<Limited>> {
+    let retry = Duration::from_secs(INGESTION.title_svg_retry_hours * 3600);
+    let due: Vec<(Waiting, Option<String>)> = featured_to_draw(db)
+        .await?
+        .into_iter()
+        .filter(|(event, _)| tried.get(&event.id).is_none_or(|at| at.elapsed() >= retry))
+        .collect();
+    let mut results = stream::iter(due)
+        .map(|(event, svg)| async move {
+            let drawn = draw(&event).await;
+            (event, svg, drawn)
+        })
+        .buffer_unordered(INGESTION.title_svg_lanes.max(1));
+    let mut unrefreshed: Vec<i64> = Vec::new();
+    let mut limited = None;
+    while let Some((event, svg, drawn)) = results.next().await {
+        match drawn {
+            Ok(Drawn::Svg(drawing)) => {
+                // Only over the drawing this pass read, so a newer one is never replaced.
+                sqlx::query(
+                    "UPDATE public.events SET title_svg = $1 \
+                     WHERE id = $2 AND title_svg IS NOT DISTINCT FROM $3",
+                )
+                .bind(&drawing)
+                .bind(event.id)
+                .bind(&svg)
+                .execute(db)
+                .await?;
+                unrefreshed.push(event.id);
+            }
+            Ok(Drawn::Plain | Drawn::Rejected) => {}
+            Err(error) => match error.downcast::<Limited>() {
+                Ok(error) => {
+                    limited = Some(error);
+                    break;
+                }
+                Err(error) => tracing::warn!(event = event.id, "Title SVG not drawn: {error:#}"),
+            },
+        }
+        tried.insert(event.id, Instant::now());
+        if unrefreshed.len() >= REFRESH_EVERY {
+            refresh_feeds(db, &std::mem::take(&mut unrefreshed)).await?;
+        }
+        if *stopping.borrow() {
+            break;
+        }
+    }
+    drop(results);
+    refresh_feeds(db, &unrefreshed).await?;
+    Ok(limited)
+}
+
+/// The featured events to come (an event Wat2Do posted in a carousel, as the
+/// events feed marks it) with a poster but no drawing that spells their title,
+/// soonest first, each with the drawing it has.
+pub(super) async fn featured_to_draw(db: &PgPool) -> Result<Vec<(Waiting, Option<String>)>> {
+    Ok(sqlx::query_as::<_, (i64, String, String, Option<String>)>(concat!(
+        "SELECT e.id::bigint, e.title, e.source_image_url, e.title_svg FROM public.events e ",
+        "JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d ",
+        "WHERE d.event_id = e.id AND coalesce(d.dtend_utc, d.dtstart_utc) >= now()) next ON true ",
+        "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%' ",
+        "AND EXISTS (SELECT 1 ",
+        featuring_slides!(),
+        " AND i.event_id = e.id) ORDER BY next.starts, e.id"
+    ))
+    .fetch_all(db)
+    .await?
+    .into_iter()
+    .filter(|(_, title, _, svg)| !svg.as_deref().is_some_and(|svg| spells_title(svg, title)))
+    .map(|(id, title, poster, svg)| (Waiting { id, title, poster }, svg))
+    .collect())
+}
+
 /// The title is written straight to the event, so its schools' cached event
 /// feeds are refreshed the way ingestion's own writes refresh them.
 async fn refresh_feeds(pool: &PgPool, events: &[i64]) -> Result<()> {
@@ -190,7 +368,19 @@ async fn refresh_feeds(pool: &PgPool, events: &[i64]) -> Result<()> {
     Ok(())
 }
 
+/// Up to `title_svg_attempts` drawings of the event's title, until one spells it.
 async fn draw(event: &Waiting) -> Result<Drawn> {
+    let mut drawn = Drawn::Plain;
+    for _ in 0..INGESTION.title_svg_attempts.max(1) {
+        drawn = draw_once(event).await?;
+        if !matches!(drawn, Drawn::Rejected) {
+            break;
+        }
+    }
+    Ok(drawn)
+}
+
+async fn draw_once(event: &Waiting) -> Result<Drawn> {
     let Some((data, content_type)) = fetch_image(&event.poster, true).await else {
         bail!("poster could not be fetched");
     };
@@ -213,12 +403,20 @@ async fn draw(event: &Waiting) -> Result<Drawn> {
             allowed_tools: &["Read(./**)"],
             schema: &schema,
             timeout: Duration::from_secs(INGESTION.model_timeout_seconds),
-            env: claude::claude_environment(),
+            // The API server's PATH leaves Claude Code out.
+            env: claude::claude_environment()
+                .into_iter()
+                .chain([("PATH".to_owned(), claude_code_path())])
+                .collect(),
         },
     )
     .await?;
     Ok(match answer.get("title_svg") {
-        Some(Value::String(svg)) if is_title_svg(svg.trim()) => Drawn::Svg(svg.trim().to_owned()),
+        Some(Value::String(svg))
+            if is_title_svg(svg.trim()) && spells_title(svg.trim(), &event.title) =>
+        {
+            Drawn::Svg(svg.trim().to_owned())
+        }
         Some(Value::String(svg)) if !svg.trim().is_empty() => Drawn::Rejected,
         _ => Drawn::Plain,
     })
@@ -273,6 +471,66 @@ mod tests {
             "<svg>{}</svg>",
             "a".repeat(MAX_LENGTH)
         )));
+    }
+
+    fn svg(lines: &[&str]) -> String {
+        let texts: String = lines
+            .iter()
+            .map(|line| format!("<text>{line}</text>"))
+            .collect();
+        format!(r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">{texts}</svg>"#)
+    }
+
+    #[test]
+    fn a_drawing_that_spells_the_whole_title_is_kept() {
+        let kpmg = "Join us for Networking with KPMG";
+        assert!(spells_title(
+            &svg(&["JOIN US FOR", "NETWORKING WITH KPMG"]),
+            kpmg
+        ));
+        // Letter-spaced lettering, stacked shadows, curly apostrophes and accents all still spell it.
+        assert!(spells_title(
+            &svg(&["RUSH CUP", "B A S K E T B A L L"]),
+            "Rush Cup Basketball"
+        ));
+        assert!(spells_title(
+            &svg(&["BROTHERS’ GAMING", "BROTHERS’ GAMING", "NIGHT"]),
+            "Brothers' Gaming Night"
+        ));
+        assert!(spells_title(
+            &svg(&["RANDO- REFUGE DE L’AÉGUL"]),
+            "Rando-Refuge de l'Aégul"
+        ));
+        assert!(spells_title(
+            &svg(&["Mac &amp; Cheese Night"]),
+            "Mac & Cheese Night"
+        ));
+        assert!(spells_title(&svg(&["CAF&#xC9; &#67;HAT"]), "Café Chat"));
+        // Joining words the poster drops or sets as a symbol do not count.
+        assert!(spells_title(
+            &svg(&["NouLa x Le Gym 3v3", "BASKETBALL TOURNAMENT"]),
+            "NouLa x Le Gym 3v3 Basketball Tournament"
+        ));
+    }
+
+    #[test]
+    fn a_drawing_that_leaves_a_word_out_or_draws_other_lettering_is_drawn_again() {
+        // A sponsor set as a logo, left out of the drawing.
+        let kpmg = "Join us for Networking with KPMG";
+        assert!(!spells_title(
+            &svg(&["JOIN US FOR", "NETWORKING WITH"]),
+            kpmg
+        ));
+        assert!(!spells_title(
+            &svg(&["Innov 8"]),
+            "Innov8 with KPMG Case Competition"
+        ));
+        // The poster's header, not the event's title.
+        assert!(!spells_title(
+            &svg(&["WEEK AHEAD"]),
+            "Brock Men's Hockey vs Guelph"
+        ));
+        assert!(!spells_title(&svg(&["TGIF"]), "TGIF Free Waffles"));
     }
 
     #[test]

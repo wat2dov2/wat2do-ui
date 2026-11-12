@@ -86,6 +86,7 @@ async fn stop_python(child: &mut Child) {
 /// Run the server and the Python app until a signal or a failure; returns the exit code.
 pub async fn serve(port: u16, reload: bool) -> Result<i32> {
     let settings = crate::settings::settings()?;
+    let draws_titles = settings.is_production();
     // Every connection carries its own statement timeout, like the data API's role.
     let statement_timeout = format!("{}ms", API_SERVER.database_statement_timeout_milliseconds);
     let db = crate::db::connect_lazy(
@@ -114,6 +115,13 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
 
     // Every server looks up waiting map locations; they take turns through the database.
     let (stop_lookups, lookups_stopping) = tokio::sync::watch::channel(false);
+    // Production also keeps its featured events' titles drawn, with the Mac's Claude Code.
+    let titles = draws_titles.then(|| {
+        tokio::spawn(crate::ingestion::title_svgs::run(
+            state.db.clone(),
+            lookups_stopping.clone(),
+        ))
+    });
     let lookups = tokio::spawn(crate::map_locations::run(
         state.db.clone(),
         lookups_stopping,
@@ -166,6 +174,10 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
         }
     };
     readiness.abort();
+    // A drawing cut short is drawn again by the next server.
+    if let Some(titles) = titles {
+        titles.abort();
+    }
     // A lookup cut short leaves its claim to lapse, and the place is tried again.
     let _ = stop_lookups.send(true);
     let mut lookups = lookups;

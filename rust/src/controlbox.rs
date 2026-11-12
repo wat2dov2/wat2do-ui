@@ -164,6 +164,10 @@ pub struct Ingestion {
     pub profile_renderer: String,
     pub profile_render_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
+    pub title_svg_lanes: usize,
+    pub title_svg_attempts: usize,
+    pub title_svg_retry_hours: u64,
+    pub title_svg_poll_seconds: u64,
     pub university_event_schools: Vec<String>,
     pub club_directories: Vec<ClubDirectory>,
 }

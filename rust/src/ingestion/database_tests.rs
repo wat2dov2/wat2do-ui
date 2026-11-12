@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use super::agent::ingest;
 use super::club_directories::queue;
+use super::title_svgs::featured_to_draw;
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
 
@@ -259,4 +260,98 @@ async fn a_directory_club_is_queued_once_and_linked_to_its_club() {
             .unwrap()
     );
     assert_eq!(candidate(&db, school, "uwpoker").await, None);
+}
+
+#[tokio::test]
+async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() {
+    let Some(db) = database() else { return };
+    let (school, slug) = school(&db).await;
+    let event = |starts_in: TimeDelta, title_svg: Option<&'static str>| {
+        let db = db.clone();
+        async move {
+            let id = listed(
+                &db,
+                school,
+                &instagram_post(),
+                "https://example.com/poster.jpg",
+            )
+            .await;
+            sqlx::query("UPDATE public.events SET title_svg = $2 WHERE id = $1")
+                .bind(id)
+                .bind(title_svg)
+                .execute(&db)
+                .await
+                .unwrap();
+            sqlx::query(
+                "INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc) \
+                 VALUES ($1, now() + $2, now() + $2 + interval '2 hours')",
+            )
+            .bind(id)
+            .bind(starts_in)
+            .execute(&db)
+            .await
+            .unwrap();
+            id
+        }
+    };
+    let day = TimeDelta::days(1);
+    let spelled = r#"<svg viewBox="0 0 400 80"><text>GAMES NIGHT</text></svg>"#;
+    let misspelled = r#"<svg viewBox="0 0 400 80"><text>WEEK AHEAD</text></svg>"#;
+    let undrawn = event(day * 2, None).await;
+    let wrong = event(day, Some(misspelled)).await;
+    let drawn = event(day, Some(spelled)).await;
+    let over = event(-day, None).await;
+    let unposted = event(day, None).await;
+    let carousel: Uuid = sqlx::query_scalar(
+        "INSERT INTO public.instagram_publish_batches (account_key, school_id, local_date, \
+             window_start, window_end, status, caption_intro, cover_body) \
+         VALUES ($1, $2, current_date, now() - interval '2 days', now() - interval '1 day', \
+             'publishing', 'Our picks', 'Good things') RETURNING id",
+    )
+    .bind(&slug)
+    .bind(school)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    for (position, event) in [undrawn, wrong, drawn, over].into_iter().enumerate() {
+        sqlx::query(
+            "INSERT INTO public.instagram_publish_items \
+                 (batch_id, account_key, event_id, position, published_at) \
+             VALUES ($1, $2, $3, $4, now())",
+        )
+        .bind(carousel)
+        .bind(&slug)
+        .bind(event)
+        .bind(position as i32 + 1)
+        .execute(&db)
+        .await
+        .unwrap();
+    }
+    sqlx::query(
+        "INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position) \
+         VALUES ($1, $2, $3, 5)",
+    )
+    .bind(carousel)
+    .bind(&slug)
+    .bind(unposted)
+    .execute(&db)
+    .await
+    .unwrap();
+
+    let ours = [undrawn, wrong, drawn, over, unposted].map(i64::from);
+    let due: Vec<(i64, Option<String>)> = featured_to_draw(&db)
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|(event, _)| ours.contains(&event.id))
+        .map(|(event, svg)| (event.id, svg))
+        .collect();
+    // Soonest first, each with the drawing a new one replaces.
+    assert_eq!(
+        due,
+        [
+            (i64::from(wrong), Some(misspelled.to_owned())),
+            (i64::from(undrawn), None),
+        ]
+    );
 }

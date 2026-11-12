@@ -171,6 +171,19 @@ macro_rules! micros {
     };
 }
 
+/// The carousel slides (`i`, of batch `b`) that make an event featured: Wat2Do
+/// posted it in an Instagram carousel.
+macro_rules! featuring_slides {
+    () => {
+        concat!(
+            "FROM public.instagram_publish_items i ",
+            "JOIN public.instagram_publish_batches b ON b.id = i.batch_id ",
+            "WHERE (i.published_at IS NOT NULL OR b.status = 'published')"
+        )
+    };
+}
+pub(crate) use featuring_slides;
+
 /// One hydrated event as JSON (`json_build_object` takes at most 100 arguments).
 const EVENT_OBJECT: &str = concat!(
     "json_build_object(",
@@ -210,9 +223,9 @@ const HYDRATE_CTES: &str = concat!(
     ", 'dtend_utc', ",
     micros!("occ.dtend_utc"),
     ", 'duration', occ.duration, 'tz', occ.tz) ORDER BY occ.rn) AS occurrences FROM occ GROUP BY occ.event_id), ",
-    "featured AS (SELECT DISTINCT i.event_id FROM public.instagram_publish_items i ",
-    "JOIN public.instagram_publish_batches b ON b.id = i.batch_id ",
-    "WHERE i.event_id = ANY(ARRAY(SELECT page.id::int4 FROM page)) AND (i.published_at IS NOT NULL OR b.status = 'published')), ",
+    "featured AS (SELECT DISTINCT i.event_id ",
+    featuring_slides!(),
+    " AND i.event_id = ANY(ARRAY(SELECT page.id::int4 FROM page))), ",
     "events_json AS (SELECT COALESCE(json_agg(",
 );
 

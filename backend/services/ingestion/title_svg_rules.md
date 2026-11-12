@@ -4,4 +4,5 @@ the event's title as the poster sets it, drawn as one SVG the events page shows 
   Centre the title: give every `<text>` `text-anchor="middle"` at x 200, since the card centres it.
   Spell the event's title in full, every word of it, including a word the poster sets as a logo (a sponsor such as KPMG, a club's wordmark); the card shows the drawing in place of the title, so a missing word shows a wrong title.
   Letters dark enough to vanish on the fade get a light outline; leave out everything that is not the title's words (icons, stars, dates, times, places, and logos that are not part of the title). No scripts, images, links, styles or event handlers.
-  Use NULL when there is no poster, its title is plain, unreadable or not shown, or its lettering is not this event's title (a header such as WEEK AHEAD or SCHEDULE, or a series name without the event).
+  Always draw it when there is a poster, since a featured card shows the drawing: when the poster's lettering is not this event's title (a header such as WEEK AHEAD or SCHEDULE, or a series name without the event), or its title is plain or not shown, set the event's title yourself in the poster's main colours and the font closest to its lettering.
+  Use NULL only when there is no poster.
