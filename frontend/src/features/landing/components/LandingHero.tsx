@@ -49,6 +49,7 @@ export function LandingHero() {
           size="hero"
           face={
             <EventPixelMosaic
+              priority
               logoRegion={logoRegion}
               title={{ lead, phrases, region: titleRegion, onLayout: setTitleHeight }}
               buttons={buttons.mosaic}

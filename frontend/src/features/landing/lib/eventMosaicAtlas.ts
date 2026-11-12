@@ -29,6 +29,9 @@ export function loadMosaicManifest(): Promise<MosaicManifest> {
   return manifest;
 }
 
+/** Where the first-paint copy is, for a page whose mosaic shows first to preload. */
+export const previewAtlasUrl = previewAtlasImage.src;
+
 /** The 16 px copy for first paint. */
 export function loadPreviewAtlas(): Promise<MosaicAtlas> {
   preview ??= Promise.all([loadMosaicManifest(), loadImage(previewAtlasImage.src)]).then(([{ previewTilePixels, columns, posters }, image]) => ({

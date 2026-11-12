@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import Image from "next/image";
 import navLogo from "@/assets/wat2do-logo-nav.webp";
-import { loadFullAtlas, loadMosaicManifest, loadPreviewAtlas } from "@/features/landing/lib/eventMosaicAtlas";
+import { loadFullAtlas, loadMosaicManifest, loadPreviewAtlas, previewAtlasUrl } from "@/features/landing/lib/eventMosaicAtlas";
 import {
   startEventPixelMosaic,
   type MosaicButton,
@@ -21,6 +21,11 @@ import { cn } from "@/shared/lib/utils";
 const LOOK: MosaicLook = { tileSize: 12, gutter: 0.5, swapsPerSecond: 0.4 };
 
 interface EventPixelMosaicProps {
+  /**
+   * The mosaic is the first thing its page shows: its first-paint atlas is
+   * preloaded with the page, so it can draw as soon as the page runs.
+   */
+  priority?: boolean;
   /** The element the Wat2Do logo is drawn behind, in the same card; none draws no logo. */
   logoRegion?: RefObject<HTMLElement | null>;
   /**
@@ -58,7 +63,7 @@ const PHRASE_MS = 9000;
  * paints first and the sharp atlas follows. Under reduced motion it is a still
  * mosaic.
  */
-export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosaicProps) {
+export function EventPixelMosaic({ priority = false, logoRegion, title, buttons }: EventPixelMosaicProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<MosaicController | null>(null);
   const [ready, setReady] = useState(false);
@@ -149,6 +154,8 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
     // Until the first atlas paints, the face is a plain card in the skeleton tone the rest
     // of the app loads with, with the Wat2Do logo in its centre.
     <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0 overflow-hidden", !ready && "bg-muted")}>
+      {/* React hoists this into the page's head. */}
+      {priority ? <link rel="preload" as="image" href={previewAtlasUrl} /> : null}
       {ready ? null : (
         <div className="absolute inset-0 grid place-items-center">
           <Image src={navLogo} alt="" width={68} height={48} loading="eager" className="h-12 w-[68px] object-contain" />
@@ -157,7 +164,7 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
       <canvas
         ref={canvasRef}
         data-slot="event-pixel-mosaic"
-        className={cn("block motion-safe:transition-opacity motion-safe:duration-500", ready ? "opacity-100" : "opacity-0")}
+        className={cn("block motion-safe:transition-opacity motion-safe:duration-150", ready ? "opacity-100" : "opacity-0")}
       />
     </div>
   );

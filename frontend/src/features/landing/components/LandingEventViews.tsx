@@ -7,6 +7,7 @@ import { useRequestSchool } from "@/app/client-providers";
 import { EventsBrowseViews, eventFeedQueryOptions, useCurrentTime } from "@/features/events";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
+import { useWhenIdle } from "@/shared/hooks/useWhenIdle";
 import type { Event } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
@@ -15,6 +16,8 @@ import { hasActiveEventOccurrence } from "@/shared/utils/date";
 const GRID_EVENT_COUNT = 10;
 /** How far below the screen the views start loading the feed (and the map its code). */
 const VIEWS_LOAD_MARGIN = "400px";
+/** The longest the views wait for an idle moment once they are near. */
+const VIEWS_IDLE_TIMEOUT_MS = 2000;
 
 export type LandingEventView = "grid" | "map" | "calendar";
 
@@ -28,7 +31,9 @@ export function LandingEventViews({ view }: { view: LandingEventView }) {
   const router = useRouter();
   const school = useRequestSchool();
   const { ref, hasIntersected: near } = useIntersectionObserver<HTMLDivElement>({ rootMargin: VIEWS_LOAD_MARGIN });
-  const { data: feed, isError } = useQuery({ ...eventFeedQueryOptions(school), enabled: near });
+  // They also wait for an idle moment, so the map's code and tiles never hold up the hero above them.
+  const ready = useWhenIdle(near, VIEWS_IDLE_TIMEOUT_MS);
+  const { data: feed, isError } = useQuery({ ...eventFeedQueryOptions(school), enabled: ready });
   const currentTimeMs = useCurrentTime();
   const events = useMemo(
     () => (currentTimeMs === null ? [] : (feed?.items ?? []).filter((event) => hasActiveEventOccurrence(event, currentTimeMs))),

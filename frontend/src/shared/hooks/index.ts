@@ -1,4 +1,5 @@
 export * from "./useIntersectionObserver";
+export * from "./useWhenIdle";
 export * from "./useDarkMode";
 export * from "./useConfetti";
 export * from "./useTranslatedOptions";
