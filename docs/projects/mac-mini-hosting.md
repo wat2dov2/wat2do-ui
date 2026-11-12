@@ -37,10 +37,10 @@ The aim is a site that is fast and costs close to nothing: nothing runs all the 
 
 ## Deploys
 
-`infra/mac-mini/deploy.sh` runs for every push to `main`:
+`infra/mac-mini/deploy.sh` runs for every push to `main`, in two jobs:
 
-1. Builds the Rust binaries and the website (`open-next build`) in the persistent checkout `~/wat2do-build`, at a low priority (`nice -n 10`) and with at most 4 crates compiling at once (`CARGO_BUILD_JOBS=4`), so a build leaves CPU and RAM to the emulator, Brave and the API.
-2. Assembles `~/wat2do-data/releases/<sha>`, applies pending migrations, switches `current` and restarts the API; when the API fails its health check, `current` goes back to the previous release.
+1. `deploy.sh build` starts with CI's checks, since it changes nothing live. It builds the Rust binaries and the website (`open-next build`) in the persistent checkout `~/wat2do-build`, at a low priority (`nice -n 10`) and with at most 4 crates compiling at once (`CARGO_BUILD_JOBS=4`), so a build leaves CPU and RAM to the emulator, Brave and the API. Cargo rebuilds only when something the crate compiles changed (`rust/build.rs` watches git's records only while the Brave worker's sources are uncommitted). It assembles `~/wat2do-data/releases/<sha>` with everything the release step needs: the binaries, `backend/`, the migration runner and the website's OpenNext build.
+2. `deploy.sh release`, once every check passes, works only from that release folder: it applies pending migrations, switches `current` and restarts the API; when the API fails its health check, `current` goes back to the previous release.
 3. Only then uploads the website: static files and the data cache to the web bucket, each function's code, and a CloudFront invalidation of `/*`, then checks `/healthz` and a school's discovery snapshot.
 
 The Mac's `~/.cargo/config.toml` sets `[build] jobs = 4` for every other cargo build there too, including the LaunchAgents that `cargo run` from `~/wat2do-runtime` and agent sessions' worktrees: an uncapped build takes all 10 cores and several GB of the 16 GB, pushing the emulator and Brave into swap.

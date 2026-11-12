@@ -146,7 +146,7 @@ git push origin main
 ```
 
 After push, CI/CD runs the backend, Rust and frontend checks.
-The deploy job then runs `infra/mac-mini/deploy.sh` on the Mac's own runner: it builds the release, applies pending database migrations, switches the Mac to it, uploads the same commit's website to AWS, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
+The Mac's own runner builds the release with `infra/mac-mini/deploy.sh build` while those checks run; once they pass, the deploy job runs `deploy.sh release`: it applies pending database migrations, switches the Mac to it, uploads the same commit's website to AWS, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
 A green local run means those check jobs should pass; the deploy also needs the Mac's configuration under `~/wat2do-data/config` (`docs/projects/mac-mini-hosting.md`).
 
 Agent handoff after a successful push:

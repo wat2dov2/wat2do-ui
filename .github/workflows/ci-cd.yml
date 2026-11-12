@@ -292,6 +292,27 @@ jobs:
           docker stop --time 30 "$container_id" >/dev/null
           test "$(docker inspect --format '{{.State.ExitCode}}' "$container_id")" = 0
 
+  build-wat2do:
+    name: Build Wat2Do on the Mac mini
+    # Starts with the checks instead of after them: it compiles and assembles the
+    # release (~/wat2do-data/releases/<sha>) but changes nothing live, so the
+    # deploy below waits only for the checks.
+    runs-on: [self-hosted, wat2do-macmini-deploy]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # One build at a time in the shared build checkout (the title SVG backfill uses it too).
+    concurrency:
+      group: build-mac-mini
+      cancel-in-progress: false
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and assemble the release
+        timeout-minutes: 60
+        run: bash infra/mac-mini/deploy.sh build "$GITHUB_SHA"
+
   deploy-wat2do:
     name: Deploy Wat2Do to the Mac mini
     # The Mac mini serves the API and data behind a Cloudflare Tunnel, and the
@@ -303,6 +324,7 @@ jobs:
       - frontend-layout
       - rust
       - rust-database
+      - build-wat2do
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     # A deploy is never cancelled halfway; a newer push waits and then deploys.
@@ -315,9 +337,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build, migrate and switch the release, then deploy the website to AWS
+      - name: Migrate and switch the release, then deploy the website to AWS
         timeout-minutes: 60
-        run: bash infra/mac-mini/deploy.sh "$GITHUB_SHA"
+        run: bash infra/mac-mini/deploy.sh release "$GITHUB_SHA"
 
       # The first read after a deploy may rebuild the snapshot through the API.
       - name: Verify the website reads discovery through the API

@@ -37,9 +37,9 @@ jobs:
     name: Draw missing title SVGs on the Mac mini
     runs-on: [self-hosted, wat2do-macmini-deploy]
     environment: production
-    # It builds in the deploy's checkout, so it never runs beside a deploy.
+    # It builds in the deploy's build checkout, so it never runs beside a build.
     concurrency:
-      group: deploy-mac-mini
+      group: build-mac-mini
       cancel-in-progress: false
     timeout-minutes: 480
     steps:

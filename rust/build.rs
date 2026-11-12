@@ -31,17 +31,6 @@ fn main() {
     for path in &paths {
         println!("cargo:rerun-if-changed={}", repository.join(path).display());
     }
-    if let Some(directory) = git(repository, &["rev-parse", "--absolute-git-dir"]) {
-        let directory = Path::new(directory.trim());
-        println!(
-            "cargo:rerun-if-changed={}",
-            directory.join("HEAD").display()
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            directory.join("index").display()
-        );
-    }
     let mut arguments = vec!["ls-tree", "-r", "HEAD", "--"];
     arguments.extend(paths.iter().copied());
     let fingerprint = match git(repository, &arguments) {
@@ -57,6 +46,21 @@ fn main() {
             let changed = git(repository, &status).unwrap_or_default();
             if changed.lines().any(|line| !line.contains("/tests/")) {
                 fingerprint.push_str("-uncommitted");
+                // Committing these sources changes no file, so only git's own
+                // records can say the "-uncommitted" mark is stale. A clean
+                // checkout watches only the source files: watching git's
+                // records there rebuilt the whole crate on every new commit.
+                if let Some(directory) = git(repository, &["rev-parse", "--absolute-git-dir"]) {
+                    let directory = Path::new(directory.trim());
+                    println!(
+                        "cargo:rerun-if-changed={}",
+                        directory.join("HEAD").display()
+                    );
+                    println!(
+                        "cargo:rerun-if-changed={}",
+                        directory.join("index").display()
+                    );
+                }
             }
             fingerprint
         }

@@ -11,12 +11,20 @@
 # and the Lambda functions (infra/terraform/web), and CloudFront's cache is
 # cleared (docs/projects/mac-mini-hosting.md).
 #
-# Usage: infra/mac-mini/deploy.sh <commit sha>
-# The workflow job that runs it allows one deploy at a time.
+# Usage: infra/mac-mini/deploy.sh [build|release] <commit sha>
+# `build` compiles and assembles the release while CI's checks still run; it
+# changes nothing live. `release` then migrates, switches and deploys the
+# website from that release alone, never from the build checkout, so the next
+# commit's build cannot change what this one ships. With neither it does both.
+# The workflow jobs that run it allow one build and one release at a time.
 
 set -euo pipefail
 
-sha="${1:?usage: deploy.sh <commit sha>}"
+case "${1:-}" in
+  build | release) mode="$1"; shift ;;
+  *) mode=all ;;
+esac
+sha="${1:?usage: deploy.sh [build|release] <commit sha>}"
 data="$HOME/wat2do-data"
 build="$HOME/wat2do-build"
 releases="$data/releases"
@@ -41,6 +49,7 @@ log() { echo "deploy: $*"; }
 export CARGO_BUILD_JOBS=4
 gentle() { nice -n 10 "$@"; }
 
+if [ "$mode" != release ]; then
 log "building $sha"
 git -C "$build" fetch --quiet origin
 git -C "$build" checkout --quiet --detach "$sha"
@@ -110,8 +119,27 @@ for binary in "${binaries[@]}"; do
   cp "$build/rust/target/release/$binary" "$release.partial/bin/$binary"
 done
 rsync -a "$build/infra/mac-mini/" "$release.partial/infra/mac-mini/"
+# What the release step needs besides the API: the migration runner (it finds
+# backend/database beside it), the website's OpenNext build, and the CloudFront
+# path each top-level entry of frontend/public needs.
+mkdir -p "$release.partial/scripts"
+cp "$build/scripts/migrate-database.sh" "$release.partial/scripts/"
+rsync -a "$build/frontend/.open-next/" "$release.partial/web/"
+for entry in "$build/frontend/public"/*; do
+  name="$(basename "$entry")"
+  [ -d "$entry" ] && name="$name/*"
+  echo "/$name"
+done >"$release.partial/web-public-paths"
 rm -rf "$release"
 mv "$release.partial" "$release"
+log "built $sha"
+fi
+
+[ "$mode" != build ] || exit 0
+[ -f "$release/web-public-paths" ] || {
+  log "$sha has not been built; run deploy.sh build $sha first"
+  exit 1
+}
 
 log "applying migrations"
 (
@@ -119,7 +147,7 @@ log "applying migrations"
   # shellcheck disable=SC1091
   . "$data/config/backend.env"
   set +a
-  bash "$build/scripts/migrate-database.sh"
+  bash "$release/scripts/migrate-database.sh"
 )
 
 previous="$(readlink "$releases/current" 2>/dev/null || true)"
@@ -151,19 +179,17 @@ if ! healthy; then
 fi
 
 # The API and its migrations go first, so the website never runs ahead of them.
-open_next="$build/frontend/.open-next"
+open_next="$release/web"
 
 # Every top-level entry of frontend/public needs its own CloudFront behavior.
 behaviors="$(aws cloudfront get-distribution-config --id "$distribution_id" \
   --query 'DistributionConfig.CacheBehaviors.Items[].PathPattern' --output text | tr '\t' '\n')"
-for entry in "$build/frontend/public"/*; do
-  name="$(basename "$entry")"
-  [ -d "$entry" ] && name="$name/*"
-  grep -qxF "/$name" <<<"$behaviors" || {
-    log "CloudFront has no behavior for /$name; run terraform apply in infra/terraform/web first"
+while read -r path; do
+  grep -qxF "$path" <<<"$behaviors" || {
+    log "CloudFront has no behavior for $path; run terraform apply in infra/terraform/web first"
     exit 1
   }
-done
+done <"$release/web-public-paths"
 
 log "uploading the website's files"
 # Hashed build files never change; everything else is revalidated after the
