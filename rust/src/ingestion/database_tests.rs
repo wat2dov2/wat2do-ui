@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use super::agent::ingest;
 use super::club_directories::queue;
-use super::title_svgs::featured_to_draw;
+use super::title_svgs::{Checked, featured_to_draw};
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
 
@@ -263,7 +263,8 @@ async fn a_directory_club_is_queued_once_and_linked_to_its_club() {
 }
 
 #[tokio::test]
-async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() {
+async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders_cleanly()
+{
     let Some(db) = database() else { return };
     let (school, slug) = school(&db).await;
     let event = |starts_in: TimeDelta, title_svg: Option<&'static str>| {
@@ -295,9 +296,12 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() 
         }
     };
     let day = TimeDelta::days(1);
-    let spelled = r#"<svg viewBox="0 0 400 80"><text>GAMES NIGHT</text></svg>"#;
+    let spelled = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 90"><text x="200" y="66" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="56" fill="#ffd400" textLength="330" lengthAdjust="spacingAndGlyphs">GAMES NIGHT</text></svg>"##;
     let misspelled = r#"<svg viewBox="0 0 400 80"><text>WEEK AHEAD</text></svg>"#;
+    // Spelled, but with no font size it would set flat across the card.
+    let flat = r#"<svg viewBox="0 0 400 80"><text x="200" y="60" text-anchor="middle" textLength="360">GAMES NIGHT</text></svg>"#;
     let undrawn = event(day * 2, None).await;
+    let unshapely = event(day * 3, Some(flat)).await;
     let wrong = event(day, Some(misspelled)).await;
     let drawn = event(day, Some(spelled)).await;
     let over = event(-day, None).await;
@@ -313,7 +317,10 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() 
     .fetch_one(&db)
     .await
     .unwrap();
-    for (position, event) in [undrawn, wrong, drawn, over].into_iter().enumerate() {
+    for (position, event) in [undrawn, wrong, drawn, over, unshapely]
+        .into_iter()
+        .enumerate()
+    {
         sqlx::query(
             "INSERT INTO public.instagram_publish_items \
                  (batch_id, account_key, event_id, position, published_at) \
@@ -329,7 +336,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() 
     }
     sqlx::query(
         "INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position) \
-         VALUES ($1, $2, $3, 5)",
+         VALUES ($1, $2, $3, 6)",
     )
     .bind(carousel)
     .bind(&slug)
@@ -338,8 +345,8 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() 
     .await
     .unwrap();
 
-    let ours = [undrawn, wrong, drawn, over, unposted].map(i64::from);
-    let due: Vec<(i64, Option<String>)> = featured_to_draw(&db)
+    let ours = [undrawn, wrong, drawn, over, unposted, unshapely].map(i64::from);
+    let due: Vec<(i64, Option<String>)> = featured_to_draw(&db, &mut Checked::default())
         .await
         .unwrap()
         .into_iter()
@@ -352,6 +359,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title() 
         [
             (i64::from(wrong), Some(misspelled.to_owned())),
             (i64::from(undrawn), None),
+            (i64::from(unshapely), Some(flat.to_owned())),
         ]
     );
 }

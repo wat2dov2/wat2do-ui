@@ -15,6 +15,7 @@ pub mod processor;
 pub mod prompt;
 pub mod schedule;
 pub mod stop;
+mod title_svg_rendering;
 pub mod title_svgs;
 
 #[cfg(test)]

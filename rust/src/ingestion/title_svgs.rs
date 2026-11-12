@@ -3,7 +3,8 @@
 //! The ingestion agent draws an event's title SVG when it reads the event's
 //! post. This draws it the same way, from the event's stored poster and the same
 //! rules (`backend/services/ingestion/title_svg_rules.md`), and writes only
-//! `title_svg`, keeping a drawing only when it spells the event's title.
+//! `title_svg`, keeping a drawing only when it spells the event's title and
+//! renders cleanly on a card (`title_svg_rendering`).
 //!
 //! The API server's worker ([`run`]) keeps every featured event to come drawn,
 //! so an event an admin features or a carousel posts shows its poster's
@@ -13,6 +14,7 @@
 //! run picks up only what the first did not reach.
 
 use std::collections::{BTreeSet, HashMap};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
@@ -29,6 +31,7 @@ use unicode_normalization::UnicodeNormalization;
 
 use super::agent::extension;
 use super::state_directory;
+use super::title_svg_rendering::rendering_problem;
 use crate::api::events::store::featuring_slides;
 use crate::claude::{self, Agent, Limited};
 use crate::controlbox::INGESTION;
@@ -127,7 +130,8 @@ pub struct Backfill {
     pub drawn: usize,
     /// Claude left the title plain (or unreadable); the page sets it as text.
     pub plain: usize,
-    /// Claude's drawing broke the database's shape rule or left words of the title out.
+    /// Claude's drawing broke the database's shape rule, left words of the title
+    /// out, or would render badly on a card.
     pub rejected: usize,
     /// The poster could not be fetched or the agent failed; tried again next run.
     pub failed: usize,
@@ -244,15 +248,16 @@ pub async fn backfill(
 }
 
 /// Keep every featured event to come drawn ([`featured_to_draw`]): one with no
-/// drawing, or one that does not spell its title, is drawn `title_svg_lanes` at a time, soonest
+/// drawing, or one that does not spell its title or render cleanly, is drawn `title_svg_lanes` at a time, soonest
 /// first, and an event none of whose drawings spelled it waits
 /// `title_svg_retry_hours` before it is drawn again. Featured events are looked
 /// for every `title_svg_poll_seconds`, and Claude's usage limit pauses the
 /// drawings until it lifts.
 pub async fn run(db: PgPool, mut stopping: watch::Receiver<bool>) {
     let mut tried: HashMap<i64, Instant> = HashMap::new();
+    let mut checked = Checked::default();
     while !*stopping.borrow() {
-        let pause = match draw_featured(&db, &mut tried, &stopping).await {
+        let pause = match draw_featured(&db, &mut tried, &mut checked, &stopping).await {
             Ok(None) => Duration::from_secs(INGESTION.title_svg_poll_seconds),
             Ok(Some(limited)) => {
                 tracing::warn!(
@@ -277,10 +282,11 @@ pub async fn run(db: PgPool, mut stopping: watch::Receiver<bool>) {
 async fn draw_featured(
     db: &PgPool,
     tried: &mut HashMap<i64, Instant>,
+    checked: &mut Checked,
     stopping: &watch::Receiver<bool>,
 ) -> Result<Option<Limited>> {
     let retry = Duration::from_secs(INGESTION.title_svg_retry_hours * 3600);
-    let due: Vec<(Waiting, Option<String>)> = featured_to_draw(db)
+    let due: Vec<(Waiting, Option<String>)> = featured_to_draw(db, checked)
         .await?
         .into_iter()
         .filter(|(event, _)| tried.get(&event.id).is_none_or(|at| at.elapsed() >= retry))
@@ -330,10 +336,29 @@ async fn draw_featured(
     Ok(limited)
 }
 
+/// Whether each drawing seen renders cleanly, by its hash, so a pass lays out
+/// only the drawings it has not seen.
+#[derive(Default)]
+pub(super) struct Checked(HashMap<u64, bool>);
+
+impl Checked {
+    fn renders_cleanly(&mut self, svg: &str) -> bool {
+        let mut hasher = DefaultHasher::new();
+        svg.hash(&mut hasher);
+        *self
+            .0
+            .entry(hasher.finish())
+            .or_insert_with(|| rendering_problem(svg).is_none())
+    }
+}
+
 /// The featured events to come (an event Wat2Do posted in a carousel, as the
-/// events feed marks it) with a poster but no drawing that spells their title,
-/// soonest first, each with the drawing it has.
-pub(super) async fn featured_to_draw(db: &PgPool) -> Result<Vec<(Waiting, Option<String>)>> {
+/// events feed marks it) with a poster but no drawing that spells their title
+/// and renders cleanly, soonest first, each with the drawing it has.
+pub(super) async fn featured_to_draw(
+    db: &PgPool,
+    checked: &mut Checked,
+) -> Result<Vec<(Waiting, Option<String>)>> {
     Ok(sqlx::query_as::<_, (i64, String, String, Option<String>)>(concat!(
         "SELECT e.id::bigint, e.title, e.source_image_url, e.title_svg FROM public.events e ",
         "JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d ",
@@ -346,7 +371,10 @@ pub(super) async fn featured_to_draw(db: &PgPool) -> Result<Vec<(Waiting, Option
     .fetch_all(db)
     .await?
     .into_iter()
-    .filter(|(_, title, _, svg)| !svg.as_deref().is_some_and(|svg| spells_title(svg, title)))
+    .filter(|(_, title, _, svg)| {
+        !svg.as_deref()
+            .is_some_and(|svg| spells_title(svg, title) && checked.renders_cleanly(svg))
+    })
     .map(|(id, title, poster, svg)| (Waiting { id, title, poster }, svg))
     .collect())
 }
@@ -411,15 +439,18 @@ async fn draw_once(event: &Waiting) -> Result<Drawn> {
         },
     )
     .await?;
-    Ok(match answer.get("title_svg") {
-        Some(Value::String(svg))
-            if is_title_svg(svg.trim()) && spells_title(svg.trim(), &event.title) =>
-        {
-            Drawn::Svg(svg.trim().to_owned())
-        }
-        Some(Value::String(svg)) if !svg.trim().is_empty() => Drawn::Rejected,
-        _ => Drawn::Plain,
-    })
+    let svg = match answer.get("title_svg") {
+        Some(Value::String(svg)) if !svg.trim().is_empty() => svg.trim(),
+        _ => return Ok(Drawn::Plain),
+    };
+    if !is_title_svg(svg) || !spells_title(svg, &event.title) {
+        return Ok(Drawn::Rejected);
+    }
+    if let Some(problem) = rendering_problem(svg) {
+        tracing::info!(event = event.id, "Title SVG drawn again: {problem}");
+        return Ok(Drawn::Rejected);
+    }
+    Ok(Drawn::Svg(svg.to_owned()))
 }
 
 fn prompt(file: &str, title: &str) -> String {
