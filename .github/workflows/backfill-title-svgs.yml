@@ -47,6 +47,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
+          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
           case "$DAYS$LIMIT" in
             "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
           esac
