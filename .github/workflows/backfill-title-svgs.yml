@@ -47,16 +47,6 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          # Claude Code lives in ~/.local/bin, first on the path as in every LaunchAgent (launch_agents::claude_code_path).
-          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-          echo "Claude Code $(claude --version)"
-          # One short answer first, so a Claude Code that cannot run stops here with its own words.
-          model=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["model"])' "$HOME/wat2do-build/backend/controlbox/ingestion.json")
-          check=$(printf 'Reply with the word ok.' | claude -p --model "$model" --output-format json --no-session-persistence || true)
-          if ! printf '%s' "$check" | python3 -c 'import json, sys; answer = json.load(sys.stdin); sys.exit(1 if answer.get("is_error") else 0)'; then
-            echo "Claude Code cannot answer: $(printf '%s' "$check" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("result", "no result"))' 2>/dev/null || printf '%s' "$check" | head -c 300)" >&2
-            exit 1
-          fi
           case "$DAYS$LIMIT" in
             "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
           esac
@@ -69,10 +59,50 @@ jobs:
           git -C "$build" fetch --quiet origin
           git -C "$build" checkout --quiet --detach "$sha"
           (cd "$build/rust" && nice -n 10 cargo build --release --quiet --bin wat2do-ingest)
-          set -a
-          . "$data/config/backend.env"
-          set +a
-          flags=(--days "$DAYS" --limit "$LIMIT")
-          if [ -n "$EVENT_IDS" ]; then flags+=(--ids "$EVENT_IDS"); fi
-          if [ "$DRY_RUN" = true ]; then flags+=(--dry-run); fi
-          nice -n 10 "$build/rust/target/release/wat2do-ingest" backfill-title-svgs "${flags[@]}"
+          flags="--days $DAYS --limit $LIMIT"
+          if [ -n "$EVENT_IDS" ]; then flags="$flags --ids $EVENT_IDS"; fi
+          if [ "$DRY_RUN" = true ]; then flags="$flags --dry-run"; fi
+
+          # Claude Code signs in through the login keychain, which only the user's own
+          # session can read, so the backfill runs as a one-off LaunchAgent there, the
+          # way ingestion runs (launch_agents::claude_code_path is its path).
+          label=io.wat2do.title-svg-backfill
+          domain="gui/$(id -u)"
+          plist="$HOME/Library/LaunchAgents/$label.plist"
+          log="$HOME/.local/state/wat2do/ingestion/title-svg-backfill.log"
+          mkdir -p "$(dirname "$log")"
+          : >"$log"
+          script=$(cat <<SCRIPT
+          set -euo pipefail
+          set -a; . "$data/config/backend.env"; set +a
+          echo "Claude Code \$(claude --version)"
+          model=\$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["model"])' "$build/backend/controlbox/ingestion.json")
+          check=\$(printf 'Reply with the word ok.' | claude -p --model "\$model" --output-format json --no-session-persistence || true)
+          printf '%s' "\$check" | python3 -c 'import json, sys; answer = json.load(sys.stdin); print("Claude Code cannot answer:", answer.get("result")) if answer.get("is_error") else None; sys.exit(1 if answer.get("is_error") else 0)'
+          exec nice -n 10 "$build/rust/target/release/wat2do-ingest" backfill-title-svgs $flags
+          SCRIPT
+          )
+          python3 - "$plist" "$label" "$log" "$script" "$HOME" <<'PLIST'
+          import plistlib, sys
+          plist, label, log, script, home = sys.argv[1:]
+          path = f"{home}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          with open(plist, "wb") as out:
+              plistlib.dump({
+                  "Label": label,
+                  "ProgramArguments": ["/bin/bash", "-c", script],
+                  "EnvironmentVariables": {"PATH": path, "HOME": home},
+                  "StandardOutPath": log,
+                  "StandardErrorPath": log,
+                  "RunAtLoad": True,
+              }, out)
+          PLIST
+          launchctl bootout "$domain/$label" 2>/dev/null || true
+          launchctl bootstrap "$domain" "$plist"
+          trap 'launchctl bootout "$domain/$label" 2>/dev/null || true; rm -f "$plist"' EXIT
+          # Wait for the one run to end, then report it.
+          sleep 5
+          while launchctl print "$domain/$label" 2>/dev/null | grep -q "state = running"; do sleep 15; done
+          cat "$log"
+          status=$(launchctl print "$domain/$label" 2>/dev/null | awk -F'= ' '/last exit code/ {print $2; exit}')
+          echo "backfill exited with ${status:-unknown}"
+          [ "${status:-1}" = 0 ]
