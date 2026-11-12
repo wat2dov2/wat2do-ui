@@ -26,8 +26,11 @@ use crate::claude::{self, Agent, Limited};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
 use crate::ingestion::prompt::TITLE_SVG_RULES;
+use crate::revalidation::revalidate_schools;
 
 const STATE_FILE: &str = "title-svgs.json";
+/// Drawings between refreshes of their schools' event feeds, so a long run shows as it goes.
+const REFRESH_EVERY: usize = 25;
 const WORKDIR_PREFIX: &str = "wat2do-title-svg-";
 /// The longest SVG the `events_title_svg_shape` check accepts.
 const MAX_LENGTH: usize = 20_000;
@@ -118,6 +121,8 @@ pub async fn backfill(
             (event, drawn)
         })
         .buffer_unordered(lanes.max(1));
+    // Drawn since the feeds were last refreshed.
+    let mut unrefreshed: Vec<i64> = Vec::new();
     while let Some((event, drawn)) = results.next().await {
         match drawn {
             Ok(Drawn::Svg(svg)) => {
@@ -130,6 +135,10 @@ pub async fn backfill(
                 .await?;
                 report.drawn += 1;
                 tried.insert(event.id);
+                unrefreshed.push(event.id);
+                if unrefreshed.len() >= REFRESH_EVERY {
+                    refresh_feeds(pool, &std::mem::take(&mut unrefreshed)).await?;
+                }
             }
             Ok(Drawn::Plain) => {
                 report.plain += 1;
@@ -152,7 +161,25 @@ pub async fn backfill(
         save_tried(&tried)?;
     }
     save_tried(&tried)?;
+    refresh_feeds(pool, &unrefreshed).await?;
     Ok(report)
+}
+
+/// The title is written straight to the event, so its schools' cached event
+/// feeds are refreshed the way ingestion's own writes refresh them.
+async fn refresh_feeds(pool: &PgPool, events: &[i64]) -> Result<()> {
+    if events.is_empty() {
+        return Ok(());
+    }
+    let schools: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT s.slug FROM public.events e JOIN public.schools s ON s.id = e.school_id \
+         WHERE e.id::bigint = ANY($1)",
+    )
+    .bind(events)
+    .fetch_all(pool)
+    .await?;
+    revalidate_schools(&schools, &["events"]).await;
+    Ok(())
 }
 
 async fn draw(event: &Waiting) -> Result<Drawn> {
