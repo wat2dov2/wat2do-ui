@@ -39,11 +39,31 @@ export function eventTitleSvg(event: { title: string; title_svg?: string | null 
   return event.title_svg && titleSvgSpellsTitle(event.title_svg, event.title) ? event.title_svg : null;
 }
 
-const TEXT_TAG = /<text\b([^>]*)>/g;
+const TAG = /<(\/?)([a-zA-Z]+)\b([^>]*?)(\/?)>/g;
+/** The elements whose `text-anchor` the lines inside them inherit. */
+const ANCHOR_HOLDERS = new Set(["svg", "g", "text"]);
 const number = (attributes: string, name: string) => {
   const match = new RegExp(`\\b${name}="(-?[\\d.]+)"`).exec(attributes);
   return match ? Number(match[1]) : null;
 };
+const anchorOf = (attributes: string) => /\btext-anchor\s*(?:=\s*["']|:\s*)(start|middle|end)\b/.exec(attributes)?.[1];
+
+/** Each line's attributes and its `text-anchor`: its own, or the one a group around it sets. */
+function textLines(svg: string): { attributes: string; anchor: string }[] {
+  const anchors = ["start"];
+  const lines: { attributes: string; anchor: string }[] = [];
+  for (const [, closing, name, attributes, selfClosing] of svg.matchAll(TAG)) {
+    if (!ANCHOR_HOLDERS.has(name)) continue;
+    if (closing) {
+      anchors.pop();
+      continue;
+    }
+    const anchor = anchorOf(attributes) ?? anchors.at(-1)!;
+    if (name === "text") lines.push({ attributes, anchor });
+    if (!selfClosing) anchors.push(anchor);
+  }
+  return lines;
+}
 
 /**
  * The drawing moved sideways so its lettering sits in the middle of its view
@@ -53,11 +73,10 @@ const number = (attributes: string, name: string) => {
  */
 export function centerTitleSvg(svg: string): string {
   const width = /viewBox="[\d.-]+\s+[\d.-]+\s+([\d.]+)\s+[\d.]+"/.exec(svg)?.[1];
-  const lines = [...svg.matchAll(TEXT_TAG)].map(([, attributes]) => {
+  const lines = textLines(svg).map(({ attributes, anchor }) => {
     const x = number(attributes, "x");
     const length = number(attributes, "textLength");
     if (x === null || length === null) return null;
-    const anchor = /\btext-anchor="(middle|end)"/.exec(attributes)?.[1];
     const left = anchor === "middle" ? x - length / 2 : anchor === "end" ? x - length : x;
     return [left, left + length] as const;
   });
