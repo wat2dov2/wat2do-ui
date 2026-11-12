@@ -50,6 +50,13 @@ jobs:
           # Claude Code lives in ~/.local/bin, first on the path as in every LaunchAgent (launch_agents::claude_code_path).
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
           echo "Claude Code $(claude --version)"
+          # One short answer first, so a Claude Code that cannot run stops here with its own words.
+          model=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["model"])' "$HOME/wat2do-build/backend/controlbox/ingestion.json")
+          check=$(printf 'Reply with the word ok.' | claude -p --model "$model" --output-format json --no-session-persistence || true)
+          if ! printf '%s' "$check" | python3 -c 'import json, sys; answer = json.load(sys.stdin); sys.exit(1 if answer.get("is_error") else 0)'; then
+            echo "Claude Code cannot answer: $(printf '%s' "$check" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("result", "no result"))' 2>/dev/null || printf '%s' "$check" | head -c 300)" >&2
+            exit 1
+          fi
           case "$DAYS$LIMIT" in
             "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
           esac
