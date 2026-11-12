@@ -213,16 +213,31 @@ async fn candidates_are_only_the_events_added_since_the_last_carousel() {
     .await
     .unwrap();
 
+    // A club that asked to stay out of carousels (written with its "@" and capitals).
+    let opted_out = event(&db, school, "Opted out", -hour, day, Some("Business")).await;
+    let handle = format!("optout{}", &Uuid::new_v4().simple().to_string()[..10]);
+    sqlx::query("UPDATE public.events SET ig_handle = $2 WHERE id = $1")
+        .bind(opted_out as i32)
+        .bind(format!(" @{}", handle.to_uppercase()))
+        .execute(&db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO public.instagram_excluded_clubs (ig_handle) VALUES ($1)")
+        .bind(&handle)
+        .execute(&db)
+        .await
+        .unwrap();
+
     let now = Utc::now();
     let candidates = drafts::draft_candidates(&db, &slug, now - day, now)
         .await
         .unwrap();
     let picked: Vec<i64> = candidates.iter().map(|event| event.id).collect();
     // Soonest first. Left out: no category, starting too soon, already
-    // posted, and the earlier event, collected before this window, which
-    // never comes back to fill the carousel.
+    // posted, a club that opted out, and the earlier event, collected before
+    // this window, which never comes back to fill the carousel.
     assert_eq!(picked, [sooner, later, requested]);
-    for left_out in [uncategorized, too_soon, posted, earlier] {
+    for left_out in [uncategorized, too_soon, posted, opted_out, earlier] {
         assert!(!picked.contains(&left_out));
     }
     let first = &candidates[0];

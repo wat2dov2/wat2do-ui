@@ -306,6 +306,20 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     let drawn = event(day, Some(spelled)).await;
     let over = event(-day, None).await;
     let unposted = event(day, None).await;
+    // A club that asked to stay out of carousels is not featured, even for a slide posted before.
+    let opted_out = event(day * 2, None).await;
+    let handle = format!("optout{}", &Uuid::new_v4().simple().to_string()[..10]);
+    sqlx::query("UPDATE public.events SET ig_handle = $2 WHERE id = $1")
+        .bind(opted_out)
+        .bind(format!("@{handle}"))
+        .execute(&db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO public.instagram_excluded_clubs (ig_handle) VALUES ($1)")
+        .bind(&handle)
+        .execute(&db)
+        .await
+        .unwrap();
     let carousel: Uuid = sqlx::query_scalar(
         "INSERT INTO public.instagram_publish_batches (account_key, school_id, local_date, \
              window_start, window_end, status, caption_intro, cover_body) \
@@ -317,7 +331,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     .fetch_one(&db)
     .await
     .unwrap();
-    for (position, event) in [undrawn, wrong, drawn, over, unshapely]
+    for (position, event) in [undrawn, wrong, drawn, over, unshapely, opted_out]
         .into_iter()
         .enumerate()
     {
@@ -336,7 +350,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     }
     sqlx::query(
         "INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position) \
-         VALUES ($1, $2, $3, 6)",
+         VALUES ($1, $2, $3, 7)",
     )
     .bind(carousel)
     .bind(&slug)
@@ -345,7 +359,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     .await
     .unwrap();
 
-    let ours = [undrawn, wrong, drawn, over, unposted, unshapely].map(i64::from);
+    let ours = [undrawn, wrong, drawn, over, unposted, unshapely, opted_out].map(i64::from);
     let due: Vec<(i64, Option<String>)> = featured_to_draw(&db, &mut Checked::default())
         .await
         .unwrap()

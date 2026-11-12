@@ -171,14 +171,32 @@ macro_rules! micros {
     };
 }
 
+/// Whether the club of the event aliased `$event` asked to stay out of carousels
+/// (`instagram_excluded_clubs`), its handle matched as the carousel jobs match it:
+/// trimmed, without its "@", lower-cased.
+macro_rules! excluded_club {
+    ($event:literal) => {
+        concat!(
+            "EXISTS (SELECT 1 FROM public.instagram_excluded_clubs x ",
+            "WHERE x.ig_handle = lower(ltrim(btrim(",
+            $event,
+            ".ig_handle), '@')))"
+        )
+    };
+}
+pub(crate) use excluded_club;
+
 /// The carousel slides (`i`, of batch `b`) that make an event featured: Wat2Do
-/// posted it in an Instagram carousel.
+/// posted it in an Instagram carousel, and its club has not since asked to stay
+/// out of carousels (Hillel's accounts among them).
 macro_rules! featuring_slides {
     () => {
         concat!(
             "FROM public.instagram_publish_items i ",
             "JOIN public.instagram_publish_batches b ON b.id = i.batch_id ",
-            "WHERE (i.published_at IS NOT NULL OR b.status = 'published')"
+            "JOIN public.events fe ON fe.id = i.event_id ",
+            "WHERE (i.published_at IS NOT NULL OR b.status = 'published') AND NOT ",
+            $crate::api::events::store::excluded_club!("fe")
         )
     };
 }

@@ -358,11 +358,13 @@ pub async fn draft_candidates(
     let Some(school_id) = store::school_id(db, account_key).await.map_err(job_error)? else {
         return Ok(Vec::new());
     };
+    // A club that asked to stay out of carousels never reaches Claude's picks.
     let events: Vec<Candidate> = sqlx::query_as(&format!(
         "SELECT {EVENT_COLUMNS} FROM public.events e \
-         WHERE e.school_id = $1 AND e.cancelled = false \
+         WHERE e.school_id = $1 AND e.cancelled = false AND NOT {excluded} \
            AND ((e.added_at >= $2 AND e.added_at < $3) OR e.carousel_requested_at IS NOT NULL) \
-         ORDER BY e.added_at DESC, e.id"
+         ORDER BY e.added_at DESC, e.id",
+        excluded = store::excluded_club!("e"),
     ))
     .bind(school_id as i32)
     .bind(window_start)
