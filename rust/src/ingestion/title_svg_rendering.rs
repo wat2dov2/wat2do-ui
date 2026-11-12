@@ -50,6 +50,8 @@ static ATTRIBUTE: LazyLock<Regex> =
 static TEXT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)<text\b([^>]*)>(.*?)</text>").unwrap());
 static TSPAN_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"</?tspan\b[^>]*>").unwrap());
+static TSPAN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?s)<tspan\b([^>]*)>(.*?)</tspan>").unwrap());
 static ANY_TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^>]+>").unwrap());
 static RECT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?s)<rect\b[^>]*/>|<rect\b[^>]*>.*?</rect>").unwrap());
@@ -123,8 +125,13 @@ impl Line {
 }
 
 /// What would show wrong if a featured card drew this title, or `None` when it
-/// renders cleanly.
+/// renders cleanly. A drawing usvg cannot lay out counts as one to draw again.
 pub fn rendering_problem(svg: &str) -> Option<String> {
+    std::panic::catch_unwind(|| problem(svg))
+        .unwrap_or_else(|_| Some("it could not be laid out".to_owned()))
+}
+
+fn problem(svg: &str) -> Option<String> {
     let Some(view_box) = VIEW_BOX.captures(svg) else {
         return Some("it has no view box".to_owned());
     };
@@ -157,11 +164,18 @@ pub fn rendering_problem(svg: &str) -> Option<String> {
             ink.bottom() - height
         ));
     }
-    // The card centres the lettering across, so only its width can be too much.
-    if ink.width() > width + EDGE_TOLERANCE {
+    // The card centres a drawing by its lines' textLength, not their ink, so an
+    // italic's or a serif's overhang past the box stays cut off.
+    if ink.left() < -EDGE_TOLERANCE {
         return Some(format!(
-            "its lettering is {:.0} wider than the view box",
-            ink.width() - width
+            "its lettering runs {:.0} past the left",
+            -ink.left()
+        ));
+    }
+    if ink.right() > width + EDGE_TOLERANCE {
+        return Some(format!(
+            "its lettering runs {:.0} past the right",
+            ink.right() - width
         ));
     }
 
@@ -187,28 +201,23 @@ pub fn rendering_problem(svg: &str) -> Option<String> {
     if !RECT.is_match(svg) {
         let light_copies: Vec<String> = lines
             .iter()
-            .filter(|line| fill_luminance(line).is_some_and(|light| light >= LIGHT_COPY))
+            .filter(|line| {
+                runs(line)
+                    .iter()
+                    .all(|run| run.fill.is_some_and(|fill| fill >= LIGHT_COPY))
+            })
             .map(|line| line.words().to_lowercase())
             .collect();
         for line in &lines {
-            let opacity = ["opacity", "fill-opacity"]
-                .iter()
-                .filter_map(|name| line.style.get(*name).and_then(|value| number(value)))
-                .fold(1.0, f32::min);
-            let outline = line
-                .style
-                .get("stroke")
-                .filter(|stroke| *stroke != "none")
-                .and_then(|stroke| luminance(stroke));
-            if fill_luminance(line).is_some_and(|fill| fill < DARK)
-                && opacity >= 0.5
-                && outline.is_none_or(|outline| outline < LIGHT_OUTLINE)
-                && !light_copies.contains(&line.words().to_lowercase())
-            {
-                return Some(format!(
-                    "\"{}\" is dark with no light outline",
-                    line.words()
-                ));
+            if light_copies.contains(&line.words().to_lowercase()) {
+                continue;
+            }
+            if let Some(run) = runs(line).into_iter().find(|run| {
+                run.fill.is_some_and(|fill| fill < DARK)
+                    && run.opacity >= 0.5
+                    && run.outline.is_none_or(|outline| outline < LIGHT_OUTLINE)
+            }) {
+                return Some(format!("\"{}\" is dark with no light outline", run.words));
             }
         }
     }
@@ -366,9 +375,43 @@ fn natural_width(line: &Line) -> Option<f32> {
     .map(|bounds| bounds.width())
 }
 
-fn fill_luminance(line: &Line) -> Option<f32> {
-    // An unset fill is black.
-    luminance(line.style.get("fill").map_or("#000000", String::as_str))
+/// A stretch of a line's words in one colour: the line's own, or a tspan's.
+struct Run {
+    words: String,
+    fill: Option<f32>,
+    outline: Option<f32>,
+    opacity: f32,
+}
+
+/// The coloured stretches a line shows: its words outside tspans in its own
+/// colours, each tspan's in its own or the line's.
+fn runs(line: &Line) -> Vec<Run> {
+    let run = |own: &HashMap<String, String>, words: String| {
+        let value = |name: &str| own.get(name).or(line.style.get(name));
+        Run {
+            words,
+            // An unset fill is black.
+            fill: luminance(value("fill").map_or("#000000", String::as_str)),
+            outline: value("stroke")
+                .filter(|stroke| *stroke != "none")
+                .and_then(|stroke| luminance(stroke)),
+            opacity: ["opacity", "fill-opacity"]
+                .iter()
+                .filter_map(|name| value(name).and_then(|value| number(value)))
+                .fold(1.0, f32::min),
+        }
+    };
+    let words = |content: &str| decode(&ANY_TAG.replace_all(content, "")).trim().to_owned();
+    let mut runs: Vec<Run> = TSPAN
+        .captures_iter(&line.content)
+        .map(|tspan| run(&attributes(&tspan[1]), words(&tspan[2])))
+        .collect();
+    runs.push(run(
+        &HashMap::new(),
+        words(&TSPAN.replace_all(&line.content, "")),
+    ));
+    runs.retain(|run| !run.words.is_empty());
+    runs
 }
 
 /// Relative luminance of a colour written as hex, `rgb()` or a common dark name.
@@ -485,10 +528,14 @@ mod tests {
         assert!(rendering_problem(&low).unwrap().contains("past the bottom"));
         let wide = drawing(r##"font-size="56" fill="#ffd400""##, "GAMES NIGHT")
             .replace(r#"textLength="330""#, r#"textLength="480""#);
+        assert!(rendering_problem(&wide).unwrap().contains("past the left"));
+        // The card centres by textLength, so lettering off to one side stays cut off.
+        let aside = drawing(r##"font-size="56" fill="#ffd400""##, "GAMES NIGHT")
+            .replace(r#"x="200""#, r#"x="260""#);
         assert!(
-            rendering_problem(&wide)
+            rendering_problem(&aside)
                 .unwrap()
-                .contains("wider than the view box")
+                .contains("past the right")
         );
     }
 
@@ -517,6 +564,20 @@ mod tests {
             r##"<text x="198" y="64" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="56" fill="#ffd400" textLength="330" lengthAdjust="spacingAndGlyphs">GAMES NIGHT</text></svg>"##,
         );
         assert_eq!(rendering_problem(&shadowed), None);
+        // Words coloured in tspans show in the tspans' colours.
+        let coloured = drawing(
+            r#"font-size="56""#,
+            r##"<tspan fill="#ffffff">GAMES </tspan><tspan fill="#f7b25c">NIGHT</tspan>"##,
+        );
+        assert_eq!(rendering_problem(&coloured), None);
+        let half_dark = drawing(
+            r#"font-size="56""#,
+            r##"<tspan fill="#ffffff">GAMES </tspan><tspan fill="#101828">NIGHT</tspan>"##,
+        );
+        assert_eq!(
+            rendering_problem(&half_dark).as_deref(),
+            Some("\"NIGHT\" is dark with no light outline")
+        );
         let banded = dark.replace(
             r#"viewBox="0 0 400 90">"#,
             r##"viewBox="0 0 400 90"><rect x="0" y="0" width="400" height="90" fill="#ffd400"/>"##,
