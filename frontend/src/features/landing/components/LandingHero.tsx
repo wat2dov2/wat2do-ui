@@ -13,17 +13,11 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ArrowRight, Check, Instagram } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import type { Event } from "@/shared/types";
 
 const VIEWS: readonly LandingEventView[] = ["map", "grid", "calendar"];
 
 /** The headline's rotating phrases, which the mosaic respells square by square as they turn. */
 const TITLE_WORDS = ["event", "networking", "social", "position"] as const;
-
-interface LandingHeroProps {
-  events: Event[];
-  isLoading: boolean;
-}
 
 /**
  * The pitch on a band that runs edge to edge from the top of the page, under
@@ -33,7 +27,7 @@ interface LandingHeroProps {
  * respell square by square. The bottom corners say what it costs and where the
  * events come from; the school's real feed follows in all three views.
  */
-export function LandingHero({ events, isLoading }: LandingHeroProps) {
+export function LandingHero() {
   const { t } = useTranslation();
   const [view, setView] = useState<LandingEventView>("map");
   const logoRegion = useRef<HTMLDivElement>(null);
@@ -105,7 +99,7 @@ export function LandingHero({ events, isLoading }: LandingHeroProps) {
             ),
           }}
         >
-          <LandingEventViews view={view} events={events} isLoading={isLoading} />
+          <LandingEventViews view={view} />
         </LandingCard>
       </Tabs>
     </Stack>

@@ -122,6 +122,13 @@ export interface MosaicController {
 const FADE_MS = 360;
 /** Squares are swapped this often, a few at a time. */
 const TICK_MS = 90;
+/**
+ * The mosaic is decorative, so it redraws at most this often. A wide screen
+ * crossfades over a thousand squares at once, each up to four canvas draws, so
+ * redrawing on every frame of a 120 Hz screen kept the page's main thread busy
+ * for crossfades no one could tell apart.
+ */
+const FRAME_MS = 30;
 /** A phrase change respells its squares at scattered moments across this long. */
 const RESPELL_MS = 900;
 /** How strongly muted cells show through the surface behind them: faint, so dark letters stand out. */
@@ -710,6 +717,10 @@ export function startEventPixelMosaic(
 
   function tick(now: number) {
     frame = 0;
+    if (lastTick && now - lastTick < FRAME_MS) {
+      schedule();
+      return;
+    }
     if (content.title && now - phraseSince >= content.title.phraseMs) {
       if (phraseSince) nextPhrase(now);
       phraseSince = now;

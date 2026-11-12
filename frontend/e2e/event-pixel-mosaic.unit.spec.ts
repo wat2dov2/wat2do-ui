@@ -197,6 +197,24 @@ test("the mosaic keeps changing a few scattered squares at a time, each with a q
   expect(mosaic.frames).toHaveLength(1);
 });
 
+test("the mosaic redraws at most about thirty times a second, however fast the screen refreshes", () => {
+  const mosaic = loadMosaic();
+  clock.now = 0;
+  mosaic.start(true);
+  let redraws = 0;
+  // One second of a 120 Hz screen.
+  for (let step = 0; step < 120; step += 1) {
+    clock.now += 1000 / 120;
+    mosaic.draws.length = 0;
+    mosaic.frames.shift()!(clock.now);
+    if (mosaic.draws.length > 0) redraws += 1;
+  }
+  expect(redraws).toBeGreaterThan(0);
+  expect(redraws).toBeLessThanOrEqual(31);
+  // Between redraws a frame is still always waiting.
+  expect(mosaic.frames).toHaveLength(1);
+});
+
 test("a headline is spelled in a 5x7 pixel font, one cell per stroke, in capitals", () => {
   const title = loadTitle();
   // "NETWORKING EVENT": 15 letters five cells wide, a three-cell space, a cell between glyphs, a margin each side.

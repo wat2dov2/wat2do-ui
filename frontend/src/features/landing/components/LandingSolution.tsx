@@ -68,11 +68,10 @@ function FeatureCopy({ featureKey, schoolName, size }: { featureKey: string; sch
 export function LandingSolution({ schoolName, snapshot }: { schoolName: string; snapshot: LandingSnapshot | null }) {
   const { t } = useTranslation();
   const isLoading = !snapshot;
-  const events = snapshot?.events ?? [];
 
   // Strongest first. A number its feed could not load is left out, never shown as zero.
   const stats: { key: string; count: number | null | undefined; label: (count: number) => string; badge?: StatProps["badge"] }[] = [
-    { key: "upcoming", count: snapshot?.events?.length, label: (count) => t("landing.solution.stats.upcomingLabel", { count }), badge: { tone: "live", text: t("common.live") } },
+    { key: "upcoming", count: snapshot?.upcomingCount, label: (count) => t("landing.solution.stats.upcomingLabel", { count }), badge: { tone: "live", text: t("common.live") } },
     { key: "networking", count: snapshot?.networkingCount, label: (count) => t("landing.solution.stats.networkingLabel", { count }) },
     { key: "new", count: snapshot?.newThisWeekCount, label: (count) => t("landing.solution.stats.newLabel", { count }), badge: { tone: "new", text: t("events.new") } },
     { key: "freeFood", count: snapshot?.freeFoodCount, label: (count) => t("landing.solution.stats.freeFoodLabel", { count }), badge: { tone: "free", text: t("common.free") } },
@@ -101,7 +100,7 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
         <Stack gap={8}>
           <FeatureCopy featureKey="filters" schoolName={schoolName} size="main" />
           <LandingCard>
-            <FreeFoodPreview events={events} isLoading={isLoading} />
+            <FreeFoodPreview events={snapshot?.freeFoodEvents ?? []} isLoading={isLoading} />
           </LandingCard>
         </Stack>
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16">

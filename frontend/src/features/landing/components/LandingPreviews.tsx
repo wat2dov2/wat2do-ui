@@ -15,7 +15,7 @@ import { ClubCard } from "@/features/clubs/components/ClubCard";
 import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
 import { EventCard, EventCardSkeleton } from "@/features/events";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
-import { isFreeFoodEvent } from "@/features/landing/lib/landingEvents";
+import { FREE_FOOD_PREVIEW_COUNT } from "@/features/landing/lib/landingEvents";
 import { EMPTY_FILTER_STATE, freeFoodFilterPatch } from "@/features/search/api/filterService";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { useSearchStore } from "@/features/search/store/search.store";
@@ -34,9 +34,6 @@ function Inert({ className = "w-full", children }: { className?: string; childre
   );
 }
 
-/** How many free-food events the preview shows: a row on desktop, two rows of two on phones. */
-const FREE_FOOD_CARDS = 4;
-
 /**
  * The feed's search bar and its Free food filter, above a row of real
  * free-food events. The filter is the real one: a tap opens the feed with
@@ -46,7 +43,6 @@ const FREE_FOOD_CARDS = 4;
 export function FreeFoodPreview({ events, isLoading }: { events: readonly Event[]; isLoading: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const freeFood = events.filter((event) => isFreeFoodEvent(event) && event.source_image_url).slice(0, FREE_FOOD_CARDS);
   const openEvent = useCallback((event: Event) => router.push(eventPagePath(event.id)), [router]);
 
   return (
@@ -68,8 +64,8 @@ export function FreeFoodPreview({ events, isLoading }: { events: readonly Event[
       </Stack>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {isLoading
-          ? Array.from({ length: FREE_FOOD_CARDS }, (_, index) => <EventCardSkeleton key={index} />)
-          : freeFood.map((event) => <EventCard key={event.id} event={event} onEventClick={openEvent} />)}
+          ? Array.from({ length: FREE_FOOD_PREVIEW_COUNT }, (_, index) => <EventCardSkeleton key={index} />)
+          : events.map((event) => <EventCard key={event.id} event={event} onEventClick={openEvent} />)}
       </div>
     </Stack>
   );

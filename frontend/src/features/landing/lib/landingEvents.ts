@@ -1,5 +1,8 @@
 import type { Club, Event } from "@/shared/types";
 
+/** How many free-food events the filters preview shows: a row on desktop, two rows of two on phones. */
+export const FREE_FOOD_PREVIEW_COUNT = 4;
+
 /** An event with food that costs nothing, as the feed's Free food filter finds it. */
 export function isFreeFoodEvent(event: Event): boolean {
   return (event.food?.length ?? 0) > 0 && !event.price;

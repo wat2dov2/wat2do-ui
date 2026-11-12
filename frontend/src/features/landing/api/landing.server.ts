@@ -1,7 +1,7 @@
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
-import { isFreeFoodEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
+import { FREE_FOOD_PREVIEW_COUNT, isFreeFoodEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
 import type { Club, Event } from "@/shared/types";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import { isNetworkingEvent } from "@/shared/utils/event";
@@ -13,11 +13,15 @@ const PREVIEW_CLUBS = 2;
 /**
  * Everything the landing page shows about one school, from its published
  * feeds. A feed that cannot be read leaves its numbers null, never zero, so
- * the page says nothing rather than something untrue.
+ * the page says nothing rather than something untrue. The page's own HTML
+ * carries only these: the event views below the hero load the school's feed
+ * in the browser as they come near, as the events page does.
  */
 export interface LandingSnapshot {
-  /** Upcoming events at the school, in the feed's order. */
-  events: Event[] | null;
+  /** Upcoming events at the school. */
+  upcomingCount: number | null;
+  /** The free-food events the filters preview shows, in the feed's order. */
+  freeFoodEvents: Event[];
   /** Upcoming events first added in the last seven days. */
   newThisWeekCount: number | null;
   /** Upcoming networking opportunities: employer events and business clubs' events. */
@@ -56,7 +60,10 @@ export async function getLandingSnapshot(school: string): Promise<LandingSnapsho
   ]);
   const countEvents = (matches: (event: Event) => boolean) => (events ? events.filter(matches).length : null);
   return {
-    events,
+    upcomingCount: events?.length ?? null,
+    freeFoodEvents: (events ?? [])
+      .filter((event) => isFreeFoodEvent(event) && event.source_image_url)
+      .slice(0, FREE_FOOD_PREVIEW_COUNT),
     newThisWeekCount: countEvents((event) => Boolean(event.added_at) && now - Date.parse(event.added_at!) <= WEEK_MS),
     networkingCount: countEvents(isNetworkingEvent),
     freeFoodCount: countEvents(isFreeFoodEvent),
