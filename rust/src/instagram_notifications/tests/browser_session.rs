@@ -5237,6 +5237,62 @@ fn test_a_digest_for_a_dropped_account_logs_it_in_and_then_runs() {
     assert_eq!(pool.setting("paused"), Value::Null);
 }
 
+/// `source` over a page whose elements report layout boxes: none when `data-hidden`.
+fn evaluate_with_layout(html: &str, source: &str) -> Option<Value> {
+    evaluate_on_page(
+        html,
+        &format!(
+            "(Element.prototype.getClientRects = function() {{ \
+               return this.attrs[\"data-hidden\"] ? [] : [{{}}]; }}, {source})"
+        ),
+    )
+}
+
+#[test]
+fn test_clicks_skip_hidden_duplicates_of_a_control() {
+    setup();
+    // Since 11-12 Instagram's logged-out page renders each saved profile twice, one
+    // copy hidden; recovery clicked neither ("ambiguous") and Brave stayed logged out.
+    let profiles = "<main><div role='button' id='hidden' data-hidden='1'>wat2do.guelph</div>\
+         <div role='button' id='shown'>wat2do.guelph</div>\
+         <div role='button' id='other'>wat2do.mit</div></main>";
+    let Some(result) = evaluate_with_layout(profiles, &scripts::click_label("wat2do.guelph"))
+    else {
+        return;
+    };
+    assert_eq!(result["status"], json!("clicked"));
+    assert_eq!(result["clicks"], json!(["shown"]));
+    let Some(result) = evaluate_with_layout(
+        "<main><div role='dialog'><button id='hidden' data-hidden='1'>Save</button>\
+         <button id='save'>Save</button><button id='later'>Not now</button></div></main>",
+        scripts::SAVE_LOGIN,
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("clicked"));
+    assert_eq!(result["clicks"], json!(["save"]));
+    let Some(result) = evaluate_with_layout(
+        "<main><div role='dialog'><h2>Switch accounts</h2>\
+         <div role='button' id='hidden' data-hidden='1'>wat2do.ubc</div>\
+         <div role='button' id='ubc'>wat2do.ubc</div></div></main>",
+        &scripts::click_account("wat2do.ubc"),
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("clicked"));
+    assert_eq!(result["clicks"], json!(["ubc"]));
+    // Two on screen are still two controls.
+    let Some(result) = evaluate_with_layout(
+        "<main><div role='button' id='a'>wat2do.guelph</div>\
+         <div role='button' id='b'>wat2do.guelph</div></main>",
+        &scripts::click_label("wat2do.guelph"),
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("ambiguous"));
+    assert_eq!(result["clicks"], json!([]));
+}
+
 #[test]
 fn test_save_login_accepts_instagrams_save_button_under_either_label() {
     setup();
