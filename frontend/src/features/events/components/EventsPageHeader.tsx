@@ -19,7 +19,7 @@ import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import type { ApiLatestAddedItem } from "@/shared/generated";
 
-// Exam de-stress leaves the season group to sit beside the date filter, where students look during exams.
+// Exam de-stress leaves the season group to sit near the date filter, where students look during exams.
 const EXAM_DESTRESS_SEASON = "exam_destress";
 
 interface EventsPageHeaderProps {
