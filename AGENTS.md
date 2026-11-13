@@ -192,6 +192,7 @@ The crawl stops only once `crawl_miss_streak` seeds in a row add no new candidat
 Each crawl takes the school's seeds in a new random order, so a crawl the miss streak ends early still reaches clubs the last one never did, and crawl after crawl covers them all.
 Its place is kept in local state, so a restart picks up at the page it was reading; state an older crawler left is finished and replaced by a fresh crawl.
 New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
+The scorer is told the school's full name and city (a same-named school elsewhere, such as the University of York in England for York University, or another campus of the same university is never this school), and its verdict decides the account at once: only an approve verdict is approved, or a review of an unreadable profile the school's club directory lists; an account it is unsure of is rejected and, while it keeps posting, scored again every `recheck_days`.
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
 The emulator worker checks `follows_due` from the database, then calls `follow_due` with the emulator on the school's account.

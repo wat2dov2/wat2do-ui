@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from services.claude_code import ClaudeCodeError, ClaudeLimited
@@ -17,6 +19,11 @@ PROFILE = {
 def world(monkeypatch):
     saved = []
     monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        module.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(name="University of Toronto St. George", city="Toronto"),
+    )
     monkeypatch.setattr(
         module.candidates,
         "unscored",
@@ -55,7 +62,8 @@ def test_each_account_is_stored_with_its_score(world, monkeypatch):
     monkeypatch.setattr(module, "run_agent", run_agent)
 
     assert module.score_pending() == {"scored": 1}
-    assert "utsg" in asked[0]
+    # The scorer is told the school's full name and city, never just its slug.
+    assert "University of Toronto St. George in Toronto" in asked[0]
     assert world[0] == (
         "1",
         PROFILE,
@@ -109,10 +117,12 @@ def _posted(days_ago):
     ("verdict", "profile", "handle", "expected"),
     [
         ("approve", _posted(400), "anything", "approved"),
-        ("review", _posted(30), "anything", "approved"),
+        # An account the scorer is unsure of is rejected, however recently it posted, and
+        # scored again later; naming the school is no proof (uoyfencing names York).
+        ("review", _posted(3), "anything", "rejected"),
         ("review", _posted(200), "anything", "rejected"),
         ("reject", _posted(5), "anything", "rejected"),
-        ("review", {"read": "failed"}, "laurieritalianclub", "approved"),
+        ("review", {"read": "failed"}, "laurieritalianclub", "rejected"),
         ("review", {"read": "failed"}, "someband", "rejected"),
         ("reject", {"read": "failed"}, "laurierconfessions", "rejected"),
         ("review", {"read": "no_posts"}, "laurierchess", "rejected"),
@@ -120,17 +130,17 @@ def _posted(days_ago):
 )
 def test_each_score_decides_the_account(verdict, profile, handle, expected):
     score = {"verdict": verdict, "score": 50, "reason": "r"}
-    assert module.decision("wlu", {"handle": handle}, profile, score) == expected
+    assert module.decision({"handle": handle}, profile, score) == expected
 
 
 def test_an_unreadable_account_the_school_directory_lists_is_approved_on_review():
     listed = {"handle": "someband", "source": "directory", "found_via": ["Laurier Clubs"]}
     crawled = {"handle": "someband", "source": "crawl", "found_via": ["laurierchess"]}
     review = {"verdict": "review", "score": 45, "reason": "r"}
-    assert module.decision("wlu", listed, {"read": "failed"}, review) == "approved"
-    assert module.decision("wlu", crawled, {"read": "failed"}, review) == "rejected"
+    assert module.decision(listed, {"read": "failed"}, review) == "approved"
+    assert module.decision(crawled, {"read": "failed"}, review) == "rejected"
     reject = {**review, "verdict": "reject"}
-    assert module.decision("wlu", listed, {"read": "failed"}, reject) == "rejected"
+    assert module.decision(listed, {"read": "failed"}, reject) == "rejected"
 
 
 def test_the_scorer_sees_which_directory_lists_an_account():

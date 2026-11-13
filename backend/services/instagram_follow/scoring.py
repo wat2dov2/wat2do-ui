@@ -5,12 +5,16 @@ out because the Mac's ingestion reads share the IP, and stored so the admin sees
 same posts the scorer judged. Claude scores a school's accounts a batch at a time.
 A sign of throttling stops the run; the rest are scored next time.
 
-Each score decides the account right away: approve verdicts, and review verdicts that
-posted within ``review_approve_days``, are approved; a profile that could not be read
-is approved only when its handle or name names the school or the school's club
-directory lists it (the follow itself then shows whether it exists); everything else
-is rejected. Rejected accounts that posted within the last year are read and scored
-again every ``recheck_days``.
+The scorer is told the school's full name and city, so a same-named school elsewhere
+(the University of York in England for York University in Toronto) or another campus
+of the same university is never taken for it.
+
+Each score decides the account right away: only approve verdicts are approved, and a
+review of a profile that could not be read when the school's club directory lists it
+(the follow itself then shows whether it exists); everything else, an account the
+scorer is unsure of included, is rejected. Rejected accounts that posted within the
+last year are read and scored again every ``recheck_days``, so one that goes on to
+post clearly as this school's club is approved then.
 """
 
 from __future__ import annotations
@@ -28,10 +32,10 @@ from typing import Any
 
 from core.constants import FOLLOW_SOURCE_DIRECTORY
 from core.controlbox import controlbox
+from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_profile
 from services.instagram_follow import candidates
-from services.instagram_follow.crawl import names_school
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_follow
@@ -102,29 +106,26 @@ def _score(school: str, batch: list[dict[str, Any]]) -> int:
         score = scores.get(row["handle"])
         candidates.save_profile(row["id"], row["profile"], score)
         if score is not None:
-            candidates.auto_decide(row["id"], decision(school, row, row["profile"], score))
+            candidates.auto_decide(row["id"], decision(row, row["profile"], score))
     return sum(row["handle"] in scores for row in batch)
 
 
-def decision(
-    school: str, row: dict[str, Any], profile: dict[str, Any], score: dict[str, Any]
-) -> str:
+def decision(row: dict[str, Any], profile: dict[str, Any], score: dict[str, Any]) -> str:
     """Approved or rejected, from the score and what the read saw."""
     if score["verdict"] == "approve":
         return candidates.FOLLOW_CANDIDATE_APPROVED
-    if profile["read"] == "failed":
-        name = profile.get("name") or row.get("name")
-        if score["verdict"] == "review" and (
-            names_school(school, row["handle"], name) or _directory(row)
-        ):
-            return candidates.FOLLOW_CANDIDATE_APPROVED
-        return candidates.FOLLOW_CANDIDATE_REJECTED
-    posts = profile.get("posts") or []
-    if score["verdict"] == "review" and posts:
-        quiet = datetime.now(timezone.utc) - datetime.fromisoformat(posts[0]["posted_at"])
-        if quiet.days <= CONTROL.review_approve_days:
-            return candidates.FOLLOW_CANDIDATE_APPROVED
+    if score["verdict"] == "review" and profile["read"] == "failed" and _directory(row):
+        return candidates.FOLLOW_CANDIDATE_APPROVED
     return candidates.FOLLOW_CANDIDATE_REJECTED
+
+
+def _school(slug: str) -> str:
+    """The school as the scorer is told it: its full name and city, such as
+    "York University in Toronto"."""
+    record = school_service.get_school(slug)
+    if record is None:
+        return slug
+    return f"{record.name} in {record.city}" if record.city else record.name
 
 
 def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -134,7 +135,7 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             json.dumps([_packet(row) for row in batch], ensure_ascii=False)
         )
         answer = run_agent(
-            PROMPT.replace("{{school}}", school).replace(
+            PROMPT.replace("{{school}}", _school(school)).replace(
                 "{{lists_university_events}}",
                 "yes" if school in controlbox.ingestion.university_event_schools else "no",
             ),

@@ -1040,8 +1040,6 @@ class InstagramFollowControl(_ControlModel):
     agent_timeout_seconds: int = Field(gt=0, le=1800)
     score_batch_size: int = Field(ge=1, le=50)
     auto_approve_score: int = Field(ge=0, le=100)
-    # A review verdict that posted this recently is approved without an admin.
-    review_approve_days: int = Field(ge=7, le=365)
     # Automated rejections that posted within a year are scored again this often.
     recheck_days: int = Field(ge=7, le=180)
     recheck_batch_size: int = Field(ge=0, le=1000)
