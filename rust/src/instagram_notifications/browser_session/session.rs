@@ -553,15 +553,27 @@ impl BrowserInstagramSession {
         let mut state = String::new();
         let bridge = self.bridge.clone();
         let window = control().login_code_wait_seconds + control().interaction_timeout_seconds;
+        // A busy Mac can stall one Apple Event while Instagram finishes the login on
+        // its own; a stalled read or Save click is tried again on the next poll instead
+        // of failing a login that went through (wat2do.mun and wat2do.ubc, 11-12).
+        let stalled = |error: &BrowserError| error.is(SessionKind::AutomationTransient);
         self.poll_until_within(window, |session| {
-            state = session.login_state()?;
+            state = match session.login_state() {
+                Ok(state) => state,
+                Err(error) if stalled(&error) => return Ok(false),
+                Err(error) => return Err(error),
+            };
             if state == "save_info" {
                 // One click; the page then navigates away on its own. The prompt's
                 // button can render a moment after its page, so a click that found no
                 // button is tried again on the next poll instead of waiting out the
                 // deadline on a login that already succeeded.
                 if !save_clicked {
-                    save_clicked = session.run(scripts::SAVE_LOGIN)?.trim() == "clicked";
+                    save_clicked = match session.run(scripts::SAVE_LOGIN) {
+                        Ok(result) => result.trim() == "clicked",
+                        Err(error) if stalled(&error) => false,
+                        Err(error) => return Err(error),
+                    };
                 }
                 return Ok(false);
             }
@@ -586,7 +598,11 @@ impl BrowserInstagramSession {
             if state == "wrong_password" || state == "challenge" {
                 return Ok(true);
             }
-            Ok(session.current_account_username()?.as_deref() == Some(username))
+            match session.current_account_username() {
+                Ok(current) => Ok(current.as_deref() == Some(username)),
+                Err(error) if stalled(&error) => Ok(false),
+                Err(error) => Err(error),
+            }
         })?;
         if state == "wrong_password" {
             return Err(BrowserError::of(

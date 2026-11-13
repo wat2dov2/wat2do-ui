@@ -4582,6 +4582,7 @@ struct LoginPage {
     account: String,
     submitted: Vec<String>,
     clicked: Vec<String>,
+    stalls: usize,
 }
 
 fn login_session(
@@ -4601,6 +4602,8 @@ enum LoginFault {
     PageStops,
     /// The one-tap prompt's Save button has not rendered on the first click.
     SaveButtonLate,
+    /// Brave stalls the first two Apple Events after the password was submitted.
+    BraveStallsTwice,
 }
 
 fn login_session_with(
@@ -4614,6 +4617,7 @@ fn login_session_with(
         account: "wat2do.guelph".to_owned(),
         submitted: Vec::new(),
         clicked: Vec::new(),
+        stalls: 0,
     });
     let seen = page.clone();
     let host = FakeHost::new(move |call| {
@@ -4630,6 +4634,10 @@ fn login_session_with(
             return ok("submitted\n");
         }
         if fault == LoginFault::PageStops && !page.submitted.is_empty() {
+            return timed_out();
+        }
+        if fault == LoginFault::BraveStallsTwice && !page.submitted.is_empty() && page.stalls < 2 {
+            page.stalls += 1;
             return timed_out();
         }
         let source = call.javascript().expect("a tab source");
@@ -4789,6 +4797,26 @@ fn test_log_in_clicks_save_again_when_its_button_was_not_there_yet() {
             .filter(|source| **source == save)
             .count(),
         2
+    );
+}
+
+#[test]
+fn test_log_in_rides_out_brave_stalling_after_submit() {
+    setup();
+    let (page, mut session) = login_session_with(
+        &["pending", "save_info", "done"],
+        Vec::new(),
+        LoginFault::BraveStallsTwice,
+        Some(30.0),
+    );
+    session.log_in("wat2do.ucalgary", "s3cret").unwrap();
+    let page = page.lock().unwrap();
+    assert_eq!(page.stalls, 2);
+    assert_eq!(page.submitted.len(), 1);
+    assert!(
+        page.clicked
+            .iter()
+            .any(|source| source == scripts::SAVE_LOGIN)
     );
 }
 
