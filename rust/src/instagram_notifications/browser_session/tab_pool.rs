@@ -390,6 +390,10 @@ impl TabPool for BrowserTabPool {
             .queue
             .get_setting("retrieval_pool_account")?
             .unwrap_or(Value::Null);
+        // Without a previous account, the login_from_school account: Instagram lists the
+        // last profile it saw first, often an account whose own login just failed and
+        // that asks for a password it may not get again today (wat2do.ualberta, 11-12).
+        let from_account = school_account_username(&control().login_from_school).ok();
         let mut clicked: Vec<String> = Vec::new();
         let mut outcome: Option<String> = Some(String::new());
         session.poll_until(|session| {
@@ -442,9 +446,22 @@ impl TabPool for BrowserTabPool {
                 }
             }
             if let Some(first) = profiles.first() {
+                let listed = |account: &&str| profiles.iter().any(|profile| profile == account);
+                let mut usable = Vec::new();
+                for profile in &profiles {
+                    let held = self
+                        .queue
+                        .account_login_paused(&account_login::canonical_account(profile))?
+                        .is_some();
+                    if !held {
+                        usable.push(profile);
+                    }
+                }
                 let choice = preferred
                     .as_str()
-                    .filter(|preferred| profiles.iter().any(|profile| profile == preferred))
+                    .filter(listed)
+                    .or_else(|| from_account.as_deref().filter(listed))
+                    .or_else(|| usable.first().map(|profile| profile.as_str()))
                     .unwrap_or(first)
                     .to_owned();
                 if session.run(&scripts::click_label(&choice))? == "clicked" {

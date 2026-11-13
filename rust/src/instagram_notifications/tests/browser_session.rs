@@ -4380,6 +4380,41 @@ fn test_login_recovery_falls_back_to_any_saved_wat2do_profile() {
 }
 
 #[test]
+fn test_login_recovery_prefers_the_login_school_then_an_account_not_held() {
+    setup();
+    // Instagram lists the last profile it saw first: here one whose login just failed.
+    let (pool, clicks) = login_pool(
+        vec![
+            json!({"state": "profiles", "profiles": ["wat2do.ualberta", "wat2do.guelph"]}),
+            json!({"state": "logged_in"}),
+        ],
+        Value::Null,
+        &[],
+    );
+    pool.pool.recover_login().unwrap();
+    assert_eq!(
+        clicks.lock().unwrap()[1..],
+        [scripts::click_label("wat2do.guelph")]
+    );
+    let (pool, clicks) = login_pool(
+        vec![
+            json!({"state": "profiles", "profiles": ["wat2do.ualberta", "wat2do.ubc"]}),
+            json!({"state": "logged_in"}),
+        ],
+        Value::Null,
+        &[],
+    );
+    pool.queue
+        .pause_account_login("wat2do.ualberta", "Instagram needs a person: fixture")
+        .unwrap();
+    pool.pool.recover_login().unwrap();
+    assert_eq!(
+        clicks.lock().unwrap()[1..],
+        [scripts::click_label("wat2do.ubc")]
+    );
+}
+
+#[test]
 fn test_login_recovery_stops_for_a_person_at_a_challenge() {
     setup();
     let (pool, _) = login_pool(
