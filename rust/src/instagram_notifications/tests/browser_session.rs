@@ -5316,6 +5316,17 @@ fn test_clicks_skip_hidden_duplicates_of_a_control() {
     };
     assert_eq!(result["status"], json!("clicked"));
     assert_eq!(result["clicks"], json!(["ubc"]));
+    // Since 11-12 the one-tap prompt also renders a disabled "Save" on screen.
+    let Some(result) = evaluate_with_layout(
+        "<main><div role='dialog'><div role='button' id='off' aria-disabled='true'>Save</div>\
+         <div role='button' id='save'>Save</div><div role='button' id='later'>Not now</div>\
+         </div></main>",
+        scripts::SAVE_LOGIN,
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("clicked"));
+    assert_eq!(result["clicks"], json!(["save"]));
     // Two on screen are still two controls.
     let Some(result) = evaluate_with_layout(
         "<main><div role='button' id='a'>wat2do.guelph</div>\
