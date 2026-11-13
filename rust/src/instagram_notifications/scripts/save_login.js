@@ -10,8 +10,11 @@
     element => !labelled.some(other => other !== element && element.contains(other)));
   // A hidden duplicate of the button is not a second control: with several, only those
   // on screen count.
+  // On screen and enabled: Instagram also renders a disabled copy of some controls
+  // (aria-disabled="true"), as on its one-tap "Save" prompt since 11-12.
   const shown = element => !!(element.offsetWidth || element.offsetHeight ||
-    element.getClientRects?.().length);
+    element.getClientRects?.().length) && element.getAttribute?.("aria-disabled") !== "true" &&
+    !element.disabled;
   if (matches.length > 1 && matches.some(shown)) matches = matches.filter(shown);
   if (matches.length !== 1) return matches.length ? "ambiguous" : "missing";
   matches[0].click();

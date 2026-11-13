@@ -17,8 +17,11 @@
   const matches = exact.length ? exact : buttons.filter(element =>
     expectedSchool && school(label(element)) === expectedSchool);
   if (!matches.length) return "missing";
+  // On screen and enabled: Instagram also renders a disabled copy of some controls
+  // (aria-disabled="true"), as on its one-tap "Save" prompt since 11-12.
   const shown = element => !!(element.offsetWidth || element.offsetHeight ||
-    element.getClientRects?.().length);
+    element.getClientRects?.().length) && element.getAttribute?.("aria-disabled") !== "true" &&
+    !element.disabled;
   const onScreen = matches.length > 1 && matches.some(shown) ? matches.filter(shown) : matches;
   if (onScreen.length !== 1) return "ambiguous";
   const button = onScreen[0];
