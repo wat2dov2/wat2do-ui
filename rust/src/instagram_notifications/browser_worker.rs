@@ -439,11 +439,16 @@ impl Worker {
                 tracing::warn!("Logged {username} in to Brave after it went missing");
                 Ok(true)
             }
-            // Its password reached Instagram: a person looks before anything else runs.
+            // Its password reached Instagram: a person looks before this account logs in
+            // again. Only this account waits; every other school's work runs on (a
+            // two-step code sent to a phone once paused every digest for days).
             Err(error) if error.is(SessionKind::LoginSubmitted) => {
-                tracing::error!("Logging {username} in to Brave needs a person: {error}");
+                tracing::error!(
+                    "Logging {username} in to Brave needs a person; its jobs fail until \
+                     `wat2do-browser resume-account --account {username}`: {error}"
+                );
                 self.queue
-                    .set_setting("paused", Value::from(error.to_string()))?;
+                    .pause_account_login(username, &error.to_string())?;
                 Ok(false)
             }
             Err(error) if error.is_session() || error.is_timeout() => {

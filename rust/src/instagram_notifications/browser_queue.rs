@@ -975,6 +975,25 @@ impl BrowserJobQueue {
         Ok(())
     }
 
+    /// Why `username`'s Brave login waits for a person, if it does. Set when its
+    /// password was submitted and the login did not finish; its jobs then fail as
+    /// unavailable and it is not logged in again until a person resumes it.
+    pub fn account_login_paused(&self, username: &str) -> BrowserResult<Option<String>> {
+        Ok(self
+            .get_setting(&account_login_paused_key(username))?
+            .and_then(|reason| reason.as_str().map(str::to_owned)))
+    }
+
+    /// Hold `username`'s Brave logins for a person, leaving every other account running.
+    pub fn pause_account_login(&self, username: &str, reason: &str) -> BrowserResult<()> {
+        self.set_setting(&account_login_paused_key(username), json!(reason))
+    }
+
+    /// Let `username` log in to Brave again after a person has checked it.
+    pub fn resume_account_login(&self, username: &str) -> BrowserResult<()> {
+        self.set_setting(&account_login_paused_key(username), Value::Null)
+    }
+
     pub fn account_excluded(&self, username: &str) -> BrowserResult<bool> {
         Ok(match self.setting_or("excluded_accounts", json!([]))? {
             Value::Array(accounts) => accounts
@@ -1725,6 +1744,24 @@ impl BrowserJobQueue {
             &db,
             "SELECT id,kind,school,state,error,finished_at FROM jobs WHERE state IN ('failed','unsupported') ORDER BY finished_at DESC LIMIT 20",
         )?;
+        let mut accounts_paused = Map::new();
+        {
+            let mut statement = db
+                .prepare("SELECT key,value FROM settings WHERE key LIKE 'account_login_paused:%' ORDER BY key")
+                .map_err(storage)?;
+            let rows = statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(storage)?;
+            for row in rows {
+                let (key, raw) = row.map_err(storage)?;
+                if let Ok(Value::String(reason)) = serde_json::from_str::<Value>(&raw) {
+                    let account = key.trim_start_matches("account_login_paused:").to_owned();
+                    accounts_paused.insert(account, Value::String(reason));
+                }
+            }
+        }
         drop(db);
         let until = self.setting_or("browser_rate_limit_until", json!(0))?;
         let remaining = pyjson::number(&until).unwrap_or(0.0) - self.host.time();
@@ -1739,6 +1776,7 @@ impl BrowserJobQueue {
             "recent_failures": recent,
             "worker": self.get_setting("worker")?,
             "paused": self.setting_or("paused", json!(false))?,
+            "accounts_paused": accounts_paused,
             "rate_limit": {
                 "retry_at": if pyjson::truthy(&until) { until.clone() } else { Value::Null },
                 "remaining_seconds": if remaining > 0.0 { json!(remaining) } else { json!(0) },
@@ -2124,6 +2162,9 @@ fn account_logins_if_allowed(
     username: &str,
     now: f64,
 ) -> BrowserResult<Option<Vec<Value>>> {
+    if stored_setting(db, &account_login_paused_key(username))?.is_string() {
+        return Ok(None);
+    }
     let attempts = recent_timestamps(&stored_setting(db, "account_login_attempts")?, now);
     let last = pyjson::number(&stored_setting(
         db,
@@ -2174,6 +2215,10 @@ fn stored_setting(db: &Connection, key: &str) -> BrowserResult<Value> {
     Ok(raw
         .and_then(|raw| serde_json::from_str(&raw).ok())
         .unwrap_or(Value::Null))
+}
+
+fn account_login_paused_key(username: &str) -> String {
+    format!("account_login_paused:{username}")
 }
 
 fn write_setting(db: &Connection, key: &str, value: &Value) -> BrowserResult<()> {
