@@ -394,100 +394,128 @@ impl TabPool for BrowserTabPool {
         // last profile it saw first, often an account whose own login just failed and
         // that asks for a password it may not get again today (wat2do.ualberta, 11-12).
         let from_account = school_account_username(&control().login_from_school).ok();
-        let mut clicked: Vec<String> = Vec::new();
-        let mut outcome: Option<String> = Some(String::new());
-        session.poll_until(|session| {
-            let Ok(page) = serde_json::from_str::<Value>(&session.read(scripts::LOGIN_PAGE)?)
-            else {
-                return Ok(false);
-            };
-            let Value::Object(page) = page else {
-                return Err(BrowserError::other(
-                    "AttributeError",
-                    "Instagram login page state is not an object",
-                ));
-            };
-            outcome = match page.get("state") {
-                None => Some(String::new()),
-                Some(Value::String(state)) => Some(state.clone()),
-                Some(_) => None,
-            };
-            match outcome.as_deref() {
-                Some("logged_in" | "password" | "challenge") => return Ok(true),
-                // Keeps one-tap login available; logged in either way.
-                Some("save_info") => {
-                    session.run(scripts::SAVE_LOGIN)?;
-                    return Ok(true);
-                }
-                Some("profiles") if clicked.is_empty() => {}
-                _ => return Ok(false),
-            }
-            let listed = match page.get("profiles") {
-                None => Vec::new(),
-                Some(Value::Array(profiles)) => profiles.clone(),
-                Some(Value::String(_)) => Vec::new(),
-                Some(_) => {
+        // Saved profiles that asked for a password that cannot go out today: the next
+        // saved profile is tried instead of pausing every school (wat2do.guelph, 11-13).
+        let mut passed_over: Vec<String> = Vec::new();
+        let mut clicked: Vec<String>;
+        let mut outcome: Option<String>;
+        loop {
+            clicked = Vec::new();
+            outcome = Some(String::new());
+            let mut others_left = false;
+            session.poll_until(|session| {
+                let Ok(page) = serde_json::from_str::<Value>(&session.read(scripts::LOGIN_PAGE)?)
+                else {
+                    return Ok(false);
+                };
+                let Value::Object(page) = page else {
                     return Err(BrowserError::other(
-                        "TypeError",
-                        "Instagram login profiles are not a list",
-                    ));
-                }
-            };
-            let mut profiles = Vec::new();
-            for profile in listed {
-                let Value::String(profile) = profile else {
-                    return Err(BrowserError::other(
-                        "TypeError",
-                        "Instagram login profile is not a name",
+                        "AttributeError",
+                        "Instagram login page state is not an object",
                     ));
                 };
-                if WAT2DO_ACCOUNT_PATTERN.is_match(&profile) {
-                    profiles.push(profile);
+                outcome = match page.get("state") {
+                    None => Some(String::new()),
+                    Some(Value::String(state)) => Some(state.clone()),
+                    Some(_) => None,
+                };
+                match outcome.as_deref() {
+                    Some("logged_in" | "password" | "challenge") => return Ok(true),
+                    // Keeps one-tap login available; logged in either way.
+                    Some("save_info") => {
+                        session.run(scripts::SAVE_LOGIN)?;
+                        return Ok(true);
+                    }
+                    Some("profiles") if clicked.is_empty() => {}
+                    _ => return Ok(false),
                 }
-            }
-            if let Some(first) = profiles.first() {
-                let listed = |account: &&str| profiles.iter().any(|profile| profile == account);
-                let mut usable = Vec::new();
-                for profile in &profiles {
-                    let held = self
-                        .queue
-                        .account_login_paused(&account_login::canonical_account(profile))?
-                        .is_some();
-                    if !held {
-                        usable.push(profile);
+                let listed = match page.get("profiles") {
+                    None => Vec::new(),
+                    Some(Value::Array(profiles)) => profiles.clone(),
+                    Some(Value::String(_)) => Vec::new(),
+                    Some(_) => {
+                        return Err(BrowserError::other(
+                            "TypeError",
+                            "Instagram login profiles are not a list",
+                        ));
+                    }
+                };
+                let mut profiles = Vec::new();
+                for profile in listed {
+                    let Value::String(profile) = profile else {
+                        return Err(BrowserError::other(
+                            "TypeError",
+                            "Instagram login profile is not a name",
+                        ));
+                    };
+                    if WAT2DO_ACCOUNT_PATTERN.is_match(&profile) {
+                        profiles.push(profile);
                     }
                 }
-                let choice = preferred
-                    .as_str()
-                    .filter(listed)
-                    .or_else(|| from_account.as_deref().filter(listed))
-                    .or_else(|| usable.first().map(|profile| profile.as_str()))
-                    .unwrap_or(first)
-                    .to_owned();
-                if session.run(&scripts::click_label(&choice))? == "clicked" {
-                    clicked.push(choice);
+                profiles.retain(|profile| !passed_over.contains(profile));
+                if let Some(first) = profiles.first() {
+                    let listed = |account: &&str| profiles.iter().any(|profile| profile == account);
+                    let mut usable = Vec::new();
+                    for profile in &profiles {
+                        let held = self
+                            .queue
+                            .account_login_paused(&account_login::canonical_account(profile))?
+                            .is_some();
+                        if !held {
+                            usable.push(profile);
+                        }
+                    }
+                    let choice = preferred
+                        .as_str()
+                        .filter(listed)
+                        .or_else(|| from_account.as_deref().filter(listed))
+                        .or_else(|| usable.first().map(|profile| profile.as_str()))
+                        .unwrap_or(first)
+                        .to_owned();
+                    others_left = profiles.iter().any(|profile| *profile != choice);
+                    if session.run(&scripts::click_label(&choice))? == "clicked" {
+                        clicked.push(choice);
+                    }
                 }
+                Ok(false)
+            })?;
+            if outcome.as_deref() == Some("password") {
+                // The saved profile clicked, or the preferred account on a bare login form.
+                let shown = clicked
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| pyjson::str(&preferred));
+                let username = account_login::canonical_account(&shown);
+                // The Keychain is read once: a person sees each password request.
+                let password = account_login::account_password(&self.bridge, &username);
+                let usable = password.is_some()
+                    && self
+                        .queue
+                        .account_login_allowed(&username, self.bridge.time())?;
+                if !usable && !clicked.is_empty() && others_left && passed_over.len() < 3 {
+                    passed_over.push(shown);
+                    session.run(&scripts::assign_home())?;
+                    // The next profile gets a full recovery's time of its own.
+                    session.reset_job_deadline(control().login_recovery_timeout_seconds);
+                    continue;
+                }
+                let password = password.ok_or_else(|| {
+                    BrowserError::session(format!(
+                        "Instagram needs a person: no stored password for {username}"
+                    ))
+                })?;
+                // A password goes to Instagram at most once a day per account, and within
+                // the day's total of account logins.
+                if !self
+                    .queue
+                    .reserve_account_login(&username, self.bridge.time())?
+                {
+                    return Err(logins_used_up(&username));
+                }
+                session.log_in(&username, &password)?;
+                outcome = Some("logged_in".to_owned());
             }
-            Ok(false)
-        })?;
-        if outcome.as_deref() == Some("password") {
-            // The saved profile clicked, or the preferred account on a bare login form.
-            let shown = clicked
-                .first()
-                .cloned()
-                .unwrap_or_else(|| pyjson::str(&preferred));
-            let username = account_login::canonical_account(&shown);
-            let password = self.stored_password(&username)?;
-            // A password goes to Instagram at most once a day per account, and within
-            // the day's total of account logins.
-            if !self
-                .queue
-                .reserve_account_login(&username, self.bridge.time())?
-            {
-                return Err(logins_used_up(&username));
-            }
-            session.log_in(&username, &password)?;
-            outcome = Some("logged_in".to_owned());
+            break;
         }
         if outcome.as_deref() == Some("challenge") {
             return Err(BrowserError::session(
