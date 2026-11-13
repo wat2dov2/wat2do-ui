@@ -164,7 +164,6 @@ pub struct Ingestion {
     pub profile_renderer: String,
     pub profile_render_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
-    pub title_svg_days: u32,
     pub title_svg_lanes: usize,
     pub title_svg_attempts: usize,
     pub title_svg_retry_hours: u64,

@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use super::agent::ingest;
 use super::club_directories::queue;
-use super::title_svgs::{Checked, events_to_draw};
+use super::title_svgs::{Checked, featured_to_draw};
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
 
@@ -263,7 +263,8 @@ async fn a_directory_club_is_queued_once_and_linked_to_its_club() {
 }
 
 #[tokio::test]
-async fn events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders_cleanly() {
+async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders_cleanly()
+{
     let Some(db) = database() else { return };
     let (school, slug) = school(&db).await;
     let event = |starts_in: TimeDelta, title_svg: Option<&'static str>| {
@@ -305,7 +306,7 @@ async fn events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders
     let drawn = event(day, Some(spelled)).await;
     let over = event(-day, None).await;
     let unposted = event(day, None).await;
-    // Past the window: drawn only when featured.
+    // Featured whatever its date; an event that is not featured is never drawn.
     let far = event(day * 40, None).await;
     let far_featured = event(day * 40, None).await;
     // A club that asked to stay out of carousels is not featured, even for a slide posted before.
@@ -381,16 +382,15 @@ async fn events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders
         far_featured,
     ]
     .map(i64::from);
-    let due: Vec<(i64, bool)> = events_to_draw(&db, &mut Checked::default())
+    let due: Vec<(i64, bool)> = featured_to_draw(&db, &mut Checked::default())
         .await
         .unwrap()
         .into_iter()
         .filter(|(event, _)| ours.contains(&event.id))
         .map(|(event, drawing)| (event.id, drawing.is_some()))
         .collect();
-    // Featured first, then the rest starting within the window, soonest first in each,
-    // each with whether it has a drawing a new one replaces. The opted-out club's
-    // event is drawn as any other, but not as a featured one.
+    // Featured events only, soonest first, each with whether it has a drawing a new
+    // one replaces. The opted-out club's event is not featured, so it is not drawn.
     let i = i64::from;
     assert_eq!(
         due,
@@ -399,8 +399,6 @@ async fn events_to_come_are_drawn_until_a_drawing_spells_their_title_and_renders
             (i(undrawn), false),
             (i(unshapely), true),
             (i(far_featured), false),
-            (i(unposted), false),
-            (i(opted_out), false),
         ]
     );
 }

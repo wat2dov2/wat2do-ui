@@ -3,12 +3,11 @@
 //! The ingestion agent draws an event's title SVG when it reads the event's
 //! post. The API server's worker ([`run`]) draws it the same way, from the
 //! event's stored poster and the same rules
-//! (`backend/services/ingestion/title_svg_rules.md`), for every event to come
-//! whose drawing is missing, does not spell its title, or would render badly
-//! on a card (`title_svg_rendering`): every featured event first (one an admin
-//! features or a carousel posts shows its poster's lettering on its featured
-//! card soon after), then each event starting within `title_svg_days`,
-//! soonest first. It writes only `title_svg`.
+//! (`backend/services/ingestion/title_svg_rules.md`), for every featured event
+//! to come (one a carousel posts shows its poster's lettering on its featured
+//! card soon after) whose drawing is missing, does not spell its title, or
+//! would render badly on a card (`title_svg_rendering`), soonest first. Events
+//! that are not featured are never drawn again. It writes only `title_svg`.
 
 use std::collections::HashMap;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -128,7 +127,7 @@ enum Drawn {
     Rejected,
 }
 
-/// Keep every event to come drawn ([`events_to_draw`]), `title_svg_lanes` at
+/// Keep every featured event to come drawn ([`featured_to_draw`]), `title_svg_lanes` at
 /// a time; an event none of whose drawings was kept waits
 /// `title_svg_retry_hours` before it is drawn again. Events are looked for
 /// every `title_svg_poll_seconds`, and Claude's usage limit pauses the
@@ -163,7 +162,7 @@ async fn draw_due(
     stopping: &watch::Receiver<bool>,
 ) -> Result<Option<Limited>> {
     let retry = Duration::from_secs(INGESTION.title_svg_retry_hours * 3600);
-    let due: Vec<(Waiting, Option<String>)> = events_to_draw(db, checked)
+    let due: Vec<(Waiting, Option<String>)> = featured_to_draw(db, checked)
         .await?
         .into_iter()
         .filter(|(event, _)| tried.get(&event.id).is_none_or(|at| at.elapsed() >= retry))
@@ -224,11 +223,10 @@ fn drawing_key(drawing: &str, title: &str) -> u64 {
     hasher.finish()
 }
 
-/// The events to come with a poster but no drawing that spells their title and
-/// renders cleanly: every featured one (an event Wat2Do posted in a carousel,
-/// as the events feed marks it), then those starting within `title_svg_days`,
-/// soonest first, each with its drawing's md5.
-pub(super) async fn events_to_draw(
+/// The featured events to come (an event Wat2Do posted in a carousel, as the
+/// events feed marks it) with a poster but no drawing that spells their title
+/// and renders cleanly, soonest first, each with its drawing's md5.
+pub(super) async fn featured_to_draw(
     db: &PgPool,
     checked: &mut Checked,
 ) -> Result<Vec<(Waiting, Option<String>)>> {
@@ -236,14 +234,12 @@ pub(super) async fn events_to_draw(
         "SELECT e.id::bigint, e.title, e.source_image_url, md5(e.title_svg) FROM public.events e ",
         "JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d ",
         "WHERE d.event_id = e.id AND coalesce(d.dtend_utc, d.dtstart_utc) >= now()) next ON true ",
-        "CROSS JOIN LATERAL (SELECT EXISTS (SELECT 1 ",
-        featuring_slides!(),
-        " AND i.event_id = e.id) AS yes) featured ",
         "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%' ",
-        "AND (featured.yes OR next.starts < now() + make_interval(days => $1)) ",
-        "ORDER BY featured.yes DESC, next.starts, e.id"
+        "AND EXISTS (SELECT 1 ",
+        featuring_slides!(),
+        " AND i.event_id = e.id) ",
+        "ORDER BY next.starts, e.id"
     ))
-    .bind(INGESTION.title_svg_days as i32)
     .fetch_all(db)
     .await?;
     // Read and lay out only the drawings not seen before, off the async threads.
