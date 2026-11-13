@@ -4415,6 +4415,51 @@ fn test_login_recovery_prefers_the_login_school_then_an_account_not_held() {
 }
 
 #[test]
+fn test_login_recovery_tries_the_next_profile_when_a_password_cannot_go_out() {
+    setup();
+    // guelph's saved login asks for a password the worker cannot enter (none stored
+    // here; on 11-13 its one entry for the day was spent): tmu's one-tap login is used.
+    let profiles = json!({"state": "profiles", "profiles": ["wat2do.guelph", "wat2do.tmu"]});
+    let (pool, clicks) = login_pool(
+        vec![
+            profiles.clone(),
+            json!({"state": "password"}),
+            profiles,
+            json!({"state": "logged_in"}),
+        ],
+        Value::Null,
+        &[],
+    );
+    pool.pool.recover_login().unwrap();
+    let clicks = clicks.lock().unwrap();
+    assert_eq!(
+        clicks[1..],
+        [
+            scripts::click_label("wat2do.guelph"),
+            scripts::assign_home(),
+            scripts::click_label("wat2do.tmu"),
+        ]
+    );
+    drop(clicks);
+    // With no other profile, it still stops for a person.
+    let (pool, _) = login_pool(
+        vec![
+            json!({"state": "profiles", "profiles": ["wat2do.guelph"]}),
+            json!({"state": "password"}),
+        ],
+        Value::Null,
+        &[],
+    );
+    let error = error_of(pool.pool.recover_login());
+    assert!(
+        error
+            .to_string()
+            .contains("no stored password for wat2do.guelph"),
+        "{error}"
+    );
+}
+
+#[test]
 fn test_login_recovery_stops_for_a_person_at_a_challenge() {
     setup();
     let (pool, _) = login_pool(
