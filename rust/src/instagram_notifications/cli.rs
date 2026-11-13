@@ -273,6 +273,11 @@ pub enum Command {
     Pause,
     /// Resume after inspecting any uncertain browser activity
     Resume,
+    /// Let one account whose Brave login waited for a person log in again
+    ResumeAccount {
+        #[arg(long)]
+        account: String,
+    },
     Retry {
         #[arg(long)]
         job_id: String,
@@ -380,6 +385,11 @@ fn operate(cli: Cli, services: &dyn CliServices) -> anyhow::Result<Option<Value>
                 anyhow::bail!("Browser worker pause changed; inspect before resuming");
             }
             json!({"paused": queue.get_setting("paused")?})
+        }
+        Command::ResumeAccount { account } => {
+            let prior = queue.account_login_paused(&account)?;
+            queue.resume_account_login(&account)?;
+            json!({"account": account, "was_paused": prior})
         }
         Command::Retry { job_id } => {
             let job = queue.get(&job_id)?.ok_or_else(|| {

@@ -4063,19 +4063,61 @@ fn test_login_recovery_after_a_submitted_password_pauses_without_a_refund() {
 }
 
 #[test]
-fn test_account_login_after_a_submitted_password_pauses() {
+fn test_account_login_after_a_submitted_password_holds_only_that_account() {
     let env = Env::new();
     let message = "Instagram asked for a code after the password; inspect before retrying";
-    let pool = env
-        .pool()
-        .add_account(move |_| Err(BrowserError::of(SessionKind::LoginSubmitted, message)));
+    let tried = Arc::new(Mutex::new(Vec::new()));
+    let record = tried.clone();
+    let pool = env.pool().add_account(move |username| {
+        record.lock().unwrap().push(username.to_owned());
+        if username == "wat2do.ucalgary" {
+            Err(BrowserError::of(SessionKind::LoginSubmitted, message))
+        } else {
+            Ok(())
+        }
+    });
     let worker = env.real_worker(pool);
     assert!(
         !worker
             .attempt_account_login("wat2do.ucalgary", &|| 100_000.0)
             .unwrap()
     );
-    assert_eq!(paused(&env.queue), json!(message));
+    // Every other school's work runs on.
+    assert_eq!(setting(&env.queue, "paused"), None);
+    assert_eq!(
+        env.queue.account_login_paused("wat2do.ucalgary").unwrap(),
+        Some(message.to_owned())
+    );
+    assert_eq!(
+        env.queue.status().unwrap()["accounts_paused"],
+        json!({"wat2do.ucalgary": message})
+    );
+    assert!(
+        worker
+            .attempt_account_login("wat2do.sfu", &|| 100_000.0)
+            .unwrap()
+    );
+    // Never retried automatically, even a day later, until a person resumes it.
+    assert!(
+        !worker
+            .attempt_account_login("wat2do.ucalgary", &|| 300_000.0)
+            .unwrap()
+    );
+    assert_eq!(
+        *tried.lock().unwrap(),
+        vec!["wat2do.ucalgary", "wat2do.sfu"]
+    );
+    env.queue.resume_account_login("wat2do.ucalgary").unwrap();
+    assert_eq!(
+        env.queue.account_login_paused("wat2do.ucalgary").unwrap(),
+        None
+    );
+    assert_eq!(env.queue.status().unwrap()["accounts_paused"], json!({}));
+    assert!(
+        env.queue
+            .account_login_allowed("wat2do.ucalgary", 300_000.0)
+            .unwrap()
+    );
 }
 
 #[test]

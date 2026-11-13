@@ -108,7 +108,7 @@ When the `login_from_school` account is missing too, it is logged back in first 
 Switch accounts' dialog is always closed before the worker reads the active account or gives up, since a modal hides the page's navigation.
 A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
 Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout; a login is recorded just before its password goes out, so a failure before that spends nothing.
-Once a password has been submitted, any failure (including a timeout) pauses browser work for a person and is never retried automatically.
+Once a password has been submitted, any failure (including a timeout) is never retried automatically. After a logout it pauses browser work for a person; for a missing account it holds only that account (its jobs fail as unavailable, `accounts_paused` in `wat2do-browser status`) until `wat2do-browser resume-account --account <name>`, and every other school keeps running.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge waits for a person.
 Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
