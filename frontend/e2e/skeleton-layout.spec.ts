@@ -396,13 +396,6 @@ async function settle(page: Page) {
   await page.waitForTimeout(300);
 }
 
-/** The events page opens on its map; tests of the event list switch to the grid the way a reader does. */
-async function showGrid(page: Page) {
-  await page.getByRole("combobox", { name: "Event view" }).click();
-  await page.getByRole("option", { name: "Grid", exact: true }).click();
-  await page.locator("main [data-event-card]").first().waitFor();
-}
-
 /** A name or school runs as wide as its text, which no placeholder can know; everything else is exact. */
 const TEXT_WIDTH_KEYS = new Set(["page-title", "page-description"]);
 
@@ -631,8 +624,9 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await page.addInitScript(OBSERVE_SHIFTS);
       await page.goto(`${BASE}/events`);
       await completeFeed.requested;
-      await page.locator("[data-event-card]").first().waitFor();
-      await showGrid(page);
+      // The events page opens on its grid.
+      await expect(page.getByRole("combobox", { name: "Event view" })).toHaveText("Grid");
+      await page.locator("main [data-event-card]").first().waitFor();
       await settle(page);
       const header = await landmarks(page, "[data-slot=page-header]");
 
@@ -662,15 +656,13 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const completeFeed = await failCompleteEventFeed(page);
       await page.addInitScript(OBSERVE_SHIFTS);
       await page.goto(`${BASE}/events`);
-      await page.locator("[data-event-card]").first().waitFor();
-      await showGrid(page);
+      await page.locator("main [data-event-card]").first().waitFor();
       // The row still waiting for the rest of the list is where the notice will appear.
       await page.locator("[data-testid=event-list-sentinel]").scrollIntoViewIfNeeded();
       await settle(page);
       const waiting = await landmarks(page);
 
       // The first read and each retry (about 1, 2 and 4 seconds apart) fail before the page says so.
-      // The highlights' map says so too; this test follows the list's own notice.
       const notice = page.locator("main [data-slot=load-failure-notice]");
       await expect(notice).toBeVisible({ timeout: 20_000 });
       expect(completeFeed.attempts()).toBe(4);
@@ -724,9 +716,8 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       // More events draws from the complete feed, which the page loads after its first screen.
       const completeFeed = page.waitForResponse(response => new URL(response.url()).pathname === "/api/discovery");
       await page.goto(`${BASE}/events`);
-      await page.locator("[data-event-card]").first().waitFor();
+      await page.locator("main [data-event-card]").first().waitFor();
       await completeFeed;
-      await showGrid(page);
       await settle(page);
 
       const openedAt = await page.evaluate(() => {

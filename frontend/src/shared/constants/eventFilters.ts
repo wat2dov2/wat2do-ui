@@ -19,15 +19,16 @@ export const START_FROM_NOW = "now";
 /** Shared by the live filter controls and their initial loading shell. */
 const eventQuickFilters = [
   { id: "going", labelKey: "filters.going", value: "goingFilter", action: "setGoingFilter", requiresProfile: true },
-  { id: "new", labelKey: "common.newlyAddedFilter.last24Hours" },
-  { id: "featured", labelKey: "filters.featured", value: "featured", action: "setFeatured" },
   { id: "campusSeasons" },
-  { id: "employersOnCampus", labelKey: "filters.employersOnCampus", value: "employersOnCampus", action: "setEmployersOnCampus" },
   { id: "freeFoodOnCampus", labelKey: "filters.freeFoodOnCampus", value: "freeFood", action: "setFreeFood" },
   { id: "recurring", labelKey: "filters.recurring", value: "recurring", action: "setRecurring" },
   { id: "competitions", labelKey: "filters.competitions", value: "competitions", action: "setCompetitions" },
   { id: "sportsGame", labelKey: "filters.sportsGame", value: "sportsGame", action: "setSportsGame" },
   { id: "examDestress" },
+  // Featured, New and Networking follow Exam de-stress, or the other chips when its season is over.
+  { id: "featured", labelKey: "filters.featured", value: "featured", action: "setFeatured" },
+  { id: "new", labelKey: "common.newlyAddedFilter.last24Hours" },
+  { id: "employersOnCampus", labelKey: "filters.employersOnCampus", value: "employersOnCampus", action: "setEmployersOnCampus" },
   { id: "date", labelKey: "events.dateFilter.any" },
   { id: "minGoing", labelKey: "events.goingCount" },
   { id: "price", labelKey: "filters.anyPrice" },

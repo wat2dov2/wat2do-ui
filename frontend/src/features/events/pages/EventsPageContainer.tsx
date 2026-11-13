@@ -87,7 +87,7 @@ export function EventsPageContainer({
   const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
   // The highlights stay above every view through any search or filter (the filter
   // bar keeps the results in view), so the reader can always scroll back up to
-  // them. In the map view they leave out their own campus map, which would repeat it.
+  // them.
   const showHighlights = !error;
   // Everything waiting for the rest of the feed says so the same way, with a way to try again.
   const loadFailureNotice = restLoadFailed ? (
