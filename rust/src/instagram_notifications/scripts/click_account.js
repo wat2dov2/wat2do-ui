@@ -17,8 +17,11 @@
   const matches = exact.length ? exact : buttons.filter(element =>
     expectedSchool && school(label(element)) === expectedSchool);
   if (!matches.length) return "missing";
-  if (matches.length !== 1) return "ambiguous";
-  const button = matches[0];
+  const shown = element => !!(element.offsetWidth || element.offsetHeight ||
+    element.getClientRects?.().length);
+  const onScreen = matches.length > 1 && matches.some(shown) ? matches.filter(shown) : matches;
+  if (onScreen.length !== 1) return "ambiguous";
+  const button = onScreen[0];
   button.scrollIntoView({behavior: "instant", block: "center"});
   button.click();
   return "clicked";
