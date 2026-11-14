@@ -4,6 +4,7 @@
   "github_repo": "wat2dov2/wat2do-ui",
   "workflow_name": "Process Notifications",
   "lookback_hours": 36,
+  "reruns_per_pass": 2,
   "reruns_per_day": 150,
   "max_reruns_per_run": 5,
   "rerun_spacing_minutes": 30

@@ -4,8 +4,9 @@
 //! down, or when its school's account is held for a person or missing from Brave. A pass
 //! reruns nothing while the worker cannot run digests, and leaves a run alone while its
 //! account cannot run yet, so a rerun is spent only when it can succeed: each run is
-//! reran at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, and its posts
-//! are ingested within minutes of the worker recovering. The worker logs itself back in;
+//! reran at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, at most
+//! `reruns_per_pass` a pass (each switches Brave's account, and a burst of switches gets
+//! the session logged out), so a backlog drains steadily once the worker recovers. The worker logs itself back in;
 //! this pass only reruns. `gh` carries the user's own authentication, so no token is
 //! stored here.
 
@@ -254,6 +255,9 @@ pub fn retry_failed_notifications(
     let mut state = load_state(state_path);
     prune(&mut state, now(), control().lookback_hours);
     let mut reruns_today = state["rerun_timestamps"].as_array().map_or(0, Vec::len);
+    // Each rerun switches Brave's account; a burst of switches gets the whole session
+    // logged out, so a pass starts only a few and the rest wait for the next.
+    let mut reruns_this_pass = 0;
     let spacing = f64::from(control().rerun_spacing_minutes) * 60.0;
     let push = |result: &mut Value, key: &str, id: &str| {
         result[key]
@@ -300,6 +304,10 @@ pub fn retry_failed_notifications(
             push(&mut result, "waiting", &run.id);
             continue;
         }
+        if reruns_this_pass >= control().reruns_per_pass {
+            push(&mut result, "waiting", &run.id);
+            continue;
+        }
         if reruns_today >= control().reruns_per_day {
             push(&mut result, "skipped", &run.id);
             continue;
@@ -320,6 +328,7 @@ pub fn retry_failed_notifications(
             .expect("timestamps are a list")
             .push(json!(now()));
         reruns_today += 1;
+        reruns_this_pass += 1;
         push(&mut result, "reran", &run.id);
         tracing::info!("Reran {} ({})", run.id, run.title);
     }

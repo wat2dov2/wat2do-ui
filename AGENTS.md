@@ -115,7 +115,7 @@ Once a password has been submitted, any failure (including a timeout) is never r
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge holds that account for a person.
 A digest whose account is missing and cannot log in yet marks it missing (`accounts_missing` in `wat2do-browser status`) until its login is allowed again or a digest finds it in Brave.
-`io.wat2do.notification-retry` reruns failed Process Notifications runs: none while the worker is paused or down, never one whose account is held or missing, and each run at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, so a run's posts are ingested within minutes of the worker recovering.
+`io.wat2do.notification-retry` reruns failed Process Notifications runs: none while the worker is paused or down, never one whose account is held or missing, each run at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, and at most `reruns_per_pass` a pass, since each rerun switches Brave's account and a burst of switches gets the whole session logged out.
 Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
 The worker may create, keep and replace those jars and log the accounts in to them itself, typing the Keychain password and the emailed code over CDP on an owner-only Unix socket; neither, nor any jar's contents, is ever logged, copied elsewhere or put on a command line.
 An account counts as logged in when its jar holds a non-empty `sessionid`.

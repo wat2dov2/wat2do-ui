@@ -351,6 +351,7 @@ pub struct NotificationRetry {
     pub github_repo: String,
     pub workflow_name: String,
     pub lookback_hours: u32,
+    pub reruns_per_pass: usize,
     pub reruns_per_day: usize,
     pub max_reruns_per_run: i64,
     pub rerun_spacing_minutes: u32,

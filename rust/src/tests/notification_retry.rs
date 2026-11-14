@@ -25,6 +25,7 @@ fn control_with(change: impl FnOnce(&mut crate::controlbox::NotificationRetry)) 
         control.reruns_per_day = 20;
         control.max_reruns_per_run = 3;
         control.rerun_spacing_minutes = 30;
+        control.reruns_per_pass = 10;
         change(control);
     });
 }
@@ -220,6 +221,23 @@ fn test_a_run_waits_while_its_account_cannot_run() {
     let result = retry_at(&services, &state, 1000.0 + 60.0);
     assert_eq!(services.reran(), vec!["1", "3"]);
     assert_eq!(ids(&result, "waiting"), vec!["2"], "reran a minute ago");
+}
+
+#[test]
+fn test_a_pass_starts_only_a_few_reruns_and_the_next_takes_the_rest() {
+    // 11-13 23:26-23:33: eight reruns in seven minutes, each an account switch, and
+    // Instagram logged the whole Brave session out.
+    control_with(|control| control.reruns_per_pass = 2);
+    let directory = tempfile::tempdir().unwrap();
+    let state = directory.path().join("state.json");
+    let runs = vec![workflow_run("1"), workflow_run("2"), workflow_run("3")];
+    let services = FakeRetry::ready(runs);
+    let result = retry_at(&services, &state, 1000.0);
+    assert_eq!(ids(&result, "reran"), vec!["1", "2"]);
+    assert_eq!(ids(&result, "waiting"), vec!["3"]);
+    let result = retry_at(&services, &state, 1600.0);
+    assert_eq!(ids(&result, "reran"), vec!["3"]);
+    assert_eq!(services.reran(), vec!["1", "2", "3"]);
 }
 
 #[test]
