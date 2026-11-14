@@ -1362,6 +1362,9 @@ class NotificationRetryControl(_ControlModel):
     workflow_name: str = Field(min_length=1, max_length=100)
     # Only runs that failed within this many hours are considered.
     lookback_hours: int = Field(ge=1, le=168)
+    # At most this many reruns start per pass: each switches Brave's account, and a burst
+    # of switches gets the whole Brave session logged out (8 in 7 minutes on 11-13).
+    reruns_per_pass: int = Field(ge=1, le=20)
     # At most this many run reruns are started per day, across every run.
     reruns_per_day: int = Field(ge=0, le=500)
     # A run reran this many times and still failing is reported, not reran again.
