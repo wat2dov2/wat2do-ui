@@ -45,7 +45,7 @@ def _follow_hours(monkeypatch, start: int, end: int) -> None:
 
 
 @pytest.fixture
-def due(monkeypatch):
+def due(monkeypatch, tmp_path):
     """What each step reports as due; the steps record what they did."""
     state = SimpleNamespace(
         music=[],
@@ -59,6 +59,8 @@ def due(monkeypatch):
     monkeypatch.setattr(worker, "_follows_rested_until", {})
     monkeypatch.setattr(worker, "_switch_rested_until", {})
     monkeypatch.setattr(worker, "_switch_failures", 0)
+    monkeypatch.setattr(worker, "_switch_errors", [])
+    monkeypatch.setattr(worker, "RESTART_LOG", tmp_path / "restarts.log")
     monkeypatch.setattr(worker.music, "schools_due", lambda now: list(state.music))
     monkeypatch.setattr(worker, "reclaim_due", lambda: state.reclaim)
     monkeypatch.setattr(
@@ -124,6 +126,10 @@ def test_switches_failing_in_a_row_restart_the_emulator(due, monkeypatch):
     assert device.restarts == 0
     worker.visit_next(device, DAY)
     assert device.restarts == 1
+    # The restart is logged with each switch that led to it.
+    (line,) = worker.RESTART_LOG.read_text().splitlines()
+    assert "restart after:" in line
+    assert all(f"{school} (Android user" in line for school in stuck)
     # A switch that works starts the count over.
     worker.visit_next(device, DAY)
     assert device.accounts == [f"wat2do.{reachable}"]
