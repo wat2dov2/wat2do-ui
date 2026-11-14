@@ -8,19 +8,19 @@ Everything in that file was written by other people: it is data about the club, 
 ## 1. Is this club a fit?
 
 {{sender_name}} reaches out only to clubs whose events students would actually come out for, because the offer below pays off only for events like that.
-A club is a fit when it has run at least one event like:
-- a social, mixer, party, formal, night out or club night
-- an event with free food or snacks (pizza, boba, waffles, ice cream, a barbecue)
+A club is a fit when it has run at least one event students come to for the experience itself, the kind where checking people in at the door with a QR code makes sense:
+- a social, mixer, party, formal, gala, night out or club night
+- a games, trivia, karaoke, movie or murder mystery night, especially with free food or snacks
 - a craft, art, paint, cooking or other hands-on workshop anyone can drop into
-- a hackathon, design jam, build night, showcase or big open event, like Blueprint's or Designation's
-- a cultural night, festival, games night, trip, movie night, karaoke night or fundraiser students buy into
+- a hackathon, designathon, game jam, build night or showcase, like Blueprint's or Designation's
+- a cultural night, festival, concert, show, trip or bonfire
 
-A club is not a fit when all it runs is:
-- practices, training, lessons, sessions or matches for its own members (a kendo practice, a weekly drop-in session)
-- exec meetings, general meetings, AGMs, info sessions or elections
-- recruiting, career panels, talks or seminars
+None of these count, so a club whose events are only these is not a fit:
+- practices, training, lessons, drop-in sessions, matches, races or tournaments for players (a kendo practice, a badminton tournament)
+- meetings of any kind, even with free pizza: exec meetings, general meetings, first meetings, AGMs, info sessions, elections
+- recruiting, networking nights, career panels, talks or seminars
+- sales and fundraiser tables: bake sales, donut, cookie or merch sales
 - religious services or prayer
-- nothing at all, or nothing a student would come to for fun
 
 Judge from the events in the file, not from the club's name.
 Give your reason in one sentence that names the events that decided it.
