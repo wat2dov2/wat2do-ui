@@ -191,7 +191,8 @@ pub struct ClubDirectoryListing {
     pub body: Option<String>,
 }
 
-/// The event image and video limits and the thumbnail sizes in `controlbox/uploads.json`.
+/// The event image and video limits, the thumbnail sizes and the claim proof
+/// rules in `controlbox/uploads.json`.
 #[derive(Debug, Deserialize)]
 pub struct Uploads {
     pub event_image_allowed_mime_types: Vec<String>,
@@ -205,6 +206,9 @@ pub struct Uploads {
     pub thumbnail_suffix: String,
     pub event_video_max_size_bytes: usize,
     pub event_video_download_timeout_seconds: u64,
+    /// Screenshots and screen recordings, shared verbatim with the claim form's picker.
+    pub claim_proof_allowed_mime_types: Vec<String>,
+    pub claim_proof_max_size_bytes: usize,
 }
 
 /// The directory image floor and Instagram's web app ID in `controlbox/scraping.json`.
@@ -923,6 +927,7 @@ mod tests {
         assert!(RATE_LIMITS.default.maximum_requests > 0);
         assert!(INGESTION.parallel_agents > 0);
         assert!(UPLOADS.event_image_max_size_bytes > 0);
+        assert!(UPLOADS.claim_proof_max_size_bytes > 0);
         assert!(SCRAPING.directory_minimum_image_dimension_pixels > 0);
         assert!(!EVENT_DISCOVERY.campus_seasons.schools.is_empty());
         assert!(MORNING_EMAIL.local_send_hour <= MORNING_EMAIL.last_local_send_hour);

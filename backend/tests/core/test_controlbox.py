@@ -469,6 +469,11 @@ def test_discovery_controls_load_checked_in_feature_sources():
         ("discovery_cache", {"public_page_stale_while_revalidate_seconds": 3601}),
         ("uploads", {"event_video_max_size_bytes": 0}),
         ("uploads", {"event_video_download_timeout_seconds": 0}),
+        ("uploads", {"claim_proof_max_size_bytes": 0}),
+        ("uploads", {"claim_proof_allowed_mime_types": []}),
+        # A type whose bytes the upload check cannot verify would be stored as sent.
+        ("uploads", {"claim_proof_allowed_mime_types": ["image/png", "application/pdf"]}),
+        ("uploads", {"claim_proof_allowed_mime_types": ["video/mp4", "video/mp4"]}),
         ("image_delivery", {"first_row_image_count": 0}),
         ("image_delivery", {"first_row_image_count": 25}),
         ("image_delivery", {"media_origin": "http://media.wat2do.io"}),

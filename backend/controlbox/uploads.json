@@ -14,5 +14,13 @@
   "club_logo_thumbnail_quality": 80,
   "thumbnail_suffix": ".thumb.webp",
   "event_video_max_size_bytes": 24000000,
-  "event_video_download_timeout_seconds": 60
+  "event_video_download_timeout_seconds": 60,
+  "claim_proof_allowed_mime_types": [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "video/mp4",
+    "video/quicktime"
+  ],
+  "claim_proof_max_size_bytes": 52428800
 }

@@ -143,6 +143,23 @@ async fn claim_proofs_need_a_signed_in_sender() {
 }
 
 #[tokio::test]
+async fn claim_proofs_can_be_screen_recordings() {
+    let recording = b"\x00\x00\x00\x14ftypqt  \x00\x00\x00\x00qt  ";
+    let (status, body, recorder) = Call::new(
+        "/uploads/claim-proof",
+        form("RPReplay.mov", "video/quicktime", recording),
+    )
+    .signed_in("auth-claim-1")
+    .send()
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let puts = stored(&recorder);
+    assert!(puts[0].key().starts_with("claim-proofs/") && puts[0].key().ends_with(".mov"));
+    assert_eq!(puts[0].body, recording);
+    assert_eq!(puts[0].header("content-type"), Some("video/quicktime"));
+}
+
+#[tokio::test]
 async fn signed_in_uploads_refuse_anonymous_senders() {
     // test_upload_qr_asset_requires_auth, test_replacing_existing_event_image_still_requires_auth
     for path in [

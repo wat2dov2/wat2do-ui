@@ -75,6 +75,8 @@ export const controlBox = {
   uploads: {
     eventImageAllowedMimeTypes: uploads.event_image_allowed_mime_types,
     eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
+    claimProofAllowedMimeTypes: uploads.claim_proof_allowed_mime_types,
+    claimProofMaxSizeBytes: uploads.claim_proof_max_size_bytes,
   },
   socialPreviews: {
     width: socialPreviews.width,

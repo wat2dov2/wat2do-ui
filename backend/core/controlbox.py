@@ -480,6 +480,15 @@ class AdminControl(_ControlModel):
     items_per_page: int = Field(gt=0)
 
 
+_VERIFIED_CLAIM_PROOF_TYPES = (
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "video/mp4",
+    "video/quicktime",
+)
+
+
 class UploadsControl(_ControlModel):
     """Client-facing upload contract, shared verbatim with the frontend picker."""
 
@@ -487,6 +496,11 @@ class UploadsControl(_ControlModel):
     event_image_max_size_bytes: int = Field(gt=0)
     event_video_max_size_bytes: int = Field(gt=0)
     event_video_download_timeout_seconds: int = Field(gt=0)
+    # A claim's proof is a screenshot or a screen recording (an executive
+    # logged in to the club's Instagram, say), so it takes the videos phones
+    # record as well as images.
+    claim_proof_allowed_mime_types: list[str] = Field(min_length=1)
+    claim_proof_max_size_bytes: int = Field(gt=0)
     # Posters are stored at this width, so it is the width every viewer gets.
     # 1080 is where the Instagram sources top out; asking for more would store
     # upscaled pixels, and the detail view is the widest place one is shown.
@@ -520,6 +534,16 @@ class UploadsControl(_ControlModel):
             set(self.event_image_allowed_mime_types)
         ):
             raise ValueError("event image MIME types must be unique")
+        # Only types whose bytes the upload check verifies (rust/src/storage.rs).
+        for mime_type in self.claim_proof_allowed_mime_types:
+            if mime_type not in _VERIFIED_CLAIM_PROOF_TYPES:
+                raise ValueError(
+                    "claim proof MIME types must be among " + ", ".join(_VERIFIED_CLAIM_PROOF_TYPES)
+                )
+        if len(self.claim_proof_allowed_mime_types) != len(
+            set(self.claim_proof_allowed_mime_types)
+        ):
+            raise ValueError("claim proof MIME types must be unique")
         return self
 
 
