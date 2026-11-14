@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Tiếp cận",
       "cardDescription": "Các câu lạc bộ chưa được nhận để mời nhận trang của mình.",
-      "description": "Các câu lạc bộ chưa được nhận có sự kiện hoặc vị trí trên Wat2Do, mỗi câu lạc bộ kèm email tìm thấy trên trang của họ hoặc qua tìm kiếm, và một email mời họ nhận trang chúng tôi đã tạo. Lượt tìm hằng ngày thêm các câu lạc bộ mới. Mở email trong Gmail và tự gửi.",
+      "description": "Các câu lạc bộ chưa được nhận quản lý có sự kiện thu hút sinh viên, mỗi câu lạc bộ có email, kịch bản cho video của bạn và một email cá nhân gửi kèm video. Người mở liên kết nhận quản lý trong email sẽ trở thành chủ sở hữu câu lạc bộ. Mỗi ngày hệ thống quét thêm câu lạc bộ; hãy mở email trong Gmail, đính kèm video và tự gửi.",
       "statuses": {
         "new": "Mới",
         "contacted": "Đã liên hệ",
@@ -622,7 +622,7 @@
         "dismissed": "Đã loại"
       },
       "emptyTitle": "Chưa có câu lạc bộ",
-      "emptyDescription": "Lượt tìm hằng ngày thêm câu lạc bộ vào đây khi tìm thấy email của họ.",
+      "emptyDescription": "Lượt quét hằng ngày sẽ thêm câu lạc bộ vào đây khi tìm thấy email và đánh giá sự kiện của họ đáng để mời.",
       "club": "Câu lạc bộ",
       "contact": "Liên hệ",
       "formality": "Mức độ chính thức",
@@ -656,9 +656,14 @@
       },
       "source": "Nơi tìm thấy email",
       "email": "Email",
-      "followUp": "Email theo dõi",
+      "script": "Kịch bản video",
+      "whyFit": "Vì sao phù hợp",
+      "claimLink": "Liên kết nhận quản lý",
       "notes": "Ghi chú",
-      "saveNotes": "Lưu ghi chú"
+      "saveNotes": "Lưu ghi chú",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "copyFailed": "Không sao chép được. Hãy chọn văn bản và tự sao chép."
     },
     "clubSubmissionDetails": {
       "records": "Chi tiết bản ghi",

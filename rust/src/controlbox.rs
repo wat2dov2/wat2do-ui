@@ -547,10 +547,10 @@ pub struct PromoterTemplate {
 /// What the admin outreach page writes into each claim email (`controlbox/outreach.json`).
 #[derive(Debug, Deserialize)]
 pub struct Outreach {
-    /// Signs the claim email and its follow-up.
-    pub sender_name: String,
     /// A club's page, with `{school}` and `{club_id}` filled in.
     pub club_url_template: String,
+    /// A lead's claim link, with `{school}` and `{token}` filled in.
+    pub claim_url_template: String,
 }
 
 /// `controlbox/positions.json`, every field.

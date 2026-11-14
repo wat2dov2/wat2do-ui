@@ -67,7 +67,17 @@
     "submittedForReview": "Đã gửi để xem xét. Tổ chức của bạn sẽ hiển thị trực tuyến khi một quản trị viên phê duyệt.",
     "awaitingReview": "Tổ chức này đang chờ xem xét bởi quản trị viên. Nó chưa được công khai và sự kiện không thể được xuất bản cho đến khi nó được phê duyệt.",
     "reviewRejected": "Tổ chức này chưa được phê duyệt. Liên hệ với đội ngũ Wat2Do nếu bạn cho rằng đây là một sự nhầm lẫn.",
-    "minimumEvents": "Số sự kiện tối thiểu"
+    "minimumEvents": "Số sự kiện tối thiểu",
+    "claimLink": {
+      "title": "Nhận quản lý {{club}} trên Wat2Do",
+      "description": "Trang câu lạc bộ của bạn đã sẵn sàng. Khi nhận quản lý, bạn trở thành chủ sở hữu trang: có thể đăng sự kiện và vị trí, cập nhật chúng và xem ai sẽ tham gia.",
+      "checking": "Đang kiểm tra liên kết nhận quản lý...",
+      "claim": "Nhận quản lý câu lạc bộ",
+      "claiming": "Đang xử lý...",
+      "invalidTitle": "Liên kết nhận quản lý này không dùng được",
+      "invalidDescription": "Có thể liên kết bị gõ sai, hoặc một người trong nhóm bạn đã nhận quản lý câu lạc bộ. Hãy nhờ họ thêm bạn trong bảng quản lý câu lạc bộ.",
+      "browseEvents": "Xem sự kiện"
+    }
   },
   "inviteLanding": {
     "validating": "Đang xác thực liên kết mời...",

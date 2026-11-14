@@ -28,6 +28,7 @@ export const ROUTES = {
   SETTINGS: "/settings",
   MARKETING: "/marketing",
   INVITE: "/invite",
+  CLAIM: "/claim",
   EVENT_SUBMIT: "/events/submit",
   POSITION_SUBMIT: "/positions/submit",
   PROMOTE: "/promote",
@@ -136,6 +137,10 @@ export function getRouteDocumentTitle(pathname: string): string {
 
   if (normalizedPathname.startsWith("/invite/")) {
     return buildDocumentTitle("Club Invite");
+  }
+
+  if (normalizedPathname.startsWith(`${ROUTES.CLAIM}/`)) {
+    return buildDocumentTitle("Claim Club");
   }
 
   if (

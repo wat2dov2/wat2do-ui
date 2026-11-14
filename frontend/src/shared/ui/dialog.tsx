@@ -79,13 +79,11 @@ function DialogContent({
   showCloseButton = true,
   size,
   variant = "surface",
-  scrollable = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   size?: DialogSize
   variant?: DialogVariant
-  scrollable?: boolean
 }) {
   const { t } = useTranslation()
   const closeButton = showCloseButton ? (
@@ -112,9 +110,9 @@ function DialogContent({
         className={cn(
           "text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-modal w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] duration-100",
           dialogVariantClasses[variant],
-          scrollable
-            ? "flex max-h-[85dvh] flex-col overflow-hidden"
-            : "grid",
+          // A dialog holding a DialogBody never outgrows the screen: it becomes a
+          // capped column and the body scrolls inside it.
+          "grid has-[[data-slot=dialog-body]]:flex has-[[data-slot=dialog-body]]:max-h-[85dvh] has-[[data-slot=dialog-body]]:flex-col has-[[data-slot=dialog-body]]:overflow-hidden",
           size && dialogSizeClasses[size],
           className
         )}

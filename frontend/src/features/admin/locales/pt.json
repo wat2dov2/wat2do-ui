@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Divulgação",
       "cardDescription": "Clubes não reivindicados para convidar a reivindicar sua página.",
-      "description": "Clubes não reivindicados com eventos ou vagas no Wat2Do, cada um com o e-mail encontrado na própria página ou por pesquisa, e um e-mail convidando-o a reivindicar a página que criamos. Uma busca diária adiciona mais clubes. Abra o e-mail no Gmail e envie você mesmo.",
+      "description": "Clubes não reivindicados cujos eventos atraem estudantes, cada um com seu e-mail, um roteiro para o seu vídeo e um e-mail pessoal para enviar junto. Quem abre o link de reivindicação do e-mail se torna dono do clube. Uma varredura diária adiciona clubes; abra o e-mail no Gmail, anexe seu vídeo e envie você mesmo.",
       "statuses": {
         "new": "Novo",
         "contacted": "Contatado",
@@ -622,7 +622,7 @@
         "dismissed": "Descartado"
       },
       "emptyTitle": "Ainda não há clubes",
-      "emptyDescription": "A busca diária adiciona clubes aqui à medida que encontra os e-mails deles.",
+      "emptyDescription": "A varredura diária adiciona clubes aqui quando encontra o e-mail deles e julga que seus eventos valem a abordagem.",
       "club": "Clube",
       "contact": "Contato",
       "formality": "Formalidade",
@@ -656,9 +656,14 @@
       },
       "source": "Onde o e-mail foi encontrado",
       "email": "E-mail",
-      "followUp": "Follow-up",
+      "script": "Roteiro do vídeo",
+      "whyFit": "Por que combina",
+      "claimLink": "Link de reivindicação",
       "notes": "Notas",
-      "saveNotes": "Salvar notas"
+      "saveNotes": "Salvar notas",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "Não foi possível copiar. Selecione o texto e copie você mesmo."
     },
     "clubSubmissionDetails": {
       "records": "Detalhes do registo",

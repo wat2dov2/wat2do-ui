@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Club non rivendicati da invitare a rivendicare la propria pagina.",
-      "description": "Club non rivendicati con eventi o posizioni su Wat2Do, ognuno con l'email trovata sulla sua pagina o tramite ricerca, e un'email che lo invita a rivendicare la pagina che abbiamo creato. Una ricerca giornaliera aggiunge altri club. Apri l'email in Gmail e inviala tu.",
+      "description": "Club non rivendicati ai cui eventi gli studenti partecipano, ognuno con la sua email, un copione per il tuo video e un'email personale da inviare insieme. Chi apre il link di rivendicazione dell'email diventa proprietario del club. Una scansione giornaliera aggiunge club; apri l'email in Gmail, allega il tuo video e inviala tu.",
       "statuses": {
         "new": "Nuovo",
         "contacted": "Contattato",
@@ -622,7 +622,7 @@
         "dismissed": "Scartato"
       },
       "emptyTitle": "Ancora nessun club",
-      "emptyDescription": "La ricerca giornaliera aggiunge qui i club man mano che trova la loro email.",
+      "emptyDescription": "La scansione giornaliera aggiunge qui i club quando trova la loro email e giudica i loro eventi adatti.",
       "club": "Club",
       "contact": "Contatto",
       "formality": "Formalità",
@@ -656,9 +656,14 @@
       },
       "source": "Dove è stata trovata l'email",
       "email": "Email",
-      "followUp": "Follow-up",
+      "script": "Copione del video",
+      "whyFit": "Perché è adatto",
+      "claimLink": "Link di rivendicazione",
       "notes": "Note",
-      "saveNotes": "Salva note"
+      "saveNotes": "Salva note",
+      "copy": "Copia",
+      "copied": "Copiato",
+      "copyFailed": "Impossibile copiare. Seleziona il testo e copialo tu."
     },
     "clubSubmissionDetails": {
       "records": "Dettagli del record",

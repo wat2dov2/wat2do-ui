@@ -612,7 +612,7 @@
     "outreach": {
       "title": "外展邀請",
       "cardDescription": "可以邀請認領自己頁面嘅未認領學會。",
-      "description": "喺 Wat2Do 有活動或職位嘅未認領學會，每個都有喺佢哋頁面或者調查搵到嘅電郵，同埋一封邀請佢哋認領我哋整好嘅頁面嘅電郵。每日搜尋會加入更多學會。喺 Gmail 打開電郵再自己發送。",
+      "description": "未認領、活動吸引到學生參加嘅社團，每個都有電郵、你拍片用嘅稿，同埋跟片一齊寄嘅個人電郵。打開電郵入面認領連結嘅人會成為社團嘅擁有人。每日掃描會加入社團；喺 Gmail 打開電郵，附上你段片，然後自己寄出。",
       "statuses": {
         "new": "新",
         "contacted": "已聯絡",
@@ -622,7 +622,7 @@
         "dismissed": "已略過"
       },
       "emptyTitle": "暫時未有學會",
-      "emptyDescription": "每日搜尋搵到學會電郵之後會加喺呢度。",
+      "emptyDescription": "每日掃描搵到社團嘅電郵、覺得佢哋嘅活動值得推介之後，就會將社團加到呢度。",
       "club": "學會",
       "contact": "聯絡",
       "formality": "正式程度",
@@ -656,9 +656,14 @@
       },
       "source": "電郵喺邊度搵到",
       "email": "電郵",
-      "followUp": "跟進",
+      "script": "影片稿",
+      "whyFit": "點解適合",
+      "claimLink": "認領連結",
       "notes": "筆記",
-      "saveNotes": "儲存筆記"
+      "saveNotes": "儲存筆記",
+      "copy": "複製",
+      "copied": "已複製",
+      "copyFailed": "複製唔到。請揀選文字自己複製。"
     },
     "clubSubmissionDetails": {
       "records": "記錄詳情",

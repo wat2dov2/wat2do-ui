@@ -4,7 +4,7 @@
  */
 
 import type { Club } from "@/shared/types";
-import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
+import type { ApiClubClaimLinkResponse, ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
 import { normalizeClub } from "@/features/clubs/api/clubService";
 import { getSessionEmail } from "@/features/auth/api/auth.api";
@@ -118,4 +118,20 @@ export async function saveClubToBackend(clubId: number): Promise<void> {
 
 export async function unsaveClubToBackend(clubId: number): Promise<void> {
   await api.delete(`/saved-clubs/${clubId}`);
+}
+
+/** The club an outreach email's claim link hands over, while nobody manages it. */
+export type ClubClaimLink = ApiClubClaimLinkResponse;
+
+export function claimLinkQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: queryKeys.clubs.claimLink(token),
+    queryFn: () => api.get<ClubClaimLink>(`/clubs/claim-links/${token}`),
+    retry: false,
+  });
+}
+
+/** Makes the signed-in user the owner of the club the claim link hands over. */
+export async function acceptClaimLink(token: string): Promise<ClubClaimLink> {
+  return api.post<ClubClaimLink>(`/clubs/claim-links/${token}/accept`);
 }

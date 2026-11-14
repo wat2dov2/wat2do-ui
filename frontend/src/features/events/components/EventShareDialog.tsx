@@ -16,7 +16,7 @@ import {
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { Button } from "@/shared/ui/button";
-import { toast } from "@/shared/hooks/use-toast";
+import { useCopyText } from "@/shared/hooks/useCopyText";
 import { DrawerBody, Stack } from "@/shared/layout";
 import { tracker } from "@/shared/services/trackingService";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -78,7 +78,7 @@ export function EventShareDialog({
 }: EventShareDialogProps) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyText();
   const [wechatQrVisible, setWechatQrVisible] = useState(false);
   const shareUrl = useMemo(() => buildEventShareUrl(event.id), [event.id]);
   const cardDate = formatCardDate(event, getSchoolTimezone(event.school), i18n.language);
@@ -90,22 +90,11 @@ export function EventShareDialog({
   ].filter(Boolean).join("\n");
   const shareBody = `${shareText}\n${shareUrl}`;
 
-  async function copyLink(message?: string) {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-      toast({
-        description: message ?? t("events.shareDialog.linkCopied"),
-        variant: "success",
-      });
-    } catch (err) {
-      console.error("Failed to copy event link:", err);
-      toast({
-        description: t("events.shareDialog.copyFailed"),
-        variant: "destructive",
-      });
-    }
+  function copyLink(message?: string) {
+    return copy(shareUrl, {
+      copied: message ?? t("events.shareDialog.linkCopied"),
+      failed: t("events.shareDialog.copyFailed"),
+    });
   }
 
   function handleCopy() {

@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Prospection",
       "cardDescription": "Clubs non revendiqués à inviter à revendiquer leur page.",
-      "description": "Clubs non revendiqués qui ont des événements ou des postes sur Wat2Do, chacun avec l'adresse e-mail trouvée sur sa propre page ou par recherche, et un e-mail l'invitant à revendiquer la page que nous avons créée. Une recherche quotidienne ajoute d'autres clubs. Ouvrez l'e-mail dans Gmail et envoyez-le vous-même.",
+      "description": "Clubs non revendiqués dont les événements attirent les étudiants, chacun avec son e-mail, un script pour votre vidéo et un e-mail personnel à envoyer avec. La personne qui ouvre le lien de revendication de l'e-mail devient propriétaire du club. Un balayage quotidien ajoute des clubs ; ouvrez l'e-mail dans Gmail, joignez votre vidéo et envoyez-le vous-même.",
       "statuses": {
         "new": "Nouveau",
         "contacted": "Contacté",
@@ -622,7 +622,7 @@
         "dismissed": "Écarté"
       },
       "emptyTitle": "Aucun club pour l'instant",
-      "emptyDescription": "La recherche quotidienne ajoute ici des clubs à mesure qu'elle trouve leur adresse e-mail.",
+      "emptyDescription": "Le balayage quotidien ajoute des clubs ici dès qu'il trouve leur e-mail et juge que leurs événements valent la démarche.",
       "club": "Club",
       "contact": "Contact",
       "formality": "Formalité",
@@ -656,9 +656,14 @@
       },
       "source": "Où l'adresse e-mail a été trouvée",
       "email": "E-mail",
-      "followUp": "Relance",
+      "script": "Script vidéo",
+      "whyFit": "Pourquoi ce club convient",
+      "claimLink": "Lien de revendication",
       "notes": "Notes",
-      "saveNotes": "Enregistrer les notes"
+      "saveNotes": "Enregistrer les notes",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Copie impossible. Sélectionnez le texte et copiez-le vous-même."
     },
     "clubSubmissionDetails": {
       "records": "Détails du dossier",

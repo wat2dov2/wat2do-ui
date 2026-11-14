@@ -82,7 +82,17 @@
     "positionCount_two": "{{count}} منصبان",
     "positionCount_few": "{{count}} مناصب",
     "positionCount_many": "{{count}} منصبًا",
-    "minimumEvents": "الحد الأدنى للفعاليات"
+    "minimumEvents": "الحد الأدنى للفعاليات",
+    "claimLink": {
+      "title": "طالِب بـ{{club}} على Wat2Do",
+      "description": "صفحة ناديك جاهزة. عند المطالبة بها تصبح مالكها، فتستطيع نشر الفعاليات والمناصب وتحديثها ومعرفة من سيحضر.",
+      "checking": "جارٍ التحقق من رابط المطالبة...",
+      "claim": "المطالبة بالنادي",
+      "claiming": "جارٍ المطالبة...",
+      "invalidTitle": "رابط المطالبة هذا لا يعمل",
+      "invalidDescription": "ربما كُتب بشكل خاطئ، أو طالب أحد أعضاء فريقك بالنادي بالفعل. اطلب منه إضافتك من لوحة النادي.",
+      "browseEvents": "تصفح الفعاليات"
+    }
   },
   "inviteLanding": {
     "validating": "جارٍ التحقق من رابط الدعوة...",

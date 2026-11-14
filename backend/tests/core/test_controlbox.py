@@ -978,6 +978,28 @@ def test_outreach_rejects_a_club_link_without_the_club(tmp_path: Path) -> None:
         load_controlbox(path)
 
 
+def test_outreach_pitches_waterloo_with_a_claim_link() -> None:
+    control = load_controlbox().outreach
+    assert control.pitch_schools == ["uwaterloo"]
+    assert "{school}" in control.claim_url_template and "{token}" in control.claim_url_template
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"claim_url_template": "https://{school}.wat2do.io/claim"},
+        {"pitch_schools": []},
+        {"pitch_schools": ["uwaterloo", "uwaterloo"]},
+        {"pitch_schools": ["UWaterloo"]},
+        {"pitch_model": "gpt-5"},
+    ],
+)
+def test_outreach_rejects_unusable_pitch_settings(tmp_path: Path, patch: dict) -> None:
+    path = _write_control(tmp_path, "outreach", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
 def test_follow_control_names_every_uoft_campus_for_the_others() -> None:
     names = controlbox.instagram_follow.school_names
     assert {"uoft", "utsc", "utsg"} <= set(names["utm"])

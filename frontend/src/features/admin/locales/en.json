@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Unclaimed clubs to invite to claim their page.",
-      "description": "Unclaimed clubs with events or positions on Wat2Do, each with the email found on its own page or by research, and an email inviting it to claim the page we made. A daily sweep adds more clubs. Open the email in Gmail and send it yourself.",
+      "description": "Unclaimed clubs whose events students come out for, each with its email, a script for your video and a personal email to send with it. Opening the email's claim link makes the opener the club's owner. A daily sweep adds clubs; open the email in Gmail, attach your video and send it yourself.",
       "statuses": {
         "new": "New",
         "contacted": "Contacted",
@@ -622,7 +622,7 @@
         "dismissed": "Dismissed"
       },
       "emptyTitle": "No clubs yet",
-      "emptyDescription": "The daily sweep adds clubs here as it finds their emails.",
+      "emptyDescription": "The daily sweep adds clubs here once it finds their email and judges their events worth pitching.",
       "club": "Club",
       "contact": "Contact",
       "formality": "Formality",
@@ -656,9 +656,14 @@
       },
       "source": "Where the email was found",
       "email": "Email",
-      "followUp": "Follow-up",
+      "script": "Video script",
+      "whyFit": "Why it's a fit",
+      "claimLink": "Claim link",
       "notes": "Notes",
-      "saveNotes": "Save notes"
+      "saveNotes": "Save notes",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Couldn't copy. Select the text and copy it yourself."
     },
     "clubSubmissionDetails": {
       "records": "Record details",

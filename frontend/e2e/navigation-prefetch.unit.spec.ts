@@ -234,6 +234,7 @@ test("only exact public page URLs are warmed on intent", () => {
     "/admin",
     "/club-panel",
     "/invite/club-invitation",
+    "/claim/claim-token",
     "/about?email=visitor%40example.com",
     "/?token=sign-in-token",
     "https://another-school.wat2do.io/login",

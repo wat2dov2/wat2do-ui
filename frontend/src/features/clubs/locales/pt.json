@@ -73,7 +73,17 @@
     "eventCount_many": "{{count}} eventos",
     "positionCount_one": "{{count}} posição",
     "positionCount_many": "{{count}} posições",
-    "minimumEvents": "Mínimo de eventos"
+    "minimumEvents": "Mínimo de eventos",
+    "claimLink": {
+      "title": "Reivindique {{club}} no Wat2Do",
+      "description": "A página do seu clube está pronta. Ao reivindicá-la, você se torna o dono: pode publicar eventos e vagas, mantê-los atualizados e ver quem vai.",
+      "checking": "Verificando seu link de reivindicação...",
+      "claim": "Reivindicar clube",
+      "claiming": "Reivindicando...",
+      "invalidTitle": "Este link de reivindicação não funciona",
+      "invalidDescription": "Ele pode estar digitado errado, ou alguém da sua equipe já reivindicou o clube. Peça para essa pessoa adicionar você pelo painel do clube.",
+      "browseEvents": "Ver eventos"
+    }
   },
   "inviteLanding": {
     "validating": "Validando link de convite...",

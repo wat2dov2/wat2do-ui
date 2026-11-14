@@ -208,6 +208,8 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(routes::clubs::invitations::revoke_invitation))
         .routes(routes!(routes::clubs::invitations::get_invitation_by_token))
         .routes(routes!(routes::clubs::invitations::accept_invitation))
+        .routes(routes!(routes::clubs::claim_links::get_claim_link))
+        .routes(routes!(routes::clubs::claim_links::accept_claim_link))
         .routes(routes!(routes::clubs::claims::create_claim))
         .routes(routes!(routes::clubs::claims::update_claim))
         .routes(routes!(routes::contact::submit_contact_message))

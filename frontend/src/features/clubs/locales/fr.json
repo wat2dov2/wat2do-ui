@@ -73,7 +73,17 @@
     "eventCount_many": "{{count}} événements",
     "positionCount_one": "{{count}} poste",
     "positionCount_many": "{{count}} postes",
-    "minimumEvents": "Événements minimum"
+    "minimumEvents": "Événements minimum",
+    "claimLink": {
+      "title": "Revendiquez {{club}} sur Wat2Do",
+      "description": "La page de votre club est prête. La revendiquer fait de vous son propriétaire : vous pourrez publier des événements et des postes, les tenir à jour et voir qui vient.",
+      "checking": "Vérification de votre lien de revendication...",
+      "claim": "Revendiquer le club",
+      "claiming": "Revendication...",
+      "invalidTitle": "Ce lien de revendication ne fonctionne pas",
+      "invalidDescription": "Il est peut-être mal saisi, ou quelqu'un de votre équipe a déjà revendiqué le club. Demandez-lui de vous ajouter depuis le panneau du club.",
+      "browseEvents": "Parcourir les événements"
+    }
   },
   "inviteLanding": {
     "validating": "Validation du lien d'invitation...",

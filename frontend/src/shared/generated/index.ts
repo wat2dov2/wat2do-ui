@@ -72,6 +72,7 @@ export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];
 
 // ── Clubs ───────────────────────────────────────────────────
 export type ApiClubResponse = components["schemas"]["ClubResponse"];
+export type ApiClubClaimLinkResponse = components["schemas"]["ClubClaimLinkResponse"];
 export type ApiPaginatedClubsResponse = components["schemas"]["PaginatedResponse_ClubResponse_"];
 
 // ── Reports ─────────────────────────────────────────────────────────

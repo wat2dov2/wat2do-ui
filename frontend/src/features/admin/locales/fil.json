@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Mga club na hindi pa na-claim na iimbitahang i-claim ang kanilang page.",
-      "description": "Mga club na hindi pa na-claim na may mga event o posisyon sa Wat2Do, bawat isa ay may email na nakita sa sarili nitong page o sa pananaliksik, at isang email na nag-iimbitang i-claim ang page na ginawa namin. Nagdadagdag ng mas maraming club ang araw-araw na paghahanap. Buksan ang email sa Gmail at ipadala mo ito.",
+      "description": "Mga hindi pa na-claim na club na dinadayo ng mga estudyante ang mga event, bawat isa may email, script para sa video mo, at personal na email na ipapadala kasama nito. Ang magbubukas ng claim link sa email ang magiging may-ari ng club. May pang-araw-araw na sweep na nagdadagdag ng mga club; buksan ang email sa Gmail, i-attach ang video mo at ikaw na ang magpadala.",
       "statuses": {
         "new": "Bago",
         "contacted": "Nakontak na",
@@ -622,7 +622,7 @@
         "dismissed": "Inalis"
       },
       "emptyTitle": "Wala pang club",
-      "emptyDescription": "Idinadagdag dito ng araw-araw na paghahanap ang mga club kapag nakita nito ang kanilang email.",
+      "emptyDescription": "Idinadagdag dito ng pang-araw-araw na sweep ang mga club kapag nahanap na nito ang email nila at nakitang sulit i-pitch ang mga event nila.",
       "club": "Club",
       "contact": "Contact",
       "formality": "Pagiging pormal",
@@ -656,9 +656,14 @@
       },
       "source": "Saan nakita ang email",
       "email": "Email",
-      "followUp": "Follow-up",
+      "script": "Script ng video",
+      "whyFit": "Bakit bagay",
+      "claimLink": "Claim link",
       "notes": "Mga tala",
-      "saveNotes": "I-save ang mga tala"
+      "saveNotes": "I-save ang mga tala",
+      "copy": "Kopyahin",
+      "copied": "Nakopya na",
+      "copyFailed": "Hindi makopya. Piliin ang text at kopyahin ito nang mano-mano."
     },
     "clubSubmissionDetails": {
       "records": "Mga detalye ng tala",

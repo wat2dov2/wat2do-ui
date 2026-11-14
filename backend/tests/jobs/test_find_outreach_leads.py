@@ -14,12 +14,30 @@ def test_launch_agent_sweeps_on_the_control_box_interval_without_logs():
     assert ".local/bin" in payload["EnvironmentVariables"]["PATH"]
 
 
-@pytest.mark.parametrize(("failed", "code"), [(0, 0), (2, 1)])
-def test_sweep_prints_its_result_and_fails_when_research_failed(monkeypatch, capsys, failed, code):
+@pytest.mark.parametrize(
+    ("research_failed", "pitch_failed", "code"), [(0, 0, 0), (2, 0, 1), (0, 1, 1)]
+)
+def test_sweep_prints_its_result_and_fails_when_any_agent_failed(
+    monkeypatch, capsys, research_failed, pitch_failed, code
+):
     from services.outreach import finder
 
-    result = {"page_emails": 4, "research_failed": failed}
+    result = {"page_emails": 4, "research_failed": research_failed, "pitch_failed": pitch_failed}
     monkeypatch.setattr(sys, "argv", ["job", "sweep"])
     monkeypatch.setattr(finder, "sweep", lambda: result)
     assert job.main() == code
+    assert json.loads(capsys.readouterr().out) == result
+
+
+def test_pitch_backfills_the_named_schools(monkeypatch, capsys):
+    from services.outreach import pitch
+
+    asked = []
+    result = {"pitch_fit": 2, "pitch_not_fit": 1, "pitch_failed": 0}
+    monkeypatch.setattr(sys, "argv", ["job", "pitch", "--school", "uwaterloo", "--limit", "5"])
+    monkeypatch.setattr(
+        pitch, "write_pitches", lambda schools, limit: asked.append((schools, limit)) or result
+    )
+    assert job.main() == 0
+    assert asked == [(["uwaterloo"], 5)]
     assert json.loads(capsys.readouterr().out) == result

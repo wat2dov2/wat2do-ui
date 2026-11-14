@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import type { OutreachLead } from "@/features/admin/api/admin.api";
 import { FormalityBadge } from "@/features/admin/components/outreach/FormalityBadge";
 import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompose";
+import { useCopyText } from "@/shared/hooks/useCopyText";
 import { DialogBody, FormActions, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { ExternalLink, Mail } from "lucide-react";
+import { Check, Copy, ExternalLink, Mail } from "lucide-react";
 import { FormTextarea } from "@/shared/ui/form-field";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { LoadingButton } from "@/shared/ui/loading-button";
@@ -18,7 +19,7 @@ interface LeadDetailsDialogProps {
   onSaveNotes: (lead: OutreachLead, notes: string) => void;
 }
 
-/** The email and follow-up inviting one club to claim its page, ready to send. */
+/** One club's video script, the email sent with the video, and its claim link, ready to send. */
 export function LeadDetailsDialog({ lead, isSaving, onClose, onSaveNotes }: LeadDetailsDialogProps) {
   return (
     <Dialog open={lead !== null} onOpenChange={open => !open && onClose()}>
@@ -33,8 +34,13 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
   const { t } = useTranslation();
   const [notes, setNotes] = useState(lead.notes);
   const sections = [
-    { title: t("admin.outreach.email"), text: `${lead.email_subject}\n\n${lead.email_body}` },
-    { title: t("admin.outreach.followUp"), text: lead.follow_up },
+    { title: t("admin.outreach.script"), text: lead.script, copy: lead.script },
+    {
+      title: t("admin.outreach.email"),
+      text: `${lead.email_subject}\n\n${lead.email_body}`,
+      copy: lead.email_body,
+    },
+    { title: t("admin.outreach.claimLink"), text: lead.claim_url, copy: lead.claim_url },
   ];
 
   return (
@@ -46,6 +52,10 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
       <DialogBody>
         <Stack gap={5}>
           <ItemContent>
+            <ItemTitle>{t("admin.outreach.whyFit")}</ItemTitle>
+            <ItemDescription length="full">{lead.pitch_reason}</ItemDescription>
+          </ItemContent>
+          <ItemContent>
             <ItemTitle>{t("admin.outreach.formality")}</ItemTitle>
             <FormalityBadge formality={lead.formality} />
             {lead.formality_signals.length > 0 && (
@@ -56,7 +66,10 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
           </ItemContent>
           {sections.map(section => (
             <ItemContent key={section.title}>
-              <ItemTitle>{section.title}</ItemTitle>
+              <Stack direction="horizontal" justify="between" align="center" gap={2}>
+                <ItemTitle>{section.title}</ItemTitle>
+                <CopyButton text={section.copy} />
+              </Stack>
               <ItemDescription length="full">{section.text}</ItemDescription>
             </ItemContent>
           ))}
@@ -83,5 +96,16 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
         </Stack>
       </DialogBody>
     </>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const { copied, copy } = useCopyText();
+  return (
+    <Button type="button" variant="ghost" size="sm"
+      onClick={() => void copy(text, { copied: t("admin.outreach.copied"), failed: t("admin.outreach.copyFailed") })}>
+      {copied ? <Check /> : <Copy />}{t("admin.outreach.copy")}
+    </Button>
   );
 }

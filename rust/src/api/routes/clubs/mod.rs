@@ -5,6 +5,7 @@
 //! `members`, `invitations` and `claims` hold the team routes; this module
 //! holds the club itself and the reads they share.
 
+pub mod claim_links;
 pub mod claims;
 pub mod emails;
 pub mod invitations;

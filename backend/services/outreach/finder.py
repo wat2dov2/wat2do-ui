@@ -6,8 +6,8 @@ club, or already given to another club, belongs to the directory, not the club, 
 is never used. Clubs still without an email then get a Claude research agent, a few at
 a time; code keeps an address only when it is printed on the page the agent cites, so
 an invented one never reaches the admin page. Last, every lead not scored yet gets its
-formality (``formality.py``) from what the sweep read. Nothing is ever sent: an admin sends the
-email from Gmail.
+formality (``formality.py``) from what the sweep read, and Claude pitches the leads that
+have an email (``pitch.py``). Nothing is ever sent: an admin sends the email from Gmail.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from pydantic import ValidationError
 from core.controlbox import controlbox
 from schemas.outreach import FoundClubEmail
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
-from services.outreach import formality, service
+from services.outreach import formality, pitch, service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
@@ -85,6 +85,7 @@ def sweep() -> dict[str, Any]:
         "researched": len(research) - failed,
         "research_emails": research_emails,
         "research_failed": failed,
+        **pitch.write_pitches(),
     }
 
 

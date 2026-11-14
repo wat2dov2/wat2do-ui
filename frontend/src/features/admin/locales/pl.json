@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Nieprzejęte kluby, które warto zaprosić do przejęcia ich strony.",
-      "description": "Nieprzejęte kluby z wydarzeniami lub stanowiskami na Wat2Do, każdy z adresem e-mail znalezionym na jego stronie lub w wyniku wyszukiwania oraz e-mailem zapraszającym do przejęcia strony, którą utworzyliśmy. Codzienne wyszukiwanie dodaje kolejne kluby. Otwórz e-mail w Gmailu i wyślij go samodzielnie.",
+      "description": "Nieprzejęte kluby, na których wydarzenia przychodzą studenci, każdy z adresem e-mail, scenariuszem do Twojego filmu i osobistym e-mailem do wysłania razem z nim. Osoba, która otworzy link przejęcia z e-maila, zostaje właścicielem klubu. Codzienny przegląd dodaje kluby; otwórz e-mail w Gmailu, dołącz swój film i wyślij.",
       "statuses": {
         "new": "Nowy",
         "contacted": "Skontaktowano",
@@ -622,7 +622,7 @@
         "dismissed": "Odrzucony"
       },
       "emptyTitle": "Brak klubów",
-      "emptyDescription": "Codzienne wyszukiwanie dodaje tu kluby, gdy znajdzie ich adresy e-mail.",
+      "emptyDescription": "Codzienny przegląd dodaje tu kluby, gdy znajdzie ich e-mail i uzna ich wydarzenia za warte propozycji.",
       "club": "Klub",
       "contact": "Kontakt",
       "formality": "Formalność",
@@ -656,9 +656,14 @@
       },
       "source": "Gdzie znaleziono e-mail",
       "email": "E-mail",
-      "followUp": "Follow-up",
+      "script": "Scenariusz filmu",
+      "whyFit": "Dlaczego pasuje",
+      "claimLink": "Link przejęcia",
       "notes": "Notatki",
-      "saveNotes": "Zapisz notatki"
+      "saveNotes": "Zapisz notatki",
+      "copy": "Kopiuj",
+      "copied": "Skopiowano",
+      "copyFailed": "Nie udało się skopiować. Zaznacz tekst i skopiuj go ręcznie."
     },
     "clubSubmissionDetails": {
       "records": "Szczegóły rekordu",

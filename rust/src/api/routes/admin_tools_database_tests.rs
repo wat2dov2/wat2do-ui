@@ -1,4 +1,4 @@
-//! The outreach, competitor pain point and automate log routes against a real
+//! The outreach (with its claim links), competitor pain point and automate log routes against a real
 //! Postgres loaded with our schema, so every statement runs as in production.
 //!
 //! They run only when `WAT2DO_TEST_DATABASE_URL` names that database (CI's
@@ -51,20 +51,26 @@ fn state(db: PgPool) -> AppState {
     AppState::new(settings, db, None).unwrap()
 }
 
-/// A new admin's access token.
-async fn admin(db: &PgPool) -> String {
+/// A new user with `role`: its id and access token.
+async fn user(db: &PgPool, role: &str) -> (Uuid, String) {
     let id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO public.users (id, email, auth_id, full_name, role) \
-         VALUES ($1, $2, $3, 'Admin Tester', 'admin')",
+         VALUES ($1, $2, $3, 'Tester', $4)",
     )
     .bind(id)
-    .bind(format!("admin-{}@example.com", id.simple()))
+    .bind(format!("{role}-{}@example.com", id.simple()))
     .bind(id.to_string())
+    .bind(role)
     .execute(db)
     .await
     .unwrap();
-    access_token(&id.to_string())
+    (id, access_token(&id.to_string()))
+}
+
+/// A new admin's access token.
+async fn admin(db: &PgPool) -> String {
+    user(db, "admin").await.1
 }
 
 async fn call(
@@ -100,8 +106,14 @@ async fn call(
     )
 }
 
-/// A new club at uwaterloo with a lead; the lead has an email unless `email` is `None`.
-async fn lead(db: &PgPool, name: &str, email: Option<&str>) -> (i32, Uuid) {
+/// A new club at uwaterloo with a lead: its club, id and claim token. The lead has
+/// an email unless `email` is `None`, and Claude's verdict `fit` unless that is `None`.
+async fn lead(
+    db: &PgPool,
+    name: &str,
+    email: Option<&str>,
+    fit: Option<bool>,
+) -> (i32, Uuid, Uuid) {
     let club: i32 = sqlx::query_scalar(
         "INSERT INTO public.clubs (club_name, school_id, status) \
          SELECT $1, id, 'approved' FROM public.schools WHERE slug = 'uwaterloo' RETURNING id",
@@ -110,20 +122,28 @@ async fn lead(db: &PgPool, name: &str, email: Option<&str>) -> (i32, Uuid) {
     .fetch_one(db)
     .await
     .unwrap();
-    let lead: Uuid = sqlx::query_scalar(
+    let (lead, token): (Uuid, Uuid) = sqlx::query_as(
         "INSERT INTO public.outreach_leads \
-             (club_id, email, email_source_url, email_found_by, found_at, formality) \
+             (club_id, email, email_source_url, email_found_by, found_at, formality, \
+              pitch_fit, pitch_reason, pitch_script, pitch_email_subject, pitch_email_body, \
+              pitched_at) \
          VALUES ($1, $2, CASE WHEN $2 IS NULL THEN NULL ELSE 'https://example.com/clubs' END, \
              CASE WHEN $2 IS NULL THEN NULL ELSE 'club_page' END, \
-             CASE WHEN $2 IS NULL THEN NULL ELSE now() END, 40) \
-         RETURNING id",
+             CASE WHEN $2 IS NULL THEN NULL ELSE now() END, 40, \
+             $3, CASE WHEN $3 IS NULL THEN NULL ELSE 'Game nights with snacks.' END, \
+             CASE WHEN $3 THEN 'Hey ' || $4 || '!' END, CASE WHEN $3 THEN $4 || ' on Wat2Do' END, \
+             CASE WHEN $3 THEN 'Hi ' || $4 || E' team,\n{{claim_url}}\nTony' END, \
+             CASE WHEN $3 IS NULL THEN NULL ELSE now() END) \
+         RETURNING id, claim_token",
     )
     .bind(club)
     .bind(email)
+    .bind(fit)
+    .bind(name)
     .fetch_one(db)
     .await
     .unwrap();
-    (club, lead)
+    (club, lead, token)
 }
 
 #[tokio::test]
@@ -132,8 +152,24 @@ async fn admins_list_and_update_outreach_leads() {
     let token = admin(&db).await;
     let tag = Uuid::new_v4().simple().to_string();
     let name = format!("Lead Club {tag}");
-    let (club, lead_id) = lead(&db, &name, Some("leads@example.com")).await;
-    let (_, hidden) = lead(&db, &format!("Lead Club {tag} hidden"), None).await;
+    let (club, lead_id, claim_token) =
+        lead(&db, &name, Some("leads@example.com"), Some(true)).await;
+    // The page lists only leads with an email whose club Claude judged a fit.
+    let (_, hidden, _) = lead(&db, &format!("Lead Club {tag} hidden"), None, None).await;
+    let (_, not_a_fit, _) = lead(
+        &db,
+        &format!("Lead Club {tag} unfit"),
+        Some("unfit@example.com"),
+        Some(false),
+    )
+    .await;
+    let (_, unjudged, _) = lead(
+        &db,
+        &format!("Lead Club {tag} unjudged"),
+        Some("unjudged@example.com"),
+        None,
+    )
+    .await;
 
     for sort in ["newest", "formality"] {
         let (status, page) = call(
@@ -157,7 +193,15 @@ async fn admins_list_and_update_outreach_leads() {
         assert_eq!(item["school_slug"], "uwaterloo");
         assert_eq!(item["formality"], 40);
         assert_eq!(item["formality_signals"], json!([]));
-        assert!(item["email_body"].as_str().unwrap().contains(&name));
+        let claim_url = format!("https://uwaterloo.wat2do.io/claim/{claim_token}");
+        assert_eq!(item["claim_url"], claim_url.as_str());
+        assert_eq!(
+            item["email_body"],
+            format!("Hi {name} team,\n{claim_url}\nTony").as_str()
+        );
+        assert_eq!(item["email_subject"], format!("{name} on Wat2Do").as_str());
+        assert_eq!(item["script"], format!("Hey {name}!").as_str());
+        assert_eq!(item["pitch_reason"], "Game nights with snacks.");
     }
 
     let path = format!("/outreach/leads/{lead_id}");
@@ -184,7 +228,7 @@ async fn admins_list_and_update_outreach_leads() {
     assert_eq!(kept["status"], "contacted");
     assert_eq!(kept["notes"], "Followed up");
 
-    for missing in [Uuid::new_v4(), hidden] {
+    for missing in [Uuid::new_v4(), hidden, not_a_fit, unjudged] {
         let (status, body) = call(
             &db,
             &token,
@@ -405,4 +449,51 @@ async fn automate_logs_are_stored_and_listed_newest_first() {
     .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(none, json!([]));
+}
+
+#[tokio::test]
+async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
+    let Some(db) = database() else { return };
+    let tag = Uuid::new_v4().simple().to_string();
+    let name = format!("Claim Club {tag}");
+    let (club, lead_id, token) = lead(&db, &name, Some("claim@example.com"), Some(true)).await;
+    let (first, first_token) = user(&db, "user").await;
+    let (_, second_token) = user(&db, "user").await;
+    let link = format!("/clubs/claim-links/{token}");
+    let expected = json!({"club_id": club, "club_name": name, "school": "uwaterloo"});
+
+    let (status, shown) = call(&db, &first_token, Method::GET, &link, None).await;
+    assert_eq!((status, &shown), (StatusCode::OK, &expected));
+    let accept = format!("{link}/accept");
+    let (status, claimed) = call(&db, &first_token, Method::POST, &accept, None).await;
+    assert_eq!((status, &claimed), (StatusCode::OK, &expected));
+
+    let (owner, members, lead_status): (Option<Uuid>, Vec<Uuid>, String) = sqlx::query_as(
+        "SELECT c.created_by, \
+             ARRAY(SELECT m.user_id FROM public.club_members m WHERE m.club_id = c.id), l.status \
+         FROM public.clubs c JOIN public.outreach_leads l ON l.club_id = c.id WHERE l.id = $1",
+    )
+    .bind(lead_id)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(
+        (owner, members, lead_status.as_str()),
+        (Some(first), vec![first], "claimed")
+    );
+
+    // Once the club is claimed the link hands over nothing, to anyone.
+    for (method, path) in [(Method::GET, &link), (Method::POST, &accept)] {
+        let (status, body) = call(&db, &second_token, method, path, None).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
+    }
+    let (status, _) = call(
+        &db,
+        &first_token,
+        Method::GET,
+        "/clubs/claim-links/nope",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
 }

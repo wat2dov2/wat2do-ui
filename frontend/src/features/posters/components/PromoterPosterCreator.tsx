@@ -251,7 +251,7 @@ export function PromoterPosterCreator({
         {t("posters.create.open")}
       </Button>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent size="xl" scrollable>
+        <DialogContent size="xl">
           <DialogHeader>
             <DialogTitle>{t("posters.create.title")}</DialogTitle>
             <DialogDescription>

@@ -1,7 +1,8 @@
 """Store the unclaimed clubs the daily sweep finds emails for.
 
-Every lead is one club. The admin page (``rust/src/api/routes/outreach``) writes each
-lead's email, follow-up and claim link from the club when it reads the lead.
+Every lead is one club. Claude's pitch (``pitch.py``) judges the club and writes its
+video script and email; the admin page (``rust/src/api/routes/outreach``) fills in each
+lead's claim link when it reads the lead.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from typing import Any
 from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import OUTREACH_LEADS
-from schemas.outreach import EmailFoundBy, FoundClubEmail
+from schemas.outreach import EmailFoundBy, FoundClubEmail, Pitch
 from services.outreach.formality import ClubFacts
 
 
@@ -123,33 +124,49 @@ def save_formality(scores: list[tuple[str, int, int, list[str]]]) -> None:
 
 
 def mark_claimed() -> int:
-    """Leads whose club has since been claimed move to claimed."""
-    rows = fetch_all_pages(
-        lambda offset, limit: (
-            (
-                get_sb()
-                .table(OUTREACH_LEADS)
-                .select("club_id")
-                .neq("status", "claimed")
-                .order("id")
-                .range(offset, offset + limit - 1)
-                .execute()
-            ).data
-            or []
+    """Leads whose club has since been claimed move to claimed; returns how many moved."""
+    return get_sb().rpc("outreach_mark_claimed", {}).execute().data or 0
+
+
+def unpitched(
+    schools: list[str], limit: int, *, recheck_before: datetime, event_limit: int
+) -> list[dict[str, Any]]:
+    """Leads at ``schools`` to judge: never judged, or judged not a fit before ``recheck_before``.
+
+    Each comes with its club and the club's newest ``event_limit`` events.
+    """
+    if limit == 0:
+        return []
+    return (
+        get_sb()
+        .rpc(
+            "outreach_unpitched",
+            {
+                "p_schools": schools,
+                "p_limit": limit,
+                "p_recheck_before": recheck_before.isoformat(),
+                "p_event_limit": event_limit,
+            },
         )
+        .execute()
+        .data
+        or []
     )
-    club_ids = [row["club_id"] for row in rows]
-    if not club_ids:
-        return 0
-    unclaimed = set(
-        get_sb().rpc("outreach_unclaimed", {"p_club_ids": club_ids}).execute().data or []
-    )
-    claimed = [club_id for club_id in club_ids if club_id not in unclaimed]
-    if claimed:
-        get_sb().table(OUTREACH_LEADS).update({"status": "claimed"}).in_(
-            "club_id", claimed
-        ).execute()
-    return len(claimed)
+
+
+def save_pitch(lead_id: str, pitch: Pitch) -> None:
+    """Store Claude's verdict, and for a fit the script and email (else none)."""
+    written = pitch.fit
+    get_sb().table(OUTREACH_LEADS).update(
+        {
+            "pitch_fit": pitch.fit,
+            "pitch_reason": pitch.reason,
+            "pitch_script": pitch.script if written else None,
+            "pitch_email_subject": pitch.email_subject if written else None,
+            "pitch_email_body": pitch.email_body if written else None,
+            "pitched_at": datetime.now(UTC).isoformat(),
+        }
+    ).eq("id", lead_id).execute()
 
 
 def _email_columns(found: FoundClubEmail | None, found_by: EmailFoundBy) -> dict[str, Any]:

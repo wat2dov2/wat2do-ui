@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Find unclaimed clubs' emails for the admin Outreach page.
 
-``sweep`` reads the pages of clubs not seen yet and sends Claude after the emails
-still missing; ``install-schedule`` runs it daily, on the control box's interval,
-through a macOS LaunchAgent that keeps no logs.
+``sweep`` reads the pages of clubs not seen yet, sends Claude after the emails
+still missing and pitches the leads due; ``pitch`` only pitches, for a backfill;
+``install-schedule`` runs the sweep daily, on the control box's interval, through a
+macOS LaunchAgent that keeps no logs.
 """
 
 from __future__ import annotations
@@ -42,6 +43,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("sweep", help="Find new clubs' emails and store them")
+    pitch_command = commands.add_parser("pitch", help="Judge and pitch the leads due now")
+    pitch_command.add_argument(
+        "--school", action="append", help="A school slug (default: the control box's)"
+    )
+    pitch_command.add_argument("--limit", type=int, help="Most leads to pitch")
     commands.add_parser("install-schedule", help="Run sweep on a schedule via a LaunchAgent")
     args = parser.parse_args()
     if args.command == "install-schedule":
@@ -53,11 +59,16 @@ def main() -> int:
         )
         print(f"Installed {LAUNCH_AGENT_LABEL}")
         return 0
-    from services.outreach.finder import sweep
+    if args.command == "pitch":
+        from services.outreach.pitch import write_pitches
 
-    result = sweep()
+        result = write_pitches(args.school, args.limit)
+    else:
+        from services.outreach.finder import sweep
+
+        result = sweep()
     print(json.dumps(result, sort_keys=True))
-    return 1 if result["research_failed"] else 0
+    return 1 if result.get("research_failed") or result["pitch_failed"] else 0
 
 
 if __name__ == "__main__":
