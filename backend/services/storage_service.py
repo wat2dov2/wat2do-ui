@@ -23,7 +23,6 @@ from botocore.config import Config  # type: ignore[import-untyped]
 from core.config import settings
 from core.constants import (
     BUCKET_AVATARS,
-    BUCKET_CLAIM_PROOFS,
     BUCKET_CLUB_LOGOS,
     BUCKET_EVENT_IMAGES,
     BUCKET_EVENT_VIDEOS,
@@ -74,10 +73,6 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
     BUCKET_QR_ASSETS: {
         "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
-    },
-    BUCKET_CLAIM_PROOFS: {
-        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
-        "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
     },
 }
 

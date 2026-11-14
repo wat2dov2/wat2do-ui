@@ -78,7 +78,9 @@ pub fn allowed_mime_types(bucket: &str) -> Vec<String> {
         // Shared verbatim with the frontend file picker, so it lives in the control box.
         BUCKET_EVENT_IMAGES => UPLOADS.event_image_allowed_mime_types.clone(),
         BUCKET_EVENT_VIDEOS => images(&["video/mp4"]),
-        BUCKET_AVATARS | BUCKET_CLAIM_PROOFS => images(&["image/jpeg", "image/png", "image/webp"]),
+        // Screenshots and screen recordings, shared verbatim with the claim form's picker.
+        BUCKET_CLAIM_PROOFS => UPLOADS.claim_proof_allowed_mime_types.clone(),
+        BUCKET_AVATARS => images(&["image/jpeg", "image/png", "image/webp"]),
         BUCKET_CLUB_LOGOS | BUCKET_QR_ASSETS => {
             images(&["image/jpeg", "image/png", "image/webp", "image/svg+xml"])
         }
@@ -91,6 +93,7 @@ pub fn file_size_limit(bucket: &str) -> usize {
     match bucket {
         BUCKET_EVENT_IMAGES => UPLOADS.event_image_max_size_bytes,
         BUCKET_EVENT_VIDEOS => UPLOADS.event_video_max_size_bytes,
+        BUCKET_CLAIM_PROOFS => UPLOADS.claim_proof_max_size_bytes,
         BUCKET_AVATARS | BUCKET_CLUB_LOGOS => MAX_AVATAR_SIZE_BYTES,
         _ => MAX_IMAGE_SIZE_BYTES,
     }
@@ -101,6 +104,7 @@ pub fn file_size_limit(bucket: &str) -> usize {
 fn extension(content_type: &str) -> &'static str {
     match content_type {
         "video/mp4" => ".mp4",
+        "video/quicktime" => ".mov",
         "image/jpeg" => ".jpg",
         "image/png" => ".png",
         "image/webp" => ".webp",
@@ -131,11 +135,13 @@ pub fn validate_and_prepare(
     if data.len() > limit {
         return Err(too_large(limit));
     }
-    if content_type == "video/mp4" {
-        // ISO base media files name their container in an ftyp box; never
-        // serve arbitrary bytes merely labelled video/mp4.
+    if let Some(container) = video_container(content_type) {
+        // MP4 and QuickTime files name their container in an ftyp box; never
+        // serve arbitrary bytes merely labelled a video.
         if data.len() < 16 || &data[4..8] != b"ftyp" {
-            return Err(UploadRefused::new("Uploaded file is not an MP4 video."));
+            return Err(UploadRefused::new(format!(
+                "Uploaded file is not an {container} video."
+            )));
         }
         return Ok((data, content_type.to_owned()));
     }
@@ -175,6 +181,15 @@ pub fn validate_and_prepare(
         return Ok((prepared, content_type.to_owned()));
     }
     Ok((data, content_type.to_owned()))
+}
+
+/// The container a video type is stored as, for the video types uploads accept.
+fn video_container(content_type: &str) -> Option<&'static str> {
+    match content_type {
+        "video/mp4" => Some("MP4"),
+        "video/quicktime" => Some("MOV"),
+        _ => None,
+    }
 }
 
 /// The size limit's refusal (`code="file_too_large"`).
@@ -995,11 +1010,50 @@ mod tests {
         assert_eq!(file_size_limit(BUCKET_AVATARS), 2 * 1024 * 1024);
         assert_eq!(file_size_limit(BUCKET_CLUB_LOGOS), 2 * 1024 * 1024);
         assert_eq!(file_size_limit(BUCKET_QR_ASSETS), 5 * 1024 * 1024);
-        assert_eq!(file_size_limit(BUCKET_CLAIM_PROOFS), 5 * 1024 * 1024);
+        assert_eq!(file_size_limit(BUCKET_CLAIM_PROOFS), 50 * 1024 * 1024);
         assert_eq!(file_size_limit("unknown"), MAX_IMAGE_SIZE_BYTES);
         assert_eq!(
             allowed_mime_types(BUCKET_CLAIM_PROOFS),
-            ["image/jpeg", "image/png", "image/webp"]
+            [
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "video/mp4",
+                "video/quicktime"
+            ]
+        );
+    }
+
+    #[test]
+    fn claim_proofs_take_screen_recordings() {
+        // A phone's screen recording: MP4 from Android, QuickTime from an iPhone or a Mac.
+        let mov = b"\x00\x00\x00\x14ftypqt  \x00\x00\x00\x00qt  ".to_vec();
+        let (prepared, content_type) =
+            validate_and_prepare(BUCKET_CLAIM_PROOFS, mov.clone(), Some("video/quicktime"))
+                .unwrap();
+        assert_eq!((prepared, content_type.as_str()), (mov, "video/quicktime"));
+        assert_eq!(extension("video/quicktime"), ".mov");
+        let mp4 = b"\x00\x00\x00\x18ftypisom\x00\x00\x00\x00isommp42".to_vec();
+        assert!(validate_and_prepare(BUCKET_CLAIM_PROOFS, mp4, Some("video/mp4")).is_ok());
+
+        let error = refused(validate_and_prepare(
+            BUCKET_CLAIM_PROOFS,
+            b"<html><body>not a video</body></html>".to_vec(),
+            Some("video/quicktime"),
+        ));
+        assert_eq!(error.detail, "Uploaded file is not an MOV video.");
+        // Other buckets still take no recordings.
+        let mov = b"\x00\x00\x00\x14ftypqt  \x00\x00\x00\x00qt  ".to_vec();
+        let error = refused(validate_and_prepare(
+            BUCKET_AVATARS,
+            mov,
+            Some("video/quicktime"),
+        ));
+        assert!(
+            error
+                .detail
+                .starts_with("File type video/quicktime not allowed"),
+            "{error}"
         );
     }
 

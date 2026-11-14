@@ -29,6 +29,10 @@ interface ImageUploadFieldProps {
   className?: string;
   multiple?: boolean;
   previewVariant?: keyof typeof PREVIEW_STYLES;
+  /** What `imagePreview` shows: a field that also takes recordings previews a video. */
+  previewMedia?: "image" | "video";
+  /** The empty field's call to action, for a field that takes more than images. */
+  uploadPrompt?: string;
 }
 
 export function ImageUploadField({
@@ -43,6 +47,8 @@ export function ImageUploadField({
   multiple = false,
   accept = "image/*",
   previewVariant = "thumbnail",
+  previewMedia = "image",
+  uploadPrompt,
 }: ImageUploadFieldProps) {
   const { t } = useTranslation();
   const internalRef = useRef<HTMLInputElement>(null);
@@ -82,11 +88,21 @@ export function ImageUploadField({
               previewStyles.container,
             )}
           >
-            <img
-              src={imagePreview}
-              alt={t("qrCode.posterPreview")}
-              className={previewStyles.image}
-            />
+            {previewMedia === "video" ? (
+              <video
+                src={imagePreview}
+                controls
+                muted
+                playsInline
+                className={previewStyles.image}
+              />
+            ) : (
+              <img
+                src={imagePreview}
+                alt={t("qrCode.posterPreview")}
+                className={previewStyles.image}
+              />
+            )}
           </div>
           {onRemoveImage && <Button
             type="button"
@@ -112,7 +128,7 @@ export function ImageUploadField({
         >
           <ImagePlus className="size-8 text-muted-foreground" />
           <p className="text-base font-medium md:text-sm">
-            {t("forms.clickToUploadImage")}
+            {uploadPrompt ?? t("forms.clickToUploadImage")}
           </p>
         </button>
       )}
