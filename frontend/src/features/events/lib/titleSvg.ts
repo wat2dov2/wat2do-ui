@@ -11,9 +11,13 @@ const JOINING_WORDS = new Set(["a", "an", "and", "at", "by", "de", "des", "du", 
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'" };
 
-/** Letters and digits only, lower-cased and without accents, so "B A S K E T" reads as "basket". */
+/**
+ * Letters and digits only, lower-cased, without accents and with ligatures
+ * spelled out (as `letters` in `rust/src/ingestion/title_svgs.rs` reads them),
+ * so "B A S K E T" reads as "basket" and "SŒURS" as "soeurs".
+ */
 function letters(text: string): string {
-  return text.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return text.replace(/[œŒ]/g, "oe").replace(/[æÆ]/g, "ae").replace(/ß/g, "ss").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 /** Everything the drawing writes, its text and tspan contents run together. */

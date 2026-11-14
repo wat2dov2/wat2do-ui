@@ -11,6 +11,9 @@ test("a drawing that spells the whole title stands in for it", () => {
   expect(titleSvgSpellsTitle(svg("BROTHERS’ GAMING", "BROTHERS’ GAMING", "NIGHT"), "Brothers' Gaming Night")).toBe(true);
   expect(titleSvgSpellsTitle(svg("RANDO- REFUGE DE L’AÉGUL"), "Rando-Refuge de l'Aégul")).toBe(true);
   expect(titleSvgSpellsTitle(svg("Mac &amp; Cheese Night"), "Mac & Cheese Night")).toBe(true);
+  // Ligatures match their spelled-out letters either way round.
+  expect(titleSvgSpellsTitle(svg("MUAY THAI ENTRE SOEURS"), "Muay Thai Entre Sœurs")).toBe(true);
+  expect(titleSvgSpellsTitle(svg("MUAY THAI ENTRE SŒURS"), "Muay Thai Entre Soeurs")).toBe(true);
   // Joining words the poster drops or sets as a symbol do not count.
   expect(titleSvgSpellsTitle(svg("NouLa x Le Gym 3v3", "BASKETBALL TOURNAMENT"), "NouLa x Le Gym 3v3 Basketball Tournament")).toBe(true);
 });

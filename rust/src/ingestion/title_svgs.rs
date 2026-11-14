@@ -66,7 +66,16 @@ static WORD_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[\s/:|]+").un
 
 /// Letters and digits only, lower-cased and without accents, so "B A S K E T" reads as "basket".
 fn letters(text: &str) -> String {
-    text.nfkd()
+    text.chars()
+        // Ligatures NFKD leaves whole, spelled out as a poster may set them.
+        .flat_map(|c| match c {
+            'œ' | 'Œ' => "oe".chars().collect::<Vec<_>>(),
+            'æ' | 'Æ' => "ae".chars().collect(),
+            'ß' => "ss".chars().collect(),
+            other => vec![other],
+        })
+        .collect::<String>()
+        .nfkd()
         .flat_map(char::to_lowercase)
         .filter(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
         .collect()
@@ -107,12 +116,21 @@ fn drawn_letters(svg: &str) -> String {
 /// word out (a sponsor set as a logo) or drew other lettering (a "WEEK AHEAD"
 /// header) would show the wrong title, so it is drawn again instead.
 pub fn spells_title(svg: &str, title: &str) -> bool {
+    missing_words(svg, title).is_empty()
+}
+
+/// The words of the title a drawing does not spell.
+fn missing_words<'a>(svg: &str, title: &'a str) -> Vec<&'a str> {
     let drawn = drawn_letters(svg);
     WORD_BREAK
         .split(title)
-        .map(letters)
-        .filter(|word| word.len() > 1 && !JOINING_WORDS.contains(&word.as_str()))
-        .all(|word| drawn.contains(&word))
+        .filter(|word| {
+            let letters = letters(word);
+            letters.len() > 1
+                && !JOINING_WORDS.contains(&letters.as_str())
+                && !drawn.contains(&letters)
+        })
+        .collect()
 }
 
 pub(super) struct Waiting {
@@ -124,7 +142,8 @@ pub(super) struct Waiting {
 enum Drawn {
     Svg(String),
     Plain,
-    Rejected,
+    /// Why the drawing was not kept, which the next attempt is told.
+    Rejected(String),
 }
 
 /// Keep every featured event to come drawn ([`featured_to_draw`]), `title_svg_lanes` at
@@ -190,7 +209,7 @@ async fn draw_due(
                 .await?;
                 unrefreshed.push(event.id);
             }
-            Ok(Drawn::Plain | Drawn::Rejected) => {}
+            Ok(Drawn::Plain | Drawn::Rejected(_)) => {}
             Err(error) => match error.downcast::<Limited>() {
                 Ok(error) => {
                     limited = Some(error);
@@ -304,19 +323,24 @@ async fn refresh_feeds(pool: &PgPool, events: &[i64]) -> Result<()> {
     Ok(())
 }
 
-/// Up to `title_svg_attempts` drawings of the event's title, until one is kept.
+/// Up to `title_svg_attempts` drawings of the event's title, until one is kept,
+/// each told why the one before it was not.
 async fn draw(event: &Waiting) -> Result<Drawn> {
     let mut drawn = Drawn::Plain;
     for _ in 0..INGESTION.title_svg_attempts.max(1) {
-        drawn = draw_once(event).await?;
-        if !matches!(drawn, Drawn::Rejected) {
+        let feedback = match &drawn {
+            Drawn::Rejected(reason) => Some(reason.clone()),
+            _ => None,
+        };
+        drawn = draw_once(event, feedback.as_deref()).await?;
+        if !matches!(drawn, Drawn::Rejected(_)) {
             break;
         }
     }
     Ok(drawn)
 }
 
-async fn draw_once(event: &Waiting) -> Result<Drawn> {
+async fn draw_once(event: &Waiting, feedback: Option<&str>) -> Result<Drawn> {
     let Some((data, content_type)) = fetch_image(&event.poster, true).await else {
         bail!("poster could not be fetched");
     };
@@ -330,7 +354,7 @@ async fn draw_once(event: &Waiting) -> Result<Drawn> {
         "properties": {"title_svg": {"type": ["string", "null"]}},
     });
     let answer = claude::run_agent(
-        &prompt(&file, &event.title),
+        &prompt(&file, &event.title, feedback),
         workdir.path(),
         Agent {
             name: "Title SVG agent",
@@ -351,20 +375,32 @@ async fn draw_once(event: &Waiting) -> Result<Drawn> {
         Some(Value::String(svg)) if !svg.trim().is_empty() => svg.trim(),
         _ => return Ok(Drawn::Plain),
     };
-    if !is_title_svg(svg) || !spells_title(svg, &event.title) {
-        return Ok(Drawn::Rejected);
-    }
-    if let Some(problem) = rendering_problem(svg) {
+    let problem = if !is_title_svg(svg) {
+        Some("it held something besides <text>, <tspan>, <g> and <rect>, or ran past 20000 characters".to_owned())
+    } else {
+        let missing = missing_words(svg, &event.title);
+        if missing.is_empty() {
+            rendering_problem(svg)
+        } else {
+            Some(format!("it left out {}", missing.join(", ")))
+        }
+    };
+    if let Some(problem) = problem {
         tracing::info!(event = event.id, "Title SVG drawn again: {problem}");
-        return Ok(Drawn::Rejected);
+        return Ok(Drawn::Rejected(problem));
     }
     Ok(Drawn::Svg(svg.to_owned()))
 }
 
-fn prompt(file: &str, title: &str) -> String {
+fn prompt(file: &str, title: &str, feedback: Option<&str>) -> String {
+    let again = feedback
+        .map(|reason| {
+            format!("\n\nYour last drawing of this title could not be used: {reason}. Draw it again without that.")
+        })
+        .unwrap_or_default();
     format!(
         "./{file} is the poster of a campus event listed as \"{title}\". Read it, then answer with \
-         `title_svg`: {rules}\n\nAnswer `title_svg` with the SVG text, or null.",
+         `title_svg`: {rules}\n\nAnswer `title_svg` with the SVG text, or null.{again}",
         rules = TITLE_SVG_RULES.trim_end(),
     )
 }
@@ -454,10 +490,34 @@ mod tests {
 
     #[test]
     fn the_prompt_carries_the_shared_rules_and_the_title() {
-        let prompt = prompt("poster.jpg", "Fall Formal");
-        assert!(prompt.contains("./poster.jpg"));
-        assert!(prompt.contains("\"Fall Formal\""));
-        assert!(prompt.contains("textLength"));
-        assert!(!prompt.contains("{{"));
+        let first = prompt("poster.jpg", "Fall Formal", None);
+        assert!(first.contains("./poster.jpg"));
+        assert!(first.contains("\"Fall Formal\""));
+        assert!(first.contains("textLength"));
+        assert!(!first.contains("{{"));
+        assert!(!first.contains("could not be used"));
+        // A drawing again is told why the last one was not kept.
+        let again = prompt("poster.jpg", "Fall Formal", Some("it left out Formal"));
+        assert!(
+            again.ends_with("could not be used: it left out Formal. Draw it again without that.")
+        );
+    }
+
+    #[test]
+    fn a_drawing_names_the_words_it_left_out() {
+        let svg = |text: &str| format!("<svg viewBox=\"0 0 400 80\"><text>{text}</text></svg>");
+        assert_eq!(
+            missing_words(&svg("ODYSSEY"), "Odyssey: Fall 2026 Concert"),
+            ["Fall", "2026", "Concert"]
+        );
+        // Ligatures match their spelled-out letters either way round.
+        assert!(spells_title(
+            &svg("MUAY THAI ENTRE SOEURS"),
+            "Muay Thai Entre Sœurs"
+        ));
+        assert!(spells_title(
+            &svg("MUAY THAI ENTRE SŒURS"),
+            "Muay Thai Entre Soeurs"
+        ));
     }
 }
