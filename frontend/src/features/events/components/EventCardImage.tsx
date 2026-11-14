@@ -162,6 +162,7 @@ export function EventCardImage({
               cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
+              verified={event.verified}
               disabled={!interactive}
               logoLoading={eagerImage ? "eager" : "lazy"}
               onNavigate={onClubNavigate}

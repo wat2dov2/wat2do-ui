@@ -9,6 +9,7 @@
     "submissionFailedTitle": "Submission failed",
     "clubRequired": "Select a club before submitting the event.",
     "club": "Club",
+    "verified": "Verified",
     "status": "Status",
     "dayOfWeek": "Day of Week",
     "createEvent": "Add event",

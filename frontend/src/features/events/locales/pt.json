@@ -9,6 +9,7 @@
     "submissionFailedTitle": "Envio falhou",
     "clubRequired": "Selecione uma organização antes de enviar o evento.",
     "club": "Organização",
+    "verified": "Verificado",
     "status": "Status",
     "dayOfWeek": "Dia da Semana",
     "createEvent": "Adicionar evento",

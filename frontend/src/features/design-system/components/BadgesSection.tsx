@@ -42,6 +42,9 @@ export function BadgesSection() {
         <ShowcaseBlock label="Shared club badge with a fixed cohost count">
           <ClubBadgeLink disabled clubName="University Campus Community Club" cohosts={[{ id: 2, club_name: "Second Club", logo_url: null }]} />
         </ShowcaseBlock>
+        <ShowcaseBlock label="Club badge of a verified event (its club claimed its page)">
+          <ClubBadgeLink disabled verified clubName="UW Blueprint" />
+        </ShowcaseBlock>
         <ShowcaseBlock label="Variants">
           <Stack direction="horizontal" gap={2} align="center" className="flex-wrap">
             {BADGE_VARIANTS.map((variant) => (

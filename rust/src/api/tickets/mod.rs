@@ -76,6 +76,7 @@ pub(crate) mod tests {
             club_logo_url: None,
             cohosts: Vec::new(),
             featured: false,
+            verified: false,
             is_directory_event: false,
             club_type: None,
             club_page: None,

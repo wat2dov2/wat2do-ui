@@ -9,6 +9,7 @@
     "submissionFailedTitle": "提交失败",
     "clubRequired": "提交活动前请选择一个组织。",
     "club": "组织",
+    "verified": "已认证",
     "status": "状态",
     "dayOfWeek": "星期",
     "createEvent": "添加活动",

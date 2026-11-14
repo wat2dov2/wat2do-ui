@@ -9,6 +9,7 @@
     "submissionFailedTitle": "Échec de la soumission",
     "clubRequired": "Sélectionnez une organisation avant de soumettre l'événement.",
     "club": "Organisation",
+    "verified": "Vérifié",
     "status": "Statut",
     "dayOfWeek": "Jour de la semaine",
     "createEvent": "Ajouter un événement",
