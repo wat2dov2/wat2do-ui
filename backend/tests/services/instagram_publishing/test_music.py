@@ -41,7 +41,10 @@ class _Table:
 @pytest.fixture
 def database(monkeypatch):
     tables = {
-        "instagram_songs": [{"query": "the weeknd after hours"}, {"query": "dua lipa houdini"}],
+        "instagram_songs": [
+            {"query": "bigbang loser", "asian_campuses_only": True},
+            {"query": "bts dope", "asian_campuses_only": True},
+        ],
         "instagram_publish_batches": [BATCH],
     }
     calls = []
@@ -66,19 +69,19 @@ def _updates(calls):
     ]
 
 
-def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
-    finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
+def test_pending_carousels_get_a_song_in_rotation_order(monkeypatch, database):
+    finish_post = Mock(return_value=AddedTrack("bts dope", "Dope by BTS,3:57"))
     monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"added": 1}
     device, school, permalink, songs, choose, _gif, place = finish_post.call_args.args
     assert (device, school, permalink) == (DEVICE, "uwaterloo", POST)
-    assert sorted(songs) == ["dua lipa houdini", "the weeknd after hours"]
+    assert sorted(songs) == ["bigbang loser", "bts dope"]
     assert choose is music.choose_track
     assert place == PlaceTag("University of Waterloo", music.choose_place)
     assert _updates(database.calls) == [
         {
             "music_status": "added",
-            "music_track": "Houdini by Dua Lipa,3:05",
+            "music_track": "Dope by BTS,3:57",
             "music_error": None,
             "music_attempts": 1,
         }
@@ -122,7 +125,7 @@ def test_claudes_usage_limit_never_gives_a_carousel_up(monkeypatch, database):
 
 
 def test_a_failed_try_waits_before_the_next(monkeypatch, database):
-    finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
+    finish_post = Mock(return_value=AddedTrack("bts dope", "Dope by BTS,3:57"))
     monkeypatch.setattr(music, "finish_post", finish_post)
     just_tried = (NOW - timedelta(minutes=music._CONTROL.music_retry_minutes - 1)).isoformat()
     database.tables["instagram_publish_batches"] = [
@@ -239,13 +242,37 @@ def _tried_songs(monkeypatch, database, school):
     return tried
 
 
-def test_asian_and_kpop_songs_play_only_on_asian_campuses(monkeypatch, database):
+def test_asian_campuses_play_only_asian_and_kpop_songs(monkeypatch, database):
     assert music._CONTROL.asian_song_schools
     assert "uwaterloo" in music._CONTROL.asian_song_schools
-    assert _tried_songs(monkeypatch, database, "uwaterloo") == [
-        ["bts spring day", "the weeknd after hours"]
-    ]
+    assert _tried_songs(monkeypatch, database, "uwaterloo") == [["bts spring day"]]
     assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
+
+
+SONGS = [f"song {n}" for n in range(7)]
+
+
+def test_every_school_tries_the_same_song_first_on_the_same_day():
+    day = datetime(2026, 11, 14).date()
+    tries = music.rotation(SONGS, day)
+    assert sorted(tries) == sorted(SONGS)
+    assert music.rotation(list(reversed(SONGS)), day) == tries
+
+
+def test_the_rotation_moves_one_song_on_each_day():
+    days = [datetime(2026, 11, 14).date() + timedelta(days=n) for n in range(len(SONGS))]
+    firsts = [music.rotation(SONGS, day)[0] for day in days]
+    assert sorted(firsts) == sorted(SONGS)
+    tomorrow = music.rotation(SONGS, days[1])
+    assert tomorrow == music.rotation(SONGS, days[0])[1:] + music.rotation(SONGS, days[0])[:1]
+
+
+def test_a_retry_after_midnight_keeps_the_posting_days_song():
+    published = "2026-11-14T14:40:00+00:00"
+    after_midnight = datetime(2026, 11, 15, 6, tzinfo=timezone.utc)
+    assert music._posting_day(published, after_midnight) == datetime(2026, 11, 14).date()
+    late_evening = datetime(2026, 11, 15, 3, tzinfo=timezone.utc)
+    assert music._posting_day(None, late_evening) == datetime(2026, 11, 14).date()
 
 
 def test_a_campus_with_no_playable_song_is_left_pending(monkeypatch, database):
