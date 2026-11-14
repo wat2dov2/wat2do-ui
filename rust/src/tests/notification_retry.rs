@@ -2,12 +2,13 @@
 //! `tests/services/notification_retry/test_github_runs.py` and
 //! `tests/jobs/test_retry_failed_notifications.py`.
 //!
-//! Python patched `github_runs` and `_recover_login`; here a fake `RetryServices`
-//! records each call. `gh` itself runs on a `FakeHost`, the state file lives in a
+//! Python patched `github_runs`; here a fake `RetryServices` records each call and
+//! answers what the worker can run. `gh` itself runs on a `FakeHost`, the state file lives in a
 //! temporary directory, and the controls come from
 //! `controlbox::overrides::notification_retry`.
 
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -21,9 +22,9 @@ fn control_with(change: impl FnOnce(&mut crate::controlbox::NotificationRetry)) 
         control.github_repo = "owner/repo".into();
         control.workflow_name = "Process Notifications".into();
         control.lookback_hours = 36;
-        control.login_first_school = "guelph".into();
         control.reruns_per_day = 20;
         control.max_reruns_per_run = 3;
+        control.rerun_spacing_minutes = 30;
         change(control);
     });
 }
@@ -31,9 +32,16 @@ fn control_with(change: impl FnOnce(&mut crate::controlbox::NotificationRetry)) 
 fn workflow_run(run_id: &str) -> WorkflowRun {
     WorkflowRun {
         id: run_id.into(),
-        title: format!("run {run_id}"),
+        title: format!("poster{run_id} and 3 others - wat2do.school{run_id}"),
         url: format!("https://x/{run_id}"),
         created_at: 900.0,
+    }
+}
+
+fn titled(run_id: &str, title: &str) -> WorkflowRun {
+    WorkflowRun {
+        title: title.into(),
+        ..workflow_run(run_id)
     }
 }
 
@@ -41,23 +49,36 @@ type Rerun = Box<dyn Fn(&str) -> Result<(), GitHubCliError>>;
 
 struct FakeRetry {
     runs: Result<Vec<WorkflowRun>, GitHubCliError>,
-    relogin: Option<bool>,
+    readiness: Option<Readiness>,
     rerun: Rerun,
     listed: RefCell<Vec<(String, String, u32, f64)>>,
-    relogins: RefCell<Vec<String>>,
+    readiness_reads: RefCell<usize>,
     reruns: RefCell<Vec<(String, String)>>,
 }
 
 impl FakeRetry {
-    fn new(runs: Vec<WorkflowRun>, relogin: Option<bool>) -> Self {
+    fn new(runs: Vec<WorkflowRun>, readiness: Option<Readiness>) -> Self {
         Self {
             runs: Ok(runs),
-            relogin,
+            readiness,
             rerun: Box::new(|_| Ok(())),
             listed: RefCell::new(Vec::new()),
-            relogins: RefCell::new(Vec::new()),
+            readiness_reads: RefCell::new(0),
             reruns: RefCell::new(Vec::new()),
         }
+    }
+
+    /// The worker runs digests for every account.
+    fn ready(runs: Vec<WorkflowRun>) -> Self {
+        Self::new(runs, Some(Readiness::default()))
+    }
+
+    fn reran(&self) -> Vec<String> {
+        self.reruns
+            .borrow()
+            .iter()
+            .map(|(_, run_id)| run_id.clone())
+            .collect()
     }
 }
 
@@ -82,16 +103,18 @@ impl RetryServices for FakeRetry {
         (self.rerun)(run_id)
     }
 
-    fn recover_login(&self, login_first_school: &str) -> Option<bool> {
-        self.relogins
-            .borrow_mut()
-            .push(login_first_school.to_owned());
-        self.relogin
+    fn readiness(&self) -> Option<Readiness> {
+        *self.readiness_reads.borrow_mut() += 1;
+        self.readiness.clone()
     }
 }
 
 fn retry(services: &FakeRetry, state: &Path) -> Value {
-    retry_failed_notifications(services, state, &|| 1000.0)
+    retry_at(services, state, 1000.0)
+}
+
+fn retry_at(services: &FakeRetry, state: &Path, now: f64) -> Value {
+    retry_failed_notifications(services, state, &|| now)
 }
 
 fn ids(result: &Value, key: &str) -> Vec<String> {
@@ -104,15 +127,15 @@ fn ids(result: &Value, key: &str) -> Vec<String> {
 }
 
 #[test]
-fn test_no_failed_runs_skips_relogin_and_reruns() {
+fn test_no_failed_runs_reads_nothing_else() {
     control_with(|_| {});
     let directory = tempfile::tempdir().unwrap();
-    let services = FakeRetry::new(vec![], Some(true));
+    let services = FakeRetry::ready(vec![]);
 
     let result = retry(&services, &directory.path().join("state.json"));
 
     assert_eq!(result["failed_runs"], 0);
-    assert!(services.relogins.borrow().is_empty());
+    assert_eq!(*services.readiness_reads.borrow(), 0);
     assert!(services.reruns.borrow().is_empty());
     assert_eq!(
         *services.listed.borrow(),
@@ -126,21 +149,131 @@ fn test_no_failed_runs_skips_relogin_and_reruns() {
 }
 
 #[test]
-fn test_relogin_first_then_rerun_each_failed_run() {
+fn test_reruns_each_failed_run_while_the_worker_runs() {
     control_with(|_| {});
     let directory = tempfile::tempdir().unwrap();
-    let services = FakeRetry::new(vec![workflow_run("1"), workflow_run("2")], Some(true));
+    let services = FakeRetry::ready(vec![workflow_run("1"), workflow_run("2")]);
 
     let result = retry(&services, &directory.path().join("state.json"));
 
     assert_eq!(ids(&result, "reran"), vec!["1", "2"]);
-    assert_eq!(result["relogin"], true);
-    assert_eq!(services.reruns.borrow().len(), 2);
-    assert_eq!(*services.relogins.borrow(), vec!["guelph".to_owned()]);
+    assert_eq!(services.reran(), vec!["1", "2"]);
+    assert_eq!(result["blocked"], Value::Null);
 }
 
 #[test]
-fn test_run_past_its_cap_is_escalated_not_reran() {
+fn test_nothing_is_reran_or_spent_while_the_worker_is_paused() {
+    // 11-13: Brave sat logged out from 10:17 to 21:51 and every rerun would have failed.
+    control_with(|_| {});
+    let directory = tempfile::tempdir().unwrap();
+    let state = directory.path().join("state.json");
+    let paused = Readiness {
+        blocked: Some("the Instagram browser worker is paused: logged out".to_owned()),
+        ..Readiness::default()
+    };
+    let services = FakeRetry::new(vec![workflow_run("1")], Some(paused));
+
+    let result = retry(&services, &state);
+
+    assert_eq!(
+        result["blocked"],
+        "the Instagram browser worker is paused: logged out"
+    );
+    assert!(services.reruns.borrow().is_empty());
+    // An unreadable queue blocks the same way.
+    let services = FakeRetry::new(vec![workflow_run("1")], None);
+    assert!(retry(&services, &state)["blocked"].is_string());
+    assert!(services.reruns.borrow().is_empty());
+    // Once the worker runs, the run gets every one of its reruns.
+    let services = FakeRetry::ready(vec![workflow_run("1")]);
+    assert_eq!(ids(&retry(&services, &state), "reran"), vec!["1"]);
+    let saved: Value = serde_json::from_str(&std::fs::read_to_string(&state).unwrap()).unwrap();
+    assert_eq!(saved["runs"]["1"]["count"], 1);
+}
+
+#[test]
+fn test_a_run_waits_while_its_account_cannot_run() {
+    control_with(|_| {});
+    let directory = tempfile::tempdir().unwrap();
+    let state = directory.path().join("state.json");
+    let runs = vec![
+        titled("1", "sfuastronomyclub and 24 others - wat2do.sfu"),
+        titled("2", "ubcaseac and 138 others - wat2do.ubc"),
+        titled("3", "dance and 2 others - sfu.wat2do.io"),
+    ];
+    let readiness = Readiness {
+        blocked: None,
+        unavailable: BTreeMap::from([(
+            "wat2do.sfu".to_owned(),
+            "missing from Brave until its login is allowed again".to_owned(),
+        )]),
+    };
+    let services = FakeRetry::new(runs.clone(), Some(readiness));
+
+    let result = retry(&services, &state);
+
+    // An old switcher name is the same account.
+    assert_eq!(ids(&result, "waiting"), vec!["1", "3"]);
+    assert_eq!(services.reran(), vec!["2"]);
+    // Back in Brave: its runs are reran, none of their reruns spent while waiting.
+    let services = FakeRetry::ready(runs);
+    let result = retry_at(&services, &state, 1000.0 + 60.0);
+    assert_eq!(services.reran(), vec!["1", "3"]);
+    assert_eq!(ids(&result, "waiting"), vec!["2"], "reran a minute ago");
+}
+
+#[test]
+fn test_a_failing_run_is_reran_again_only_after_the_spacing() {
+    control_with(|control| control.rerun_spacing_minutes = 30);
+    let directory = tempfile::tempdir().unwrap();
+    let state = directory.path().join("state.json");
+    let services = FakeRetry::ready(vec![workflow_run("1")]);
+    retry_at(&services, &state, 1000.0);
+    retry_at(&services, &state, 1000.0 + 29.0 * 60.0);
+    assert_eq!(services.reran(), vec!["1"]);
+    retry_at(&services, &state, 1000.0 + 30.0 * 60.0);
+    assert_eq!(services.reran(), vec!["1", "1"]);
+}
+
+#[test]
+fn test_unroutable_runs_are_never_reran() {
+    control_with(|_| {});
+    let directory = tempfile::tempdir().unwrap();
+    let services = FakeRetry::ready(vec![titled("1", " - "), titled("2", "Process @club")]);
+
+    let result = retry(&services, &directory.path().join("state.json"));
+
+    assert_eq!(ids(&result, "skipped"), vec!["1"]);
+    // A manual run names no account and is reran.
+    assert_eq!(services.reran(), vec!["2"]);
+}
+
+#[test]
+fn test_run_account_reads_the_title() {
+    assert_eq!(
+        run_account("michigandaily and 134 others - wat2do.umich"),
+        RunAccount::Named("wat2do.umich".to_owned())
+    );
+    assert_eq!(
+        run_account("Husayniyyah Toronto Met | Downtown Toronto - wat2do.tmu"),
+        RunAccount::Named("wat2do.tmu".to_owned())
+    );
+    assert_eq!(
+        run_account("A - B - wat2do.ubc"),
+        RunAccount::Named("wat2do.ubc".to_owned())
+    );
+    assert_eq!(run_account("Process @club"), RunAccount::Unnamed);
+    for unroutable in [" - ", "-", "poster - ", "poster -"] {
+        assert_eq!(
+            run_account(unroutable),
+            RunAccount::Unroutable,
+            "{unroutable:?}"
+        );
+    }
+}
+
+#[test]
+fn test_run_past_its_cap_is_escalated_once_not_reran() {
     control_with(|control| control.max_reruns_per_run = 2);
     let directory = tempfile::tempdir().unwrap();
     let state = directory.path().join("state.json");
@@ -149,20 +282,22 @@ fn test_run_past_its_cap_is_escalated_not_reran() {
         json!({"runs": {"1": {"count": 2, "last_at": 999.0}}, "rerun_timestamps": []}).to_string(),
     )
     .unwrap();
-    let services = FakeRetry::new(vec![workflow_run("1")], Some(false));
+    let services = FakeRetry::ready(vec![workflow_run("1")]);
 
     let result = retry(&services, &state);
 
     assert_eq!(ids(&result, "escalated"), vec!["1"]);
     assert!(ids(&result, "reran").is_empty());
     assert!(services.reruns.borrow().is_empty());
+    let saved: Value = serde_json::from_str(&std::fs::read_to_string(&state).unwrap()).unwrap();
+    assert_eq!(saved["runs"]["1"]["reported"], true);
 }
 
 #[test]
 fn test_daily_cap_skips_further_reruns() {
     control_with(|control| control.reruns_per_day = 1);
     let directory = tempfile::tempdir().unwrap();
-    let services = FakeRetry::new(vec![workflow_run("1"), workflow_run("2")], Some(true));
+    let services = FakeRetry::ready(vec![workflow_run("1"), workflow_run("2")]);
 
     let result = retry(&services, &directory.path().join("state.json"));
 
@@ -171,18 +306,18 @@ fn test_daily_cap_skips_further_reruns() {
 }
 
 #[test]
-fn test_list_error_reports_and_never_touches_brave() {
+fn test_list_error_reports_and_never_reads_the_worker() {
     control_with(|_| {});
     let directory = tempfile::tempdir().unwrap();
     let services = FakeRetry {
         runs: Err(GitHubCliError("gh not authenticated".into())),
-        ..FakeRetry::new(vec![], Some(true))
+        ..FakeRetry::ready(vec![])
     };
 
     let result = retry(&services, &directory.path().join("state.json"));
 
     assert_eq!(result["error"], "gh not authenticated");
-    assert!(services.relogins.borrow().is_empty());
+    assert_eq!(*services.readiness_reads.borrow(), 0);
 }
 
 #[test]
@@ -197,7 +332,7 @@ fn test_rerun_failure_skips_that_run_only() {
                 Ok(())
             }
         }),
-        ..FakeRetry::new(vec![workflow_run("1"), workflow_run("2")], Some(true))
+        ..FakeRetry::ready(vec![workflow_run("1"), workflow_run("2")])
     };
 
     let result = retry(&services, &directory.path().join("state.json"));
@@ -325,7 +460,7 @@ fn test_run_command_prints_result_and_exits_zero() {
     assert_eq!(result["failed_runs"], 0);
     assert_eq!(
         printed,
-        r#"{"escalated": [], "failed_runs": 0, "relogin": null, "reran": [], "skipped": []}"#
+        r#"{"blocked": null, "escalated": [], "failed_runs": 0, "reran": [], "skipped": [], "waiting": []}"#
     );
 }
 

@@ -454,7 +454,6 @@ impl TabPool for BrowserTabPool {
                 }
                 profiles.retain(|profile| !passed_over.contains(profile));
                 if let Some(first) = profiles.first() {
-                    let listed = |account: &&str| profiles.iter().any(|profile| profile == account);
                     let mut usable = Vec::new();
                     for profile in &profiles {
                         let held = self
@@ -465,6 +464,9 @@ impl TabPool for BrowserTabPool {
                             usable.push(profile);
                         }
                     }
+                    // An account held for a person is never preferred, even as the
+                    // previous account or the login school.
+                    let listed = |account: &&str| usable.iter().any(|profile| profile == account);
                     let choice = preferred
                         .as_str()
                         .filter(listed)
@@ -512,15 +514,28 @@ impl TabPool for BrowserTabPool {
                 {
                     return Err(logins_used_up(&username));
                 }
-                session.log_in(&username, &password)?;
+                if let Err(error) = session.log_in(&username, &password) {
+                    // Its password went out: only this account waits for a person, and
+                    // the next recovery tries the other saved profiles.
+                    if error.is(SessionKind::LoginSubmitted) {
+                        self.queue
+                            .pause_account_login(&username, &error.to_string())?;
+                    }
+                    return Err(error);
+                }
                 outcome = Some("logged_in".to_owned());
             }
             break;
         }
         if outcome.as_deref() == Some("challenge") {
-            return Err(BrowserError::session(
-                "Instagram needs a person: it asks to confirm the account",
-            ));
+            let reason = "Instagram needs a person: it asks to confirm the account";
+            // Only the challenged account waits for a person; the next recovery tries
+            // the other saved profiles.
+            if let Some(shown) = clicked.first() {
+                self.queue
+                    .pause_account_login(&account_login::canonical_account(shown), reason)?;
+            }
+            return Err(BrowserError::session(reason));
         }
         let mut username: Option<String> = None;
         session.poll_until(|session| {
@@ -545,7 +560,9 @@ impl TabPool for BrowserTabPool {
     }
 
     /// Added the way a person adds one: from the `login_from_school` account, which is
-    /// logged back in first (under the same caps) when Instagram dropped it too.
+    /// logged back in first (under the same caps) when Instagram dropped it too. When its
+    /// own login cannot happen today, the account is added from whichever account Brave
+    /// shows: one spent login never keeps every missing school out for a day (11-13).
     fn add_account(&self, username: &str) -> BrowserResult<()> {
         let password = self.stored_password(username)?;
         let ids = self.live_ids(&self.registered_ids()?)?;
@@ -565,10 +582,35 @@ impl TabPool for BrowserTabPool {
         if username != from_account && session.active_account()? != from_account {
             match session.switch_account(&from_account) {
                 Err(error) if error.to_string() == ACCOUNT_UNAVAILABLE => {
-                    let from_password = self.stored_password(&from_account)?;
-                    self.log_in_from_switcher(&mut session, &from_account, &from_password)?;
-                    // The account being added gets a full login's time of its own.
-                    session.reset_job_deadline(control().login_recovery_timeout_seconds);
+                    let allowed = self
+                        .queue
+                        .account_login_allowed(&from_account, self.bridge.time())?;
+                    let from_password = if allowed {
+                        account_login::account_password(&self.bridge, &from_account)
+                    } else {
+                        None
+                    };
+                    if let Some(from_password) = from_password {
+                        match self.log_in_from_switcher(&mut session, &from_account, &from_password)
+                        {
+                            // Its own password went out: the login school waits for a
+                            // person, not the account being added.
+                            Err(error) if error.is(SessionKind::LoginSubmitted) => {
+                                self.queue
+                                    .pause_account_login(&from_account, &error.to_string())?;
+                                return Err(BrowserError::session(format!(
+                                    "{username} waits for its next try: {error}"
+                                )));
+                            }
+                            other => other?,
+                        }
+                        // The account being added gets a full login's time of its own.
+                        session.reset_job_deadline(control().login_recovery_timeout_seconds);
+                    } else {
+                        tracing::warn!(
+                            "Adding {username} to Brave from the account it shows: {from_account} is missing too and cannot log in today"
+                        );
+                    }
                 }
                 other => other?,
             }
@@ -607,7 +649,9 @@ impl TabPool for BrowserTabPool {
             return Err(BrowserError::session(LOGGED_OUT_PAUSE));
         }
         let username = if job.kind == "digest" {
-            primary.activate_account(&job.recipient_id, &job.account_username)?
+            let username = primary.activate_account(&job.recipient_id, &job.account_username)?;
+            self.queue.clear_account_missing(&job.account_username)?;
+            username
         } else {
             Self::ready_username(primary)?
         };

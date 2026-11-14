@@ -157,8 +157,11 @@ pub fn response_failure(payload: &Map<String, Value>) -> BrowserError {
         (Some("account_changed"), _) => BrowserError::page_unavailable(
             "Instagram browser account changed during a Following read",
         ),
+        // A page instead of the API's JSON is Instagram refusing the read (a login or
+        // checkpoint page served in place): it holds these reads like any refusal, never
+        // retried at once (11-13: Lightpanda asked again every ten seconds, 282 an hour).
         (Some("invalid_json"), _) => {
-            BrowserError::page_unavailable("Instagram Following response was not valid JSON")
+            BrowserError::rate_limited("Instagram Following response was not valid JSON")
         }
         (Some("invalid_response"), _) => {
             BrowserError::session("Instagram Following response did not contain an account list")

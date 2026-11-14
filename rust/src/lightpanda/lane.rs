@@ -856,6 +856,24 @@ mod tests {
     }
 
     #[test]
+    fn a_page_in_place_of_following_json_holds_the_account() {
+        // 11-13: mun, sfu and uwindsor got a page instead of JSON and asked again every
+        // ten seconds; it is a refusal, so the account is held and backs off.
+        let payload = serde_json::json!({"state": "failed", "reason": "invalid_json"});
+        let error = crate::instagram_notifications::browser_following::response_failure(
+            payload.as_object().unwrap(),
+        );
+        assert_eq!(
+            failed("following", 1, error, false),
+            Failed {
+                hold: true,
+                hand_back: true,
+                retry: true
+            }
+        );
+    }
+
+    #[test]
     fn a_logged_out_session_hands_back_without_a_hold() {
         let ended = failed("following", 1, BrowserError::page_unavailable("x"), true);
         assert_eq!(

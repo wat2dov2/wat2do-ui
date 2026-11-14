@@ -79,14 +79,14 @@ When Instagram collapses a notification into "account posted and N others", the
 existing, human-authenticated browser tab before recording notification media.
 CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
-The worker, the workflow's job and the daily rerun of failed runs are Rust (`rust/src/instagram_notifications`, binary `wat2do-browser`).
-`wat2do-browser install`, run from the committed runtime checkout only, copies the binary to `~/.local/libexec/wat2do/wat2do-browser` when its source fingerprint (`rust/browser-worker-sources.txt`) changed; the LaunchAgents `io.wat2do.instagram-browser.worker` and the daily `io.wat2do.notification-retry` (`install-retry-schedule`, which never replaces the binary) run that copy, so macOS's Automation approval for Brave survives unrelated rebuilds; each replaced copy needs one approval and pauses the worker until then.
+The worker, the workflow's job and the rerun of failed runs are Rust (`rust/src/instagram_notifications`, binary `wat2do-browser`).
+`wat2do-browser install`, run from the committed runtime checkout only, copies the binary to `~/.local/libexec/wat2do/wat2do-browser` when its source fingerprint (`rust/browser-worker-sources.txt`) changed; the LaunchAgents `io.wat2do.instagram-browser.worker` and `io.wat2do.notification-retry` (every `controlbox/notification_retry.json` `interval_minutes`, installed by `install-retry-schedule`, which never replaces the binary) run that copy, so macOS's Automation approval for Brave survives unrelated rebuilds; each replaced copy needs one approval and pauses the worker until then.
 The workflow builds `wat2do-browser` from its own checkout once per source change (`scripts/notification-binary.sh`), before any credential is in its environment, and fails before recording anything when that binary is missing or stale.
 Their AppleScript and page JavaScript live under `rust/src/instagram_notifications/scripts/`, and the local queue stays `~/.local/state/wat2do/instagram-browser/jobs.sqlite3`.
 The worker owns two Instagram tabs in the existing Brave session.
 The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries, manual profile listings and the follow crawl's Following reads.
 Its queue's job kinds are `digest`, `engagement`, `retrieval` (profile listings) and `following`: one page of an account's Following list, read with the page's own `fetch` of `/api/v1/friendships/<user_id>/following/` as whichever account Brave shows (so `excluded_accounts` never holds it), never switching accounts, one at a time, at least an hour divided by `following_requests_per_hour` apart and after a pause before each next page and each new list (`controlbox/instagram_browser.json` `following_*`).
-An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own), and a 429, a login wall or any other refusal on a Following read (feedback or spam blocks, any 4xx but a plain "not found" or "private") holds only Following reads; a 429 on any other job holds every claim.
+An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own), and a 429, a login wall or any other refusal on a Following read (feedback or spam blocks, any 4xx but a plain "not found" or "private", a page in place of its JSON) holds only Following reads; a 429 on any other job holds every claim.
 `wat2do-browser pause-following` stops Following reads alone, and `resume-following` lets them run again; a cancelled Following read stays cancelled.
 While the worker's Lightpanda lane (below) serves any account, Following reads whose list owner's ID is known run there instead, and Brave keeps only the rest.
 Brave never opens individual posts for ingestion.
@@ -101,16 +101,21 @@ Never read, copy, print, persist, rotate, or maintain `sessionid` values or brow
 cookie jars, and never create a parallel pool of browser sessions.
 Exception: after Instagram logs Brave out, the worker may log back in by clicking a
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
-spaced and capped by controlbox.
+spaced by controlbox's backoff (`login_recovery_interval_seconds`, doubled for each other
+attempt within `login_recovery_backoff_window_seconds`, at most
+`login_recovery_max_interval_seconds`), never a daily cap: one left Brave logged out from
+10:17 to 21:51 on 2026-11-13 and failed every school's digests.
 A school account missing from the switcher is logged in the way a person adds one: switch to the `login_from_school` account, then Switch accounts, "Log into an Existing Account".
 When Brave holds no other saved account, Switch accounts opens a bare login form instead of the chooser: a switch closes it and treats the account as missing, and adding an account logs in through that form directly.
-When the `login_from_school` account is missing too, it is logged back in first the same way, and counts toward the same limits.
+When the `login_from_school` account is missing too, it is logged back in first the same way, and counts toward the same limits; when it cannot log in today, the account is added from whichever account Brave shows, and when its own submitted login does not finish, it is held, not the account being added.
 Switch accounts' dialog is always closed before the worker reads the active account or gives up, since a modal hides the page's navigation.
 A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
 Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout; a login is recorded just before its password goes out, so a failure before that spends nothing.
-Once a password has been submitted, any failure (including a timeout) is never retried automatically. After a logout it pauses browser work for a person; for a missing account it holds only that account (its jobs fail as unavailable, `accounts_paused` in `wat2do-browser status`) until `wat2do-browser resume-account --account <name>`, and every other school keeps running.
+Once a password has been submitted, any failure (including a timeout) is never retried automatically for that account: it holds only that account (its jobs fail as unavailable, `accounts_paused` in `wat2do-browser status`) until `wat2do-browser resume-account --account <name>`, and every other school keeps running; after a logout, the next recovery attempt tries the other saved profiles, so browser work never waits for a person while any saved profile can get back in.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
-A refused password or any other challenge waits for a person.
+A refused password or any other challenge holds that account for a person.
+A digest whose account is missing and cannot log in yet marks it missing (`accounts_missing` in `wat2do-browser status`) until its login is allowed again or a digest finds it in Brave.
+`io.wat2do.notification-retry` reruns failed Process Notifications runs: none while the worker is paused or down, never one whose account is held or missing, and each run at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, so a run's posts are ingested within minutes of the worker recovering.
 Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
 The worker may create, keep and replace those jars and log the accounts in to them itself, typing the Keychain password and the emailed code over CDP on an owner-only Unix socket; neither, nor any jar's contents, is ever logged, copied elsewhere or put on a command line.
 An account counts as logged in when its jar holds a non-empty `sessionid`.
