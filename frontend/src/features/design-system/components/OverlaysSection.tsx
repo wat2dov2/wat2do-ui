@@ -47,7 +47,7 @@ export function OverlaysSection() {
               Open dialog
             </Button>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogContent size="md" scrollable>
+              <DialogContent size="md">
                 <DialogHeader>
                   <DialogTitle>Confirm action</DialogTitle>
                   <DialogDescription>

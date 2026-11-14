@@ -67,7 +67,17 @@
     "submittedForReview": "Submitted for review. Your club goes live once an admin approves it.",
     "awaitingReview": "This club is awaiting admin review. It is not listed publicly yet, and events cannot be published until it is approved.",
     "reviewRejected": "This club was not approved. Contact the Wat2Do team if you think this is a mistake.",
-    "minimumEvents": "Minimum events"
+    "minimumEvents": "Minimum events",
+    "claimLink": {
+      "title": "Claim {{club}} on Wat2Do",
+      "description": "Your club's page is ready. Claiming it makes you its owner, so you can post events and positions, keep them up to date and see who's going.",
+      "checking": "Checking your claim link...",
+      "claim": "Claim club",
+      "claiming": "Claiming...",
+      "invalidTitle": "This claim link doesn't work",
+      "invalidDescription": "It may be mistyped, or someone on your team has already claimed the club. Ask them to add you from the club panel.",
+      "browseEvents": "Browse events"
+    }
   },
   "inviteLanding": {
     "validating": "Validating invitation link...",

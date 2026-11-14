@@ -67,7 +67,17 @@
     "submittedForReview": "已提交审核。管理员批准后，您的组织将会上线。",
     "awaitingReview": "该组织正在等待管理员审核。在获得批准之前，它不会公开显示，也无法发布活动。",
     "reviewRejected": "该组织未获批准。如果您认为这是错误，请联系 Wat2Do 团队。",
-    "minimumEvents": "最少活动数"
+    "minimumEvents": "最少活动数",
+    "claimLink": {
+      "title": "在 Wat2Do 上认领 {{club}}",
+      "description": "您社团的页面已经准备好了。认领后您将成为页面的所有者，可以发布活动和职位、随时更新，并查看谁会参加。",
+      "checking": "正在检查您的认领链接...",
+      "claim": "认领社团",
+      "claiming": "正在认领...",
+      "invalidTitle": "此认领链接无效",
+      "invalidDescription": "链接可能输入有误，或者您团队中的其他人已经认领了该社团。请让他们在社团面板中添加您。",
+      "browseEvents": "浏览活动"
+    }
   },
   "inviteLanding": {
     "validating": "正在验证邀请链接...",

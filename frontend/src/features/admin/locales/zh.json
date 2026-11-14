@@ -612,7 +612,7 @@
     "outreach": {
       "title": "推广邀约",
       "cardDescription": "可邀请认领自己页面的未认领社团。",
-      "description": "在 Wat2Do 上有活动或职位的未认领社团，每个都附有从其页面或调研中找到的邮箱，以及一封邀请其认领我们所建页面的邮件。每日搜索会添加更多社团。在 Gmail 中打开邮件并自行发送。",
+      "description": "尚未认领、活动能吸引学生参加的社团，每个都附有邮箱、你录视频用的脚本，以及随视频发送的个人邮件。打开邮件中认领链接的人会成为社团的所有者。每日扫描会添加社团；在 Gmail 中打开邮件，附上你的视频，然后自己发送。",
       "statuses": {
         "new": "新",
         "contacted": "已联系",
@@ -622,7 +622,7 @@
         "dismissed": "已忽略"
       },
       "emptyTitle": "暂无社团",
-      "emptyDescription": "每日搜索找到社团邮箱后会将其添加到这里。",
+      "emptyDescription": "每日扫描找到社团的邮箱并判断其活动值得推荐后，会把社团添加到这里。",
       "club": "社团",
       "contact": "联系方式",
       "formality": "正式程度",
@@ -656,9 +656,14 @@
       },
       "source": "邮箱来源",
       "email": "邮件",
-      "followUp": "跟进",
+      "script": "视频脚本",
+      "whyFit": "为什么合适",
+      "claimLink": "认领链接",
       "notes": "备注",
-      "saveNotes": "保存备注"
+      "saveNotes": "保存备注",
+      "copy": "复制",
+      "copied": "已复制",
+      "copyFailed": "无法复制。请选中文字自行复制。"
     },
     "clubSubmissionDetails": {
       "records": "记录详情",

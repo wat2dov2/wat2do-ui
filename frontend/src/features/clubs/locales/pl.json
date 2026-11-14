@@ -76,7 +76,17 @@
     "positionCount_one": "{{count}} stanowisko",
     "positionCount_few": "{{count}} stanowiska",
     "positionCount_many": "{{count}} stanowisk",
-    "minimumEvents": "Minimalna liczba wydarzeń"
+    "minimumEvents": "Minimalna liczba wydarzeń",
+    "claimLink": {
+      "title": "Przejmij klub {{club}} w Wat2Do",
+      "description": "Strona Twojego klubu jest gotowa. Po jej przejęciu zostajesz jej właścicielem: możesz publikować wydarzenia i stanowiska, aktualizować je i widzieć, kto przyjdzie.",
+      "checking": "Sprawdzamy Twój link przejęcia...",
+      "claim": "Przejmij klub",
+      "claiming": "Przejmowanie...",
+      "invalidTitle": "Ten link przejęcia nie działa",
+      "invalidDescription": "Może zawierać literówkę albo ktoś z Twojego zespołu już przejął klub. Poproś tę osobę, aby dodała Cię w panelu klubu.",
+      "browseEvents": "Przeglądaj wydarzenia"
+    }
   },
   "inviteLanding": {
     "validating": "Sprawdzanie linku zaproszenia...",

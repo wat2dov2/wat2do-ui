@@ -67,7 +67,17 @@
     "submittedForReview": "已提交審核。你的組織在管理員批准後將上線。",
     "awaitingReview": "此組織正等待管理員審核。它尚未公開列出，在獲批准前無法發布活動。",
     "reviewRejected": "此組織未獲批准。如您認為此為錯誤，請聯絡 Wat2Do 團隊。",
-    "minimumEvents": "最少活動數"
+    "minimumEvents": "最少活動數",
+    "claimLink": {
+      "title": "喺 Wat2Do 認領 {{club}}",
+      "description": "你社團嘅頁面已經準備好。認領之後你就係頁面嘅擁有人，可以發佈活動同職位、保持更新，仲睇到邊個會去。",
+      "checking": "檢查緊你嘅認領連結...",
+      "claim": "認領社團",
+      "claiming": "認領緊...",
+      "invalidTitle": "呢條認領連結用唔到",
+      "invalidDescription": "可能打錯咗，或者你團隊入面已經有人認領咗社團。請佢喺社團面板加你入去。",
+      "browseEvents": "瀏覽活動"
+    }
   },
   "inviteLanding": {
     "validating": "正在驗證邀請連結…",

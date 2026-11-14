@@ -23,6 +23,7 @@ export const queryKeys = {
       [...queryKeys.clubs.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.clubs.all, "all", school ?? ""] as const,
+    claimLink: (token: string) => [...queryKeys.clubs.all, "claim-link", token] as const,
   },
   positions: {
     stats: (school: string) => [...queryKeys.positions.all, "stats", school] as const,

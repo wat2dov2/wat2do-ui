@@ -1135,6 +1135,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/claim-links/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Claim Link
+         * @description Public: the club a claim link hands over, while nobody manages it.
+         */
+        get: operations["get_claim_link_clubs_claim_links__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/claim-links/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Claim Link
+         * @description Make the signed-in user the owner of the club the link hands over.
+         */
+        post: operations["accept_claim_link_clubs_claim_links__token__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/{club_id}/claims": {
         parameters: {
             query?: never;
@@ -2281,6 +2321,14 @@ export interface components {
         ClubClaimCreate: {
             executive_role: string;
             proof_url?: string | null;
+        };
+        /** @description The club a claim link would hand over. */
+        ClubClaimLinkResponse: {
+            /** Format: int32 */
+            club_id: number;
+            club_name: string;
+            /** @description The club's school slug, whose site manages the club. */
+            school: string;
         };
         ClubClaimResponse: {
             /** Format: uuid */
@@ -3788,7 +3836,10 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** @description One unclaimed club, its email, and what to send it to claim its page. */
+        /**
+         * @description One unclaimed club, its email, and the video script and email inviting it to
+         *     claim its page through its claim link.
+         */
         OutreachLeadResponse: {
             /** Format: uuid */
             id: string;
@@ -3796,6 +3847,8 @@ export interface components {
             club_id: number;
             club_name: string;
             club_url: string;
+            /** @description Opening it signed in makes the opener the club's owner while nobody manages it. */
+            claim_url: string;
             /** Format: int64 */
             listings: number;
             school_slug: string;
@@ -3804,9 +3857,13 @@ export interface components {
             email_source_url: string;
             /** @enum {string} */
             email_found_by: "club_page" | "research";
+            /** @description Why Claude judged the club's events worth pitching. */
+            pitch_reason: string;
+            /** @description What the admin says in the video sent with the email. */
+            script: string;
             email_subject: string;
+            /** @description The email, its claim link filled in. */
             email_body: string;
-            follow_up: string;
             /** @enum {string} */
             status: "new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed";
             notes: string;
@@ -7322,6 +7379,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_claim_link_clubs_claim_links__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_claim_link_clubs_claim_links__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimLinkResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

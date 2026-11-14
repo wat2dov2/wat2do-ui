@@ -70,7 +70,17 @@
     "clubLabel_one": "Organisation",
     "eventCount_one": "{{count}} Veranstaltung",
     "positionCount_one": "{{count}} Position",
-    "minimumEvents": "Mindestanzahl an Veranstaltungen"
+    "minimumEvents": "Mindestanzahl an Veranstaltungen",
+    "claimLink": {
+      "title": "Beanspruche {{club}} auf Wat2Do",
+      "description": "Die Seite deines Clubs ist fertig. Wenn du sie beanspruchst, wirst du ihr Inhaber: Du kannst Veranstaltungen und Positionen veröffentlichen, sie aktuell halten und sehen, wer kommt.",
+      "checking": "Dein Beanspruchungslink wird geprüft...",
+      "claim": "Club beanspruchen",
+      "claiming": "Wird beansprucht...",
+      "invalidTitle": "Dieser Beanspruchungslink funktioniert nicht",
+      "invalidDescription": "Vielleicht ist er falsch geschrieben, oder jemand aus deinem Team hat den Club schon beansprucht. Bitte diese Person, dich im Club-Panel hinzuzufügen.",
+      "browseEvents": "Veranstaltungen ansehen"
+    }
   },
   "inviteLanding": {
     "validating": "Einladungslink wird überprüft...",

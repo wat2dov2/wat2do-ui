@@ -110,8 +110,8 @@ const itemDescriptionVariants = cva(
       length: {
         // A two-line preview, as in lists and table cells.
         summary: "line-clamp-2 text-balance",
-        // Every word, keeping the text's own line breaks.
-        full: "whitespace-pre-line text-pretty",
+        // Every word, keeping the text's own line breaks; a long link wraps instead of overflowing.
+        full: "whitespace-pre-line text-pretty break-words",
       },
     },
     defaultVariants: {

@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Nicht beanspruchte Clubs, die du einladen kannst, ihre Seite zu beanspruchen.",
-      "description": "Nicht beanspruchte Clubs mit Events oder Positionen auf Wat2Do, jeweils mit der E-Mail-Adresse von ihrer eigenen Seite oder aus der Recherche und einer E-Mail, die sie einlädt, die von uns erstellte Seite zu beanspruchen. Eine tägliche Suche fügt weitere Clubs hinzu. Öffne die E-Mail in Gmail und sende sie selbst.",
+      "description": "Nicht beanspruchte Clubs, zu deren Veranstaltungen Studierende kommen, jeweils mit E-Mail-Adresse, einem Skript für dein Video und einer persönlichen E-Mail dazu. Wer den Beanspruchungslink der E-Mail öffnet, wird Inhaber des Clubs. Ein täglicher Durchlauf fügt Clubs hinzu; öffne die E-Mail in Gmail, häng dein Video an und sende sie selbst.",
       "statuses": {
         "new": "Neu",
         "contacted": "Kontaktiert",
@@ -622,7 +622,7 @@
         "dismissed": "Verworfen"
       },
       "emptyTitle": "Noch keine Clubs",
-      "emptyDescription": "Die tägliche Suche fügt hier Clubs hinzu, sobald sie ihre E-Mail-Adresse findet.",
+      "emptyDescription": "Der tägliche Durchlauf fügt hier Clubs hinzu, sobald er ihre E-Mail-Adresse findet und ihre Veranstaltungen für lohnend hält.",
       "club": "Club",
       "contact": "Kontakt",
       "formality": "Formalität",
@@ -656,9 +656,14 @@
       },
       "source": "Fundort der E-Mail-Adresse",
       "email": "E-Mail",
-      "followUp": "Follow-up",
+      "script": "Videoskript",
+      "whyFit": "Warum er passt",
+      "claimLink": "Beanspruchungslink",
       "notes": "Notizen",
-      "saveNotes": "Notizen speichern"
+      "saveNotes": "Notizen speichern",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "copyFailed": "Kopieren nicht möglich. Markiere den Text und kopiere ihn selbst."
     },
     "clubSubmissionDetails": {
       "records": "Datensatzdetails",

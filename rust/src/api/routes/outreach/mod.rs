@@ -1,7 +1,7 @@
 //! `/outreach`: the unclaimed clubs the daily sweep (`jobs/find_outreach_leads.py`)
-//! found emails for, served to the admin page. Each lead's claim email and
-//! follow-up are written from `claim_email.md` and the club as the page reads
-//! them, so the copy always matches the club's current page.
+//! found emails for and Claude judged a fit (`services/outreach/pitch.py`), served to
+//! the admin page with the video script and email Claude wrote for each, its claim
+//! link filled in.
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -43,36 +43,8 @@ const SCHOOL_PATTERN: &str = "^[a-z0-9-]{1,80}$";
 static SCHOOL: LazyLock<Regex> = LazyLock::new(|| Regex::new(SCHOOL_PATTERN).expect("pattern"));
 const MAX_NOTES_LENGTH: usize = 4000;
 
-/// `claim_email.md`'s sections by heading: Subject, Body and Follow-up.
-static TEMPLATE: LazyLock<HashMap<String, String>> =
-    LazyLock::new(|| sections(include_str!("claim_email.md")));
-
-/// Each `## Heading` and the text under it, stripped.
-fn sections(markdown: &str) -> HashMap<String, String> {
-    let heading = Regex::new(r"(?m)^## (.+)$").expect("heading pattern");
-    let headings: Vec<_> = heading.captures_iter(markdown).collect();
-    headings
-        .iter()
-        .enumerate()
-        .map(|(index, captures)| {
-            let start = captures.get(0).expect("match").end();
-            let end = headings
-                .get(index + 1)
-                .map_or(markdown.len(), |next| next.get(0).expect("match").start());
-            (
-                captures[1].to_owned(),
-                python_strip(&markdown[start..end]).to_owned(),
-            )
-        })
-        .collect()
-}
-
-/// Fill each `{{key}}` in turn, as `str.replace` does one key after another.
-fn fill(text: &str, values: &[(&str, &str)]) -> String {
-    values.iter().fold(text.to_owned(), |text, (key, value)| {
-        text.replace(&format!("{{{{{key}}}}}"), value)
-    })
-}
+/// Where a pitch's email names its claim link.
+const CLAIM_URL_KEY: &str = "{{claim_url}}";
 
 #[derive(ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -119,7 +91,8 @@ enum FormalitySignal {
     InformalAccount,
 }
 
-/// One unclaimed club, its email, and what to send it to claim its page.
+/// One unclaimed club, its email, and the video script and email inviting it to
+/// claim its page through its claim link.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct OutreachLeadResponse {
     #[schema(value_type = Uuid)]
@@ -127,6 +100,8 @@ pub struct OutreachLeadResponse {
     pub club_id: i64,
     pub club_name: String,
     pub club_url: String,
+    /// Opening it signed in makes the opener the club's owner while nobody manages it.
+    pub claim_url: String,
     pub listings: i64,
     pub school_slug: String,
     pub school_name: String,
@@ -134,9 +109,13 @@ pub struct OutreachLeadResponse {
     pub email_source_url: String,
     #[schema(value_type = EmailFoundBy, inline)]
     pub email_found_by: String,
+    /// Why Claude judged the club's events worth pitching.
+    pub pitch_reason: String,
+    /// What the admin says in the video sent with the email.
+    pub script: String,
     pub email_subject: String,
+    /// The email, its claim link filled in.
     pub email_body: String,
-    pub follow_up: String,
     #[schema(value_type = LeadStatus, inline)]
     pub status: String,
     pub notes: String,
@@ -159,7 +138,10 @@ crate::paginated_schema!(
 /// A lead's columns, `l` being the lead, `c` its club and `s` the club's school.
 const COLUMNS: &str = "l.id::text AS id, l.club_id, c.club_name::text AS club_name, \
      s.slug::text AS school_slug, s.name::text AS school_name, l.email, l.email_source_url, \
-     l.email_found_by, l.status, l.notes, l.found_at, l.formality, l.formality_signals";
+     l.email_found_by, l.claim_token, l.pitch_reason, l.pitch_script, l.pitch_email_subject, \
+     l.pitch_email_body, l.status, l.notes, l.found_at, l.formality, l.formality_signals";
+/// The leads the page lists: those with an email whose club Claude judged a fit.
+const LISTED: &str = "l.email IS NOT NULL AND l.pitch_fit";
 const CLUB_AND_SCHOOL: &str =
     "JOIN public.clubs c ON c.id = l.club_id LEFT JOIN public.schools s ON s.id = c.school_id";
 
@@ -173,6 +155,11 @@ struct LeadRow {
     email: String,
     email_source_url: String,
     email_found_by: String,
+    claim_token: Uuid,
+    pitch_reason: String,
+    pitch_script: String,
+    pitch_email_subject: String,
+    pitch_email_body: String,
     status: String,
     notes: String,
     found_at: DateTime<Utc>,
@@ -196,6 +183,11 @@ impl LeadRow {
             email: row.try_get("email")?,
             email_source_url: row.try_get("email_source_url")?,
             email_found_by: row.try_get("email_found_by")?,
+            claim_token: row.try_get("claim_token")?,
+            pitch_reason: row.try_get("pitch_reason")?,
+            pitch_script: row.try_get("pitch_script")?,
+            pitch_email_subject: row.try_get("pitch_email_subject")?,
+            pitch_email_body: row.try_get("pitch_email_body")?,
             status: row.try_get("status")?,
             notes: row.try_get("notes")?,
             found_at: row.try_get("found_at")?,
@@ -205,35 +197,32 @@ impl LeadRow {
         })
     }
 
-    /// The lead as the page shows it, with its claim email written out.
+    /// The lead as the page shows it, its claim link filled into the email.
     fn into_response(self, listings: i64) -> OutreachLeadResponse {
         let club_url = OUTREACH
             .club_url_template
             .replace("{school}", &self.school_slug)
             .replace("{club_id}", &self.club_id.to_string());
-        let values = [
-            ("club_name", self.club_name.as_str()),
-            ("school_name", self.school_name.as_str()),
-            ("club_url", club_url.as_str()),
-            ("sender_name", OUTREACH.sender_name.as_str()),
-        ];
-        let section = |heading: &str| fill(&TEMPLATE[heading], &values);
-        let (email_subject, email_body, follow_up) =
-            (section("Subject"), section("Body"), section("Follow-up"));
+        let claim_url = OUTREACH
+            .claim_url_template
+            .replace("{school}", &self.school_slug)
+            .replace("{token}", &self.claim_token.to_string());
         OutreachLeadResponse {
             id: self.id,
             club_id: self.club_id.into(),
             club_name: self.club_name,
             club_url,
+            email_body: self.pitch_email_body.replace(CLAIM_URL_KEY, &claim_url),
+            claim_url,
             listings,
             school_slug: self.school_slug,
             school_name: self.school_name,
             email: self.email,
             email_source_url: self.email_source_url,
             email_found_by: self.email_found_by,
-            email_subject,
-            email_body,
-            follow_up,
+            pitch_reason: self.pitch_reason,
+            script: self.pitch_script,
+            email_subject: self.pitch_email_subject,
             status: self.status,
             notes: self.notes,
             found_at: self.found_at,
@@ -333,7 +322,7 @@ pub async fn list_leads(
         "WITH matched AS ( \
              SELECT l.id, l.found_at, l.formality FROM public.outreach_leads l \
              JOIN public.clubs c ON c.id = l.club_id \
-             WHERE l.email IS NOT NULL \
+             WHERE {LISTED} \
                AND ($3::text IS NULL OR l.status = $3) \
                AND ($4::int IS NULL OR c.school_id = $4) \
                AND ($5::text IS NULL OR c.club_name ILIKE '%' || $5 || '%')), \
@@ -425,7 +414,7 @@ pub async fn update_lead(
     Ok(Json(update(&state.db, id, changes).await?))
 }
 
-/// `exclude_none` changes, then the lead as it now stands (only leads with an email).
+/// `exclude_none` changes, then the lead as it now stands (only listed leads).
 async fn update(
     db: &sqlx::PgPool,
     id: Uuid,
@@ -447,7 +436,7 @@ async fn update(
     }
     let sql = format!(
         "SELECT {COLUMNS} FROM public.outreach_leads l {CLUB_AND_SCHOOL} \
-         WHERE l.id = $1 AND l.email IS NOT NULL"
+         WHERE l.id = $1 AND {LISTED}"
     );
     let row = read_with_retry(|| sqlx::query(&sql).bind(id).fetch_optional(db))
         .await?
@@ -471,6 +460,12 @@ mod tests {
             email: "boardgames@example.com".into(),
             email_source_url: "https://example.com/clubs/board-games".into(),
             email_found_by: "club_page".into(),
+            claim_token: Uuid::parse_str("99999999-9999-4999-8999-999999999993").unwrap(),
+            pitch_reason: "Open game nights with snacks students drop into.".into(),
+            pitch_script: "Hey Board Games Club! Your game nights are the best on campus.".into(),
+            pitch_email_subject: "Your game nights, on Wat2Do".into(),
+            pitch_email_body: "Hi Board Games Club team,\n\nClaim it here:\n{{claim_url}}\n\nTony"
+                .into(),
             status: "new".into(),
             notes: String::new(),
             found_at: DateTime::parse_from_rfc3339("2026-10-28T00:00:00Z")
@@ -482,44 +477,24 @@ mod tests {
     }
 
     #[test]
-    fn a_lead_invites_the_club_to_claim_the_page_we_made_for_it() {
-        // tests/services/outreach/test_service.py
+    fn a_lead_carries_its_pitch_with_the_claim_link_filled_in() {
         let lead = lead().into_response(4);
         assert_eq!(lead.club_url, "https://uwaterloo.wat2do.io/clubs/10");
+        assert_eq!(
+            lead.claim_url,
+            "https://uwaterloo.wat2do.io/claim/99999999-9999-4999-8999-999999999993"
+        );
         assert_eq!(lead.listings, 4);
-        assert!(lead.email_subject.contains("Board Games Club"));
-        for text in [&lead.email_body, &lead.follow_up] {
-            assert!(text.contains(&lead.club_url));
-            assert!(text.contains("Claim club"));
-            assert!(text.contains("University of Waterloo"));
-            assert!(text.contains(&OUTREACH.sender_name));
-            assert!(!text.contains("{{") && !text.contains('\u{2014}'));
-        }
-        assert!(
-            lead.email_body
-                .contains("made a page for you and added your events")
-        );
         assert_eq!(
-            lead.email_subject,
-            "Board Games Club is on Wat2Do: your page is ready to claim"
+            lead.email_body,
+            format!(
+                "Hi Board Games Club team,\n\nClaim it here:\n{}\n\nTony",
+                lead.claim_url
+            )
         );
-        assert!(lead.email_body.starts_with("Hi Board Games Club team,\n\n"));
-        assert!(
-            lead.follow_up
-                .ends_with(&format!("\n\n{}", OUTREACH.sender_name))
-        );
-    }
-
-    #[test]
-    fn template_values_are_filled_one_after_another() {
-        // Python's chained str.replace: a club name naming a later key is filled too.
-        assert_eq!(
-            fill(
-                "{{club_name}} at {{school_name}}",
-                &[("club_name", "{{school_name}}"), ("school_name", "UW")]
-            ),
-            "UW at UW"
-        );
+        assert_eq!(lead.email_subject, "Your game nights, on Wat2Do");
+        assert!(lead.script.starts_with("Hey Board Games Club!"));
+        assert!(lead.pitch_reason.contains("game nights"));
     }
 
     #[test]
@@ -533,15 +508,17 @@ mod tests {
                 "club_id",
                 "club_name",
                 "club_url",
+                "claim_url",
                 "listings",
                 "school_slug",
                 "school_name",
                 "email",
                 "email_source_url",
                 "email_found_by",
+                "pitch_reason",
+                "script",
                 "email_subject",
                 "email_body",
-                "follow_up",
                 "status",
                 "notes",
                 "found_at",

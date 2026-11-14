@@ -70,7 +70,17 @@
     "clubLabel_one": "organisasyon",
     "eventCount_one": "{{count}} kaganapan",
     "positionCount_one": "{{count}} posisyon",
-    "minimumEvents": "Minimum na mga event"
+    "minimumEvents": "Minimum na mga event",
+    "claimLink": {
+      "title": "I-claim ang {{club}} sa Wat2Do",
+      "description": "Handa na ang page ng club mo. Kapag na-claim mo ito, ikaw na ang may-ari: puwede kang mag-post ng mga event at posisyon, panatilihing updated ang mga ito, at makita kung sino ang pupunta.",
+      "checking": "Sinusuri ang claim link mo...",
+      "claim": "I-claim ang club",
+      "claiming": "Kine-claim...",
+      "invalidTitle": "Hindi gumagana ang claim link na ito",
+      "invalidDescription": "Maaaring mali ang pagkaka-type nito, o may kasama ka sa team na naka-claim na ng club. Hilingin sa kanila na idagdag ka mula sa club panel.",
+      "browseEvents": "Mag-browse ng mga event"
+    }
   },
   "inviteLanding": {
     "validating": "Vini-validate ang link ng imbitasyon...",

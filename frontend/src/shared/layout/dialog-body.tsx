@@ -7,8 +7,9 @@ type DialogBodyProps = React.ComponentProps<"div">
 /**
  * Scroll owner for height-capped dialogs.
  *
- * DialogContent supplies the capped flex column. DialogBody shrinks inside it
- * and keeps scrolling within the overlay instead of chaining to the page.
+ * A DialogContent holding a DialogBody becomes a column capped to the screen.
+ * DialogBody shrinks inside it and keeps scrolling within the overlay instead of
+ * chaining to the page.
  */
 function DialogBody({ className, ...props }: DialogBodyProps) {
   return (

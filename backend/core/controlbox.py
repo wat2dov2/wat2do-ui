@@ -1310,11 +1310,38 @@ class OutreachControl(_ControlModel):
     # Each email must appear on the page it was found on, fetched within this time.
     page_fetch_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # Who signs the email.
+    # Claude judges each lead's club from its events and, for a club whose events
+    # students would come out for, writes the video script and the email.
+    pitch_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    pitch_timeout_seconds: int = Field(gt=0, le=3600)
+    # Only these schools' leads are pitched, so only they reach the admin page.
+    pitch_schools: list[str] = Field(min_length=1)
+    # The data API answers at most a thousand rows, so a sweep asks for no more.
+    pitches_per_sweep: int = Field(ge=0, le=1000)
+    # A club judged not a fit is judged again after this long, in case it has run
+    # an event worth coming to since.
+    pitch_recheck_days: int = Field(ge=1, le=365)
+    # The club's newest events Claude reads.
+    pitch_event_limit: int = Field(ge=1, le=50)
+    # What the pitch offers: this much of a club's event costs back for every
+    # student who comes through its Wat2Do QR code.
+    qr_reimbursement_dollars: int = Field(ge=1, le=100)
+    # Who records the video and signs the email.
     sender_name: str = Field(min_length=1, max_length=60)
     # "{school}" becomes the school's slug and "{club_id}" the club's id.
     club_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{club_id\}\S*$")
+    # "{school}" becomes the school's slug and "{token}" the lead's claim token.
+    claim_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{token\}\S*$")
     formality: OutreachFormalityControl
+
+    @model_validator(mode="after")
+    def _validate_pitch_schools(self) -> "OutreachControl":
+        schools = self.pitch_schools
+        if len(set(schools)) != len(schools) or not all(
+            re.fullmatch(r"[a-z0-9-]{1,80}", school) for school in schools
+        ):
+            raise ValueError("pitch_schools must be unique school slugs")
+        return self
 
 
 class CompetitorPainPointsControl(_ControlModel):

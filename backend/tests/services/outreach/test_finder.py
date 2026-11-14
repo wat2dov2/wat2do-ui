@@ -103,6 +103,8 @@ def test_sweep_reads_new_pages_researches_the_rest_and_reports(monkeypatch):
     monkeypatch.setattr(finder, "remove_leftovers", lambda _prefix: None)
     monkeypatch.setattr(finder.service, "mark_claimed", lambda: 2)
     monkeypatch.setattr(finder, "_score_leads", lambda: 5)
+    pitched = {"pitch_fit": 3, "pitch_not_fit": 2, "pitch_failed": 0}
+    monkeypatch.setattr(finder.pitch, "write_pitches", lambda: pitched)
     monkeypatch.setattr(finder.service, "emails_in_use", lambda: {"used@example.org"})
     monkeypatch.setattr(finder.service, "new_clubs", lambda limit: [{"club_id": 1}])
     monkeypatch.setattr(finder, "_search_club_pages", lambda clubs, taken: len(clubs))
@@ -142,6 +144,7 @@ def test_sweep_reads_new_pages_researches_the_rest_and_reports(monkeypatch):
         "researched": 3,
         "research_emails": 1,
         "research_failed": 1,
+        **pitched,
     }
 
 

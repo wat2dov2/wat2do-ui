@@ -612,7 +612,7 @@
     "outreach": {
       "title": "Difusión",
       "cardDescription": "Clubes sin reclamar a los que invitar a reclamar su página.",
-      "description": "Clubes sin reclamar con eventos o puestos en Wat2Do, cada uno con el correo encontrado en su propia página o mediante investigación, y un correo que lo invita a reclamar la página que creamos. Una búsqueda diaria añade más clubes. Abre el correo en Gmail y envíalo tú.",
+      "description": "Clubes sin reclamar cuyos eventos atraen a estudiantes, cada uno con su correo, un guion para tu video y un correo personal para enviar con él. Quien abre el enlace de reclamo del correo se vuelve dueño del club. Un barrido diario agrega clubes; abre el correo en Gmail, adjunta tu video y envíalo tú.",
       "statuses": {
         "new": "Nuevo",
         "contacted": "Contactado",
@@ -622,7 +622,7 @@
         "dismissed": "Descartado"
       },
       "emptyTitle": "Aún no hay clubes",
-      "emptyDescription": "La búsqueda diaria añade clubes aquí a medida que encuentra sus correos.",
+      "emptyDescription": "El barrido diario agrega clubes aquí cuando encuentra su correo y considera que sus eventos valen la pena.",
       "club": "Club",
       "contact": "Contacto",
       "formality": "Formalidad",
@@ -656,9 +656,14 @@
       },
       "source": "Dónde se encontró el correo",
       "email": "Correo",
-      "followUp": "Seguimiento",
+      "script": "Guion del video",
+      "whyFit": "Por qué encaja",
+      "claimLink": "Enlace de reclamo",
       "notes": "Notas",
-      "saveNotes": "Guardar notas"
+      "saveNotes": "Guardar notas",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar. Selecciona el texto y cópialo tú."
     },
     "clubSubmissionDetails": {
       "records": "Detalles del registro",

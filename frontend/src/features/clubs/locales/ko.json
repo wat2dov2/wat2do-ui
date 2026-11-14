@@ -67,7 +67,17 @@
     "submittedForReview": "검토를 위해 제출되었습니다. 관리자가 승인하면 조직이 공개됩니다.",
     "awaitingReview": "이 조직은 관리자의 검토를 기다리고 있습니다. 아직 공개적으로 목록에 표시되지 않으며, 승인이 완료될 때까지 이벤트를 게시할 수 없습니다.",
     "reviewRejected": "이 조직은 승인되지 않았습니다. 실수라고 생각되면 Wat2Do 팀에 연락하세요.",
-    "minimumEvents": "최소 행사 수"
+    "minimumEvents": "최소 행사 수",
+    "claimLink": {
+      "title": "Wat2Do에서 {{club}} 소유권 받기",
+      "description": "동아리 페이지가 준비되었습니다. 소유권을 받으면 페이지의 소유자가 되어 이벤트와 모집 공고를 올리고, 최신 상태로 유지하고, 누가 오는지 볼 수 있습니다.",
+      "checking": "소유권 링크를 확인하는 중...",
+      "claim": "동아리 소유권 받기",
+      "claiming": "처리 중...",
+      "invalidTitle": "이 소유권 링크는 사용할 수 없습니다",
+      "invalidDescription": "링크가 잘못 입력되었거나 팀의 다른 사람이 이미 동아리 소유권을 받았을 수 있습니다. 그 사람에게 동아리 패널에서 추가해 달라고 요청하세요.",
+      "browseEvents": "이벤트 둘러보기"
+    }
   },
   "inviteLanding": {
     "validating": "초대 링크를 검증하는 중...",

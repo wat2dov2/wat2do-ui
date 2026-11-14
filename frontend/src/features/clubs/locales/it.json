@@ -73,7 +73,17 @@
     "eventCount_many": "{{count}} eventi",
     "positionCount_one": "{{count}} posizione",
     "positionCount_many": "{{count}} posizioni",
-    "minimumEvents": "Eventi minimi"
+    "minimumEvents": "Eventi minimi",
+    "claimLink": {
+      "title": "Rivendica {{club}} su Wat2Do",
+      "description": "La pagina del tuo club è pronta. Rivendicandola ne diventi il proprietario: puoi pubblicare eventi e posizioni, tenerli aggiornati e vedere chi partecipa.",
+      "checking": "Verifica del link di rivendicazione...",
+      "claim": "Rivendica club",
+      "claiming": "Rivendicazione...",
+      "invalidTitle": "Questo link di rivendicazione non funziona",
+      "invalidDescription": "Potrebbe essere scritto male, oppure qualcuno del tuo team ha già rivendicato il club. Chiedigli di aggiungerti dal pannello del club.",
+      "browseEvents": "Sfoglia gli eventi"
+    }
   },
   "inviteLanding": {
     "validating": "Validazione del link di invito...",

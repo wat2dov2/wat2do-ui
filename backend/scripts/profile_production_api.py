@@ -43,6 +43,7 @@ SKIPPED_GET_ROUTES = {
     "/calendar/token": "GET may create a calendar token, so it is not read-only.",
     "/notification-preferences/unsubscribe": "Requires a private unsubscribe token.",
     "/clubs/invitations/{token}": "Requires a private invitation token.",
+    "/clubs/claim-links/{token}": "Requires a private outreach claim token.",
     "/qr/{qr_code_id}": "Records a scan and is intentionally excluded from profiling.",
     "/tickets/{code}": "Requires a private ticket code.",
     "/tickets/orders/{order_id}": "Requires one of the profiling account's own ticket orders.",

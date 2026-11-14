@@ -81,7 +81,6 @@ export function PromoterTermsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         size="lg"
-        scrollable
         data-testid="promoter-terms-dialog"
         onOpenAutoFocus={() => {
           setHasReachedEnd(false);

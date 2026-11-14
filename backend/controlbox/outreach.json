@@ -10,8 +10,18 @@
   "scoring_batch_size": 1000,
   "page_fetch_timeout_seconds": 15,
   "launch_agent_timeout_seconds": 30,
+  "pitch_model": "claude-sonnet-5-5",
+  "pitch_timeout_seconds": 300,
+  "pitch_schools": [
+    "uwaterloo"
+  ],
+  "pitches_per_sweep": 300,
+  "pitch_recheck_days": 30,
+  "pitch_event_limit": 15,
+  "qr_reimbursement_dollars": 5,
   "sender_name": "Tony",
   "club_url_template": "https://{school}.wat2do.io/clubs/{club_id}",
+  "claim_url_template": "https://{school}.wat2do.io/claim/{token}",
   "formality": {
     "directory_min_clubs": 5,
     "points": {

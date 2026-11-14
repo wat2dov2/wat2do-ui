@@ -73,7 +73,17 @@
     "eventCount_many": "{{count}} eventos",
     "positionCount_one": "{{count}} puesto",
     "positionCount_many": "{{count}} puestos",
-    "minimumEvents": "Mínimo de eventos"
+    "minimumEvents": "Mínimo de eventos",
+    "claimLink": {
+      "title": "Reclama {{club}} en Wat2Do",
+      "description": "La página de tu club está lista. Al reclamarla te conviertes en su dueño: puedes publicar eventos y puestos, mantenerlos al día y ver quién va.",
+      "checking": "Revisando tu enlace de reclamo...",
+      "claim": "Reclamar club",
+      "claiming": "Reclamando...",
+      "invalidTitle": "Este enlace de reclamo no funciona",
+      "invalidDescription": "Puede que esté mal escrito o que alguien de tu equipo ya haya reclamado el club. Pídele que te agregue desde el panel del club.",
+      "browseEvents": "Ver eventos"
+    }
   },
   "inviteLanding": {
     "validating": "Validando enlace de invitación...",

@@ -4000,6 +4000,92 @@
         }
       }
     },
+    "/clubs/claim-links/{token}": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Get Claim Link",
+        "description": "Public: the club a claim link hands over, while nobody manages it.",
+        "operationId": "get_claim_link_clubs_claim_links__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubClaimLinkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/claim-links/{token}/accept": {
+      "post": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Accept Claim Link",
+        "description": "Make the signed-in user the owner of the club the link hands over.",
+        "operationId": "accept_claim_link_clubs_claim_links__token__accept_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubClaimLinkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clubs/{club_id}/claims": {
       "post": {
         "tags": [
@@ -8290,6 +8376,28 @@
               "null"
             ],
             "maxLength": 500
+          }
+        }
+      },
+      "ClubClaimLinkResponse": {
+        "type": "object",
+        "description": "The club a claim link would hand over.",
+        "required": [
+          "club_id",
+          "club_name",
+          "school"
+        ],
+        "properties": {
+          "club_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "club_name": {
+            "type": "string"
+          },
+          "school": {
+            "type": "string",
+            "description": "The club's school slug, whose site manages the club."
           }
         }
       },
@@ -12760,21 +12868,23 @@
       },
       "OutreachLeadResponse": {
         "type": "object",
-        "description": "One unclaimed club, its email, and what to send it to claim its page.",
+        "description": "One unclaimed club, its email, and the video script and email inviting it to\nclaim its page through its claim link.",
         "required": [
           "id",
           "club_id",
           "club_name",
           "club_url",
+          "claim_url",
           "listings",
           "school_slug",
           "school_name",
           "email",
           "email_source_url",
           "email_found_by",
+          "pitch_reason",
+          "script",
           "email_subject",
           "email_body",
-          "follow_up",
           "status",
           "notes",
           "found_at",
@@ -12795,6 +12905,10 @@
           },
           "club_url": {
             "type": "string"
+          },
+          "claim_url": {
+            "type": "string",
+            "description": "Opening it signed in makes the opener the club's owner while nobody manages it."
           },
           "listings": {
             "type": "integer",
@@ -12819,14 +12933,20 @@
               "research"
             ]
           },
+          "pitch_reason": {
+            "type": "string",
+            "description": "Why Claude judged the club's events worth pitching."
+          },
+          "script": {
+            "type": "string",
+            "description": "What the admin says in the video sent with the email."
+          },
           "email_subject": {
             "type": "string"
           },
           "email_body": {
-            "type": "string"
-          },
-          "follow_up": {
-            "type": "string"
+            "type": "string",
+            "description": "The email, its claim link filled in."
           },
           "status": {
             "type": "string",

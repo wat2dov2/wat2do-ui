@@ -807,12 +807,19 @@ VALUES
      1, current_date - 2, current_date - 2)
 ON CONFLICT (key) DO NOTHING;
 
--- Local example for the admin Outreach page: one unclaimed club with its email.
+-- Local example for the admin Outreach page: one unclaimed club with its email and pitch.
 INSERT INTO public.outreach_leads
-    (id, club_id, email, email_source_url, email_found_by, found_at, status)
+    (id, club_id, email, email_source_url, email_found_by, found_at, status, claim_token,
+     pitch_fit, pitch_reason, pitch_script, pitch_email_subject, pitch_email_body, pitched_at)
 SELECT
     '99999999-9999-4999-8999-999999999992', id, 'boardgames@example.com',
-    'https://example.com/clubs/board-games', 'club_page', now(), 'new'
+    'https://example.com/clubs/board-games', 'club_page', now(), 'new',
+    '99999999-9999-4999-8999-999999999993', true,
+    'Open board game nights with snacks, the kind of night students drop into.',
+    'Hey Board Games Club! Your game nights are exactly what Waterloo needs more of.',
+    'Your game nights, on Wat2Do',
+    E'Hi Board Games Club team,\n\nI made you a short video.\n\nClaim your page: {{claim_url}}\n\nTony',
+    now()
 FROM public.clubs WHERE club_name = 'UW Board Games Club'
 ORDER BY id LIMIT 1
 ON CONFLICT (id) DO NOTHING;
