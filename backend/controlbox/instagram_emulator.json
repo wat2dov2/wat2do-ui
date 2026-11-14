@@ -8,10 +8,11 @@
     "-no-boot-anim",
     "-no-snapshot-load",
     "-no-snapshot-save",
+    "-writable-system",
     "-gpu",
     "host",
     "-memory",
-    "4096",
+    "6144",
     "-cores",
     "4"
   ],
