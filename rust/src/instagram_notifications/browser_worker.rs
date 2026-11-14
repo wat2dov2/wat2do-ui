@@ -467,18 +467,25 @@ impl Worker {
         match self.tab_pool().add_account(username) {
             Ok(()) => {
                 tracing::warn!("Logged {username} in to Brave after it went missing");
+                self.queue.clear_unfinished_login(username)?;
                 Ok(true)
             }
             // Its password reached Instagram: a person looks before this account logs in
-            // again. Only this account waits; every other school's work runs on (a
-            // two-step code sent to a phone once paused every digest for days).
+            // again, unless the login only did not finish for the first time (it is tried
+            // once more after its daily limit). Only this account waits; every other
+            // school's work runs on (a two-step code sent to a phone once paused every
+            // digest for days).
             Err(error) if error.is(SessionKind::LoginSubmitted) => {
-                tracing::error!(
-                    "Logging {username} in to Brave needs a person; its jobs fail until \
-                     `wat2do-browser resume-account --account {username}`: {error}"
-                );
-                self.queue
-                    .pause_account_login(username, &error.to_string())?;
+                if self.queue.hold_submitted_login(username, &error)? {
+                    tracing::error!(
+                        "Logging {username} in to Brave needs a person; its jobs fail until \
+                         `wat2do-browser resume-account --account {username}`: {error}"
+                    );
+                } else {
+                    tracing::error!(
+                        "Logging {username} in to Brave did not finish; it tries once more after its daily limit: {error}"
+                    );
+                }
                 Ok(false)
             }
             Err(error) if error.is_session() || error.is_timeout() => {

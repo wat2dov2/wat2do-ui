@@ -518,8 +518,7 @@ impl TabPool for BrowserTabPool {
                     // Its password went out: only this account waits for a person, and
                     // the next recovery tries the other saved profiles.
                     if error.is(SessionKind::LoginSubmitted) {
-                        self.queue
-                            .pause_account_login(&username, &error.to_string())?;
+                        self.queue.hold_submitted_login(&username, &error)?;
                     }
                     return Err(error);
                 }
@@ -596,8 +595,7 @@ impl TabPool for BrowserTabPool {
                             // Its own password went out: the login school waits for a
                             // person, not the account being added.
                             Err(error) if error.is(SessionKind::LoginSubmitted) => {
-                                self.queue
-                                    .pause_account_login(&from_account, &error.to_string())?;
+                                self.queue.hold_submitted_login(&from_account, &error)?;
                                 return Err(BrowserError::session(format!(
                                     "{username} waits for its next try: {error}"
                                 )));
