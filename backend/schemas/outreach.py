@@ -28,9 +28,10 @@ _CLAIM_URL = "{{claim_url}}"
 class Pitch(BaseModel):
     """Claude's verdict on a lead's club and, for a fit, its video script and email.
 
-    A fit's email names the claim link exactly once as ``{{claim_url}}`` (the admin
-    page fills it in), and nothing written carries another link, a template key or
-    an em dash.
+    A fit's script is a short, relaxed video script (at most one exclamation mark),
+    its email names the claim link exactly once as ``{{claim_url}}`` (the admin page
+    fills it in), and nothing written carries another link, a template key or an em
+    dash.
     """
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
@@ -46,8 +47,10 @@ class Pitch(BaseModel):
         if not self.fit:
             self.script = self.email_subject = self.email_body = ""
             return self
-        if not (300 <= len(self.script) <= 3000):
-            raise ValueError("script must be 300 to 3000 characters")
+        if not (300 <= len(self.script) <= 1500):
+            raise ValueError("script must be 300 to 1500 characters")
+        if self.script.count("!") > 1:
+            raise ValueError("script may use at most one exclamation mark")
         if not (1 <= len(self.email_subject) <= 150):
             raise ValueError("email subject must be 1 to 150 characters")
         if self.email_body.count(_CLAIM_URL) != 1:

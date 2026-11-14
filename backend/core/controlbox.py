@@ -1323,8 +1323,8 @@ class OutreachControl(_ControlModel):
     pitch_recheck_days: int = Field(ge=1, le=365)
     # The club's newest events Claude reads.
     pitch_event_limit: int = Field(ge=1, le=50)
-    # What the pitch offers: this much of a club's event costs back for every
-    # student who comes through its Wat2Do QR code.
+    # What the pitch offers: this much of a club's event-related expenses back for
+    # every attendee its free Wat2Do QR check-in scans in.
     qr_reimbursement_dollars: int = Field(ge=1, le=100)
     # Who records the video and signs the email.
     sender_name: str = Field(min_length=1, max_length=60)

@@ -816,7 +816,7 @@ SELECT
     'https://example.com/clubs/board-games', 'club_page', now(), 'new',
     '99999999-9999-4999-8999-999999999993', true,
     'Open board game nights with snacks, the kind of night students drop into.',
-    'Hey Board Games Club! Your game nights are exactly what Waterloo needs more of.',
+    'POV: your next game night is packed and you don''t recognize half the room. I''m Tony, and I run Wat2Do.',
     'Your game nights, on Wat2Do',
     E'Hi Board Games Club team,\n\nI made you a short video.\n\nClaim your page: {{claim_url}}\n\nTony',
     now()

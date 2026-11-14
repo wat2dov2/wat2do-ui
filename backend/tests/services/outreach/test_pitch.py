@@ -16,7 +16,10 @@ LEAD = {
     "ig": "uwrunning",
     "club_page": None,
     "categories": ["Sports"],
-    "events": [{"title": "Bonfire Social", "starts": "2026-10-30T23:00:00+00:00"}],
+    "events": [
+        {"title": "Karaoke Night", "starts": "2026-11-20T23:00:00+00:00", "upcoming": True},
+        {"title": "Bonfire Social", "starts": "2026-10-30T23:00:00+00:00", "upcoming": False},
+    ],
 }
 SCRIPT = "Hey Running Club! " + "Your bonfire socials are exactly what campus needs. " * 8
 BODY = "Hi Running Club team,\n\nI made you a video.\n\n{{claim_url}}\n\nTony"
@@ -62,6 +65,8 @@ def test_a_club_that_is_not_a_fit_keeps_only_its_reason():
         {"script": SCRIPT.replace("!", " —")},
         {"email_subject": "Hi {{club_name}}"},
         {"script": "Too short."},
+        {"script": SCRIPT.replace("!", ",") * 4},
+        {"script": SCRIPT + " Claim it today!"},
         {"email_subject": ""},
         {"reason": ""},
     ],
@@ -79,6 +84,17 @@ def test_the_prompt_names_the_school_offer_and_sender_but_leaves_the_claim_link(
     assert "{{claim_url}}" in prompt
     assert "{{" not in prompt.replace("{{claim_url}}", "")
     assert "—" not in prompt
+
+
+def test_every_lead_gets_one_hook_style_and_keeps_it():
+    assert len(pitch.HOOK_STYLES) >= 5
+    assert all(style.count("\n- ") >= 5 for style in pitch.HOOK_STYLES)
+    styles = {pitch._hook_style(f"lead-{number}") for number in range(200)}
+    assert styles == set(pitch.HOOK_STYLES)
+    prompt = pitch._prompt(LEAD)
+    chosen = [style for style in pitch.HOOK_STYLES if style.split("\n")[0] in prompt]
+    assert len(chosen) == 1 and pitch._prompt(LEAD) == prompt
+    assert "Video hooks" not in prompt and "Sources:" not in prompt
 
 
 def test_claude_reads_the_club_from_a_file_with_read_only_tools(monkeypatch):

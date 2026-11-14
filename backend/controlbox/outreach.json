@@ -18,7 +18,7 @@
   "pitches_per_sweep": 300,
   "pitch_recheck_days": 30,
   "pitch_event_limit": 15,
-  "qr_reimbursement_dollars": 5,
+  "qr_reimbursement_dollars": 3,
   "sender_name": "Tony",
   "club_url_template": "https://{school}.wat2do.io/clubs/{club_id}",
   "claim_url_template": "https://{school}.wat2do.io/claim/{token}",
