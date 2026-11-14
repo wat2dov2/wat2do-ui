@@ -361,59 +361,6 @@
     "unknownSubdomainDescription": "There is no Wat2Do school mapped to \"{{school}}\". Check the URL or head back to the main site.",
     "unknownSubdomainAction": "Take me back"
   },
-  "about": {
-    "stayUpdated": "Stay Updated",
-    "newsletterDescription": "Get a weekly digest of the best events. No spam, just the good stuff.",
-    "subscribe": "Subscribe",
-    "subscribeSuccess": "Thanks for subscribing!",
-    "subscribeError": "Something went wrong. Please try again.",
-    "emailPlaceholder": "you@{{domain}}",
-    "openingDate": "SOMEWHERE ON UW CAMPUS · JUNE 2025",
-    "openingTitle": "Stumbling Upon the Underrated",
-    "openingParagraph1": "We were the students who kept missing out.",
-    "openingParagraph2": "Tony found an Instagram story about <strong>Italian cooking lessons for $5</strong>. It was posted 3 days ago. The event was already over.",
-    "openingParagraph3": "Erica heard about <strong>Man Dancing: Hip-Hop Edition</strong> from a poster in the hallway. 30 minutes before it started. She showed up, and it was packed.",
-    "openingParagraph4": "The next week, she found out about a <strong>Mechanical Arm curling competition</strong> in a random Discord. That's when we realized: all the coolest events are hidden.",
-    "photo1Alt": "Campus events",
-    "photo1Caption": "One of the dozens of events we found out about too late.",
-    "phase2Date": "August 2025",
-    "phase2Title": "Building for Ourselves",
-    "phase2Paragraph1": "We were sitting in the SLC, complaining about missing <em>yet another event</em> (this time it was free Chipotle at a Women in Engineering mixer), when Erica said: <strong> \"Why isn't there just... one place for all of this?\"</strong>",
-    "phase2Paragraph2": "So we built it.",
-    "phase2Paragraph3": "Tony handled the backend—scraping club Instagrams, linking up with WUSA feeds, building the filter logic. Erica designed everything: the illustrations, the hand-drawn icons, the color palette.",
-    "phase2Paragraph4": "The first version was rough. But it worked.",
-    "photo2Alt": "Building together",
-    "photo2Caption": "Late nights in the SLC. Tony on backend, Erica on design.",
-    "phase3Date": "October 2025",
-    "phase3Title": "Sharing It With Campus",
-    "phase3Paragraph1": "We posted the link in a few group chats. Then we made a poster (ironic, we know) and stuck it in the SLC. Within a week, people were texting us screenshots.",
-    "phase3Paragraph2": "<em>\"Wait, there's a Repair Club? I can actually fix my bike there?\"</em>",
-    "phase3Paragraph3": "Someone found the <strong>Gatka Club</strong> (Sikh martial arts) through Wat2Do and said it was the highlight of their term. Another person discovered <strong>Retro Rollers</strong> (roller skating meetups) and made six new friends in one night.",
-    "phase3Paragraph4": "That's when we realized: this isn't just a calendar. It's a way to discover the version of campus life you didn't know existed.",
-    "photo3Alt": "Community discovery",
-    "photo3Caption": "People started discovering events they never knew existed.",
-    "todayDate": "December 2025",
-    "todayTitle": "You're Here Now",
-    "todayParagraph1": "Wat2Do is used by hundreds of students to discover events they'd otherwise miss. From <strong>Bloomberg networking panels</strong> to <strong>Motor Boat cruises</strong> to <strong> Video Game tournaments</strong>.",
-    "todayParagraph2": "We don't run ads. We don't sell your data. We just think campus life should be easier to navigate.",
-    "todayParagraph3": "If you find this useful, tell a friend.",
-    "guideTitle": "How to Actually Use This",
-    "guideDescription": "Here's what we've learned about making the most of campus events.",
-    "guideIndustryTitle": "Meeting People in Industry",
-    "guideIndustryWie": "<strong>WiE × Bloomberg Panel:</strong> Real engineers who actually answer questions honestly. Plus, they usually bring snacks.",
-    "guideIndustryAtlassian": "<strong>Atlassian Coffee Chats:</strong> Way less intimidating than a career fair booth. You can actually have a conversation.",
-    "guideIndustryStartup": "<strong>Startup Career Fair:</strong> Skip the big corporate booths. Go straight to startups where you can talk to actual founders.",
-    "guideRandomTitle": "Random Stuff Worth Checking Out",
-    "guideRandomRepair": "<strong>Repair Club:</strong> Broke your laptop charger? These folks have tools and will teach you how to fix it yourself. Completely free.",
-    "guideRandomGatka": "<strong>Gatka Club:</strong> Sikh martial arts with wooden sticks. No experience needed. Underrated.",
-    "guideRandomRetro": "<strong>Retro Rollers:</strong> Roller skating at local rinks. Great for de-stressing during midterms.",
-    "guideFriendsTitle": "Going With Friends",
-    "guideFriendsFood": "<strong>Free Food Events:</strong> Sort by \"Food Provided\" in the filters. Pro tip: show up 15 minutes early.",
-    "guideFriendsGames": "<strong>Game Nights:</strong> Perfect low-key hangout. Most clubs provide the games.",
-    "guideFriendsWonderland": "<strong>Canada's Wonderland Trips:</strong> Various clubs organize discounted group trips. Way cheaper than going solo.",
-    "footerPS": "<strong>P.S.</strong> We don't run ads. Everything runs out of our own pockets. No data selling. Just students helping students.",
-    "footerCopyright": "© 2025 Wat2Do · Built by Tony & Erica"
-  },
   "contact": {
     "hero": {
       "line1": "Nice to",
@@ -421,11 +368,38 @@
     },
     "about": {
       "title": "Why we built Wat2Do",
-      "origin": "Wat2Do began when we, its co-founders, discovered a way to scrape public Instagram posts about events happening at the University of Waterloo. We built it for ourselves because we loved trying new things, and students were constantly creating new and interesting things to do.",
-      "belief": "We believe university is one of the best times and environments to try something new. The problem was never a lack of things happening. It was finding them before they were over.",
-      "scale": "Since August 2025, Wat2Do has captured more than 28,900 events. We since scaled the algorithm from 400 accounts to 19,600 and process 3,340 new events a week (as of October 19th, 2026).",
-      "mission": "Solving that discovery problem changed our own university experience. Now we want to share what we built and help students everywhere discover more of the new, cool things happening around them.",
-      "signature": "- Tony & Erica"
+      "origin": "Wat2Do began when we were bored, simple as that. We wanted to find things to do on campus at the University of Waterloo but had no way of seeing everything in one place. When we discovered a way to scrape events from Instagram, we knew what we had to do. Since August 2025, Wat2Do has captured more than 29,000 events from 19,600 accounts at {{count}} school.",
+      "belief": "University is one of the best times to try something new. Clubs you didn't know existed often hold welcoming, low-cost events open to every student, from workshops and game nights to sports and more. Plenty come with free food, too. If you're looking for a j*b (sorry), there are plenty of company-sponsored events and networking nights as well.",
+      "problem": "The problem was never that there is nothing to do. It was finding out about events after they already happened.",
+      "signature": "- Tony & Erica",
+      "origin_other": "Wat2Do began when we were bored, simple as that. We wanted to find things to do on campus at the University of Waterloo but had no way of seeing everything in one place. When we discovered a way to scrape events from Instagram, we knew what we had to do. Since August 2025, Wat2Do has captured more than 29,000 events from 19,600 accounts at {{count}} schools."
+    },
+    "features": {
+      "title": "What you can do on Wat2Do",
+      "schools": {
+        "title": "Switch schools",
+        "desc": "Use the school dropdown in the top left to see what is happening at any school."
+      },
+      "discover": {
+        "title": "See what's happening",
+        "desc": "See featured and new events, filter by food, price and more, view them as a grid, map, or calendar, and share them with friends."
+      },
+      "positions": {
+        "title": "Open positions",
+        "desc": "Browse open positions and opportunities across campus."
+      },
+      "clubs": {
+        "title": "Club directory",
+        "desc": "See all clubs at your school and claim your club as an exec to manage its page."
+      },
+      "submit": {
+        "title": "Submit your own!",
+        "desc": "Add an event, a position or a club that is not listed yet."
+      },
+      "account": {
+        "title": "Sign in for more",
+        "desc": "An account lets you save events, mark the ones you're going to, get reminders, and use the tools for running a club."
+      }
     },
     "help": {
       "title": "How you can help us",
@@ -450,41 +424,6 @@
       "slef": "Student Life Endowment Fund (SLEF)",
       "wusa": " of the Waterloo Undergraduate Student Association (WUSA).",
       "logoAlt": "Student Life Endowment Fund Logo"
-    },
-    "tips": {
-      "intro": "To make the most out of this site, here are some of our helpful tips, depending on your goals.",
-      "networking": {
-        "title": "Expanding Your Professional Network",
-        "desc": "A lot of company-sponsored events might fly under your radar, making it easy to miss out on crucial networking opportunities. We've met recruiters from ",
-        "atlassian": "Atlassian",
-        "bloomberg": "Bloomberg",
-        "and": ", and ",
-        "point72": "Point72",
-        "suffix": " from events we just found about the day before."
-      },
-      "random": {
-        "title": "Random Events You Didn't Know Existed",
-        "desc": "Honestly, the best part about building this project was discovering clubs we had no idea were on campus. There's a ",
-        "repair": "Repair Club",
-        "repairSuffix": " where you can fix your broken electronics, the Iranian Students' Association's ",
-        "zumba": "Persian Zumba",
-        "zumbaSuffix": " class, and Strength Club's ",
-        "barbells": "Battle of the Barbells"
-      },
-      "search": {
-        "title": "Search Tips",
-        "desc": "Category filters can help you find events that you are interested in. \"Food,\" \"Price,\" and \"Registration Required\" tags let you know what to expect. Try searching for what you are looking for, and see what comes up!",
-        "friendsIntro": "If you're with your friends, try ",
-        "pho": "Pho Night",
-        "campfire": "Campfire Jam",
-        "or": ", or ",
-        "global": "Global Games Night"
-      },
-      "explore": {
-        "title": "Start Exploring",
-        "desc": "Check Wat2Do regularly for new events as events are added (almost) live! Or, subscribe to our newsletter for daily updates. Don't be afraid to attend events alone! The best connections happen when you just show up.",
-        "ps": "(P.S. You can enter \"random\" in the search bar to generate a random upcoming event!)"
-      }
     },
     "actions": {
       "browse": "Browse Events",

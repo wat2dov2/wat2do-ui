@@ -15,14 +15,13 @@ import photo1 from "@/assets/york-stadium-selfie.webp";
 import photo2 from "@/assets/ocad-sharp-centre.webp";
 import photo3 from "@/assets/utsc-welcome-sign.webp";
 import photo4 from "@/assets/ocad-sculpture-campus.webp";
-import photo5 from "@/assets/ocad-sculpture-portrait.webp";
-import photo6 from "@/assets/ocad-sharp-centre-selfie.webp";
-import photo7 from "@/assets/tmu-reflection.webp";
-import photo8 from "@/assets/utsg-campus-portrait.webp";
-import photo9 from "@/assets/utsg-mural-portrait.webp";
-import photo10 from "@/assets/york-campus-signpost.webp";
-import photo11 from "@/assets/york-lions-portrait.webp";
-import photo12 from "@/assets/york-sculpture-campus.webp";
+import photo5 from "@/assets/ocad-sharp-centre-selfie.webp";
+import photo6 from "@/assets/tmu-reflection.webp";
+import photo7 from "@/assets/utsg-campus-portrait.webp";
+import photo8 from "@/assets/utsg-mural-portrait.webp";
+import photo9 from "@/assets/york-lions-portrait.webp";
+import photo10 from "@/assets/laurier-team-portrait.webp";
+import photo11 from "@/assets/uwaterloo-convocation-portrait.webp";
 
 // Image placeholder mode, not user-facing input placeholder text.
 const imagePlaceholder = "blur" as const;
@@ -34,13 +33,12 @@ const schoolPhotos = [
   { image: photo3, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
   { image: photo4, school: "OCAD University", schoolSlug: "ocadu" },
   { image: photo5, school: "OCAD University", schoolSlug: "ocadu" },
-  { image: photo6, school: "OCAD University", schoolSlug: "ocadu" },
-  { image: photo7, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo6, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
+  { image: photo7, school: "University of Toronto St. George", schoolSlug: "utsg" },
   { image: photo8, school: "University of Toronto St. George", schoolSlug: "utsg" },
-  { image: photo9, school: "University of Toronto St. George", schoolSlug: "utsg" },
-  { image: photo10, school: "York University", schoolSlug: "yorku" },
-  { image: photo11, school: "York University", schoolSlug: "yorku" },
-  { image: photo12, school: "York University", schoolSlug: "yorku" },
+  { image: photo9, school: "York University", schoolSlug: "yorku" },
+  { image: photo10, school: "Wilfrid Laurier University", schoolSlug: "wlu" },
+  { image: photo11, school: "University of Waterloo", schoolSlug: "uwaterloo" },
 ];
 
 /** Manual navigation keeps photos still for reading and avoids autoplay downloads. */

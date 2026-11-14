@@ -361,59 +361,6 @@
     "unknownSubdomainDescription": "Không có trường Wat2Do nào được gán cho \"{{school}}\". Kiểm tra URL hoặc quay lại trang chính.",
     "unknownSubdomainAction": "Đưa tôi trở lại"
   },
-  "about": {
-    "stayUpdated": "Cập nhật thông tin",
-    "newsletterDescription": "Nhận bản tin hàng tuần về các sự kiện tốt nhất. Không spam, chỉ những điều hay.",
-    "subscribe": "Đăng ký",
-    "subscribeSuccess": "Cảm ơn bạn đã đăng ký!",
-    "subscribeError": "Đã xảy ra lỗi. Vui lòng thử lại.",
-    "emailPlaceholder": "you@{{domain}}",
-    "openingDate": "Ở MỘT NƠI TRÊN CAMPUS UW · THÁNG 6 2025",
-    "openingTitle": "Tình cờ Phát hiện Những Điều Bị Đánh Giá Thấp",
-    "openingParagraph1": "Chúng tôi là những sinh viên luôn bỏ lỡ cơ hội.",
-    "openingParagraph2": "Tony đã tìm thấy một Instagram câu chuyện về <strong>lớp học nấu ăn Ý giá $5</strong>. Nó được đăng 3 ngày trước. Sự kiện đã kết thúc rồi.",
-    "openingParagraph3": "Erica nghe về <strong>Man Dancing: Hip-Hop Edition</strong> từ một tấm áp phích trong hành lang. 30 phút trước khi nó bắt đầu. Cô ấy xuất hiện, và nó đông kín người.",
-    "openingParagraph4": "Tuần sau, cô ấy biết về một <strong>cuộc thi uốn tay cơ học</strong> ở một Discord ngẫu nhiên. Lúc đó chúng tôi nhận ra: tất cả những sự kiện thú vị đều được giấu kín.",
-    "photo1Alt": "Các sự kiện trên campus",
-    "photo1Caption": "Một trong hàng chục sự kiện mà chúng tôi biết quá muộn.",
-    "phase2Date": "Tháng Tám 2025",
-    "phase2Title": "Xây dựng cho chính chúng tôi",
-    "phase2Paragraph1": "Chúng tôi đang ngồi trong SLC, than phiền về việc bỏ lỡ <em>thêm một sự kiện nữa</em> (lần này là Chipotle miễn phí tại một buổi gặp gỡ Women in Engineering), khi Erica nói: <strong> \"Tại sao không có... chỉ một nơi cho tất cả những thứ này?\"</strong>",
-    "phase2Paragraph2": "Vậy là chúng tôi đã xây dựng nó.",
-    "phase2Paragraph3": "Tony phụ trách backend - thu thập dữ liệu từ tổ chức Instagrams, liên kết với các nguồn WUSA, xây dựng logic bộ lọc. Erica thiết kế mọi thứ: các minh họa, các biểu tượng vẽ tay, bảng màu.",
-    "phase2Paragraph4": "Phiên bản đầu tiên còn thô. Nhưng nó hoạt động.",
-    "photo2Alt": "Xây dựng cùng nhau",
-    "photo2Caption": "Những đêm muộn ở SLC. Tony một bên backend, Erica một bên thiết kế.",
-    "phase3Date": "Tháng Mười 2025",
-    "phase3Title": "Chia sẻ với khuôn viên trường",
-    "phase3Paragraph1": "Chúng tôi đã đăng liên kết trong vài nhóm chat. Rồi chúng tôi làm một tấm poster (mỉa mai, chúng tôi biết) và dán nó ở SLC. Trong vòng một tuần, mọi người đã nhắn tin cho chúng tôi các ảnh chụp màn hình.",
-    "phase3Paragraph2": "<em>\"Đợi đã, có Repair Club á? Mình thực sự có thể sửa xe đạp ở đó sao?\"</em>",
-    "phase3Paragraph3": "Ai đó đã tìm thấy <strong>Gatka Club</strong> (võ thuật Sikh) thông qua Wat2Do và nói rằng đó là điểm nổi bật trong kỳ học của họ. Một người khác phát hiện <strong>Retro Rollers</strong> (các buổi gặp gỡ trượt patin) và kết bạn được sáu người chỉ trong một đêm.",
-    "phase3Paragraph4": "Đó là lúc chúng tôi nhận ra: điều này không chỉ là một lịch. Đây là cách để khám phá phiên bản cuộc sống trong khuôn viên mà bạn chưa từng biết đến.",
-    "photo3Alt": "Khám phá cộng đồng",
-    "photo3Caption": "Mọi người bắt đầu khám phá những sự kiện mà họ chưa từng biết tồn tại.",
-    "todayDate": "Tháng Mười Hai 2025",
-    "todayTitle": "Bạn Đang Ở Đây",
-    "todayParagraph1": "Wat2Do được hàng trăm sinh viên sử dụng để khám phá các sự kiện mà họ sẽ bỏ lỡ. Từ <strong>các hội thảo kết nối Bloomberg</strong> đến <strong>các chuyến du thuyền Motor Boat</strong> đến <strong>giải đấu trò chơi điện tử</strong>.",
-    "todayParagraph2": "Chúng tôi không chạy quảng cáo. Chúng tôi không bán dữ liệu của bạn. Chúng tôi chỉ nghĩ rằng cuộc sống trong khuôn viên trường nên dễ dàng để điều hướng hơn.",
-    "todayParagraph3": "Nếu bạn thấy điều này hữu ích, hãy kể cho một người bạn.",
-    "guideTitle": "Cách Thực Sự Sử Dụng Điều Này",
-    "guideDescription": "Đây là những gì chúng tôi đã học được về cách tận dụng tối đa các sự kiện trong khuôn viên.",
-    "guideIndustryTitle": "Gặp Gỡ Người Trong Ngành",
-    "guideIndustryWie": "<strong>WiE × Bloomberg Hội đồng:</strong> Những kỹ sư thực sự trả lời câu hỏi một cách trung thực. Thêm nữa, họ thường mang đồ ăn nhẹ.",
-    "guideIndustryAtlassian": "<strong>Atlassian Buổi trò chuyện cà phê:</strong> Ít gây áp lực hơn nhiều so với gian hàng hội chợ việc làm. Bạn thực sự có thể trò chuyện.",
-    "guideIndustryStartup": "<strong>Hội chợ nghề nghiệp khởi nghiệp:</strong> Bỏ qua các gian hàng công ty lớn. Đi thẳng đến các startup, nơi bạn có thể nói chuyện với các nhà sáng lập thực sự.",
-    "guideRandomTitle": "Những thứ ngẫu nhiên đáng thử",
-    "guideRandomRepair": "<strong>Repair Club:</strong> Bị hỏng sạc laptop? Nhóm này có dụng cụ và sẽ dạy bạn cách tự sửa. Hoàn toàn miễn phí.",
-    "guideRandomGatka": "<strong>Gatka Club:</strong> Võ thuật Sikh với gậy gỗ. Không cần kinh nghiệm. Đáng giá.",
-    "guideRandomRetro": "<strong>Retro Rollers:</strong> Trượt patin tại các sân trượt địa phương. Tuyệt vời để giảm căng thẳng trong kỳ thi giữa kỳ.",
-    "guideFriendsTitle": "Đi cùng bạn bè",
-    "guideFriendsFood": "<strong>Sự kiện có món ăn miễn phí:</strong> Sắp xếp theo \"Có cung cấp thức ăn\" trong bộ lọc. Mẹo quan trọng: đến sớm 15 phút.",
-    "guideFriendsGames": "<strong>Đêm trò chơi:</strong> Buổi tụ tập nhẹ nhàng hoàn hảo. Hầu hết các tổ chức đều cung cấp trò chơi.",
-    "guideFriendsWonderland": "<strong>Chuyến đi Canada's Wonderland:</strong> Các tổ chức khác nhau tổ chức các chuyến đi nhóm với giá giảm. Rẻ hơn nhiều so với đi một mình.",
-    "footerPS": "<strong>P.S.</strong> Chúng tôi không chạy quảng cáo. Mọi thứ đều tự chi trả. Không bán dữ liệu. Chỉ là sinh viên giúp đỡ sinh viên.",
-    "footerCopyright": "© 2025 Wat2Do · Xây dựng bởi Tony & Erica"
-  },
   "contact": {
     "hero": {
       "line1": "Rất vui được",
@@ -421,11 +368,38 @@
     },
     "about": {
       "title": "Tại sao chúng tôi xây dựng Wat2Do",
-      "origin": "Wat2Do bắt đầu khi chúng tôi, những người đồng sáng lập, phát hiện ra cách thu thập các bài đăng công khai Instagram về các sự kiện diễn ra tại University of Waterloo. Chúng tôi xây dựng nó cho chính chúng tôi vì chúng tôi thích thử những điều mới, và sinh viên liên tục tạo ra những điều mới mẻ và thú vị để làm.",
-      "belief": "Chúng tôi tin rằng đại học là một trong những khoảng thời gian và môi trường tốt nhất để thử điều gì đó mới. Vấn đề chưa bao giờ là thiếu những sự kiện diễn ra. Vấn đề là tìm thấy chúng trước khi chúng kết thúc.",
-      "scale": "Kể từ tháng Tám 2025, Wat2Do đã ghi lại hơn 28,900 sự kiện. Kể từ đó, chúng tôi đã mở rộng thuật toán từ 400 tài khoản lên 19,600 và xử lý 3,340 sự kiện mới mỗi tuần (tính đến ngày 19 tháng Mười 2026).",
-      "mission": "Giải quyết vấn đề khám phá đó đã thay đổi trải nghiệm đại học của chính chúng tôi. Bây giờ chúng tôi muốn chia sẻ những gì chúng tôi đã xây dựng và giúp sinh viên ở khắp nơi khám phá nhiều điều mới mẻ, thú vị đang diễn ra xung quanh họ.",
+      "origin": "Wat2Do bắt đầu vì chúng tôi chán, đơn giản vậy thôi. Chúng tôi muốn tìm việc để làm trong khuôn viên University of Waterloo nhưng không có cách nào xem tất cả ở một nơi. Khi tìm ra cách thu thập sự kiện từ Instagram, chúng tôi biết mình phải làm gì. Từ tháng 8 năm 2025, Wat2Do đã ghi nhận hơn 29.000 sự kiện từ 19.600 tài khoản tại {{count}} trường.",
+      "origin_other": "Wat2Do bắt đầu vì chúng tôi chán, đơn giản vậy thôi. Chúng tôi muốn tìm việc để làm trong khuôn viên University of Waterloo nhưng không có cách nào xem tất cả ở một nơi. Khi tìm ra cách thu thập sự kiện từ Instagram, chúng tôi biết mình phải làm gì. Từ tháng 8 năm 2025, Wat2Do đã ghi nhận hơn 29.000 sự kiện từ 19.600 tài khoản tại {{count}} trường.",
+      "belief": "Đại học là một trong những khoảng thời gian tuyệt nhất để thử điều mới. Những câu lạc bộ bạn chưa từng biết đến thường tổ chức các sự kiện thân thiện, chi phí thấp, mở cho mọi sinh viên, từ hội thảo thực hành và đêm trò chơi đến thể thao và hơn thế nữa. Nhiều sự kiện có đồ ăn miễn phí. Nếu bạn đang tìm việc, cũng có rất nhiều sự kiện do công ty tài trợ và các buổi giao lưu networking.",
+      "problem": "Vấn đề chưa bao giờ là không có gì để làm. Vấn đề là biết đến sự kiện khi chúng đã diễn ra rồi.",
       "signature": "- Tony & Erica"
+    },
+    "features": {
+      "title": "Bạn có thể làm gì trên Wat2Do",
+      "schools": {
+        "title": "Đổi trường",
+        "desc": "Dùng menu chọn trường ở góc trên bên trái để xem điều gì đang diễn ra ở bất kỳ trường nào."
+      },
+      "discover": {
+        "title": "Xem điều gì đang diễn ra",
+        "desc": "Xem các sự kiện nổi bật và sự kiện mới, lọc theo đồ ăn, giá cả và nhiều tiêu chí khác, xem dưới dạng lưới, bản đồ hoặc lịch, và chia sẻ với bạn bè."
+      },
+      "positions": {
+        "title": "Vị trí đang tuyển",
+        "desc": "Xem các vị trí và cơ hội đang mở trong khuôn viên trường."
+      },
+      "clubs": {
+        "title": "Danh bạ câu lạc bộ",
+        "desc": "Xem tất cả câu lạc bộ ở trường bạn và nhận quyền quản lý câu lạc bộ của bạn với tư cách ban điều hành để quản lý trang."
+      },
+      "submit": {
+        "title": "Tự gửi của bạn!",
+        "desc": "Thêm sự kiện, vị trí hoặc câu lạc bộ chưa có trong danh sách."
+      },
+      "account": {
+        "title": "Đăng nhập để dùng thêm tính năng",
+        "desc": "Tài khoản giúp bạn lưu sự kiện, đánh dấu những sự kiện bạn sẽ tham gia, nhận nhắc nhở và dùng công cụ quản lý câu lạc bộ."
+      }
     },
     "help": {
       "title": "Cách bạn có thể giúp chúng tôi",
@@ -450,41 +424,6 @@
       "slef": "Student Life Endowment Fund (SLEF)",
       "wusa": " của Waterloo Undergraduate Student Association (WUSA).",
       "logoAlt": "Student Life Endowment Fund Logo"
-    },
-    "tips": {
-      "intro": "Để tận dụng tối đa trang web này, đây là một số mẹo hữu ích của chúng tôi, tùy thuộc vào mục tiêu của bạn.",
-      "networking": {
-        "title": "Mở rộng Mạng Lưới Chuyên Nghiệp của Bạn",
-        "desc": "Nhiều sự kiện do công ty tài trợ có thể trôi qua mà bạn không chú ý, khiến bạn dễ bỏ lỡ cơ hội kết nối quan trọng. Chúng tôi đã gặp các nhà tuyển dụng từ ",
-        "atlassian": "Atlassian",
-        "bloomberg": "Bloomberg",
-        "and": ", và ",
-        "point72": "Point72",
-        "suffix": " từ các sự kiện mà chúng tôi vừa tìm thấy vào ngày hôm trước."
-      },
-      "random": {
-        "title": "Các Sự Kiện Ngẫu Nhiên Mà Bạn Chưa Biết Tồn Tại",
-        "desc": "Thành thật mà nói, phần hay nhất khi xây dựng dự án này là khám phá các tổ chức mà chúng tôi hoàn toàn không biết có mặt trên khuôn viên. Có một ",
-        "repair": "Repair Club",
-        "repairSuffix": " nơi bạn có thể sửa thiết bị điện tử bị hỏng, Iranian Students' Association có lớp ",
-        "zumba": "Persian Zumba",
-        "zumbaSuffix": ", còn Strength Club có ",
-        "barbells": "Battle of the Barbells"
-      },
-      "search": {
-        "title": "Mẹo Tìm Kiếm",
-        "desc": "Bộ lọc theo danh mục có thể giúp bạn tìm các sự kiện mà bạn quan tâm. Các thẻ \"Thức ăn,\" \"Giá cả,\" và \"Cần đăng ký\" cho bạn biết những gì có thể mong đợi. Hãy thử tìm kiếm những gì bạn đang tìm, và xem kết quả ra sao!",
-        "friendsIntro": "Nếu bạn đi cùng bạn bè, hãy thử ",
-        "pho": "Pho Night",
-        "campfire": "Campfire Jam",
-        "or": ", hoặc ",
-        "global": "Global Games Night"
-      },
-      "explore": {
-        "title": "Bắt đầu khám phá",
-        "desc": "Kiểm tra Wat2Do thường xuyên để xem các sự kiện mới khi các sự kiện được thêm vào (gần như) trực tiếp! Hoặc, đăng ký nhận bản tin của chúng tôi để cập nhật hàng ngày. Đừng ngại tham dự sự kiện một mình! Những kết nối tốt nhất xảy ra khi bạn chỉ cần xuất hiện.",
-        "ps": "(P.S. Bạn có thể nhập \"random\" vào thanh tìm kiếm để tạo ra một sự kiện sắp tới ngẫu nhiên!)"
-      }
     },
     "actions": {
       "browse": "Duyệt các Sự kiện",

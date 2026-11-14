@@ -132,14 +132,14 @@
     "profile": {
       "title": "Choisissez votre faculté",
       "description": "Sélectionnez votre faculté et votre année",
-      "firstYearQuestion": "Êtes-vous un étudiant de première année ?"
+      "firstYearQuestion": "Êtes-vous un étudiant de première année?"
     },
     "interests": {
       "description": "Choisissez les sujets qui vous intéressent",
       "selected": "sélectionné"
     },
     "allSet": {
-      "title": "Tout est prêt !",
+      "title": "Tout est prêt!",
       "description": "Vous êtes prêt à commencer à explorer les événements",
       "year": "Année",
       "firstYear": "Première année",
@@ -150,8 +150,8 @@
       "description": "Entrez le code à 6 chiffres envoyé à {{email}}",
       "verifying": "Vérification en cours...",
       "enterCode": "Entrez le code de vérification",
-      "changeEmail": "Changer d'email",
-      "verifyEmail": "Vérifiez votre email"
+      "changeEmail": "Changer de courriel",
+      "verifyEmail": "Vérifiez votre courriel"
     }
   },
   "filters": {
@@ -211,8 +211,8 @@
     "createNewEvent": "Soumettre l'événement",
     "goingEvents": "Événements auxquels je participe",
     "notificationPreferences": "Préférences de notification",
-    "themeAppearance": "Thème & Apparence",
-    "helpSupport": "Aide & Support",
+    "themeAppearance": "Thème et apparence",
+    "helpSupport": "Aide et soutien",
     "signInToUnlockFeatures": "Connectez-vous pour débloquer les fonctionnalités",
     "editProfile": "Modifier le profil",
     "createProfile": "Créer un profil"
@@ -246,14 +246,14 @@
     "sourceUrl": "Lien source",
     "sourceUrlPlaceholder": "https://instagram.com/p/...",
     "pricePlaceholder": "0",
-    "foodPlaceholder": "par ex., Pizza, Snacks",
+    "foodPlaceholder": "par ex., Pizza, Collations",
     "posterNamePlaceholder": "par ex., Affiche du campus principal #1",
     "urlPlaceholder": "https://example.com",
     "chooseEvent": "Choisissez un événement",
     "addCategoryPlaceholder": "Ajouter une catégorie...",
     "discordPlaceholder": "https://discord.gg/...",
-    "clickToUploadImage": "Cliquez pour télécharger l'image",
-    "clickToUpload": "Cliquez pour télécharger",
+    "clickToUploadImage": "Cliquez pour téléverser l'image",
+    "clickToUpload": "Cliquez pour téléverser",
     "livePreview": "Aperçu en direct",
     "optionalDetails": "Détails facultatifs",
     "name": "Nom",
@@ -265,7 +265,7 @@
     "clubTypeMapped": "{{type}}",
     "clubTypeIndependent": "Indépendant",
     "clubNameRequired": "Le nom de l'organisation est requis",
-    "ownerEmail": "E-mail du propriétaire",
+    "ownerEmail": "Courriel du propriétaire",
     "categories": "Catégories",
     "categoryRequired": "Au moins une catégorie est requise",
     "add": "Ajouter",
@@ -290,7 +290,7 @@
     "coverImage": "Image de couverture",
     "jsonEditor": "Éditeur JSON",
     "loadingEditor": "Chargement de l'éditeur...",
-    "clickToUploadOrPasteImage": "Cliquez pour télécharger l'image ou coller",
+    "clickToUploadOrPasteImage": "Cliquez pour téléverser l'image ou coller",
     "imageTypeError": "Utilisez une image JPEG, PNG, WebP, ou GIF.",
     "skipImageUpload": "Passer et remplir manuellement"
   },
@@ -367,84 +367,60 @@
     "unknownSubdomainDescription": "Il n'y a pas d'école Wat2Do associée à \"{{school}}\". Vérifiez URL ou revenez au site principal.",
     "unknownSubdomainAction": "Revenir en arrière"
   },
-  "about": {
-    "stayUpdated": "Restez informé",
-    "newsletterDescription": "Recevez un condensé hebdomadaire des meilleurs événements. Pas de spam, juste le meilleur.",
-    "subscribe": "S'abonner",
-    "subscribeSuccess": "Merci pour votre abonnement !",
-    "subscribeError": "Une erreur est survenue. Veuillez réessayer.",
-    "emailPlaceholder": "vous@{{domain}}",
-    "openingDate": "QUELQUE PART SUR LE CAMPUS UW · JUIN 2025",
-    "openingTitle": "Tomber sur l'Injustement Sous-Estimé",
-    "openingParagraph1": "Nous étions les étudiants qui continuaient à manquer des opportunités.",
-    "openingParagraph2": "Tony est tombé sur une Instagram histoire sur <strong>des cours de cuisine italienne pour 5 $</strong>. Elle a été postée il y a 3 jours. L'événement était déjà terminé.",
-    "openingParagraph3": "Erica a entendu parler de <strong>Man Dancing : Édition Hip-Hop</strong> grâce à une affiche dans le couloir. 30 minutes avant le début. Elle est venue et il y avait foule.",
-    "openingParagraph4": "La semaine suivante, elle a découvert une <strong>compétition de curlings de bras mécaniques</strong> dans un Discord aléatoire. C'est là que nous avons réalisé : tous les événements les plus cool sont cachés.",
-    "photo1Alt": "Événements sur le campus",
-    "photo1Caption": "Un des dizaines d'événements dont nous avons appris trop tard.",
-    "phase2Date": "Août 2025",
-    "phase2Title": "Construire pour nous-mêmes",
-    "phase2Paragraph1": "Nous étions assis dans le SLC, nous plaignant d'avoir manqué <em>encore un autre événement</em> (cette fois c'était un Chipotle gratuit à un Women in Engineering mixer), quand Erica a dit : <strong> \"Pourquoi n'y a-t-il pas juste... un endroit pour tout cela ?\"</strong>",
-    "phase2Paragraph2": "Alors nous l'avons construit.",
-    "phase2Paragraph3": "Tony s’est occupé du backend : extraction des publications Instagram des organisations, connexion aux flux WUSA et création de la logique de filtrage. Erica a tout conçu : les illustrations, les icônes dessinées à la main et la palette de couleurs.",
-    "phase2Paragraph4": "La première version était rudimentaire. Mais elle fonctionnait.",
-    "photo2Alt": "Construire ensemble",
-    "photo2Caption": "Nuits tardives dans le SLC. Tony sur le backend, Erica sur le design.",
-    "phase3Date": "Octobre 2025",
-    "phase3Title": "Le partager avec le campus",
-    "phase3Paragraph1": "Nous avons publié le lien dans quelques discussions de groupe. Puis nous avons fait un poster (ironique, nous savons) et l'avons affiché dans le SLC. En une semaine, les gens nous envoyaient des captures d'écran par texto.",
-    "phase3Paragraph2": "<em>\"Attends, il y a une organisation de réparation ? Je peux vraiment réparer mon vélo là-bas ?\"</em>",
-    "phase3Paragraph3": "Quelqu'un a trouvé l'<strong>Organisation Gatka</strong> (Sikh arts martiaux) via Wat2Do et a dit que c'était le moment fort de son trimestre. Une autre personne a découvert <strong>Retro Rollers</strong> (rencontres de roller) et s'est fait six nouveaux amis en une seule soirée.",
-    "phase3Paragraph4": "C'est à ce moment-là que nous avons réalisé : ce n'est pas juste un calendrier. C'est une manière de découvrir la version de la vie sur le campus que vous ne connaissiez pas.",
-    "photo3Alt": "Découverte communautaire",
-    "photo3Caption": "Les gens ont commencé à découvrir des événements dont ils n'avaient jamais entendu parler.",
-    "todayDate": "Décembre 2025",
-    "todayTitle": "Vous êtes ici maintenant",
-    "todayParagraph1": "Wat2Do est utilisé par des centaines d'étudiants pour découvrir des événements qu'ils manqueraient autrement. Des <strong>Bloomberg panels de réseautage</strong> aux <strong>croisières en bateau à moteur</strong> en passant par les <strong>tournois de jeux vidéo</strong>.",
-    "todayParagraph2": "Nous ne diffusons pas de publicités. Nous ne vendons pas vos données. Nous pensons simplement que la vie sur le campus devrait être plus facile à naviguer.",
-    "todayParagraph3": "Si vous trouvez ceci utile, parlez-en à un ami.",
-    "guideTitle": "Comment réellement utiliser ceci",
-    "guideDescription": "Voici ce que nous avons appris sur la façon de tirer le meilleur parti des événements sur le campus.",
-    "guideIndustryTitle": "Rencontrer des gens de l'industrie",
-    "guideIndustryWie": "<strong>WiE × Bloomberg Panel :</strong> De vrais ingénieurs qui répondent honnêtement aux questions. De plus, ils apportent généralement des collations.",
-    "guideIndustryAtlassian": "<strong>Atlassian Coffee Chats :</strong> Beaucoup moins intimidant qu'un stand lors d'un salon de l'emploi. Vous pouvez réellement avoir une conversation.",
-    "guideIndustryStartup": "<strong>Foire de l'emploi pour startups :</strong> Évitez les grands stands d'entreprises. Allez directement vers les startups où vous pouvez parler aux fondateurs eux-mêmes.",
-    "guideRandomTitle": "Choses Aléatoires À Tester",
-    "guideRandomRepair": "<strong>Organisation de réparation :</strong> Votre chargeur d'ordinateur portable est cassé ? Ces gens ont des outils et vous apprendront à le réparer vous-même. Entièrement gratuit.",
-    "guideRandomGatka": "<strong>Organisation Gatka :</strong> Sikh arts martiaux avec des bâtons en bois. Aucune expérience nécessaire. Sous-estimé.",
-    "guideRandomRetro": "<strong>Retro Rollers :</strong> Patinage à roulettes dans les patinoires locales. Idéal pour se détendre pendant les examens de mi-session.",
-    "guideFriendsTitle": "Sortir avec des amis",
-    "guideFriendsFood": "<strong>Événements avec nourriture gratuite :</strong> Triez par \"Nourriture fournie\" dans les filtres. Astuce : arrivez 15 minutes en avance.",
-    "guideFriendsGames": "<strong>Soirées jeux :</strong> Parfait pour se détendre entre amis. La plupart des organisations fournissent les jeux.",
-    "guideFriendsWonderland": "<strong>Canada's Wonderland Voyages :</strong> Diverses organisations organisent des voyages de groupe à prix réduit. Bien moins cher que de partir seul.",
-    "footerPS": "<strong>P.S.</strong> Nous ne faisons pas de publicité. Tout est financé de nos propres poches. Pas de vente de données. Juste des étudiants aidant d'autres étudiants.",
-    "footerCopyright": "© 2025 Wat2Do · Construit par Tony & Erica"
-  },
   "contact": {
     "hero": {
       "line1": "Ravis de",
-      "line2": "faire votre connaissance !"
+      "line2": "faire votre connaissance!"
     },
     "about": {
-      "title": "Pourquoi nous avons construit Wat2Do",
-      "origin": "Wat2Do a commencé lorsque nous, ses cofondateurs, avons découvert un moyen de récupérer les publications publiques Instagram concernant les événements se déroulant au University of Waterloo. Nous l'avons construit pour nous-mêmes parce que nous aimions essayer de nouvelles choses, et les étudiants créaient constamment de nouvelles activités intéressantes.",
-      "belief": "Nous croyons que l'université est l'un des meilleurs moments et environnements pour essayer quelque chose de nouveau. Le problème n'a jamais été le manque de choses à faire. C'était de les trouver avant qu'elles ne soient terminées.",
-      "scale": "Depuis août 2025, Wat2Do a enregistré plus de 28 900 événements. Depuis, nous avons fait passer l'algorithme de 400 à 19 600 comptes et traitons 3 340 nouveaux événements par semaine (au 19 octobre 2026).",
-      "mission": "Résoudre ce problème de découverte a changé notre propre expérience universitaire. Maintenant, nous voulons partager ce que nous avons construit et aider les étudiants partout à découvrir davantage les nouvelles choses intéressantes qui se passent autour d'eux.",
-      "signature": "- Tony & Erica"
+      "title": "Pourquoi on a construit Wat2Do",
+      "origin": "Wat2Do est né de l'ennui, tout simplement. On voulait trouver des choses à faire sur le campus de l'Université de Waterloo, mais on n'avait aucun moyen de tout voir au même endroit. Quand on a découvert comment extraire les événements d'Instagram, on a su quoi faire. Depuis août 2025, Wat2Do a recensé plus de 29 000 événements provenant de 19 600 comptes dans {{count}} école.",
+      "origin_one": "Wat2Do est né de l'ennui, tout simplement. On voulait trouver des choses à faire sur le campus de l'Université de Waterloo, mais on n'avait aucun moyen de tout voir au même endroit. Quand on a découvert comment extraire les événements d'Instagram, on a su quoi faire. Depuis août 2025, Wat2Do a recensé plus de 29 000 événements provenant de 19 600 comptes dans {{count}} école.",
+      "origin_many": "Wat2Do est né de l'ennui, tout simplement. On voulait trouver des choses à faire sur le campus de l'Université de Waterloo, mais on n'avait aucun moyen de tout voir au même endroit. Quand on a découvert comment extraire les événements d'Instagram, on a su quoi faire. Depuis août 2025, Wat2Do a recensé plus de 29 000 événements provenant de 19 600 comptes dans {{count}} écoles.",
+      "origin_other": "Wat2Do est né de l'ennui, tout simplement. On voulait trouver des choses à faire sur le campus de l'Université de Waterloo, mais on n'avait aucun moyen de tout voir au même endroit. Quand on a découvert comment extraire les événements d'Instagram, on a su quoi faire. Depuis août 2025, Wat2Do a recensé plus de 29 000 événements provenant de 19 600 comptes dans {{count}} écoles.",
+      "belief": "L'université est l'un des meilleurs moments pour essayer quelque chose de nouveau. Des regroupements étudiants dont vous ignoriez l'existence organisent souvent des événements conviviaux et peu coûteux, ouverts à tous les étudiants, des ateliers aux soirées de jeux en passant par le sport. Plusieurs offrent aussi de la nourriture gratuite. Si vous cherchez un emploi, il y a aussi plein d'événements commandités par des entreprises et de soirées de réseautage.",
+      "problem": "Le problème n'a jamais été qu'il n'y a rien à faire. C'était d'apprendre l'existence des événements une fois qu'ils étaient déjà passés.",
+      "signature": "- Tony et Erica"
+    },
+    "features": {
+      "title": "Ce que vous pouvez faire sur Wat2Do",
+      "schools": {
+        "title": "Changer d'école",
+        "desc": "Utilisez le menu des écoles, en haut à gauche, pour voir ce qui se passe dans n'importe quelle école."
+      },
+      "discover": {
+        "title": "Voir ce qui se passe",
+        "desc": "Consultez les événements en vedette et les nouveautés, filtrez selon la nourriture, le prix et plus encore, affichez-les en mode grille, carte ou calendrier et partagez-les avec vos amis."
+      },
+      "positions": {
+        "title": "Postes à pourvoir",
+        "desc": "Parcourez les postes et les occasions à saisir sur le campus."
+      },
+      "clubs": {
+        "title": "Répertoire des regroupements étudiants",
+        "desc": "Voyez tous les regroupements étudiants de votre école et réclamez le vôtre à titre de membre de l'exécutif pour gérer sa page."
+      },
+      "submit": {
+        "title": "Ajoutez le vôtre!",
+        "desc": "Ajoutez un événement, un poste ou un regroupement étudiant qui n'est pas encore répertorié."
+      },
+      "account": {
+        "title": "Connectez-vous pour en faire plus",
+        "desc": "Un compte vous permet d'enregistrer des événements, d'indiquer ceux auxquels vous allez, de recevoir des rappels et d'utiliser les outils pour gérer un regroupement étudiant."
+      }
     },
     "help": {
       "title": "Comment nous aider",
-      "description": "Affichez des posters Wat2Do sur le campus pour aider les autres étudiants à découvrir les événements avant qu’ils aient lieu. Notre programme d’affichage vous donne tout ce qu’il faut pour commencer.",
+      "description": "Placez des affiches Wat2Do sur le campus pour aider les autres étudiants à découvrir les événements avant qu’ils aient lieu. Notre programme d’affichage vous donne tout ce qu’il faut pour commencer.",
       "action": "Aider avec les affiches du campus"
     },
     "form": {
       "title": "Prenez contact",
       "description": "Envoyez vos questions, suggestions, corrections ou idées de partenariat directement à l'équipe Wat2Do.",
-      "email": "Adresse e-mail",
+      "email": "Adresse courriel",
       "emailPlaceholder": "you@example.com",
       "message": "Message",
-      "messagePlaceholder": "Comment pouvons-nous vous aider ?",
+      "messagePlaceholder": "Comment pouvons-nous vous aider?",
       "submit": "Envoyer le message",
       "sending": "Envoi du message...",
       "success": "Merci de nous avoir contactés. Votre message a été envoyé.",
@@ -456,41 +432,6 @@
       "slef": "Fonds de dotation pour la vie étudiante (SLEF)",
       "wusa": " de l'Association des étudiants de premier cycle Waterloo (WUSA).",
       "logoAlt": "Logo du Fonds de dotation pour la vie étudiante"
-    },
-    "tips": {
-      "intro": "Pour tirer le meilleur parti de ce site, voici quelques conseils utiles, selon vos objectifs.",
-      "networking": {
-        "title": "Étendre votre réseau professionnel",
-        "desc": "Beaucoup d'événements sponsorisés par des entreprises peuvent passer inaperçus, ce qui rend facile de manquer des opportunités de réseautage cruciales. Nous avons rencontré des recruteurs de ",
-        "atlassian": "Atlassian",
-        "bloomberg": "Bloomberg",
-        "and": ", et ",
-        "point72": "Point72",
-        "suffix": " lors d'événements dont nous venions d'apprendre la veille."
-      },
-      "random": {
-        "title": "Événements aléatoires dont vous ignoriez l'existence",
-        "desc": "Honnêtement, la meilleure partie de la création de ce projet a été de découvrir des organisations dont nous n'avions aucune idée sur le campus. Il y a un ",
-        "repair": "Repair Club",
-        "repairSuffix": " où vous pouvez réparer vos appareils électroniques cassés, la ",
-        "zumba": "Zumba perse",
-        "zumbaSuffix": " cours, et Organisation de la Force ",
-        "barbells": "Bataille des Haltères"
-      },
-      "search": {
-        "title": "Conseils de recherche",
-        "desc": "Les filtres de catégorie peuvent vous aider à trouver des événements qui vous intéressent. Les étiquettes « Nourriture », « Prix » et « Inscription requise » vous indiquent à quoi vous attendre. Essayez de rechercher ce que vous cherchez et voyez ce qui apparaît !",
-        "friendsIntro": "Si vous êtes avec vos amis, essayez ",
-        "pho": "Soirée Pho",
-        "campfire": "Jam autour du feu de camp",
-        "or": ", ou ",
-        "global": "Soirée Mondiale de Jeux"
-      },
-      "explore": {
-        "title": "Commencer à explorer",
-        "desc": "Consultez Wat2Do régulièrement pour découvrir de nouveaux événements à mesure qu'ils sont ajoutés (presque) en direct ! Ou, abonnez-vous à notre newsletter pour des mises à jour quotidiennes. N'ayez pas peur d'assister aux événements seul ! Les meilleures connexions se font simplement en se présentant.",
-        "ps": "(P.S. Vous pouvez entrer \"aléatoire\" dans la barre de recherche pour générer un événement à venir au hasard !)"
-      }
     },
     "actions": {
       "browse": "Parcourir les Événements",
@@ -636,27 +577,27 @@
       "title": "Les questions des étudiants",
       "items": {
         "free": {
-          "question": "Wat2Do est-il gratuit ?",
+          "question": "Wat2Do est-il gratuit?",
           "answer": "Oui. Wat2Do est gratuit pour les étudiants, et vous pouvez parcourir tous les événements sans compte. Connectez-vous pour marquer des événements avec J’y vais et recevoir des rappels."
         },
         "clubs": {
-          "question": "Mon club doit-il s'inscrire ?",
+          "question": "Mon club doit-il s'inscrire?",
           "answer": "Non. Si votre club publie ses événements sur un compte Instagram public, Wat2Do les récupère tout seul. Vous pouvez aussi revendiquer la page de votre club pour la gérer."
         },
         "speed": {
-          "question": "En combien de temps les nouveaux événements apparaissent-ils ?",
+          "question": "En combien de temps les nouveaux événements apparaissent-ils?",
           "answer": "La plupart des nouveaux événements apparaissent dans les 19 heures suivant leur publication par le club."
         },
         "submit": {
-          "question": "Puis-je ajouter un événement moi-même ?",
+          "question": "Puis-je ajouter un événement moi-même?",
           "answer": "Oui. Soumettez-le depuis la page des événements. Téléversez l'affiche et Wat2Do remplit les détails pour vous."
         },
         "schools": {
-          "question": "Dans quels établissements Wat2Do est-il disponible ?",
-          "answer": "Wat2Do est disponible dans {{count}} établissement. Chaque établissement a son propre fil, et vous pouvez en changer depuis le haut de la page.",
-          "answer_one": "Wat2Do est disponible dans {{count}} établissement. Chaque établissement a son propre fil, et vous pouvez en changer depuis le haut de la page.",
-          "answer_many": "Wat2Do est disponible dans {{count}} établissements au Canada et aux États-Unis. Chaque établissement a son propre fil, et vous pouvez en changer depuis le haut de la page.",
-          "answer_other": "Wat2Do est disponible dans {{count}} établissements au Canada et aux États-Unis. Chaque établissement a son propre fil, et vous pouvez en changer depuis le haut de la page."
+          "question": "Dans quelles écoles Wat2Do est-il disponible?",
+          "answer": "Wat2Do est disponible dans {{count}} école. Chaque école a son propre fil, et vous pouvez en changer depuis le haut de la page.",
+          "answer_one": "Wat2Do est disponible dans {{count}} école. Chaque école a son propre fil, et vous pouvez en changer depuis le haut de la page.",
+          "answer_many": "Wat2Do est disponible dans {{count}} écoles au Canada et aux États-Unis. Chaque école a son propre fil, et vous pouvez en changer depuis le haut de la page.",
+          "answer_other": "Wat2Do est disponible dans {{count}} écoles au Canada et aux États-Unis. Chaque école a son propre fil, et vous pouvez en changer depuis le haut de la page."
         }
       }
     },

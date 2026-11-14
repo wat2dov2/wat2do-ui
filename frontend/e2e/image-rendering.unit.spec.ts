@@ -677,7 +677,7 @@ test.describe("Instagram raster preparation", () => {
 test("school carousel loads the cached static photo directly with accessible navigation", () => {
   const html = render(SchoolPhotoCarousel, {});
   expect(html.match(/<img /g)).toHaveLength(1);
-  expect(html).toMatch(/src="\/_next\/static\/media\/utsg-university-college[^"]*"/);
+  expect(html).toMatch(/src="\/_next\/static\/media\/uwaterloo-convocation-portrait[^"]*"/);
   expect(html).not.toContain("/_next/image?");
   expect(html).not.toContain('loading="lazy"');
   expect(html).toContain('aria-label="contact.photos.previous"');
@@ -693,7 +693,8 @@ test("school carousel loads the cached static photo directly with accessible nav
 test("school carousel prioritizes matching campus photos without a data request", () => {
   for (const [school, photo] of Object.entries({
     utsg: "utsg-university-college", yorku: "york-stadium-selfie", ocadu: "ocad-sharp-centre",
-    tmu: "tmu-reflection", utsc: "utsc-welcome-sign", uwaterloo: "utsg-university-college",
+    tmu: "tmu-reflection", utsc: "utsc-welcome-sign", uwaterloo: "uwaterloo-convocation-portrait",
+    wlu: "laurier-team-portrait",
   })) {
     requestSchool = school;
     try {
@@ -754,7 +755,7 @@ test("About loading preserves the carousel frame, greeting, caption and controls
   expect(html).toContain('data-slot="skeleton"');
   expect(html).not.toContain('<img ');
   expect(html.match(/<h1 /g)).toHaveLength(1);
-  expect(html).toContain('University of Toronto St. George');
+  expect(html).toContain('University of Waterloo');
   expect(html.match(/disabled=""/g)).toHaveLength(2);
 });
 

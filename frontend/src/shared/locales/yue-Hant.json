@@ -361,59 +361,6 @@
     "unknownSubdomainDescription": "未有 Wat2Do 學校對應「{{school}}」。請檢查 URL 或返回主頁面。",
     "unknownSubdomainAction": "帶我返去"
   },
-  "about": {
-    "stayUpdated": "保持更新",
-    "newsletterDescription": "每週獲取最佳活動摘要。無垃圾郵件，只有精彩內容。",
-    "subscribe": "訂閱",
-    "subscribeSuccess": "多謝你訂閱！",
-    "subscribeError": "出錯了。請再試一次。",
-    "emailPlaceholder": "you@{{domain}}",
-    "openingDate": "UW 校園某處 · 2025 年 6 月",
-    "openingTitle": "偶遇被低估的活動",
-    "openingParagraph1": "我哋係啲一直錯過嘅學生。",
-    "openingParagraph2": "Tony 發現咗一個 Instagram 故事，係關於 <strong>5蚊嘅意大利烹飪課程</strong>。三日前張貼嘅。活動已經完咗。",
-    "openingParagraph3": "Erica 係走廊入面嘅海報睇到 <strong>男士舞蹈：街舞版</strong>。開場前 30 分鐘。佢去咗，場館已經滿晒人。",
-    "openingParagraph4": "下星期，佢喺一個隨意嘅 Discord 入面發現咗 <strong>機械手臂彎舉比賽</strong>。嗰陣我哋先明白：所有最正嘅活動其實都係隱藏嘅。",
-    "photo1Alt": "校園活動",
-    "photo1Caption": "其中一個我們發現得太遲的數十個活動之一。",
-    "phase2Date": "2025年8月",
-    "phase2Title": "為自己而建",
-    "phase2Paragraph1": "我們坐喺 SLC，抱怨錯過了 <em>又一個活動</em>（今次係免費的 Chipotle 喺 Women in Engineering mixer），當時 Erica 講：<strong>「點解唔可以有一個地方集合晒呢啲嘢？」</strong>",
-    "phase2Paragraph2": "所以我哋就建咗。",
-    "phase2Paragraph3": "Tony 負責後端：擷取各組織嘅 Instagram 貼文、連接 WUSA 資料來源，同埋建立篩選邏輯。Erica 就設計咗所有嘢，包括插圖、手繪圖示同色彩配搭。",
-    "phase2Paragraph4": "第一個版本好粗糙。但佢運作咗。",
-    "photo2Alt": "一齊建構",
-    "photo2Caption": "喺 SLC 底夜晚。Tony 做後端，Erica 做設計。",
-    "phase3Date": "2025年10月",
-    "phase3Title": "與校園分享",
-    "phase3Paragraph1": "我們在幾個群聊裡發了連結。然後我們做了一張海報（諷刺，我們知道）並貼在 SLC。一個星期內，就有人傳訊息給我們截圖。",
-    "phase3Paragraph2": "<em>「等等，原來有修理組織？我真的可以喺度整單車？」</em>",
-    "phase3Paragraph3": "有人透過 Wat2Do 搵到 <strong>Gatka 組織</strong>（Sikh 武術），話呢個係佢哋學期嘅亮點。另一個人發現咗 <strong>Retro Rollers</strong>（滑旱冰聚會），一晚就識咗六個新朋友。",
-    "phase3Paragraph4": "嗰陣我哋先意識到：呢個唔單止係一個日曆。佢係一個發掘你未知道嘅校園生活方式嘅途徑。",
-    "photo3Alt": "社群探索",
-    "photo3Caption": "人們開始發現以前從未知道的活動。",
-    "todayDate": "2025年12月",
-    "todayTitle": "你而家喺呢度",
-    "todayParagraph1": "Wat2Do 俾幾百個學生用嚟發掘佢哋否則會錯過嘅活動。由 <strong>Bloomberg 網絡交流小組</strong> 到 <strong>汽船遊</strong> 再到 <strong>電子遊戲比賽</strong>。",
-    "todayParagraph2": "我哋唔做廣告。唔賣你嘅數據。我哋只係覺得大學生活應該更易導航。",
-    "todayParagraph3": "如果你覺得這有用，告訴朋友吧。",
-    "guideTitle": "如何實際使用這個",
-    "guideDescription": "這裡是我們關於如何充分利用校園活動所學到的經驗。",
-    "guideIndustryTitle": "在行業中認識人",
-    "guideIndustryWie": "<strong>WiE × Bloomberg 小組討論：</strong>真實的工程師會誠實回答問題。而且，他們通常會帶小食。",
-    "guideIndustryAtlassian": "<strong>Atlassian 咖啡聊天：</strong>比職業展攤位少得多的壓力。你其實可以進行對話。",
-    "guideIndustryStartup": "<strong>初創公司職業博覽會：</strong>唔好去大公司嘅展位。直接去初創公司，你可以同真正嘅創辦人傾偈。",
-    "guideRandomTitle": "隨便啲值得睇嘅嘢",
-    "guideRandomRepair": "<strong>維修組織：</strong>壞咗你嘅手提電腦充電器？呢啲人有工具，仲會教你自己維修。完全免費。",
-    "guideRandomGatka": "<strong>Gatka 組織：</strong>用木棍練 Sikh 武術。唔使有經驗。唔多人知。",
-    "guideRandomRetro": "<strong>Retro Rollers:</strong> 喺本地滑輪場溜冰。期中考壓力大時好放鬆。",
-    "guideFriendsTitle": "同朋友一齊去",
-    "guideFriendsFood": "<strong>免費食物活動：</strong>喺篩選器入面按「提供食物」排序。小貼士：提早15分鐘到場。",
-    "guideFriendsGames": "<strong>遊戲之夜：</strong>完美嘅輕鬆聚會。大部分組織都會提供遊戲。",
-    "guideFriendsWonderland": "<strong>Canada's Wonderland 旅行：</strong>唔同組織會安排折扣團體旅行。比自己單獨去平好多。",
-    "footerPS": "<strong>附言：</strong>我哋唔做廣告。所有開支都係自掏腰包。唔賣數據。純粹係學生幫學生。",
-    "footerCopyright": "© 2025 Wat2Do · 由 Tony & Erica 建立"
-  },
   "contact": {
     "hero": {
       "line1": "好高興",
@@ -421,11 +368,38 @@
     },
     "about": {
       "title": "我哋點解建立 Wat2Do",
-      "origin": "Wat2Do開始於我哋呢班共同創辦人，發現咗一個方法可以抓取公開嘅 Instagram 貼文，關於 University of Waterloo 發生嘅活動。我哋為自己建立咗呢個工具，因為我哋鍾意嘗試新嘢，而學生亦不斷創造新鮮同有趣嘅活動。",
-      "belief": "我哋相信大學係嘗試新事物嘅最好時光同環境之一。問題從來唔係冇活動，而係要喺活動結束之前搵到佢哋。",
-      "scale": "自2025年8月以來，Wat2Do 已經收集咗超過28,900個活動。之後我哋將算法由400個帳戶擴展到19,600個，而家每星期處理3,340個新活動（截至2026年10月19日）。",
-      "mission": "解決嗰個發現問題改變咗我哋自己嘅大學經歷。而家我哋想分享我哋建立嘅嘢，幫助學生喺世界各地發現更多周圍發生嘅新同型嘢。",
+      "origin": "Wat2Do 嘅開始好簡單：因為我哋悶。我哋想喺 University of Waterloo 校園搵啲嘢做，但冇辦法喺同一個地方睇晒所有活動。當我哋發現可以由 Instagram 抓取活動資訊，就知道要做乜。由 2025 年 8 月開始，Wat2Do 已經由 {{count}} 間學校嘅 19,600 個帳戶收錄咗超過 29,000 個活動。",
+      "origin_other": "Wat2Do 嘅開始好簡單：因為我哋悶。我哋想喺 University of Waterloo 校園搵啲嘢做，但冇辦法喺同一個地方睇晒所有活動。當我哋發現可以由 Instagram 抓取活動資訊，就知道要做乜。由 2025 年 8 月開始，Wat2Do 已經由 {{count}} 間學校嘅 19,600 個帳戶收錄咗超過 29,000 個活動。",
+      "belief": "大學係嘗試新事物嘅最佳時期之一。你可能聽都未聽過嘅學會，成日舉辦溫馨又平價、對所有學生開放嘅活動，由工作坊、遊戲之夜到運動等等。好多活動仲有免費食物。如果你想搵工，亦都有好多公司贊助嘅活動同交流之夜。",
+      "problem": "問題從來唔係冇嘢做，而係活動完咗你先知道。",
       "signature": "- Tony & Erica"
+    },
+    "features": {
+      "title": "你可以喺 Wat2Do 做啲乜",
+      "schools": {
+        "title": "切換學校",
+        "desc": "用左上角嘅學校下拉選單，睇下任何學校而家有啲乜。"
+      },
+      "discover": {
+        "title": "睇下而家有啲乜",
+        "desc": "睇精選同最新活動，按食物、價錢等篩選，用網格、地圖或日曆模式睇，同分享畀朋友。"
+      },
+      "positions": {
+        "title": "開放職位",
+        "desc": "瀏覽校園入面開放嘅職位同機會。"
+      },
+      "clubs": {
+        "title": "學會目錄",
+        "desc": "睇你學校所有學會，同以幹事身份認領你嘅學會嚟管理佢嘅專頁。"
+      },
+      "submit": {
+        "title": "提交你自己嘅！",
+        "desc": "加入未收錄嘅活動、職位或學會。"
+      },
+      "account": {
+        "title": "登入解鎖更多功能",
+        "desc": "有帳戶就可以儲存活動、標記你會去嘅活動、收提醒，同使用管理學會嘅工具。"
+      }
     },
     "help": {
       "title": "你可以點樣幫我哋",
@@ -450,41 +424,6 @@
       "slef": "學生生活基金 (SLEF)",
       "wusa": " 由 Waterloo 本科生學生會 (WUSA) 提供。",
       "logoAlt": "學生生活基金標誌"
-    },
-    "tips": {
-      "intro": "要善用呢個網站，根據你嘅目標，呢度有啲實用嘅小貼士畀你參考。",
-      "networking": {
-        "title": "擴展你嘅專業人際網絡",
-        "desc": "好多由公司贊助嘅活動可能會無聲無息，令你容易錯過重要嘅人脈交流機會。我哋喺以下場合認識咗招聘人員：",
-        "atlassian": "Atlassian",
-        "bloomberg": "Bloomberg",
-        "and": ", 同埋",
-        "point72": "Point72",
-        "suffix": "喺我哋前一日先知道嘅活動認識到嘅。"
-      },
-      "random": {
-        "title": "你未聽過嘅隨機活動",
-        "desc": "老實講，建呢個項目最開心嘅一部分就係發現咗啲我哋完全唔知喺校園入面有嘅組織。有一個 ",
-        "repair": "維修組織",
-        "repairSuffix": "，你可以喺度修理壞咗嘅電子產品，仲有伊朗學生會嘅 ",
-        "zumba": "波斯尊巴舞",
-        "zumbaSuffix": "課堂，同埋力量組織嘅 ",
-        "barbells": "鐵桿之戰"
-      },
-      "search": {
-        "title": "搜索提示",
-        "desc": "分類篩選可以幫你搵到你有興趣嘅活動。「食物」、「價格」同「需要登記」嘅標籤可以令你知道會有啲咩。試下搜索你想搵嘅嘢，睇下結果係點樣！",
-        "friendsIntro": "如果你同朋友一齊，可以試下 ",
-        "pho": "越南河粉之夜",
-        "campfire": "營火音樂會",
-        "or": ", 或 ",
-        "global": "全球遊戲之夜"
-      },
-      "explore": {
-        "title": "開始探索",
-        "desc": "定期檢查 Wat2Do 以獲取新活動，因為活動幾乎會即時添加！或者，訂閱我們的電子報以獲取每日更新。不要怕獨自參加活動！最好的連繫往往發生在你只是出現的時候。",
-        "ps": "(P.S. 你可以在搜尋欄輸入「隨機」來生成隨機即將舉行的活動！)"
-      }
     },
     "actions": {
       "browse": "瀏覽活動",

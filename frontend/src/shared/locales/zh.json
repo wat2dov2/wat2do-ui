@@ -361,59 +361,6 @@
     "unknownSubdomainDescription": "Wat2Do 没有映射到“{{school}}”的学校。请检查网址，或返回主站。",
     "unknownSubdomainAction": "带我回去"
   },
-  "about": {
-    "stayUpdated": "保持关注",
-    "newsletterDescription": "获取每周精选活动概要。绝无垃圾邮件，仅奉上精彩内容。",
-    "subscribe": "订阅",
-    "subscribeSuccess": "感谢您的订阅！",
-    "subscribeError": "订阅失败，请重试。",
-    "emailPlaceholder": "you@{{domain}}",
-    "openingDate": "UW 校园某处 · 2025年6月",
-    "openingTitle": "偶然发现那些被低估的精彩",
-    "openingParagraph1": "我们曾是一直在错失精彩的学生。",
-    "openingParagraph2": "Tony 偶然在 Instagram 快拍上看到一个<strong>仅需 $5 的意大利烹饪教程</strong>。它是三天前发布的。当看到时，活动已经结束了。",
-    "openingParagraph3": "Erica 在走廊海报上听说了<strong>“男人跳舞：嘻哈专场”</strong>。当时距离活动开始只剩 30 分钟。当她赶过去时，现场已经挤满了人。",
-    "openingParagraph4": "下周，她在一个不起眼的 Discord 频道中得知了<strong>机械臂冰壶比赛</strong>。那时我们意识到：校园里很多最酷的活动都是隐藏着的。",
-    "photo1Alt": "校园活动",
-    "photo1Caption": "那些我们知道得太晚的数十个精彩活动之一。",
-    "phase2Date": "2025年8月",
-    "phase2Title": "为自己而建",
-    "phase2Paragraph1": "当时我们正坐在 SLC，抱怨又错过了<em>一场精彩活动</em>（那次是 WIE 女生工程协会聚会上的免费 Chipotle 卷饼），Erica 说：<strong>“为什么不能有一个... 整合所有活动的地方呢？”</strong>",
-    "phase2Paragraph2": "于是我们动手做了一个。",
-    "phase2Paragraph3": "Tony 负责后端——爬取组织 Instagram、对接 WUSA 动态，构建筛选逻辑。Erica 负责所有设计：插画、手绘图标和配色方案。",
-    "phase2Paragraph4": "第一个版本很简陋，但它确实管用。",
-    "photo2Alt": "一起开发",
-    "photo2Caption": "在 SLC 奋斗的深夜。Tony 负责后端，Erica 负责设计。",
-    "phase3Date": "2025年10月",
-    "phase3Title": "与全校分享",
-    "phase3Paragraph1": "我们将链接发到了几个群聊里。接着我们做了一张海报（很讽刺对吧）并贴在 SLC 大厅。在一周内，大家开始给我们发来截图反馈。",
-    "phase3Paragraph2": "<em>“等等，这里竟然还有自行车维修组织？我真的可以去那里修自行车吗？”</em>",
-    "phase3Paragraph3": "有人通过 Wat2Do 发现了 <strong>Gatka Club</strong>（锡克武术），并表示这是他们学期中最精彩的体验。另一个人发现了 <strong>Retro Rollers</strong>（轮滑聚会）并在一个晚上结识了六位新朋友。",
-    "phase3Paragraph4": "那时我们明白：这不仅是一个日程表。它是探索你未曾了解的校园生活的新媒介。",
-    "photo3Alt": "社区探索",
-    "photo3Caption": "大家开始发现自己从未听说过的有趣活动。",
-    "todayDate": "2025年12月",
-    "todayTitle": "现在你来到了这里",
-    "todayParagraph1": "现在数以百计的学生在使用 Wat2Do 来发现他们原本会错过的活动。从<strong>彭博社（Bloomberg）人脉社交讲座</strong>到<strong>马达游艇出航</strong>，再到<strong>电子游戏竞技大赛</strong>。",
-    "todayParagraph2": "We don't run ads. We don't sell your data. We just think campus life should be easier to navigate.",
-    "todayParagraph3": "If you find this useful, tell a friend.",
-    "guideTitle": "如何更好地使用本网站",
-    "guideDescription": "以下是我们在丰富校园生活经历中总结出的心得体会。",
-    "guideIndustryTitle": "在行业活动中拓展人脉",
-    "guideIndustryWie": "<strong>WiE × Bloomberg 专题讲座：</strong> 真实工程师耐心地解答问题，且通常会提供精美小吃。",
-    "guideIndustryAtlassian": "<strong>Atlassian 咖啡交流会：</strong> 比正式招聘会轻松得多，可以进行真正的面对面交流。",
-    "guideIndustryStartup": "<strong>创业公司招聘会：</strong> 跳过大型企业展台，直接与创业公司创始人进行深入对话。",
-    "guideRandomTitle": "值得一试的宝藏活动",
-    "guideRandomRepair": "<strong>物品维修组织：</strong> 充电器坏了？这些伙伴有工具并会免费手把手教你如何修复它。完全免费。",
-    "guideRandomGatka": "<strong>Gatka 锡克武术：</strong> 锡克传统木棍武术。零基础也可参与，被低估的精彩。",
-    "guideRandomRetro": "<strong>Retro Rollers 轮滑：</strong> 本地轮滑馆聚会。非常适合在期中考试期间释放压力。",
-    "guideFriendsTitle": "与好友结伴而行",
-    "guideFriendsFood": "<strong>免费食物活动：</strong> 在筛选条件中按“提供食物”排序。友情提示：提前 15 分钟入场。",
-    "guideFriendsGames": "<strong>桌游之夜：</strong> 绝佳的低门槛社交活动，组织者通常会准备各种桌游。",
-    "guideFriendsWonderland": "<strong>加拿大奇幻乐园之旅：</strong> 各种学生组织会举办特惠团队旅游。比独自前往要便宜很多。",
-    "footerPS": "<strong>附言：</strong> 我们不投放广告，所有运营开销自掏腰包。不售卖个人数据。只是纯粹的学生互助项目。",
-    "footerCopyright": "© 2025 Wat2Do · 由 Tony & Erica 倾力打造"
-  },
   "contact": {
     "hero": {
       "line1": "很高兴",
@@ -421,11 +368,38 @@
     },
     "about": {
       "title": "我们为什么打造 Wat2Do",
-      "origin": "Wat2Do 的起点，是我们两位联合创始人发现了一种方法，可以抓取滑铁卢大学公开发布在 Instagram 上的校园活动。我们最初为自己打造了这个平台，因为我们喜欢尝试新事物，而学生们也一直在创造新鲜、有趣的体验。",
-      "belief": "我们相信，大学是尝试新事物最好的阶段和环境之一。问题从来不是校园里没有活动，而是如何在活动结束之前发现它们。",
-      "scale": "自 2025 年 8 月以来，Wat2Do 已收录超过 28,900 场活动。此后，我们将算法从 400 个账号扩展到 19,600 个，每周处理 3,340 场新活动（截至 2026 年 10 月 19 日）。",
-      "mission": "解决这个发现难题改变了我们自己的大学体验。现在，我们希望把这个成果分享出去，帮助各地学生发现身边更多新鲜、有趣的事情。",
+      "origin": "Wat2Do 的诞生很简单：因为我们无聊。我们想在 University of Waterloo 校园里找点事做，却没办法在一个地方看到所有活动。当我们发现可以从 Instagram 抓取活动信息时，就知道该做什么了。自 2025 年 8 月以来，Wat2Do 已从 {{count}} 所学校的 19,600 个账号中收录了超过 29,000 个活动。",
+      "origin_other": "Wat2Do 的诞生很简单：因为我们无聊。我们想在 University of Waterloo 校园里找点事做，却没办法在一个地方看到所有活动。当我们发现可以从 Instagram 抓取活动信息时，就知道该做什么了。自 2025 年 8 月以来，Wat2Do 已从 {{count}} 所学校的 19,600 个账号中收录了超过 29,000 个活动。",
+      "belief": "大学是尝试新事物的最佳时期之一。你可能从没听说过的社团，常常举办温馨又低成本、向所有学生开放的活动，从工作坊、游戏之夜到体育等等。很多活动还有免费食物。如果你在找工作，也有很多公司赞助的活动和社交之夜。",
+      "problem": "问题从来不是无事可做，而是活动结束后你才知道它们存在过。",
       "signature": "- Tony & Erica"
+    },
+    "features": {
+      "title": "你可以在 Wat2Do 做什么",
+      "schools": {
+        "title": "切换学校",
+        "desc": "使用左上角的学校下拉菜单，查看任何学校正在发生的事。"
+      },
+      "discover": {
+        "title": "看看正在发生什么",
+        "desc": "查看精选和最新活动，按食物、价格等筛选，用网格、地图或日历模式查看，并分享给朋友。"
+      },
+      "positions": {
+        "title": "开放职位",
+        "desc": "浏览校园内开放的职位和机会。"
+      },
+      "clubs": {
+        "title": "社团目录",
+        "desc": "查看你学校的所有社团，并以干事身份认领你的社团来管理它的主页。"
+      },
+      "submit": {
+        "title": "提交你自己的！",
+        "desc": "添加尚未收录的活动、职位或社团。"
+      },
+      "account": {
+        "title": "登录解锁更多功能",
+        "desc": "账号可让你收藏活动、标记你要参加的活动、接收提醒，并使用管理社团的工具。"
+      }
     },
     "help": {
       "title": "你可以如何帮助我们",
@@ -450,41 +424,6 @@
       "slef": "学生生活基金（SLEF）",
       "wusa": " 提供的资金赞助支持。",
       "logoAlt": "学生生活基金会标志"
-    },
-    "tips": {
-      "intro": "为了让您能更好地使用本网站，我们根据不同的目标整理了一些实用的建议。",
-      "networking": {
-        "title": "拓展您的专业人脉圈",
-        "desc": "很多企业赞助的活动可能不会公开宣传，导致同学们错失良机。我们曾经在活动开始前一天才偶然发现信息，却因此结识了来自 ",
-        "atlassian": "Atlassian",
-        "bloomberg": "彭博社",
-        "and": " 和 ",
-        "point72": "Point72",
-        "suffix": " 的校招HR。"
-      },
-      "random": {
-        "title": "你不知道的奇妙小众活动",
-        "desc": "在开发这个项目最有趣的部分是发现了校园里许多我们此前从未听闻的组织。比如能够教你修复电子产品的 ",
-        "repair": "物品维修社团",
-        "repairSuffix": "、伊朗学生会的 ",
-        "zumba": "波斯尊巴",
-        "zumbaSuffix": " 舞蹈课，以及力量训练协会举办的 ",
-        "barbells": "杠铃力量对决"
-      },
-      "search": {
-        "title": "搜索技巧",
-        "desc": "分类筛选可以快速帮您定位感兴趣的活动类型。“食物”、“价格”和“是否需要报名”标签让您能对活动细节了如指掌。试着搜索任何您想要的关键字吧！",
-        "friendsIntro": "如果您正打算和朋友小聚，可以尝试搜索 ",
-        "pho": "越南粉之夜",
-        "campfire": "篝火弹唱会",
-        "or": " 或 ",
-        "global": "全球游戏之夜"
-      },
-      "explore": {
-        "title": "本网站开始探索",
-        "desc": "定期查看 Wat2Do 的更新，因为全校活动每天都在近乎实时地添加！您也可以订阅我们的每日邮件推送。不用害怕独自去参加活动，许多真挚的友谊就源于你的勇敢到场。",
-        "ps": "（提示：您可以在搜索栏输入“random”来随机生成一个近期举办的校园活动！）"
-      }
     },
     "actions": {
       "browse": "浏览活动",

@@ -370,59 +370,6 @@
     "unknownSubdomainDescription": "Nie ma szkoły Wat2Do przypisanej do „{{school}}”. Sprawdź URL lub wróć do strony głównej.",
     "unknownSubdomainAction": "Zabierz mnie z powrotem"
   },
-  "about": {
-    "stayUpdated": "Bądź na bieżąco",
-    "newsletterDescription": "Otrzymuj cotygodniowy przegląd najlepszych wydarzeń. Bez spamu, tylko dobre rzeczy.",
-    "subscribe": "Subskrybuj",
-    "subscribeSuccess": "Dziękujemy za subskrypcję!",
-    "subscribeError": "Coś poszło nie tak. Spróbuj ponownie.",
-    "emailPlaceholder": "ty@{{domain}}",
-    "openingDate": "GDZIEŚ NA KAMPUSIE UW · CZERWIEC 2025",
-    "openingTitle": "Natrafiając na niedocenione",
-    "openingParagraph1": "Byliśmy studentami, którzy ciągle coś przegapiali.",
-    "openingParagraph2": "Tony znalazł Instagram historię o <strong>lekcjach gotowania włoskiego za 5 dolarów</strong>. Została opublikowana 3 dni temu. Wydarzenie już się odbyło.",
-    "openingParagraph3": "Erica usłyszał o <strong>Taniec Mężczyzny: Edycja Hip-Hop</strong> z plakatu na korytarzu. 30 minut przed rozpoczęciem. Pojawiła się i było pełno ludzi.",
-    "openingParagraph4": "W następnym tygodniu dowiedziała się o <strong>zawodach w podciąganiu ramienia mechanicznego</strong> w przypadkowym Discord. Wtedy zdaliśmy sobie sprawę: wszystkie najfajniejsze wydarzenia są ukryte.",
-    "photo1Alt": "Wydarzenia na kampusie",
-    "photo1Caption": "Jedno z dziesiątek wydarzeń, o których dowiedzieliśmy się za późno.",
-    "phase2Date": "Sierpień 2025",
-    "phase2Title": "Budując dla siebie",
-    "phase2Paragraph1": "Siedzieliśmy w SLC, narzekając, że przegapiliśmy <em>jeszcze jedno wydarzenie</em> (tym razem był to darmowy Chipotle na Women in Engineering spotkaniu networkingowym), gdy Erica powiedział: <strong> \"Dlaczego nie ma po prostu... jednego miejsca na to wszystko?\"</strong>",
-    "phase2Paragraph2": "Więc je zbudowaliśmy.",
-    "phase2Paragraph3": "Tony zajmował się backendem: pobieraniem publikacji organizacji z Instagram, łączeniem kanałów WUSA i tworzeniem logiki filtrów. Erica zaprojektowała wszystko: ilustracje, ręcznie rysowane ikony i paletę kolorów.",
-    "phase2Paragraph4": "Pierwsza wersja była surowa. Ale działała.",
-    "photo2Alt": "Budowanie razem",
-    "photo2Caption": "Późne noce w SLC. Tony przy backendzie, Erica przy projekcie.",
-    "phase3Date": "Październik 2025",
-    "phase3Title": "Dzielenie się tym na kampusie",
-    "phase3Paragraph1": "Opublikowaliśmy link w kilku grupowych czatach. Następnie zrobiliśmy plakat (ironicznie, wiemy) i przykleiliśmy go w SLC. W ciągu tygodnia ludzie wysyłali nam zrzuty ekranu.",
-    "phase3Paragraph2": "<em>\"Czekaj, jest Organizacja Naprawcza? Można tam naprawdę naprawić rower?\"</em>",
-    "phase3Paragraph3": "Ktoś znalazł <strong>Gatka Organizację</strong> (Sikh sztuki walki) przez Wat2Do, i powiedział, że to było największe wydarzenie ich semestru. Inna osoba odkryła <strong>Retro Rollers</strong> (spotkania na rolkach) i poznała sześć nowych osób w jedną noc.",
-    "phase3Paragraph4": "Wtedy zdaliśmy sobie sprawę: to nie jest tylko kalendarz. To sposób na odkrycie wersji życia na kampusie, której nie znałeś.",
-    "photo3Alt": "Odkrywanie społeczności",
-    "photo3Caption": "Ludzie zaczęli odkrywać wydarzenia, o których wcześniej nie wiedzieli.",
-    "todayDate": "Grudzień 2025",
-    "todayTitle": "Jesteś tutaj teraz",
-    "todayParagraph1": "Wat2Do jest używany przez setki studentów do odkrywania wydarzeń, które w przeciwnym razie by przegapili. Od <strong>Bloomberg paneli networkingowych</strong> po <strong>rejsy motorówką</strong> po <strong>turnieje gier wideo</strong>.",
-    "todayParagraph2": "Nie prowadzimy reklam. Nie sprzedajemy twoich danych. Po prostu uważamy, że życie kampusowe powinno być łatwiejsze do nawigowania.",
-    "todayParagraph3": "Jeśli uważasz to za przydatne, powiedz o tym znajomemu.",
-    "guideTitle": "Jak to naprawdę wykorzystać",
-    "guideDescription": "Oto, czego się nauczyliśmy o maksymalnym wykorzystaniu wydarzeń na kampusie.",
-    "guideIndustryTitle": "Spotykanie ludzi z branży",
-    "guideIndustryWie": "<strong>WiE × Bloomberg Panel:</strong> Prawdziwi inżynierowie, którzy naprawdę odpowiadają szczerze na pytania. Dodatkowo, zazwyczaj przynoszą przekąski.",
-    "guideIndustryAtlassian": "<strong>Atlassian Coffee Chats:</strong> O wiele mniej przerażające niż stoisko na targach kariery. Naprawdę można porozmawiać.",
-    "guideIndustryStartup": "<strong>Targi Kariery w Startupach:</strong> Pomiń duże stoiska korporacyjne. Idź prosto do startupów, gdzie możesz porozmawiać z prawdziwymi założycielami.",
-    "guideRandomTitle": "Losowe rzeczy warte sprawdzenia",
-    "guideRandomRepair": "<strong>Organizacja Naprawcza:</strong> Zepsuła się ładowarka do laptopa? Ci ludzie mają narzędzia i nauczą Cię, jak naprawić ją samodzielnie. Całkowicie za darmo.",
-    "guideRandomGatka": "<strong>Gatka Organizacja:</strong> Sikh sztuki walki drewnianymi kijami. Nie jest wymagane doświadczenie. Niedoceniane.",
-    "guideRandomRetro": "<strong>Retro Rollers:</strong> Jazda na rolkach w lokalnych halach. Świetne na odstresowanie się podczas sesji egzaminacyjnej.",
-    "guideFriendsTitle": "Spotkania z Przyjaciółmi",
-    "guideFriendsFood": "<strong>Bezpłatne wydarzenia z jedzeniem:</strong> Sortuj według „Jedzenie zapewnione” w filtrach. Profesjonalna wskazówka: pojaw się 15 minut wcześniej.",
-    "guideFriendsGames": "<strong>Noce gier:</strong> Idealne na spokojne spotkanie. Większość organizacji udostępnia gry.",
-    "guideFriendsWonderland": "<strong>Canada's Wonderland Wyjazdy:</strong> Różne organizacje organizują grupowe wyjazdy po obniżonych cenach. Znacznie taniej niż samemu.",
-    "footerPS": "<strong>P.S.</strong> Nie wyświetlamy reklam. Wszystko pokrywamy z własnej kieszeni. Brak sprzedaży danych. Po prostu studenci pomagający studentom.",
-    "footerCopyright": "© 2025 Wat2Do · Zbudowane przez Tony & Erica"
-  },
   "contact": {
     "hero": {
       "line1": "Miło Cię",
@@ -430,11 +377,41 @@
     },
     "about": {
       "title": "Dlaczego zbudowaliśmy Wat2Do",
-      "origin": "Wat2Do zaczęło się, gdy my, jego współzałożyciele, odkryliśmy sposób na zbieranie publicznych postów Instagram o wydarzeniach odbywających się na University of Waterloo. Zbudowaliśmy to dla siebie, ponieważ uwielbialiśmy próbować nowych rzeczy, a studenci nieustannie tworzyli nowe i interesujące rzeczy do robienia.",
-      "belief": "Uważamy, że uniwersytet to jeden z najlepszych okresów i środowisk do wypróbowywania czegoś nowego. Problemem nigdy nie brakowało wydarzeń. Problemem było ich znalezienie, zanim się skończyły.",
-      "scale": "Od sierpnia 2025 Wat2Do zarejestrowało ponad 28900 wydarzeń. Od tego czasu przeskalowaliśmy algorytm z 400 do 19600 kont i przetwarzamy 3340 nowych wydarzeń tygodniowo (stan na 19 października 2026 r.).",
-      "mission": "Rozwiązanie tego problemu odkrywania zmieniło nasze własne doświadczenia na uniwersytecie. Teraz chcemy podzielić się tym, co stworzyliśmy, i pomóc studentom wszędzie odkrywać więcej nowych, fajnych rzeczy dziejących się wokół nich.",
+      "origin": "Wat2Do powstało z nudów, po prostu. Chcieliśmy znaleźć rzeczy do robienia na kampusie University of Waterloo, ale nie mieliśmy jak zobaczyć wszystkiego w jednym miejscu. Gdy odkryliśmy sposób na pobieranie wydarzeń z Instagrama, wiedzieliśmy, co robić. Od sierpnia 2025 roku Wat2Do zebrało ponad 29 000 wydarzeń z 19 600 kont na {{count}} uczelni.",
+      "origin_one": "Wat2Do powstało z nudów, po prostu. Chcieliśmy znaleźć rzeczy do robienia na kampusie University of Waterloo, ale nie mieliśmy jak zobaczyć wszystkiego w jednym miejscu. Gdy odkryliśmy sposób na pobieranie wydarzeń z Instagrama, wiedzieliśmy, co robić. Od sierpnia 2025 roku Wat2Do zebrało ponad 29 000 wydarzeń z 19 600 kont na {{count}} uczelni.",
+      "origin_few": "Wat2Do powstało z nudów, po prostu. Chcieliśmy znaleźć rzeczy do robienia na kampusie University of Waterloo, ale nie mieliśmy jak zobaczyć wszystkiego w jednym miejscu. Gdy odkryliśmy sposób na pobieranie wydarzeń z Instagrama, wiedzieliśmy, co robić. Od sierpnia 2025 roku Wat2Do zebrało ponad 29 000 wydarzeń z 19 600 kont na {{count}} uczelniach.",
+      "origin_many": "Wat2Do powstało z nudów, po prostu. Chcieliśmy znaleźć rzeczy do robienia na kampusie University of Waterloo, ale nie mieliśmy jak zobaczyć wszystkiego w jednym miejscu. Gdy odkryliśmy sposób na pobieranie wydarzeń z Instagrama, wiedzieliśmy, co robić. Od sierpnia 2025 roku Wat2Do zebrało ponad 29 000 wydarzeń z 19 600 kont na {{count}} uczelniach.",
+      "origin_other": "Wat2Do powstało z nudów, po prostu. Chcieliśmy znaleźć rzeczy do robienia na kampusie University of Waterloo, ale nie mieliśmy jak zobaczyć wszystkiego w jednym miejscu. Gdy odkryliśmy sposób na pobieranie wydarzeń z Instagrama, wiedzieliśmy, co robić. Od sierpnia 2025 roku Wat2Do zebrało ponad 29 000 wydarzeń z 19 600 kont na {{count}} uczelniach.",
+      "belief": "Studia to jeden z najlepszych momentów, żeby spróbować czegoś nowego. Kluby, o których istnieniu możesz nawet nie wiedzieć, często organizują przyjazne, tanie wydarzenia otwarte dla wszystkich studentów, od warsztatów i wieczorów gier po sport i nie tylko. Wiele z nich oferuje darmowe jedzenie. Jeśli szukasz pracy, jest też mnóstwo wydarzeń sponsorowanych przez firmy i spotkań networkingowych.",
+      "problem": "Problemem nigdy nie był brak rzeczy do zrobienia, tylko dowiadywanie się o wydarzeniach, gdy już się odbyły.",
       "signature": "- Tony & Erica"
+    },
+    "features": {
+      "title": "Co możesz robić w Wat2Do",
+      "schools": {
+        "title": "Zmień uczelnię",
+        "desc": "Użyj menu uczelni w lewym górnym rogu, aby zobaczyć, co dzieje się na dowolnej uczelni."
+      },
+      "discover": {
+        "title": "Zobacz, co się dzieje",
+        "desc": "Przeglądaj wyróżnione i nowe wydarzenia, filtruj według jedzenia, ceny i nie tylko, wyświetlaj je jako siatkę, na mapie lub w kalendarzu i udostępniaj znajomym."
+      },
+      "positions": {
+        "title": "Otwarte stanowiska",
+        "desc": "Przeglądaj otwarte stanowiska i możliwości na kampusie."
+      },
+      "clubs": {
+        "title": "Katalog klubów",
+        "desc": "Zobacz wszystkie kluby na swojej uczelni i przejmij swój klub jako członek zarządu, aby zarządzać jego stroną."
+      },
+      "submit": {
+        "title": "Dodaj własne!",
+        "desc": "Dodaj wydarzenie, stanowisko lub klub, których jeszcze nie ma na liście."
+      },
+      "account": {
+        "title": "Zaloguj się, by zyskać więcej",
+        "desc": "Konto pozwala zapisywać wydarzenia, oznaczać te, na które idziesz, otrzymywać przypomnienia i korzystać z narzędzi do prowadzenia klubu."
+      }
     },
     "help": {
       "title": "Jak możesz nam pomóc",
@@ -459,41 +436,6 @@
       "slef": "Student Life Endowment Fund (SLEF)",
       "wusa": " z Waterloo Undergraduate Student Association (WUSA).",
       "logoAlt": "Logo Student Life Endowment Fund"
-    },
-    "tips": {
-      "intro": "Aby w pełni wykorzystać tę stronę, oto kilka naszych pomocnych wskazówek, w zależności od Twoich celów.",
-      "networking": {
-        "title": "Rozszerzanie swojej sieci zawodowej",
-        "desc": "Wiele wydarzeń sponsorowanych przez firmy może umknąć Twojej uwadze, co sprawia, że łatwo przegapić kluczowe możliwości nawiązywania kontaktów. Spotkaliśmy rekruterów z ",
-        "atlassian": "Atlassian",
-        "bloomberg": "Bloomberg",
-        "and": ", oraz ",
-        "point72": "Point72",
-        "suffix": " podczas wydarzeń, o których dowiedzieliśmy się dopiero dzień wcześniej."
-      },
-      "random": {
-        "title": "Losowe wydarzenia, o których nie wiedziałeś, że istnieją",
-        "desc": "Szczerze mówiąc, najlepszą częścią budowania tego projektu było odkrycie organizacji, o których nie mieliśmy pojęcia, że istnieją na kampusie. Jest ",
-        "repair": "Organizacja Napraw",
-        "repairSuffix": " gdzie możesz naprawić zepsutą elektronikę, irańskie stowarzyszenie studentów ",
-        "zumba": "Perska Zumba",
-        "zumbaSuffix": " zajęcia i Organizacja Sił ",
-        "barbells": "Bitwa Sztang"
-      },
-      "search": {
-        "title": "Wskazówki dotyczące wyszukiwania",
-        "desc": "Filtry kategorii mogą pomóc Ci znaleźć wydarzenia, które Cię interesują. Tagi „Jedzenie”, „Cena” i „Wymagana rejestracja” informują, czego się spodziewać. Spróbuj wyszukać to, czego szukasz, i zobacz, co się pojawi!",
-        "friendsIntro": "Jeśli jesteś ze znajomymi, spróbuj ",
-        "pho": "Wieczór Pho",
-        "campfire": "Jam przy ognisku",
-        "or": ", lub ",
-        "global": "Globalna Noc Gier"
-      },
-      "explore": {
-        "title": "Zacznij odkrywać",
-        "desc": "Sprawdzaj Wat2Do regularnie w poszukiwaniu nowych wydarzeń, ponieważ wydarzenia dodawane są (prawie) na żywo! Alternatywnie, zapisz się do naszego newslettera, aby codziennie otrzymywać aktualizacje. Nie bój się chodzić na wydarzenia sam! Najlepsze kontakty powstają, gdy po prostu się pojawisz.",
-        "ps": "(P.S. Możesz wpisać „losowe” w pasku wyszukiwania, aby wygenerować losowe nadchodzące wydarzenie!)"
-      }
     },
     "actions": {
       "browse": "Przeglądaj Wydarzenia",
