@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Keep all four Android users that hold the school accounts running, so each
+         keeps receiving Instagram pushes. -->
+    <integer name="config_multiuserMaxRunningUsers">6</integer>
+    <!-- Never stop a background user on a timer. -->
+    <integer name="config_backgroundUserScheduledStopTimeSecs">-1</integer>
+</resources>
