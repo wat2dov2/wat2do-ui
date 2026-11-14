@@ -72,7 +72,7 @@ AS $$
     )
     SELECT count(*)::integer FROM moved;
 $$;
-REVOKE ALL ON FUNCTION public.outreach_mark_claimed() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.outreach_mark_claimed() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.outreach_mark_claimed() TO service_role;
 
 -- Leads at the given schools to pitch: unclaimed, with an email, never judged or judged
@@ -118,8 +118,7 @@ AS $$
     ORDER BY lead.pitch_fit NULLS FIRST, lead.found_at DESC, lead.id
     LIMIT p_limit;
 $$;
-REVOKE ALL ON FUNCTION public.outreach_unpitched(text[], integer, timestamptz, integer)
-    FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.outreach_unpitched(text[], integer, timestamptz, integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.outreach_unpitched(text[], integer, timestamptz, integer)
     TO service_role;
 
