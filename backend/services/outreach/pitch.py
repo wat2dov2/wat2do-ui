@@ -2,13 +2,16 @@
 
 Claude reads one club's newest events (``pitch_prompt.md``) and decides whether
 students would come out for them; for a club that is a fit it writes the video
-script the admin records and the personal email sent with the video. Only leads at
+script the admin records and the personal email sent with the video. Each script
+opens with a hook in one style from ``hooks.md``, the same style for a lead every
+time, so scripts across clubs do not all open the same way. Only leads at
 the control box's ``pitch_schools`` are pitched, and only fit leads reach the admin
 Outreach page. A club judged not a fit is judged again after ``pitch_recheck_days``.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import shutil
@@ -28,6 +31,11 @@ from services.outreach import service
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
 PROMPT = (Path(__file__).with_name("pitch_prompt.md")).read_text()
+# Each "### " section of hooks.md is one hook style; its preamble is for people only.
+HOOK_STYLES = [
+    "### " + style.strip()
+    for style in (Path(__file__).with_name("hooks.md")).read_text().split("\n### ")[1:]
+]
 WORKDIR_PREFIX = "wat2do-pitch-"
 _TOOLS = ("Read",)
 _ALLOWED_TOOLS = ("Read(./**)",)
@@ -111,8 +119,16 @@ def _club(lead: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _hook_style(lead_id: str) -> str:
+    """The hook style for this lead's script, always the same one for the same lead."""
+    digest = hashlib.sha256(str(lead_id).encode()).digest()
+    return HOOK_STYLES[int.from_bytes(digest[:8]) % len(HOOK_STYLES)]
+
+
 def _prompt(lead: dict[str, Any]) -> str:
+    # The hook style goes in first, so the keys below are filled inside it too.
     values = {
+        "hook_style": _hook_style(lead["lead_id"]),
         "sender_name": CONTROL.sender_name,
         "school_name": lead["school_name"],
         "qr_reimbursement_dollars": str(CONTROL.qr_reimbursement_dollars),
