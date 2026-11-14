@@ -993,7 +993,40 @@ impl BrowserJobQueue {
 
     /// Let `username` log in to Brave again after a person has checked it.
     pub fn resume_account_login(&self, username: &str) -> BrowserResult<()> {
-        self.set_setting(&account_login_paused_key(username), Value::Null)
+        self.set_setting(&account_login_paused_key(username), Value::Null)?;
+        self.set_setting(&account_unfinished_key(username), Value::Null)
+    }
+
+    /// After `username`'s password went out and its login failed with `error`, hold it
+    /// for a person, unless the login only did not finish and had not before: Instagram
+    /// often finished it anyway (11-13: wat2do.dalhousie was saved while Brave was logged
+    /// out around it), so its once-a-day limit spaces one more try. A refusal, a
+    /// challenge, a code that never came or a second unfinished login holds it. True
+    /// when held.
+    pub fn hold_submitted_login(
+        &self,
+        username: &str,
+        error: &BrowserError,
+    ) -> BrowserResult<bool> {
+        let message = error.to_string();
+        let key = account_unfinished_key(username);
+        if message.contains(LOGIN_UNFINISHED)
+            && self.get_setting(&key)?.is_none_or(|at| at.is_null())
+        {
+            self.set_setting(&key, json!(self.host.time()))?;
+            return Ok(false);
+        }
+        self.pause_account_login(username, &message)?;
+        Ok(true)
+    }
+
+    /// `username`'s login finished: an earlier unfinished one no longer counts.
+    pub fn clear_unfinished_login(&self, username: &str) -> BrowserResult<()> {
+        let key = account_unfinished_key(username);
+        if self.get_setting(&key)?.is_some_and(|at| !at.is_null()) {
+            self.set_setting(&key, Value::Null)?;
+        }
+        Ok(())
     }
 
     /// Record that `username` was missing from Brave's switcher at `now` and could not
@@ -1006,11 +1039,12 @@ impl BrowserJobQueue {
 
     /// `username` is in Brave again.
     pub fn clear_account_missing(&self, username: &str) -> BrowserResult<()> {
-        let key = account_missing_key(&account_login::canonical_account(username));
+        let username = account_login::canonical_account(username);
+        let key = account_missing_key(&username);
         if self.get_setting(&key)?.is_some_and(|at| !at.is_null()) {
             self.set_setting(&key, Value::Null)?;
         }
-        Ok(())
+        self.clear_unfinished_login(&username)
     }
 
     /// The accounts whose digests cannot run now, each with why: held for a person, or
@@ -2301,6 +2335,13 @@ fn account_login_paused_key(username: &str) -> String {
 fn account_missing_key(username: &str) -> String {
     format!("account_missing:{username}")
 }
+
+fn account_unfinished_key(username: &str) -> String {
+    format!("account_login_unfinished:{username}")
+}
+
+/// How a submitted login that neither failed nor finished reads (`submitted_login`).
+const LOGIN_UNFINISHED: &str = "was submitted but did not finish";
 
 fn write_setting(db: &Connection, key: &str, value: &Value) -> BrowserResult<()> {
     db.execute(UPSERT_SETTING, params![key, pyjson::dumps(value, None)])

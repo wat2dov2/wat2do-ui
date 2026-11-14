@@ -3937,6 +3937,57 @@ fn test_a_missing_account_is_logged_in_once_a_day_and_capped() {
 }
 
 #[test]
+fn test_a_first_unfinished_account_login_is_tried_once_more_then_held() {
+    // 11-13 23:50: dalhousie's login timed out while Instagram logged Brave out around
+    // it, yet Instagram had saved its login; holding it left the school for a person.
+    let env = Env::new();
+    let unfinished = "Instagram needs a person: the login for wat2do.dalhousie was submitted \
+                      but did not finish (Instagram browser automation timed out)";
+    let results = Arc::new(Mutex::new(vec![
+        Err(BrowserError::of(SessionKind::LoginSubmitted, unfinished)),
+        Ok(()),
+        Err(BrowserError::of(SessionKind::LoginSubmitted, unfinished)),
+        Err(BrowserError::of(SessionKind::LoginSubmitted, unfinished)),
+    ]));
+    let next = results.clone();
+    let pool = env
+        .pool()
+        .add_account(move |_| next.lock().unwrap().remove(0));
+    let worker = env.real_worker(pool);
+    let attempt = |at: f64| {
+        worker
+            .attempt_account_login("wat2do.dalhousie", &move || at)
+            .unwrap()
+    };
+    assert!(!attempt(100_000.0));
+    // Not held: it tries once more.
+    assert_eq!(
+        env.queue.account_login_paused("wat2do.dalhousie").unwrap(),
+        None
+    );
+    // That login finished: an unfinished one later is a first again.
+    assert!(attempt(200_000.0));
+    assert!(!attempt(300_000.0));
+    assert_eq!(
+        env.queue.account_login_paused("wat2do.dalhousie").unwrap(),
+        None
+    );
+    // A second unfinished login in a row holds it for a person.
+    assert!(!attempt(400_000.0));
+    assert_eq!(
+        env.queue.account_login_paused("wat2do.dalhousie").unwrap(),
+        Some(unfinished.to_owned())
+    );
+    assert!(results.lock().unwrap().is_empty());
+    // A person's resume starts its count afresh.
+    env.queue.resume_account_login("wat2do.dalhousie").unwrap();
+    assert_eq!(
+        setting(&env.queue, "account_login_unfinished:wat2do.dalhousie"),
+        Some(Value::Null)
+    );
+}
+
+#[test]
 fn test_missing_accounts_log_in_one_at_a_time() {
     let env = Env::new();
     let added = Arc::new(Mutex::new(Vec::new()));
