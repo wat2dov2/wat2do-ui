@@ -16,6 +16,7 @@
   "login_recovery_max_interval_seconds": 3600,
   "login_recovery_backoff_window_seconds": 21600,
   "account_login_daily_limit": 12,
+  "account_login_spacing_seconds": 300,
   "login_from_school": "guelph",
   "login_keychain_service": "wat2do-instagram",
   "login_code_email": "tonyqiu12345@gmail.com",

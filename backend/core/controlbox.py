@@ -620,6 +620,9 @@ class InstagramBrowserControl(_ControlModel):
     login_recovery_max_interval_seconds: float = Field(gt=0, le=86400)
     login_recovery_backoff_window_seconds: float = Field(gt=0, le=86400)
     account_login_daily_limit: int = Field(ge=0, le=100)
+    # A missing account's login starts only this long after the last password went out,
+    # so a burst of reruns never sends Instagram many logins at once.
+    account_login_spacing_seconds: float = Field(ge=0, le=3600)
     login_from_school: str = Field(min_length=1)
     login_keychain_service: str = Field(min_length=1)
     login_code_email: str = Field(min_length=3)

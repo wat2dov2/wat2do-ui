@@ -457,7 +457,11 @@ impl Worker {
         username: &str,
         now: &dyn Fn() -> f64,
     ) -> BrowserResult<bool> {
-        if !self.queue.account_login_allowed(username, now())? {
+        // Spaced too: a burst of reruns for missing accounts sends their logins one at a
+        // time, never many at once.
+        if !self.queue.account_login_allowed(username, now())?
+            || !self.queue.account_login_spaced(now())?
+        {
             return Ok(false);
         }
         match self.tab_pool().add_account(username) {
