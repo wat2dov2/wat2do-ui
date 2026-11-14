@@ -895,6 +895,12 @@
           "description": "Published to Instagram",
           "default": false
         },
+        "verified": {
+          "type": "boolean",
+          "title": "Verified",
+          "description": "Its club has claimed its page, so the club runs it itself",
+          "default": false
+        },
         "is_directory_event": {
           "type": "boolean",
           "title": "Is Directory Event",

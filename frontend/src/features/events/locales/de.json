@@ -9,6 +9,7 @@
     "submissionFailedTitle": "Einreichung fehlgeschlagen",
     "clubRequired": "Wählen Sie eine Organisation aus, bevor Sie die Veranstaltung einreichen.",
     "club": "Organisation",
+    "verified": "Verifiziert",
     "status": "Status",
     "dayOfWeek": "Wochentag",
     "createEvent": "Veranstaltung hinzufügen",

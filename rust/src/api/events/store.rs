@@ -186,6 +186,22 @@ macro_rules! excluded_club {
 }
 pub(crate) use excluded_club;
 
+/// Whether the club aliased `$club` has been claimed: someone owns it or it has
+/// members. The events of a claimed club are verified: the club runs them itself.
+macro_rules! claimed_club {
+    ($club:literal) => {
+        concat!(
+            "(",
+            $club,
+            ".created_by IS NOT NULL OR EXISTS (SELECT 1 FROM public.club_members m ",
+            "WHERE m.club_id = ",
+            $club,
+            ".id))"
+        )
+    };
+}
+pub(crate) use claimed_club;
+
 /// The carousel slides (`i`, of batch `b`) that make an event featured: Wat2Do
 /// posted it in an Instagram carousel, and its club has not since asked to stay
 /// out of carousels (Hillel's accounts among them).
@@ -224,8 +240,9 @@ const EVENT_OBJECT: &str = concat!(
     "'cohosts', COALESCE((SELECT json_agg(json_build_object('id', h.id, 'club_name', h.club_name, ",
     "'logo_url', h.logo_url, 'club_type', h.club_type, 'club_page', h.club_page, 'ig', h.ig, ",
     "'discord', h.discord) ORDER BY h.id) FROM public.clubs h WHERE h.id = ANY(e.cohost_club_ids)), '[]'), ",
-    "'featured', f.event_id IS NOT NULL, ",
-    "'occurrences', COALESCE(o.occurrences, '[]'))"
+    "'featured', f.event_id IS NOT NULL, 'verified', ",
+    claimed_club!("c"),
+    ", 'occurrences', COALESCE(o.occurrences, '[]'))"
 );
 
 /// CTEs that hydrate the events of a `page(id int8, ord int8)` CTE the caller
@@ -328,6 +345,7 @@ struct EventJson {
     club_discord: Option<String>,
     cohosts: Vec<ClubCohost>,
     featured: bool,
+    verified: bool,
     occurrences: Vec<OccurrenceJson>,
 }
 
@@ -375,6 +393,7 @@ impl EventJson {
             club_discord: self.club_discord,
             cohosts: self.cohosts,
             featured: self.featured,
+            verified: self.verified,
         };
         Ok((row, occurrences))
     }

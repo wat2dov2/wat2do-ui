@@ -786,6 +786,7 @@ export function EventDetailsBody({
               cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
+              verified={event.verified}
               onNavigate={onClubNavigate}
             />
         </Section>

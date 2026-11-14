@@ -122,6 +122,8 @@ pub struct EventRow {
     pub club_discord: Option<String>,
     pub cohosts: Vec<ClubCohost>,
     pub featured: bool,
+    /// Its club has been claimed, so the club runs it itself.
+    pub verified: bool,
 }
 
 /// A hydrated event: every field any of the three response models carries.
@@ -152,6 +154,7 @@ pub struct Event {
     pub club_logo_url: Option<String>,
     pub cohosts: Vec<ClubCohost>,
     pub featured: bool,
+    pub verified: bool,
     pub is_directory_event: bool,
     pub club_type: Option<String>,
     pub club_page: Option<String>,
@@ -287,6 +290,7 @@ pub fn hydrate(
         club_logo_url,
         cohosts,
         featured: row.featured,
+        verified: row.verified,
         is_directory_event,
         club_type: club_type_value(row.club_type, id)?,
         club_page: row.club_page,
@@ -340,6 +344,7 @@ pub struct EventSummaryResponse<'a> {
     pub club_logo_url: &'a Option<String>,
     pub cohosts: &'a [ClubCohost],
     pub featured: bool,
+    pub verified: bool,
     pub is_directory_event: bool,
     pub club_type: &'a Option<String>,
     pub club_page: &'a Option<String>,
@@ -380,6 +385,7 @@ pub struct EventResponse<'a> {
     pub club_logo_url: &'a Option<String>,
     pub cohosts: &'a [ClubCohost],
     pub featured: bool,
+    pub verified: bool,
     pub is_directory_event: bool,
     pub club_type: &'a Option<String>,
     pub school: &'a Option<String>,
@@ -445,6 +451,7 @@ impl Event {
             club_logo_url: &self.club_logo_url,
             cohosts: &self.cohosts,
             featured: self.featured,
+            verified: self.verified,
             is_directory_event: self.is_directory_event,
             club_type: &self.club_type,
             club_page: &self.club_page,
@@ -481,6 +488,7 @@ impl Event {
             club_logo_url: &self.club_logo_url,
             cohosts: &self.cohosts,
             featured: self.featured,
+            verified: self.verified,
             is_directory_event: self.is_directory_event,
             club_type: &self.club_type,
             school: &self.school,

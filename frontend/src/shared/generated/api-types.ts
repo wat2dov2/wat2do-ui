@@ -2792,6 +2792,12 @@ export interface components {
              */
             featured: boolean;
             /**
+             * Verified
+             * @description Its club has claimed its page, so the club runs it itself
+             * @default false
+             */
+            verified: boolean;
+            /**
              * Is Directory Event
              * @default false
              */
@@ -2902,6 +2908,12 @@ export interface components {
              * @default false
              */
             featured: boolean;
+            /**
+             * Verified
+             * @description Its club has claimed its page, so the club runs it itself
+             * @default false
+             */
+            verified: boolean;
             /**
              * Is Directory Event
              * @default false
@@ -3043,6 +3055,12 @@ export interface components {
              * @default false
              */
             featured: boolean;
+            /**
+             * Verified
+             * @description Its club has claimed its page, so the club runs it itself
+             * @default false
+             */
+            verified: boolean;
             /**
              * Is Directory Event
              * @default false

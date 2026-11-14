@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { BadgeCheck } from "lucide-react";
 import { clubPagePath } from "@/shared/constants/routes";
 import { ClubTypeIcon } from "@/shared/components/ClubTypeIcon";
 import { Badge } from "@/shared/ui/badge";
@@ -31,6 +32,8 @@ interface ClubBadgeLinkProps {
   clubLogoUrl?: string | null;
   clubType?: string | null;
   school?: string | null;
+  /** The club has claimed its page and runs this event itself: a check follows its name. */
+  verified?: boolean;
   disabled?: boolean;
   /** Eager on the first screen, so the logos arrive with the page instead of after it. */
   logoLoading?: "eager" | "lazy";
@@ -47,6 +50,7 @@ export function ClubBadgeLink({
   clubLogoUrl,
   clubType,
   school,
+  verified = false,
   disabled = false,
   logoLoading,
   onNavigate,
@@ -62,6 +66,9 @@ export function ClubBadgeLink({
   const content = <>
     <AvatarStack size="sm" avatars={avatars} loading={logoLoading} />
     <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
+    {verified ? (
+      <BadgeCheck data-slot="club-verified" role="img" aria-label={t("events.verified")} className="size-3.5 shrink-0" />
+    ) : null}
     {cohosts.length > 0 ? <span data-slot="club-cohost-count" className="shrink-0 font-bold">+{cohosts.length}</span> : null}
     <ClubTypeIcon school={school} clubType={clubType} />
   </>;

@@ -9898,6 +9898,12 @@
             "description": "Published to Instagram",
             "default": false
           },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "description": "Its club has claimed its page, so the club runs it itself",
+            "default": false
+          },
           "is_directory_event": {
             "type": "boolean",
             "title": "Is Directory Event",
@@ -10226,6 +10232,12 @@
             "type": "boolean",
             "title": "Featured",
             "description": "Published to Instagram",
+            "default": false
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "description": "Its club has claimed its page, so the club runs it itself",
             "default": false
           },
           "is_directory_event": {
@@ -10617,6 +10629,12 @@
             "type": "boolean",
             "title": "Featured",
             "description": "Published to Instagram",
+            "default": false
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified",
+            "description": "Its club has claimed its page, so the club runs it itself",
             "default": false
           },
           "is_directory_event": {

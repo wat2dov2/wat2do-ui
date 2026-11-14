@@ -33,8 +33,7 @@ pub struct ClubClaimLinkResponse {
 }
 
 /// Nobody manages the club: it has no owner and no members.
-const UNCLAIMED: &str = "c.created_by IS NULL \
-     AND NOT EXISTS (SELECT 1 FROM public.club_members m WHERE m.club_id = c.id)";
+const UNCLAIMED: &str = concat!("NOT ", crate::api::events::store::claimed_club!("c"));
 
 fn token(path: &PathParams) -> Result<Uuid, ApiError> {
     let mut check = Validator::default();
@@ -126,7 +125,7 @@ mod tests {
 
     #[test]
     fn a_claim_link_only_hands_over_a_club_nobody_manages() {
-        assert!(UNCLAIMED.starts_with("c.created_by IS NULL"));
-        assert!(UNCLAIMED.contains("NOT EXISTS (SELECT 1 FROM public.club_members"));
+        assert!(UNCLAIMED.starts_with("NOT (c.created_by IS NOT NULL OR EXISTS"));
+        assert!(UNCLAIMED.contains("SELECT 1 FROM public.club_members m WHERE m.club_id = c.id"));
     }
 }

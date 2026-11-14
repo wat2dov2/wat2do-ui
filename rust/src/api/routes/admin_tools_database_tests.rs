@@ -1,4 +1,4 @@
-//! The outreach (with its claim links), competitor pain point and automate log routes against a real
+//! The outreach (with its claim links and the verified events they lead to), competitor pain point and automate log routes against a real
 //! Postgres loaded with our schema, so every statement runs as in production.
 //!
 //! They run only when `WAT2DO_TEST_DATABASE_URL` names that database (CI's
@@ -461,6 +461,27 @@ async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
     let (_, second_token) = user(&db, "user").await;
     let link = format!("/clubs/claim-links/{token}");
     let expected = json!({"club_id": club, "club_name": name, "school": "uwaterloo"});
+    let event: i32 = sqlx::query_scalar(
+        "INSERT INTO public.events (title, location, club, school_id, club_id) \
+         SELECT 'Karaoke Night', 'SLC', $1, school_id, id FROM public.clubs WHERE id = $2 \
+         RETURNING id",
+    )
+    .bind(&name)
+    .bind(club)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    let verified = || async {
+        crate::api::events::store::event_by_id(&db, i64::from(event))
+            .await
+            .unwrap()
+            .unwrap()
+            .verified
+    };
+    assert!(
+        !verified().await,
+        "an unclaimed club's event is not verified"
+    );
 
     let (status, shown) = call(&db, &first_token, Method::GET, &link, None).await;
     assert_eq!((status, &shown), (StatusCode::OK, &expected));
@@ -481,6 +502,7 @@ async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
         (owner, members, lead_status.as_str()),
         (Some(first), vec![first], "claimed")
     );
+    assert!(verified().await, "a claimed club's events are verified");
 
     // Once the club is claimed the link hands over nothing, to anyone.
     for (method, path) in [(Method::GET, &link), (Method::POST, &accept)] {
