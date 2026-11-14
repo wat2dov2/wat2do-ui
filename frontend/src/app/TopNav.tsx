@@ -97,17 +97,13 @@ const PRIMARY_NAV_ITEMS = [
   { labelKey: "navigation.about", href: ROUTES.ABOUT, Icon: HelpCircle },
 ] as const;
 
-const MY_TICKETS_NAV_ITEM = {
-  labelKey: "navigation.myTickets",
-  href: ROUTES.TICKETS,
-  Icon: QrCode,
-} as const;
+/** A signed-in visitor's own pages, which only the side menu lists. */
+const ACCOUNT_NAV_ITEMS = [
+  { labelKey: "navigation.myTickets", href: ROUTES.TICKETS, Icon: QrCode },
+  { labelKey: "navigation.settings", href: ROUTES.SETTINGS, Icon: Settings },
+] as const;
 
-const SETTINGS_NAV_ITEM = {
-  labelKey: "navigation.settings",
-  href: ROUTES.SETTINGS,
-  Icon: Settings,
-} as const;
+type NavigationItem = (typeof PRIMARY_NAV_ITEMS)[number] | (typeof ACCOUNT_NAV_ITEMS)[number];
 
 // Event and position forms open to everyone and ask for sign-in themselves, before they submit.
 const SUBMIT_ITEMS = [
@@ -151,6 +147,37 @@ function SubmitMenu({ size, onNavigate }: SubmitMenuProps) {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+interface NavigationLinkProps {
+  item: NavigationItem;
+  size: "sm" | "navigation";
+  onNavigate?: () => void;
+}
+
+/** A link to one page, marked while that page is open and loaded ahead as soon as the visitor reaches for it. */
+function NavigationLink({ item: { labelKey, href, Icon }, size, onNavigate }: NavigationLinkProps) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const active = isRouteActive(pathname, href);
+  const prefetch = () => prefetchPublicPage(router, href);
+  return (
+    <Button asChild variant={active ? "outline" : "ghost"} size={size}>
+      <NextLink
+        href={href}
+        prefetch={PUBLIC_PAGE_ROUTES.includes(href) ? false : undefined}
+        onPointerEnter={prefetch}
+        onFocus={prefetch}
+        onTouchStart={prefetch}
+        aria-current={active ? "page" : undefined}
+        onClick={onNavigate}
+      >
+        {size === "navigation" ? <Icon /> : null}
+        {t(labelKey)}
+      </NextLink>
+    </Button>
   );
 }
 
@@ -200,9 +227,7 @@ export function TopNav() {
   const userAvatar = userAvatarUrl ? (
     <LazyImage src={userAvatarUrl} alt="" width={32} height={32} fallback={userInitial} className="size-full" />
   ) : userInitial;
-  const navigationItems = isAuthenticated
-    ? [...PRIMARY_NAV_ITEMS, MY_TICKETS_NAV_ITEM, SETTINGS_NAV_ITEM]
-    : PRIMARY_NAV_ITEMS;
+  const closeNavigation = useCallback(() => setNavigationOpen(false), []);
 
   const handleAdminClick = useCallback(() => {
     setNavigationOpen(false);
@@ -269,40 +294,53 @@ export function TopNav() {
       </div>
 
       {/*
-        The server cannot know who is visiting, so the controls that differ
-        between signed in and signed out are SessionView looks: the bar a
-        signed-in visitor first sees is already their own, never the signed-out
-        bar collapsing into an avatar once the page wakes up.
+        Signed in or out, a wide screen's bar holds the same pages, Submit,
+        language and theme. Only its last control differs: Sign in, or the
+        visitor's avatar, which opens the side menu. The server cannot know who
+        is visiting, so those are SessionView looks: the bar a signed-in visitor
+        first sees is already their own, never Sign in turning into an avatar
+        once the page wakes up.
       */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <SessionView signedIn={null} signedOut={<nav
+        <nav
           aria-label={t("navigation.primary")}
           className="hidden items-center gap-0.5 md:flex"
         >
-          {PRIMARY_NAV_ITEMS.map(({ labelKey, href }) => {
-            const active = isRouteActive(pathname, href);
-            return (
-              <Button
-                key={href}
-                asChild
-                variant={active ? "outline" : "ghost"}
-                size="sm"
-              >
-                <NextLink
-                  href={href}
-                  prefetch={PUBLIC_PAGE_ROUTES.includes(href) ? false : undefined}
-                  onPointerEnter={() => prefetchPublicPage(router, href)}
-                  onFocus={() => prefetchPublicPage(router, href)}
-                  onTouchStart={() => prefetchPublicPage(router, href)}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {t(labelKey)}
-                </NextLink>
-              </Button>
-            );
-          })}
+          {PRIMARY_NAV_ITEMS.map((item) => (
+            <NavigationLink key={item.href} item={item} size="sm" />
+          ))}
           <SubmitMenu size="sm" />
-        </nav>} />
+        </nav>
+
+        <div className="hidden items-center gap-2 md:flex">
+          <Separator
+            orientation="vertical"
+            data-nav-preferences-divider
+            className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
+          />
+          <LanguageSelector />
+          <ThemeToggle />
+        </div>
+
+        <SessionView signedIn={null} signedOut={
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                className="hidden md:inline-flex"
+                onPointerEnter={prefetchSignIn}
+                onFocus={prefetchSignIn}
+                onTouchStart={prefetchSignIn}
+                onMouseDown={handleSignIn}
+              >
+                {t("events.signIn")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t("modals.signIn.signInToSavePreferences")}</p>
+            </TooltipContent>
+          </Tooltip>
+        } />
 
         <Drawer
           open={navigationOpen}
@@ -342,17 +380,22 @@ export function TopNav() {
               <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
             </DrawerHeader>
             <DrawerBody className="gap-3">
-              <Stack direction="horizontal" align="center" justify="between" gap={2}>
+              {/*
+                On a wide screen the bar already shows the pages, Submit,
+                language and theme, so the menu there lists only what the bar
+                does not: the visitor's own pages and club and admin tools.
+              */}
+              <Stack direction="horizontal" align="center" justify="between" gap={2} className="md:hidden">
                 <Wat2DoLogoLink
                   label={t("navigation.events")}
-                  onNavigate={() => setNavigationOpen(false)}
+                  onNavigate={closeNavigation}
                 />
                 <Stack direction="horizontal" align="center" gap={2}>
                   <LanguageSelector />
                   <ThemeToggle />
                 </Stack>
               </Stack>
-              <Separator />
+              <Separator className="md:hidden" />
               {!isAuthenticated && (
                 <>
                   <Button
@@ -372,67 +415,53 @@ export function TopNav() {
               )}
               <nav
                 aria-label={t("navigation.primary")}
-                className="flex flex-col gap-1"
+                className="flex flex-col gap-1 md:hidden"
               >
-                {navigationItems.map(({ labelKey, href, Icon }) => {
-                  const active = isRouteActive(pathname, href);
-                  return (
-                    <Button
-                      key={href}
-                      asChild
-                      variant={active ? "outline" : "ghost"}
-                      size="navigation"
-                    >
-                      <NextLink
-                        href={href}
-                        prefetch={PUBLIC_PAGE_ROUTES.includes(href) ? false : undefined}
-                        onPointerEnter={() => prefetchPublicPage(router, href)}
-                        onFocus={() => prefetchPublicPage(router, href)}
-                        onTouchStart={() => prefetchPublicPage(router, href)}
-                        aria-current={active ? "page" : undefined}
-                        onClick={() => setNavigationOpen(false)}
-                      >
-                        <Icon />
-                        {t(labelKey)}
-                      </NextLink>
-                    </Button>
-                  );
-                })}
-                <SubmitMenu size="navigation" onNavigate={() => setNavigationOpen(false)} />
+                {PRIMARY_NAV_ITEMS.map((item) => (
+                  <NavigationLink key={item.href} item={item} size="navigation" onNavigate={closeNavigation} />
+                ))}
+                <SubmitMenu size="navigation" onNavigate={closeNavigation} />
               </nav>
-              {canOpenClubPanel && (
+              {isAuthenticated && (
                 <>
-                  <Separator />
-                  {/* One entry for every club the user manages: pick which one the club panel opens on. */}
-                  <SearchCombobox<NavClub>
-                    // Marks a club only while its panel is open.
-                    selectedKey={onClubPanel ? activeClub.id : ""}
-                    onSelect={handleClubSelect}
-                    items={clubs}
-                    getKey={(club) => club.id}
-                    getLabel={(club) => club.club_name}
-                    displayValue={t("clubPanel.title")}
-                    renderTriggerLabel={(label) => (
-                      <>
-                        <Crown />
-                        <span className="min-w-0 flex-1 truncate text-start">{label}</span>
-                        <ChevronDown />
-                      </>
+                  <Separator className="md:hidden" />
+                  <Stack gap={1}>
+                    {ACCOUNT_NAV_ITEMS.map((item) => (
+                      <NavigationLink key={item.href} item={item} size="navigation" onNavigate={closeNavigation} />
+                    ))}
+                    {canOpenClubPanel && (
+                      // One entry for every club the user manages: pick which one the club panel opens on.
+                      <SearchCombobox<NavClub>
+                        // Marks a club only while its panel is open.
+                        selectedKey={onClubPanel ? activeClub.id : ""}
+                        onSelect={handleClubSelect}
+                        items={clubs}
+                        getKey={(club) => club.id}
+                        getLabel={(club) => club.club_name}
+                        displayValue={t("clubPanel.title")}
+                        renderTriggerLabel={(label) => (
+                          <>
+                            <Crown />
+                            <span className="min-w-0 flex-1 truncate text-start">{label}</span>
+                            <ChevronDown />
+                          </>
+                        )}
+                        triggerClassName={buttonVariants({
+                          variant: onClubPanel ? "outline" : "ghost",
+                          size: "navigation",
+                        })}
+                        searchPlaceholder={t("forms.searchClubPlaceholder")}
+                        emptyLabel={t("forms.noClubFound")}
+                      />
                     )}
-                    triggerClassName={buttonVariants({
-                      variant: onClubPanel ? "outline" : "ghost",
-                      size: "navigation",
-                    })}
-                    searchPlaceholder={t("forms.searchClubPlaceholder")}
-                    emptyLabel={t("forms.noClubFound")}
-                  />
+                    {profileCompleted && isAdmin && (
+                      <Button variant="ghost" size="navigation" onClick={handleAdminClick}>
+                        <Shield />
+                        {t("navigation.admin")}
+                      </Button>
+                    )}
+                  </Stack>
                 </>
-              )}
-              {profileCompleted && isAdmin && (
-                <Button variant="ghost" size="navigation" onClick={handleAdminClick}>
-                  <Shield />
-                  {t("navigation.admin")}
-                </Button>
               )}
             </DrawerBody>
             {isAuthenticated && <>
@@ -443,7 +472,7 @@ export function TopNav() {
                     <NextLink
                       href={ROUTES.SETTINGS}
                       aria-label={t("navigation.settings")}
-                      onClick={() => setNavigationOpen(false)}
+                      onClick={closeNavigation}
                     >
                       {userAvatar}
                     </NextLink>
@@ -457,35 +486,6 @@ export function TopNav() {
             </>}
           </DrawerContent>
         </Drawer>
-
-        <SessionView signedIn={null} signedOut={<>
-          <div className="hidden items-center gap-2 md:flex">
-            <Separator
-              orientation="vertical"
-              data-nav-preferences-divider
-              className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
-            />
-            <LanguageSelector />
-            <ThemeToggle />
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                className="hidden md:inline-flex"
-                onPointerEnter={prefetchSignIn}
-                onFocus={prefetchSignIn}
-                onTouchStart={prefetchSignIn}
-                onMouseDown={handleSignIn}
-              >
-                {t("events.signIn")}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("modals.signIn.signInToSavePreferences")}</p>
-            </TooltipContent>
-          </Tooltip>
-        </>} />
       </div>
       <span id={TOP_NAV_END_ID} hidden />
     </header>

@@ -5452,7 +5452,7 @@ test.describe("Navigation", () => {
     ).toBeVisible();
   });
 
-  test("account actions live in the compact sidecar and club selection stays out of the main bar", async ({ page, next }) => {
+  test("a signed-in bar keeps every page and the side menu holds the visitor's own", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
@@ -5462,6 +5462,13 @@ test.describe("Navigation", () => {
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
+    const menu = drawer.locator('[data-slot="drawer-body"]');
+    // A phone's bar has no room for the pages, so its menu lists them above the visitor's own.
+    for (const name of ["Events", "Positions", "Clubs", "About"]) {
+      await expect(menu.getByRole("navigation").getByRole("link", { name, exact: true })).toBeVisible();
+    }
+    await expect(menu.getByRole("link", { name: "My tickets", exact: true })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
     // The Club Panel dropdown lists each club the user manages.
     await drawer.getByRole("button", { name: "Club Panel", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "UW Tech Club" })).toBeVisible();
@@ -5472,9 +5479,23 @@ test.describe("Navigation", () => {
     await expect(drawer).toHaveCount(0);
 
     await page.setViewportSize({ width: 1440, height: 900 });
+    // A wide screen's bar shows a signed-in visitor the same pages, Submit, language and theme as everyone.
+    const pages = topNavigation.getByRole("navigation", { name: "Primary navigation" });
+    for (const name of ["Events", "Positions", "Clubs", "About"]) {
+      await expect(pages.getByRole("link", { name, exact: true })).toBeVisible();
+    }
+    await expect(pages.getByRole("button", { name: "Submit", exact: true })).toBeVisible();
+    await expect(topNavigation.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+    await expect(topNavigation.getByRole("button", { name: "Sign In", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
+    // The side menu then lists only what the bar does not.
+    await expect(menu.getByRole("link", { name: "My tickets", exact: true })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Events", exact: true })).toHaveCount(0);
+    await expect(menu.getByRole("button", { name: "Submit", exact: true })).toHaveCount(0);
+    await expect(drawer.getByRole("button", { name: "Switch to dark mode" })).toHaveCount(0);
     await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
     await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
   });
