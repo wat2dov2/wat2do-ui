@@ -3,10 +3,12 @@
 Admins keep a list of songs, typed loosely, through the API
 (``rust/src/api/routes/instagram_publishing/songs.rs``). Some minutes after a carousel
 publishes, the emulator worker visits its school's account and ``finish_due`` opens
-the live post, likes and reposts it, and tries the songs in random order: Instagram's
-music search finds candidates and Claude Haiku picks the track the admin meant, or none
-so the next song is tried. A song marked Asian or K-pop is tried only at the control
-box's ``asian_song_schools``. On the first try it also comments a GIF: Haiku names a
+the live post, likes and reposts it, and tries the songs in the day's rotation order:
+Instagram's music search finds candidates and Claude Haiku picks the track the admin
+meant, or none so the next song is tried. The control box's ``asian_song_schools`` play
+only the songs marked Asian or K-pop, and every other school plays only the rest. Each
+day the rotation moves one song on, so every school in a group gets the same song that
+day. On the first try it also comments a GIF: Haiku names a
 movie or show scene that fits the carousel's first event (or none), and picks a real
 movie or show clip from GIPHY's results (or none, so nothing is commented). The same
 edit tags the post with the school's own place: the first one Instagram's location
@@ -16,19 +18,20 @@ school itself, or none.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
-import random
 import re
 import shutil
 import tempfile
 import unicodedata
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from core.constants import (
     INSTAGRAM_BATCH_PUBLISHED,
@@ -53,6 +56,7 @@ from services.instagram_emulator.device import EmulatorDevice
 log = logging.getLogger(__name__)
 
 _CONTROL = controlbox.instagram_publishing
+_TORONTO = ZoneInfo("America/Toronto")
 WORKDIR_PREFIX = "wat2do-music-"
 PROMPT = (Path(__file__).parent / "music_prompt.md").read_text()
 GIF_QUERY_PROMPT = (Path(__file__).parent / "gif_query_prompt.md").read_text()
@@ -102,22 +106,47 @@ def finish_due(device: EmulatorDevice, school: str, now: datetime | None = None)
         playable = _songs_for(school, songs)
         if not playable:
             continue
-        outcome = _add_music(device, batch, random.sample(playable, len(playable)))
+        day = _posting_day(batch.get("published_at"), now)
+        outcome = _add_music(device, batch, rotation(playable, day))
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
     return outcomes
 
 
 def _songs_for(school: str | None, songs: list[dict[str, Any]]) -> list[str]:
-    """Every song can play anywhere except Asian and K-pop ones, kept to Asian campuses."""
+    """Asian campuses play only the Asian and K-pop songs; every other campus the rest."""
     asian_campus = school in _CONTROL.asian_song_schools
-    return [song["query"] for song in songs if asian_campus or not song.get("asian_campuses_only")]
+    return [
+        song["query"] for song in songs if bool(song.get("asian_campuses_only")) == asian_campus
+    ]
+
+
+def rotation(songs: Sequence[str], day: date) -> list[str]:
+    """The songs in the order to try them on ``day``: the day's song, then the ones after it.
+
+    The order is a fixed shuffle (by hash, so it never depends on when a song was
+    added), and each day starts one song further on. Every school given the same list
+    tries the same song first on the same day.
+    """
+    ordered = sorted(songs, key=lambda query: hashlib.sha256(query.casefold().encode()).digest())
+    start = day.toordinal() % len(ordered) if ordered else 0
+    return ordered[start:] + ordered[:start]
+
+
+def _posting_day(published_at: str | None, now: datetime | None) -> date:
+    """The Toronto date the carousel went up, so a retry after midnight keeps its song."""
+    moment = (
+        datetime.fromisoformat(published_at) if published_at else now or datetime.now(timezone.utc)
+    )
+    return moment.astimezone(_TORONTO).date()
 
 
 def _pending_batches(now: datetime) -> list[dict[str, Any]]:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(f"id,permalink,music_attempts,updated_at,{school_service.SCHOOL_SLUG_EMBED}")
+        .select(
+            f"id,permalink,music_attempts,updated_at,published_at,{school_service.SCHOOL_SLUG_EMBED}"
+        )
         .eq("status", INSTAGRAM_BATCH_PUBLISHED)
         .eq("music_status", INSTAGRAM_MUSIC_PENDING)
         .lte("published_at", (now - timedelta(minutes=_CONTROL.music_delay_minutes)).isoformat())
