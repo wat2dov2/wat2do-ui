@@ -1040,7 +1040,7 @@ fn install_replaces_an_installed_binary_built_from_other_source() {
 /// Ported from `tests/jobs/test_retry_failed_notifications.py`; the job is now the
 /// `retry-failed-notifications` command of the installed binary.
 #[test]
-fn test_launch_agent_runs_daily_at_three() {
+fn test_launch_agent_runs_every_few_minutes() {
     let binary = Path::new("/installed/wat2do-browser");
 
     let payload = retry_launch_agent_payload(
@@ -1053,13 +1053,12 @@ fn test_launch_agent_runs_daily_at_three() {
         entry(&payload, "Label"),
         &Plist::from("io.wat2do.notification-retry")
     );
+    // Failed runs are reran within minutes of the worker recovering, not once a day.
     assert_eq!(
-        entry(&payload, "StartCalendarInterval"),
-        &Plist::Dict(BTreeMap::from([
-            ("Hour".to_owned(), Plist::Integer(3)),
-            ("Minute".to_owned(), Plist::Integer(0)),
-        ]))
+        entry(&payload, "StartInterval"),
+        &Plist::Integer(i64::from(crate::controlbox::notification_retry().interval_minutes) * 60)
     );
+    assert!(crate::controlbox::notification_retry().interval_minutes <= 15);
     assert_eq!(
         entry(&payload, "ProgramArguments"),
         &Plist::Array(vec![
@@ -1070,7 +1069,7 @@ fn test_launch_agent_runs_daily_at_three() {
     let Plist::Dict(entries) = &payload else {
         panic!("not a dict");
     };
-    assert!(!entries.contains_key("StartInterval"));
+    assert!(!entries.contains_key("StartCalendarInterval"));
 }
 
 #[test]

@@ -1,24 +1,26 @@
-//! Daily: log Brave back in (the first school's profile first), then rerun the failed
-//! Process Notifications runs so their posts are ingested.
+//! Every few minutes: rerun the failed Process Notifications runs that can now succeed.
 //!
-//! A school account that drops out of Brave fails its browser-run notification job. This
-//! reuses the capped, saved-profile login recovery of the browser worker and then reruns
-//! each failed run, up to a per-run and per-day cap. A run that keeps failing after its
-//! cap is reported for a person to re-login that account by hand. `gh` carries the
-//! user's own authentication, so no token is stored here.
+//! A run fails when the Brave worker is paused (a logout it is still recovering from) or
+//! down, or when its school's account is held for a person or missing from Brave. A pass
+//! reruns nothing while the worker cannot run digests, and leaves a run alone while its
+//! account cannot run yet, so a rerun is spent only when it can succeed: each run is
+//! reran at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, and its posts
+//! are ingested within minutes of the worker recovering. The worker logs itself back in;
+//! this pass only reruns. `gh` carries the user's own authentication, so no token is
+//! stored here.
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use chrono::NaiveDateTime;
 use serde_json::{Map, Value, json};
 
+use crate::controlbox::instagram_browser;
 use crate::controlbox::notification_retry as control;
 use crate::host::{CommandError, Host};
-use crate::instagram_notifications::account_login::ImapMailbox;
-use crate::instagram_notifications::browser_queue::BrowserJobQueue;
-use crate::instagram_notifications::browser_session::{Bridge, school_account_username};
-use crate::instagram_notifications::browser_worker::Worker;
+use crate::instagram_notifications::account_login::canonical_account;
+use crate::instagram_notifications::browser_queue::{BrowserJobQueue, WORKER_INSTALLATION_PAUSE};
 use crate::launch_agents::{atomic_write, home};
 
 const GH_TIMEOUT_SECONDS: f64 = 60.0;
@@ -37,6 +39,15 @@ pub struct WorkflowRun {
     pub created_at: f64,
 }
 
+/// What the Brave worker can run now, as a retry pass sees it.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Readiness {
+    /// Why no digest can run now, when none can: the worker's pause, or that it is down.
+    pub blocked: Option<String>,
+    /// The accounts whose digests cannot run now, each with why.
+    pub unavailable: BTreeMap<String, String>,
+}
+
 /// What a retry pass reaches outside itself.
 pub trait RetryServices {
     fn list_failed_runs(
@@ -47,9 +58,32 @@ pub trait RetryServices {
         now: f64,
     ) -> Result<Vec<WorkflowRun>, GitHubCliError>;
     fn rerun_failed_jobs(&self, repo: &str, run_id: &str) -> Result<(), GitHubCliError>;
-    /// Prefer one school's saved profile, then run the capped Brave relogin: true if it
-    /// logged back in, false if there was nothing to recover, None when it could not run.
-    fn recover_login(&self, login_first_school: &str) -> Option<bool>;
+    /// What the Brave worker can run now; None when its queue cannot be read.
+    fn readiness(&self) -> Option<Readiness>;
+}
+
+/// The school account a run is for, from its title ("<poster> - wat2do.<school>").
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RunAccount {
+    Named(String),
+    /// A manual run ("Process @<poster>"): no account in its title.
+    Unnamed,
+    /// A notification without its routing (" - "): a rerun can never succeed.
+    Unroutable,
+}
+
+pub fn run_account(title: &str) -> RunAccount {
+    let title = title.trim();
+    if title == "-" || title.ends_with(" -") || title.starts_with("- ") {
+        return RunAccount::Unroutable;
+    }
+    match title.rsplit_once(" - ") {
+        Some((_, account)) if !account.trim().is_empty() => {
+            RunAccount::Named(canonical_account(account.trim()))
+        }
+        Some(_) => RunAccount::Unroutable,
+        None => RunAccount::Unnamed,
+    }
 }
 
 pub fn state_directory() -> PathBuf {
@@ -178,14 +212,16 @@ fn prune(state: &mut Map<String, Value>, now: f64, lookback_hours: u32) {
     }
 }
 
-/// One pass: recover the Brave login, then rerun failed notification runs.
+/// One pass: rerun each failed notification run that can succeed now.
 pub fn retry_failed_notifications(
     services: &dyn RetryServices,
     state_path: &std::path::Path,
     now: &dyn Fn() -> f64,
 ) -> Value {
-    let mut result =
-        json!({"failed_runs": 0, "relogin": null, "reran": [], "escalated": [], "skipped": []});
+    let mut result = json!({
+        "failed_runs": 0, "blocked": null, "reran": [], "escalated": [], "skipped": [],
+        "waiting": [],
+    });
     let failed = match services.list_failed_runs(
         &control().github_repo,
         &control().workflow_name,
@@ -201,19 +237,24 @@ pub fn retry_failed_notifications(
     };
     result["failed_runs"] = json!(failed.len());
     if failed.is_empty() {
-        tracing::info!(
-            "No failed {} runs in the last {}h; nothing to retry",
-            control().workflow_name,
-            control().lookback_hours
-        );
         return result;
     }
-    // Log back in first, the login_first_school's saved profile ahead of any other. This
-    // is a no-op unless Brave is actually logged out.
-    result["relogin"] = json!(services.recover_login(&control().login_first_school));
+    // A rerun now would only fail again: each waits until the worker can run digests.
+    let readiness = match services.readiness() {
+        Some(readiness) => readiness,
+        None => Readiness {
+            blocked: Some("the Instagram browser queue could not be read".to_owned()),
+            ..Readiness::default()
+        },
+    };
+    if let Some(blocked) = readiness.blocked {
+        result["blocked"] = json!(blocked);
+        return result;
+    }
     let mut state = load_state(state_path);
     prune(&mut state, now(), control().lookback_hours);
     let mut reruns_today = state["rerun_timestamps"].as_array().map_or(0, Vec::len);
+    let spacing = f64::from(control().rerun_spacing_minutes) * 60.0;
     let push = |result: &mut Value, key: &str, id: &str| {
         result[key]
             .as_array_mut()
@@ -227,16 +268,36 @@ pub fn retry_failed_notifications(
             .cloned()
             .unwrap_or_else(|| json!({"count": 0, "last_at": 0.0}));
         let count = number(entry.get("count")) as i64;
+        let account = run_account(&run.title);
+        if account == RunAccount::Unroutable {
+            push(&mut result, "skipped", &run.id);
+            continue;
+        }
         if count >= control().max_reruns_per_run {
             push(&mut result, "escalated", &run.id);
-            let reruns = crate::pyjson::str(entry.get("count").unwrap_or(&Value::Null));
-            tracing::warn!(
-                "Run {} ({}) still failing after {} reruns; an account likely needs a manual re-login in Brave: {}",
-                run.id,
-                run.title,
-                reruns,
-                run.url
-            );
+            // Said once, not every pass.
+            if !entry.get("reported").is_some_and(crate::pyjson::truthy) {
+                tracing::warn!(
+                    "Run {} ({}) still failing after {count} reruns; it needs a person: {}",
+                    run.id,
+                    run.title,
+                    run.url
+                );
+                let mut entry = entry;
+                entry["reported"] = json!(true);
+                state["runs"][&run.id] = entry;
+            }
+            continue;
+        }
+        if let RunAccount::Named(account) = &account
+            && let Some(why) = readiness.unavailable.get(account)
+        {
+            push(&mut result, "waiting", &run.id);
+            tracing::debug!("Run {} waits: {account} is {why}", run.id);
+            continue;
+        }
+        if count > 0 && now() - number(entry.get("last_at")) < spacing {
+            push(&mut result, "waiting", &run.id);
             continue;
         }
         if reruns_today >= control().reruns_per_day {
@@ -273,19 +334,16 @@ pub fn retry_failed_notifications(
         );
     }
     let length = |key: &str| result[key].as_array().map_or(0, Vec::len);
-    let relogin = match &result["relogin"] {
-        Value::Bool(true) => "True",
-        Value::Bool(false) => "False",
-        _ => "None",
-    };
-    tracing::info!(
-        "Notification retry: {} failed, {} reran, {} need a person, {} skipped (relogin={})",
-        result["failed_runs"],
-        length("reran"),
-        length("escalated"),
-        length("skipped"),
-        relogin
-    );
+    if length("reran") > 0 {
+        tracing::info!(
+            "Notification retry: {} failed, {} reran, {} waiting, {} need a person, {} skipped",
+            result["failed_runs"],
+            length("reran"),
+            length("waiting"),
+            length("escalated"),
+            length("skipped"),
+        );
+    }
     result
 }
 
@@ -308,26 +366,40 @@ impl RetryServices for Live {
         rerun_failed_jobs(self.host.as_ref(), repo, run_id)
     }
 
-    fn recover_login(&self, login_first_school: &str) -> Option<bool> {
-        // A relogin hiccup must never block the reruns.
-        let recovered = (|| -> anyhow::Result<bool> {
+    fn readiness(&self) -> Option<Readiness> {
+        let read = (|| -> anyhow::Result<Readiness> {
             let queue = BrowserJobQueue::open(None, self.host.clone())?;
-            queue.set_setting(
-                "retrieval_pool_account",
-                json!(school_account_username(login_first_school).map_err(anyhow::Error::msg)?),
-            )?;
-            let worker = Worker::new(
-                Bridge::new(self.host.clone(), Arc::new(ImapMailbox)),
-                queue,
-                None,
-            );
-            let host = self.host.clone();
-            Ok(worker.recover_login(&move || host.time())?)
+            let now = self.host.time();
+            let worker = queue.setting_or("worker", json!({}))?;
+            let paused = queue.setting_or("paused", json!(false))?;
+            let running = worker.get("running").is_some_and(crate::pyjson::truthy);
+            let heartbeat = worker
+                .get("heartbeat")
+                .and_then(crate::pyjson::number)
+                .unwrap_or(0.0);
+            let stale = instagram_browser().job_timeout_seconds
+                + instagram_browser().request_timeout_seconds;
+            // The same test a digest's wait makes before it gives up on the worker.
+            let blocked =
+                if paused != json!(WORKER_INSTALLATION_PAUSE) && crate::pyjson::truthy(&paused) {
+                    Some(format!(
+                        "the Instagram browser worker is paused: {}",
+                        crate::pyjson::str(&paused)
+                    ))
+                } else if !running || now - heartbeat > stale {
+                    Some("the Instagram browser worker is not running".to_owned())
+                } else {
+                    None
+                };
+            Ok(Readiness {
+                blocked,
+                unavailable: queue.unavailable_accounts(now)?,
+            })
         })();
-        match recovered {
-            Ok(recovered) => Some(recovered),
+        match read {
+            Ok(readiness) => Some(readiness),
             Err(error) => {
-                tracing::error!("Brave login recovery did not run: {error}");
+                tracing::error!("The Instagram browser queue could not be read: {error}");
                 None
             }
         }

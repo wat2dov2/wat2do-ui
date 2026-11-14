@@ -46,17 +46,17 @@ def test_checked_in_controlbox_is_valid() -> None:
 
 def test_notification_retry_control_is_loaded() -> None:
     control = controlbox.notification_retry
-    assert control.schedule_hour == 3
+    # Failed runs are reran within minutes of the worker recovering, not once a day.
+    assert control.interval_minutes <= 15
     assert control.github_repo == "wat2dov2/wat2do-ui"
     assert control.workflow_name == "Process Notifications"
-    assert control.login_first_school == "guelph"
 
 
-def test_invalid_notification_retry_schedule_hour_is_rejected(tmp_path) -> None:
+def test_invalid_notification_retry_interval_is_rejected(tmp_path) -> None:
     directory = _write_control(
         tmp_path,
         "notification_retry",
-        lambda payload: payload.__setitem__("schedule_hour", 24),
+        lambda payload: payload.__setitem__("interval_minutes", 0),
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)

@@ -4460,11 +4460,11 @@ fn test_login_recovery_tries_the_next_profile_when_a_password_cannot_go_out() {
 }
 
 #[test]
-fn test_login_recovery_stops_for_a_person_at_a_challenge() {
+fn test_login_recovery_holds_only_a_challenged_profile() {
     setup();
     let (pool, _) = login_pool(
         vec![
-            json!({"state": "profiles", "profiles": ["wat2do.ottawa"]}),
+            json!({"state": "profiles", "profiles": ["wat2do.ottawa", "wat2do.tmu"]}),
             json!({"state": "challenge"}),
         ],
         json!("wat2do.ottawa"),
@@ -4472,11 +4472,33 @@ fn test_login_recovery_stops_for_a_person_at_a_challenge() {
     );
     let error = error_of(pool.pool.recover_login());
     assert!(error.is_session() && error.to_string().contains("asks to confirm the account"));
-    // This pause is not the logged-out one, so recovery is not attempted again.
+    // That account waits for a person; the next recovery passes over it.
     assert!(
-        !error
-            .to_string()
-            .starts_with("Instagram browser requires human account recovery")
+        pool.queue
+            .account_login_paused("wat2do.ottawa")
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(pool.queue.account_login_paused("wat2do.tmu").unwrap(), None);
+    let (next, clicks) = login_pool(
+        vec![
+            json!({"state": "profiles", "profiles": ["wat2do.ottawa", "wat2do.tmu"]}),
+            json!({"state": "logged_in"}),
+        ],
+        json!("wat2do.ottawa"),
+        &[],
+    );
+    next.queue
+        .pause_account_login("wat2do.ottawa", "Instagram needs a person: fixture")
+        .unwrap();
+    next.queue
+        .pause_account_login("wat2do.guelph", "Instagram needs a person: fixture")
+        .unwrap();
+    next.pool.recover_login().unwrap();
+    // Neither the held previous account nor a held login school is clicked.
+    assert_eq!(
+        clicks.lock().unwrap()[1..],
+        [scripts::click_label("wat2do.tmu")]
     );
 }
 
@@ -4944,6 +4966,9 @@ struct Instagram {
     menu: bool,
     dialog: Option<&'static str>,
     logins: usize,
+    /// An account whose password Instagram refuses: the form then says so.
+    refuses: Option<&'static str>,
+    refused: bool,
 }
 
 const DROPPED: [&str; 3] = ["wat2do.guelph", "wat2do.columbia", "wat2do.yorku"];
@@ -4956,6 +4981,8 @@ fn instagram_pool(accounts: &[&str], dialog: Option<&'static str>) -> (Pool, Sha
         menu: false,
         dialog,
         logins: 0,
+        refuses: None,
+        refused: false,
     });
     let page = instagram.clone();
     let url = format!("https://www.instagram.com/{}/", accounts[0]);
@@ -4969,6 +4996,10 @@ fn instagram_pool(accounts: &[&str], dialog: Option<&'static str>) -> (Pool, Sha
                 .expect("a known account logs in")
                 .to_owned();
             instagram.logins += 1;
+            if instagram.refuses == Some(account.as_str()) {
+                instagram.refused = true;
+                continue;
+            }
             instagram.accounts.retain(|held| *held != account);
             instagram.accounts.insert(0, account);
             instagram.dialog = None;
@@ -5031,7 +5062,9 @@ fn instagram_pool(accounts: &[&str], dialog: Option<&'static str>) -> (Pool, Sha
             });
         }
         if source == scripts::LOGIN_FORM_STATE {
-            let state = if instagram.dialog == Some("login") {
+            let state = if instagram.refused {
+                "wrong_password"
+            } else if instagram.dialog == Some("login") {
                 "form"
             } else {
                 "pending"
@@ -5184,6 +5217,57 @@ fn dialog_left(instagram: &Shared<Instagram>) -> Option<&'static str> {
 }
 
 #[test]
+fn test_a_dropped_login_school_that_cannot_log_in_today_is_passed_over() {
+    setup();
+    // 11-13: guelph dropped out too and its one password entry for the day was spent, so
+    // 13 missing schools waited a day on it. The account is added from the one Brave shows.
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku"], None);
+    assert!(
+        pool.queue
+            .reserve_account_login("wat2do.guelph", pool.host.time() - 3600.0)
+            .unwrap()
+    );
+    pool.pool.add_account("wat2do.columbia").unwrap();
+    assert_eq!(
+        instagram.lock().unwrap().accounts,
+        strings(&["wat2do.columbia", "wat2do.yorku"])
+    );
+    assert_eq!(passwords_entered(&pool), strings(&["wat2do.columbia"]));
+    assert_eq!(dialog_left(&instagram), None);
+}
+
+#[test]
+fn test_the_login_schools_refused_password_holds_it_not_the_added_account() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku"], None);
+    instagram.lock().unwrap().refuses = Some("wat2do.guelph");
+    let error = error_of(pool.pool.add_account("wat2do.columbia"));
+    // Not a submitted login of the account being added: it is not held.
+    assert!(!error.is(SessionKind::LoginSubmitted), "{error}");
+    assert!(
+        error
+            .to_string()
+            .contains("refused wat2do.guelph's password"),
+        "{error}"
+    );
+    assert!(
+        pool.queue
+            .account_login_paused("wat2do.guelph")
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        pool.queue.account_login_paused("wat2do.columbia").unwrap(),
+        None
+    );
+    assert_eq!(passwords_entered(&pool), strings(&["wat2do.guelph"]));
+    // Next time, guelph cannot log in today: columbia is added from yorku.
+    instagram.lock().unwrap().refused = false;
+    pool.pool.add_account("wat2do.columbia").unwrap();
+    assert_eq!(instagram.lock().unwrap().accounts[0], "wat2do.columbia");
+}
+
+#[test]
 fn test_an_active_login_school_is_used_even_under_a_chooser_left_open() {
     setup();
     // 11-09 21:33: guelph is active and a failed switch left the chooser over the page,
@@ -5315,6 +5399,59 @@ fn test_a_digest_for_a_dropped_account_logs_it_in_and_then_runs() {
         strings(&["wat2do.guelph", "wat2do.columbia"])
     );
     assert_eq!(pool.setting("paused"), Value::Null);
+}
+
+#[test]
+fn test_a_digest_for_a_dropped_account_that_cannot_log_in_yet_marks_it_missing() {
+    use super::super::browser_worker::Worker;
+
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku", "wat2do.guelph"], None);
+    let directory = tempfile::tempdir().unwrap();
+    let mut worker = Worker::new(bridge(&pool.host), pool.queue.clone(), None);
+    worker.seams.school_account_for = Arc::new(|_| None);
+    worker.seams.browser_lock_path = directory.path().join("browser.lock");
+    worker.seams.execute_job = Arc::new(
+        |_: &BrowserJob, _: &mut BrowserInstagramSession, _: Option<&dyn Fn(&BrowserError)>| {
+            Ok(json!({"status": "succeeded"}))
+        },
+    );
+    // Its one password entry for the day is spent.
+    let now = pool.host.time();
+    assert!(
+        pool.queue
+            .reserve_account_login("wat2do.columbia", now - 3600.0)
+            .unwrap()
+    );
+    let job = pool
+        .queue
+        .enqueue_digest("123", "wat2do.columbia", "cache-entry:1")
+        .unwrap();
+    assert!(worker.process_next_job(true).unwrap());
+    let finished = pool.queue.get(&job.id).unwrap().unwrap();
+    assert_eq!(finished.state, "failed");
+    // Its failed notification runs wait until it may log in again.
+    assert!(
+        pool.queue
+            .unavailable_accounts(now)
+            .unwrap()
+            .contains_key("wat2do.columbia")
+    );
+    assert!(passwords_entered(&pool).is_empty());
+    // A person logs it in: its next digest finds it and it is no longer missing.
+    instagram
+        .lock()
+        .unwrap()
+        .accounts
+        .push("wat2do.columbia".to_owned());
+    let job = pool
+        .queue
+        .enqueue_digest("123", "wat2do.columbia", "cache-entry:2")
+        .unwrap();
+    assert!(worker.process_next_job(true).unwrap());
+    let finished = pool.queue.get(&job.id).unwrap().unwrap();
+    assert_eq!(finished.state, "succeeded", "{:?}", finished.error);
+    assert!(pool.queue.unavailable_accounts(now).unwrap().is_empty());
 }
 
 /// `source` over a page whose elements report layout boxes: none when `data-hidden`.

@@ -156,7 +156,7 @@ fn a_429_or_a_login_wall_is_a_rate_limit_and_other_failures_keep_their_retry_kin
         ),
         (
             json!({"state": "failed", "reason": "invalid_json", "http_status": 200}),
-            SessionKind::PageUnavailable,
+            SessionKind::RateLimited,
             "not valid JSON",
         ),
         (

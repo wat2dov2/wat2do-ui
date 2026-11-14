@@ -232,7 +232,8 @@ pub struct InstagramBrowser {
     pub login_recovery_timeout_seconds: f64,
     pub login_recovery_interval_seconds: f64,
     pub login_recovery_retry_seconds: f64,
-    pub login_recovery_daily_limit: usize,
+    pub login_recovery_max_interval_seconds: f64,
+    pub login_recovery_backoff_window_seconds: f64,
     pub account_login_daily_limit: usize,
     pub login_from_school: String,
     pub login_keychain_service: String,
@@ -344,15 +345,14 @@ pub struct InstagramDigest {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct NotificationRetry {
-    pub schedule_hour: u32,
-    pub schedule_minute: u32,
+    pub interval_minutes: u32,
     pub launch_agent_timeout_seconds: f64,
     pub github_repo: String,
     pub workflow_name: String,
     pub lookback_hours: u32,
-    pub login_first_school: String,
     pub reruns_per_day: usize,
     pub max_reruns_per_run: i64,
+    pub rerun_spacing_minutes: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]

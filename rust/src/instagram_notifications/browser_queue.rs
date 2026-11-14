@@ -7,6 +7,7 @@
 //! used (`~/.local/state/wat2do/instagram-browser/jobs.sqlite3`), written with Python's
 //! JSON formatting, so jobs in flight survive a change of implementation.
 
+use std::collections::BTreeMap;
 use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -18,6 +19,7 @@ use rusqlite::{Connection, OpenFlags, OptionalExtension, Row, params, params_fro
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
+use super::account_login;
 use super::browser_digest::DigestResolution;
 use super::browser_following::{validate_cursor, validate_list_owner};
 use super::browser_ingestion::canonical_target_url;
@@ -994,6 +996,63 @@ impl BrowserJobQueue {
         self.set_setting(&account_login_paused_key(username), Value::Null)
     }
 
+    /// Record that `username` was missing from Brave's switcher at `now` and could not
+    /// be logged in: failed runs for it wait until its login is allowed again or it is
+    /// back (`unavailable_accounts`).
+    pub fn mark_account_missing(&self, username: &str, now: f64) -> BrowserResult<()> {
+        let key = account_missing_key(&account_login::canonical_account(username));
+        self.set_setting(&key, json!(now))
+    }
+
+    /// `username` is in Brave again.
+    pub fn clear_account_missing(&self, username: &str) -> BrowserResult<()> {
+        let key = account_missing_key(&account_login::canonical_account(username));
+        if self.get_setting(&key)?.is_some_and(|at| !at.is_null()) {
+            self.set_setting(&key, Value::Null)?;
+        }
+        Ok(())
+    }
+
+    /// The accounts whose digests cannot run now, each with why: held for a person, or
+    /// missing from Brave with no login allowed before the day's limits reset.
+    pub fn unavailable_accounts(&self, now: f64) -> BrowserResult<BTreeMap<String, String>> {
+        self.retry_storage(|| {
+            let db = self.connect()?;
+            let mut unavailable = BTreeMap::new();
+            let rows: Vec<(String, String)> = {
+                let mut statement = db
+                    .prepare(
+                        "SELECT key,value FROM settings WHERE key LIKE 'account_login_paused:%' \
+                         OR key LIKE 'account_missing:%' ORDER BY key",
+                    )
+                    .map_err(storage)?;
+                let rows = statement
+                    .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+                    .map_err(storage)?;
+                rows.collect::<Result<_, _>>().map_err(storage)?
+            };
+            for (key, raw) in rows {
+                let value = serde_json::from_str::<Value>(&raw).unwrap_or(Value::Null);
+                if let Some(account) = key.strip_prefix("account_login_paused:") {
+                    if let Value::String(reason) = value {
+                        unavailable
+                            .insert(account.to_owned(), format!("held for a person: {reason}"));
+                    }
+                } else if let Some(account) = key.strip_prefix("account_missing:")
+                    && value.is_number()
+                    && !unavailable.contains_key(account)
+                    && account_logins_if_allowed(&db, account, now)?.is_none()
+                {
+                    unavailable.insert(
+                        account.to_owned(),
+                        "missing from Brave until its login is allowed again".to_owned(),
+                    );
+                }
+            }
+            Ok(unavailable)
+        })
+    }
+
     pub fn account_excluded(&self, username: &str) -> BrowserResult<bool> {
         Ok(match self.setting_or("excluded_accounts", json!([]))? {
             Value::Array(accounts) => accounts
@@ -1763,6 +1822,12 @@ impl BrowserJobQueue {
             }
         }
         drop(db);
+        let accounts_missing: Map<String, Value> = self
+            .unavailable_accounts(self.host.time())?
+            .into_iter()
+            .filter(|(account, _)| !accounts_paused.contains_key(account))
+            .map(|(account, reason)| (account, Value::String(reason)))
+            .collect();
         let until = self.setting_or("browser_rate_limit_until", json!(0))?;
         let remaining = pyjson::number(&until).unwrap_or(0.0) - self.host.time();
         let following_until = self.setting_or("following_rate_limit_until", json!(0))?;
@@ -1777,6 +1842,7 @@ impl BrowserJobQueue {
             "worker": self.get_setting("worker")?,
             "paused": self.setting_or("paused", json!(false))?,
             "accounts_paused": accounts_paused,
+            "accounts_missing": accounts_missing,
             "rate_limit": {
                 "retry_at": if pyjson::truthy(&until) { until.clone() } else { Value::Null },
                 "remaining_seconds": if remaining > 0.0 { json!(remaining) } else { json!(0) },
@@ -2219,6 +2285,10 @@ fn stored_setting(db: &Connection, key: &str) -> BrowserResult<Value> {
 
 fn account_login_paused_key(username: &str) -> String {
     format!("account_login_paused:{username}")
+}
+
+fn account_missing_key(username: &str) -> String {
+    format!("account_missing:{username}")
 }
 
 fn write_setting(db: &Connection, key: &str, value: &Value) -> BrowserResult<()> {

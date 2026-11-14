@@ -3663,53 +3663,100 @@ fn test_login_recovery_is_spaced_capped_and_unpauses_on_success() {
 }
 
 #[test]
-fn test_login_recovery_gives_way_to_a_person_at_a_password_prompt() {
+fn test_login_recovery_that_needs_a_person_tries_again_after_the_backoff() {
+    // 11-12/13: a saved profile asking for a password that could not go out left a pause
+    // only a person could lift, and every school's digests failed until one did.
     let env = Env::new();
-    env.queue
-        .set_setting(
-            "paused",
-            json!("Instagram browser requires human account recovery"),
-        )
-        .unwrap();
-    let pool = env.pool().recover_login(|| {
-        Err(BrowserError::session(
-            "Instagram needs a person: it asks for a password",
-        ))
-    });
-    let worker = env.real_worker(pool);
-    assert!(!worker.recover_login(&|| 1000.0).unwrap());
-    assert_eq!(
-        paused(&env.queue),
-        json!("Instagram needs a person: it asks for a password")
-    );
-    // The new pause is not a logout pause, so no further attempts are made.
-    assert!(!worker.recover_login(&|| 99_999.0).unwrap());
-    let attempts = setting(&env.queue, "login_recovery_attempts").unwrap();
-    assert_eq!(attempts.as_array().unwrap().len(), 1);
-}
-
-#[test]
-fn test_login_recovery_stops_after_the_daily_limit() {
-    let env = Env::new();
-    let limit = control().login_recovery_daily_limit;
     env.queue
         .set_setting("paused", json!(LOGGED_OUT_PAUSE))
         .unwrap();
-    // All within the last day; spacing alone would allow another.
-    let attempts: Vec<f64> = (0..limit)
-        .map(|at| 100_000.0 - 80_000.0 + at as f64)
+    let tries = Arc::new(AtomicUsize::new(0));
+    let counted = tries.clone();
+    let pool = env.pool().recover_login(move || {
+        if counted.fetch_add(1, Ordering::SeqCst) == 0 {
+            Err(BrowserError::session(
+                "Instagram needs a person: wat2do.guelph's password was already entered today, or today's account logins are used up",
+            ))
+        } else {
+            Ok("wat2do.tmu".to_owned())
+        }
+    });
+    let worker = env.real_worker(pool);
+    let now = Mutex::new(1000.0);
+    let clock = || *now.lock().unwrap();
+    assert!(!worker.recover_login(&clock).unwrap());
+    // Still a logout pause, so recovery keeps trying.
+    assert_eq!(paused(&env.queue), json!(LOGGED_OUT_PAUSE));
+    assert_eq!(
+        number(setting(&env.queue, "login_recovery_next_at")),
+        1000.0 + control().login_recovery_interval_seconds
+    );
+    *now.lock().unwrap() += control().login_recovery_interval_seconds - 1.0;
+    assert!(!worker.recover_login(&clock).unwrap());
+    assert_eq!(tries.load(Ordering::SeqCst), 1);
+    *now.lock().unwrap() += 1.0;
+    assert!(worker.recover_login(&clock).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+    // The second attempt within the window waits twice as long before the next.
+    assert_eq!(
+        number(setting(&env.queue, "login_recovery_next_at")),
+        clock() + 2.0 * control().login_recovery_interval_seconds
+    );
+}
+
+#[test]
+fn test_login_recovery_backs_off_but_never_stops_for_the_day() {
+    // 11-13: a daily cap spent overnight left Brave logged out from 10:17 to 21:51.
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(LOGGED_OUT_PAUSE))
+        .unwrap();
+    // Thirty attempts in the last day, the latest an hour and a minute ago.
+    let now = 100_000.0;
+    let longest = control().login_recovery_max_interval_seconds;
+    let attempts: Vec<f64> = (0..30)
+        .map(|at| now - longest - 60.0 - f64::from(at) * 600.0)
         .collect();
     env.queue
         .set_setting("login_recovery_attempts", json!(attempts))
         .unwrap();
-    let checks = Checks::default();
-    let check = checks.clone();
-    let pool = env
-        .pool()
-        .recover_login(move || Err(check.fail("over the daily limit")));
+    env.queue
+        .set_setting("login_recovery_next_at", json!(now - 60.0))
+        .unwrap();
+    let pool = env.pool().recover_login(|| Ok("wat2do.ottawa".to_owned()));
     let worker = env.real_worker(pool);
-    assert!(!worker.recover_login(&|| 100_000.0).unwrap());
-    checks.assert_none();
+    assert!(worker.recover_login(&|| now).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+    // However many attempts came before, the next waits at most the longest wait.
+    assert_eq!(
+        number(setting(&env.queue, "login_recovery_next_at")),
+        now + longest
+    );
+}
+
+#[test]
+fn test_recovery_spacing_doubles_within_the_window_up_to_the_longest_wait() {
+    let interval = control().login_recovery_interval_seconds;
+    let window = control().login_recovery_backoff_window_seconds;
+    let longest = control().login_recovery_max_interval_seconds;
+    let now = 1_000_000.0;
+    let at = |ago: &[f64]| ago.iter().map(|ago| json!(now - ago)).collect::<Vec<_>>();
+    assert_eq!(recovery_spacing(&at(&[0.0]), now), interval);
+    assert_eq!(recovery_spacing(&at(&[0.0, 600.0]), now), 2.0 * interval);
+    assert_eq!(
+        recovery_spacing(&at(&[0.0, 600.0, 1200.0]), now),
+        (4.0 * interval).min(longest)
+    );
+    assert_eq!(recovery_spacing(&at(&[0.0; 20]), now), longest);
+    // Attempts older than the window do not count.
+    assert_eq!(
+        recovery_spacing(&at(&[0.0, window, window + 1.0]), now),
+        interval
+    );
+    assert!(
+        longest <= 3600.0,
+        "Brave is never left logged out for hours"
+    );
 }
 
 /// The pause a like or repost leaves when Brave stalls past its cancellation deadline.
@@ -4038,28 +4085,36 @@ fn test_blocked_source_does_not_delay_other_source_pollers() {
 }
 
 #[test]
-fn test_login_recovery_after_a_submitted_password_pauses_without_a_refund() {
+fn test_login_recovery_after_a_submitted_password_waits_out_the_backoff_without_a_refund() {
     let env = Env::new();
     env.queue
         .set_setting("paused", json!(LOGGED_OUT_PAUSE))
         .unwrap();
     let message = "Instagram did not accept the saved login; inspect before retrying";
-    let pool = env
-        .pool()
-        .recover_login(move || Err(BrowserError::of(SessionKind::LoginSubmitted, message)));
+    let tries = Arc::new(AtomicUsize::new(0));
+    let counted = tries.clone();
+    let pool = env.pool().recover_login(move || {
+        counted.fetch_add(1, Ordering::SeqCst);
+        Err(BrowserError::of(SessionKind::LoginSubmitted, message))
+    });
     let worker = env.real_worker(pool);
+    let interval = control().login_recovery_interval_seconds;
     assert!(!worker.recover_login(&|| 1000.0).unwrap());
-    assert_eq!(paused(&env.queue), json!(message));
+    // The pool holds that account for a person; Brave stays logged out, and the next
+    // attempt tries the other saved profiles.
+    assert_eq!(paused(&env.queue), json!(LOGGED_OUT_PAUSE));
     let attempts = setting(&env.queue, "login_recovery_attempts").unwrap();
     assert_eq!(attempts, json!([1000.0]));
     assert_eq!(
         number(setting(&env.queue, "login_recovery_next_at")),
-        1000.0 + control().login_recovery_interval_seconds
+        1000.0 + interval
     );
-    // A person's pause, not a logout: no further attempt.
-    assert!(!worker.recover_login(&|| 99_999.0).unwrap());
+    assert!(!worker.recover_login(&|| 1000.0 + interval - 1.0).unwrap());
+    assert_eq!(tries.load(Ordering::SeqCst), 1);
+    assert!(!worker.recover_login(&|| 1000.0 + interval).unwrap());
+    assert_eq!(tries.load(Ordering::SeqCst), 2);
     let attempts = setting(&env.queue, "login_recovery_attempts").unwrap();
-    assert_eq!(attempts.as_array().unwrap().len(), 1);
+    assert_eq!(attempts.as_array().unwrap().len(), 2);
 }
 
 #[test]

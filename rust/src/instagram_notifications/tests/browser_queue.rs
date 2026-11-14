@@ -3323,6 +3323,52 @@ fn test_status_distinguishes_rate_limit_hold_from_ready_admission() {
 }
 
 #[test]
+fn test_a_missing_account_is_unavailable_only_until_it_may_log_in_or_is_back() {
+    let f = Fixture::with_clock(Clock::new(100_000.0, 0.0));
+    let queue = &f.queue;
+    assert!(queue.unavailable_accounts(100_000.0).unwrap().is_empty());
+    // Its one password entry for the day is spent: it waits.
+    assert!(queue.reserve_account_login("wat2do.sfu", 99_000.0).unwrap());
+    queue
+        .mark_account_missing("sfu.wat2do.io", 99_500.0)
+        .unwrap();
+    // Missing, but it may log in now: a rerun can add it.
+    queue.mark_account_missing("wat2do.ubc", 99_500.0).unwrap();
+    queue
+        .pause_account_login("wat2do.mun", "Instagram needs a person: fixture")
+        .unwrap();
+    let unavailable = queue.unavailable_accounts(100_000.0).unwrap();
+    assert_eq!(
+        unavailable.keys().cloned().collect::<Vec<_>>(),
+        vec!["wat2do.mun", "wat2do.sfu"]
+    );
+    assert!(unavailable["wat2do.mun"].starts_with("held for a person"));
+    assert_eq!(
+        queue.status().unwrap()["accounts_missing"],
+        json!({"wat2do.sfu": "missing from Brave until its login is allowed again"})
+    );
+    // A day after its password went out it may log in again.
+    assert!(
+        !queue
+            .unavailable_accounts(99_000.0 + 86_400.0)
+            .unwrap()
+            .contains_key("wat2do.sfu")
+    );
+    // Back in Brave.
+    queue.clear_account_missing("wat2do.sfu").unwrap();
+    queue.clear_account_missing("wat2do.ubc").unwrap();
+    assert_eq!(
+        queue
+            .unavailable_accounts(100_000.0)
+            .unwrap()
+            .keys()
+            .collect::<Vec<_>>(),
+        vec!["wat2do.mun"]
+    );
+    assert_eq!(queue.status().unwrap()["accounts_missing"], json!({}));
+}
+
+#[test]
 fn test_status_reports_no_rate_limit_before_any_hold() {
     let f = fixture();
     assert_eq!(

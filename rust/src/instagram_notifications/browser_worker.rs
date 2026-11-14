@@ -95,6 +95,21 @@ pub fn is_logout(paused: &Value) -> bool {
         .is_some_and(|paused| paused.starts_with(prefix))
 }
 
+/// How long after the latest of `attempts` (the last day's recovery attempts, it
+/// included) the next may start: `login_recovery_interval_seconds`, doubled for each
+/// other attempt within `login_recovery_backoff_window_seconds`, never more than
+/// `login_recovery_max_interval_seconds`.
+pub fn recovery_spacing(attempts: &[Value], now: f64) -> f64 {
+    let window = control().login_recovery_backoff_window_seconds;
+    let recent = attempts
+        .iter()
+        .filter(|at| pyjson::number(at).is_some_and(|at| now - at < window))
+        .count();
+    let doublings = i32::try_from(recent.saturating_sub(1).min(30)).unwrap_or(30);
+    (control().login_recovery_interval_seconds * 2f64.powi(doublings))
+        .min(control().login_recovery_max_interval_seconds)
+}
+
 /// Run one claimed job on `session`; `on_rate_limit` hears a verified 429 at once.
 pub type ExecuteJob = dyn Fn(
         &BrowserJob,
@@ -368,7 +383,13 @@ impl Worker {
         Batch::new(self.clone(), jobs, allow_engagement).run()
     }
 
-    /// Log back in once if spacing and the daily cap allow; the browser lock is held.
+    /// Log back in once spacing allows; the browser lock is held.
+    ///
+    /// Each attempt waits `login_recovery_interval_seconds` after the last, doubled for
+    /// every other attempt within `login_recovery_backoff_window_seconds` and never more
+    /// than `login_recovery_max_interval_seconds`, so a flagged browser is not hammered
+    /// and Brave is never left logged out for the rest of a day (a daily cap did that on
+    /// 11-13: every school's digests failed from 10:17 to 21:51).
     pub fn attempt_login_recovery(&self, now: &dyn Fn() -> f64) -> BrowserResult<bool> {
         let queue = &self.queue;
         let attempts = super::browser_queue::recent_timestamps(
@@ -377,16 +398,14 @@ impl Worker {
         );
         let next_at =
             pyjson::number(&queue.setting_or("login_recovery_next_at", json!(0))?).unwrap_or(0.0);
-        if attempts.len() >= control().login_recovery_daily_limit || now() < next_at {
+        if now() < next_at {
             return Ok(false);
         }
         let mut spent = attempts.clone();
         spent.push(json!(now()));
+        let spacing = recovery_spacing(&spent, now());
         queue.set_setting("login_recovery_attempts", Value::from(spent))?;
-        queue.set_setting(
-            "login_recovery_next_at",
-            json!(now() + control().login_recovery_interval_seconds),
-        )?;
+        queue.set_setting("login_recovery_next_at", json!(now() + spacing))?;
         match self.tab_pool().recover_login() {
             Ok(username) => {
                 tracing::warn!("Logged back in to Instagram as {username} after a logout");
@@ -399,9 +418,8 @@ impl Worker {
                     || error.is(SessionKind::PageUnavailable)
                     || error.is(SessionKind::TabUnavailable) =>
             {
-                // A Brave hiccup is not a login Instagram saw: it does not use up the
-                // daily cap (timeouts once spent it and left work paused for hours).
-                // Try again soon.
+                // A Brave hiccup is not a login Instagram saw: it does not count toward
+                // the backoff. Try again soon.
                 queue.set_setting("login_recovery_attempts", Value::from(attempts))?;
                 queue.set_setting(
                     "login_recovery_next_at",
@@ -413,9 +431,17 @@ impl Worker {
                 );
                 Ok(false)
             }
+            // No saved profile got back in: one whose password cannot go out today, a
+            // challenge, or a login that did not finish. The pool holds an account whose
+            // password went out or that Instagram challenged; Brave stays logged out and
+            // the next attempt tries the other saved profiles, so every school's work
+            // waits for the backoff, never for a person (11-12/13).
             Err(error) if error.is_session() => {
-                tracing::error!("Instagram login recovery needs a person: {error}");
-                queue.set_setting("paused", Value::from(error.to_string()))?;
+                tracing::error!(
+                    "Instagram login recovery did not get back in ({error}); trying again in {} minutes",
+                    (spacing / 60.0).round()
+                );
+                queue.set_setting("paused", Value::from(LOGGED_OUT_PAUSE))?;
                 Ok(false)
             }
             Err(error) => Err(error),
@@ -461,8 +487,8 @@ impl Worker {
 
     /// Log back in after Instagram logs Brave out; true once browser work may resume.
     ///
-    /// Spaced and capped so a flagged browser is not hammered with logins. A password
-    /// prompt or challenge replaces the pause with one only a person clears.
+    /// Spaced by a growing backoff so a flagged browser is not hammered with logins; an
+    /// account that needs a person is held alone and the other saved profiles are tried.
     pub fn recover_login(&self, now: &dyn Fn() -> f64) -> BrowserResult<bool> {
         if !is_logout(&self.queue.setting_or("paused", Value::Bool(false))?) {
             return Ok(false);
@@ -1188,7 +1214,14 @@ impl Batch {
                 let recovered = if is_logout(&Value::from(error.to_string())) {
                     worker.attempt_login_recovery(&time)?
                 } else if error.to_string() == ACCOUNT_UNAVAILABLE {
-                    worker.attempt_account_login(&first.account_username, &time)?
+                    let added = worker.attempt_account_login(&first.account_username, &time)?;
+                    if !added {
+                        // Reruns of its failed notifications wait until it may log in.
+                        worker
+                            .queue
+                            .mark_account_missing(&first.account_username, time())?;
+                    }
+                    added
                 } else {
                     false
                 };

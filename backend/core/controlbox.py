@@ -615,7 +615,10 @@ class InstagramBrowserControl(_ControlModel):
     login_recovery_timeout_seconds: float = Field(gt=0, le=300)
     login_recovery_interval_seconds: float = Field(ge=0, le=86400)
     login_recovery_retry_seconds: float = Field(ge=0, le=3600)
-    login_recovery_daily_limit: int = Field(ge=0, le=100)
+    # After the base spacing above, each further attempt within the backoff window doubles
+    # the wait, up to the longest wait: Brave never stays logged out for a day.
+    login_recovery_max_interval_seconds: float = Field(gt=0, le=86400)
+    login_recovery_backoff_window_seconds: float = Field(gt=0, le=86400)
     account_login_daily_limit: int = Field(ge=0, le=100)
     login_from_school: str = Field(min_length=1)
     login_keychain_service: str = Field(min_length=1)
@@ -669,6 +672,8 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError(
                 "Login recovery timeout must cover the security code wait and its entry"
             )
+        if self.login_recovery_max_interval_seconds < self.login_recovery_interval_seconds:
+            raise ValueError("Login recovery's longest wait must not be shorter than its spacing")
         if self.viewport_warm_timeout_seconds > self.request_timeout_seconds:
             raise ValueError("Viewport warm timeout must not exceed browser request timeout")
         if self.apple_event_timeout_seconds > self.request_timeout_seconds:
@@ -1339,29 +1344,27 @@ class CompetitorPainPointsControl(_ControlModel):
 
 
 class NotificationRetryControl(_ControlModel):
-    """Daily relogin to Brave and rerun of failed Process Notifications workflow runs.
+    """Rerunning failed Process Notifications workflow runs once they can succeed.
 
-    When a school account drops out of Brave, its browser-run notification job fails.
-    A LaunchAgent fires once a day, logs back in (the login_first_school's saved profile
-    first), and reruns the failed runs so their posts are picked up. The Brave login reuses
-    the capped recovery in instagram_browser; this box only tunes the rerun side.
+    A LaunchAgent runs a pass every interval_minutes. While the Brave worker is paused or
+    down it reruns nothing; otherwise it reruns each failed run whose school account is
+    not held for a person or missing from Brave with no login allowed yet, each run at
+    most max_reruns_per_run times and rerun_spacing_minutes apart.
     """
 
-    # The daily LaunchAgent fires at this local time.
-    schedule_hour: int = Field(ge=0, le=23)
-    schedule_minute: int = Field(ge=0, le=59)
+    interval_minutes: int = Field(ge=1, le=1440)
     launch_agent_timeout_seconds: float = Field(gt=0, le=300)
     # The GitHub repository (owner/name) and the workflow whose failed runs are reran.
     github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     workflow_name: str = Field(min_length=1, max_length=100)
     # Only runs that failed within this many hours are considered.
     lookback_hours: int = Field(ge=1, le=168)
-    # The school whose saved Brave profile is logged in first, before any failed account.
-    login_first_school: str = Field(pattern=r"^[a-z0-9_]{1,23}$")
     # At most this many run reruns are started per day, across every run.
-    reruns_per_day: int = Field(ge=0, le=200)
-    # A run reran this many times across days and still failing is reported, not reran again.
+    reruns_per_day: int = Field(ge=0, le=500)
+    # A run reran this many times and still failing is reported, not reran again.
     max_reruns_per_run: int = Field(ge=1, le=10)
+    # A run is reran again only this long after its last rerun.
+    rerun_spacing_minutes: int = Field(ge=0, le=1440)
 
 
 class NotificationRecordingControl(_ControlModel):

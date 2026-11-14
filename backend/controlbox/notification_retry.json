@@ -1,11 +1,10 @@
 {
-  "schedule_hour": 3,
-  "schedule_minute": 0,
+  "interval_minutes": 10,
   "launch_agent_timeout_seconds": 30,
   "github_repo": "wat2dov2/wat2do-ui",
   "workflow_name": "Process Notifications",
   "lookback_hours": 36,
-  "login_first_school": "guelph",
-  "reruns_per_day": 20,
-  "max_reruns_per_run": 3
+  "reruns_per_day": 150,
+  "max_reruns_per_run": 5,
+  "rerun_spacing_minutes": 30
 }

@@ -548,8 +548,8 @@ pub fn launch_agent_payload(queue: &BrowserJobQueue, binary: &Path, checkout: &P
     ]))
 }
 
-/// The daily LaunchAgent that reruns failed notification runs, on the same binary so
-/// one Automation approval covers both.
+/// The LaunchAgent that reruns failed notification runs every `interval_minutes`, on
+/// the same binary so one Automation approval covers both.
 pub fn retry_launch_agent_payload(binary: &Path, state_directory: &Path, checkout: &Path) -> Plist {
     let retry = crate::controlbox::notification_retry();
     let log = |name: &str| Plist::from(state_directory.join(name).display().to_string());
@@ -574,17 +574,8 @@ pub fn retry_launch_agent_payload(binary: &Path, state_directory: &Path, checkou
             )])),
         ),
         (
-            "StartCalendarInterval".to_owned(),
-            Plist::Dict(BTreeMap::from([
-                (
-                    "Hour".to_owned(),
-                    Plist::Integer(i64::from(retry.schedule_hour)),
-                ),
-                (
-                    "Minute".to_owned(),
-                    Plist::Integer(i64::from(retry.schedule_minute)),
-                ),
-            ])),
+            "StartInterval".to_owned(),
+            Plist::Integer(i64::from(retry.interval_minutes) * 60),
         ),
         ("ProcessType".to_owned(), "Background".into()),
         ("StandardOutPath".to_owned(), log("retry.stdout.log")),
@@ -641,14 +632,14 @@ fn binary_report(services: &dyn CliServices, binary: &Path, replaced: bool) -> V
     })
 }
 
-/// The daily retry runs the worker's installed binary; it never replaces it, so the
+/// The retry LaunchAgent runs the worker's installed binary; it never replaces it, so the
 /// worker's Automation approval is changed only by `install`.
 fn install_retry_schedule(services: &dyn CliServices) -> anyhow::Result<Value> {
     let checkout = installable_checkout(services)?;
     let binary = services.installed_binary();
     if !binary.is_file() {
         anyhow::bail!(
-            "Install the worker first (wat2do-browser install): the daily retry runs its installed binary {}",
+            "Install the worker first (wat2do-browser install): the retry LaunchAgent runs its installed binary {}",
             binary.display()
         );
     }
