@@ -48,7 +48,7 @@ The hook must be true and kind: never claim something about the club the file do
 After the hook, say who you are in a few words: you are {{sender_name}} and you run Wat2Do.
 Beyond that and what the hook says, say nothing about yourself: never which school you go to, or that you are a student there.
 Then get across every one of these facts, as "you", in sentences of your own; they are notes, not lines to read:
-- claim the club: the event we already listed is officially theirs, details confirmed by them, so verified by the club itself (Wat2Do shows no badge for it, so never say it shows up as verified)
+- claim the club: the event we already listed is officially theirs and verified, with a check next to the club's name on Wat2Do, since the club itself runs it
 - free QR code check-in: free tickets students get in one tap, scanned at the door, all free
 - ${{qr_reimbursement_dollars}} of event-related expenses back per attendee scanned in
 - events promoted first to {{school_name}} students, and featured (Wat2Do's featured events, our Instagram event carousels for {{school_name}})
