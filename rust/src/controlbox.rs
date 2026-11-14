@@ -235,6 +235,7 @@ pub struct InstagramBrowser {
     pub login_recovery_max_interval_seconds: f64,
     pub login_recovery_backoff_window_seconds: f64,
     pub account_login_daily_limit: usize,
+    pub account_login_spacing_seconds: f64,
     pub login_from_school: String,
     pub login_keychain_service: String,
     pub login_code_email: String,

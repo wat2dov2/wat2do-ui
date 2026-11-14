@@ -1116,6 +1116,17 @@ impl BrowserJobQueue {
         })
     }
 
+    /// Whether `account_login_spacing_seconds` have passed since the last password went
+    /// out, so a missing account's login may start at `now`.
+    pub fn account_login_spaced(&self, now: f64) -> BrowserResult<bool> {
+        let spent = recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
+        let latest = spent
+            .iter()
+            .filter_map(pyjson::number)
+            .fold(f64::NEG_INFINITY, f64::max);
+        Ok(now - latest >= control().account_login_spacing_seconds)
+    }
+
     /// How many of the day's `account_login_daily_limit` logins are left at `now`.
     pub fn account_logins_left(&self, now: f64) -> BrowserResult<usize> {
         let spent = recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);

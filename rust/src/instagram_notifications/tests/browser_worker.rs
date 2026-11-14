@@ -3937,6 +3937,35 @@ fn test_a_missing_account_is_logged_in_once_a_day_and_capped() {
 }
 
 #[test]
+fn test_missing_accounts_log_in_one_at_a_time() {
+    let env = Env::new();
+    let added = Arc::new(Mutex::new(Vec::new()));
+    let now = Arc::new(Mutex::new(100_000.0));
+    let (record, queue, entered_at) = (added.clone(), env.queue.clone(), now.clone());
+    let pool = env.pool().add_account(move |username| {
+        record.lock().unwrap().push(username.to_owned());
+        assert!(
+            queue
+                .reserve_account_login(username, *entered_at.lock().unwrap())
+                .unwrap()
+        );
+        Ok(())
+    });
+    let worker = env.real_worker(pool);
+    let clock = || *now.lock().unwrap();
+    let spacing = control().account_login_spacing_seconds;
+    assert!(spacing >= 60.0);
+    assert!(worker.attempt_account_login("wat2do.sfu", &clock).unwrap());
+    // Another account's digest right after: it waits, and nothing reaches Instagram.
+    *now.lock().unwrap() += spacing - 1.0;
+    assert!(!worker.attempt_account_login("wat2do.ubc", &clock).unwrap());
+    assert_eq!(*added.lock().unwrap(), vec!["wat2do.sfu"]);
+    *now.lock().unwrap() += 1.0;
+    assert!(worker.attempt_account_login("wat2do.ubc", &clock).unwrap());
+    assert_eq!(*added.lock().unwrap(), vec!["wat2do.sfu", "wat2do.ubc"]);
+}
+
+#[test]
 fn test_a_failed_account_login_leaves_the_job_to_fail() {
     let env = Env::new();
     let pool = env.pool().add_account(|_| {
