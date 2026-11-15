@@ -40,7 +40,6 @@
     "addClubDescription": "此组织将列在 {{school}} 下。",
     "optionalDetailsDescription": "添加链接和组织类型信息，帮助学生识别该组织。",
     "editClub": "编辑组织",
-    "updateClub": "更新组织",
     "editClubDescription": "更新下方的组织信息",
     "clubCreatedMessage": "组织“{{name}}”已成功创建！",
     "clubUpdatedMessage": "组织“{{name}}”已更新。",

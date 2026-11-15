@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Các thay đổi chưa được lưu",
-    "unsavedChangesDescription": "Lưu hoặc hủy các thay đổi cài đặt của bạn.",
     "saveSuccess": "Cài đặt của bạn đã được lưu.",
     "saveError": "Chúng tôi không thể lưu cài đặt của bạn. Thay đổi của bạn vẫn còn ở đây.",
     "tabs": {

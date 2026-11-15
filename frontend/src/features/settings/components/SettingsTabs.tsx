@@ -5,7 +5,7 @@ import { ProfileTab } from "@/features/settings/components/ProfileTab";
 import { NotificationsTab } from "@/features/settings/components/NotificationsTab";
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PromoterProgramTab } from "@/features/settings/components/PromoterProgramTab";
-import { SettingsSaveBar } from "@/features/settings/components/SettingsSaveBar";
+import { SaveBar } from "@/shared/ui/save-bar";
 import type { SettingsForm } from "@/features/settings/hooks/useSettingsForm";
 import { usePromoterState } from "@/features/posters";
 import { QP } from "@/shared/constants/queryParams";
@@ -103,9 +103,9 @@ export function SettingsTabs({ settings }: { settings: SettingsForm }) {
         </Stack>
       </Tabs>
       {settings.isDirty && (
-        <SettingsSaveBar
+        <SaveBar
           isSaving={settings.isSaving}
-          onCancel={settings.cancel}
+          onDiscard={settings.cancel}
           onSave={settings.save}
         />
       )}

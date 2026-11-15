@@ -1,24 +1,26 @@
 import { useId } from "react";
 import NextLink from "next/link";
 import { Trans, useTranslation } from "react-i18next";
-import { QrCode } from "lucide-react";
+import { Plus, QrCode, Trash2 } from "lucide-react";
 import clubPayouts from "../../../../../backend/controlbox/club_payouts.json" with { type: "json" };
-import { useAuthState } from "@/features/auth";
 import {
   useClubPayouts,
   useEventTicketing,
   useTicketDesk,
+  useTicketsClub,
 } from "@/features/tickets/hooks/useTickets";
 import {
   eventTicketsErrors,
+  newTicketRelease,
   ticketPriceCents,
+  type TicketReleaseErrors,
 } from "@/features/tickets/lib/eventTicketsForm";
 import { buildEventOccurrence } from "@/shared/api/eventPayload";
 import { controlBox } from "@/shared/config/controlBox";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { FormGrid, Stack } from "@/shared/layout";
 import { useUIStore } from "@/shared/store/ui.store";
-import type { EventFormData, EventFormTickets } from "@/shared/types";
+import type { EventFormData, EventFormTicketRelease, EventFormTickets } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import {
@@ -30,19 +32,13 @@ import {
   FieldSeparator,
   FieldSet,
 } from "@/shared/ui/field";
-import { FormInput } from "@/shared/ui/form-field";
+import { FormDateTimePicker, FormInput } from "@/shared/ui/form-field";
 import { Link } from "@/shared/ui/link";
 import { Switch } from "@/shared/ui/switch";
 import { formatCents } from "@/shared/utils/currency";
 import { formatOccurrence } from "@/shared/utils/date";
 
-const { minimumPriceCents, maximumPriceCents, maximumCapacity } = controlBox.ticketing;
-
-/** The club the form's event belongs to, when the viewer is on its team: only its team sets tickets. */
-export function useTicketsClub(clubId: number | null) {
-  const { clubs } = useAuthState();
-  return clubs.find((club) => club.id === clubId) ?? null;
-}
+const { minimumPriceCents, maximumPriceCents, maximumCapacity, maximumReleases } = controlBox.ticketing;
 
 interface EventTicketsFieldSetProps {
   /** The saved event being edited; null while it is new. */
@@ -56,8 +52,9 @@ interface EventTicketsFieldSetProps {
 
 /**
  * The event's tickets in its own form: one switch, and once it is on, which
- * dates have tickets, the price (empty is free), the limit and pausing.
- * Only the club's team sees it.
+ * dates have tickets, the releases they go on sale in (each with when, how
+ * many per date and a price, empty for free) and pausing. Only the club's
+ * team sees it.
  */
 export function EventTicketsFieldSet({
   eventId,
@@ -81,15 +78,53 @@ export function EventTicketsFieldSet({
   const errors = showErrors ? eventTicketsErrors(formData) : {};
   const savedTickets = saved.data ?? null;
   const issuedEver = (desk.data?.issued ?? 0) + (desk.data?.refunded ?? 0);
-  // People holding tickets keep them: the price stays, and pausing replaces turning them off.
+  // People holding tickets keep them: pausing replaces turning them off.
   const held = savedTickets !== null && issuedEver > 0;
   const paidAvailable = Boolean(payouts.data?.paid_tickets_enabled);
   const canCharge = Boolean(payouts.data?.charges_enabled);
   const currency = savedTickets?.currency ?? payouts.data?.currency ?? "cad";
-  const priceCents = ticketPriceCents(tickets.price);
+  const paidReleases = tickets.releases.some((release) => (ticketPriceCents(release.price) ?? 0) > 0);
+  // People holding a release's tickets keep it, at its price.
+  const lockedReleases = new Set(
+    (savedTickets?.releases ?? []).filter((release) => release.has_tickets).map((release) => release.id),
+  );
   const datedOccurrences = occurrences
     .map((occurrence, index) => ({ occurrence, index }))
     .filter(({ occurrence }) => occurrence.dtstart_local);
+  const ticketedDates = datedOccurrences.filter(({ occurrence }) => occurrence.tickets).length;
+  const setEnabled = (enabled: boolean) =>
+    update({
+      enabled,
+      // Turning tickets on starts with one release, on sale now.
+      releases: enabled && !tickets.releases.length ? [newTicketRelease(timeZone, new Date())] : tickets.releases,
+    });
+  const updateRelease = (index: number, change: Partial<EventFormTicketRelease>) =>
+    update({
+      releases: tickets.releases.map((release, current) => (current === index ? { ...release, ...change } : release)),
+    });
+  const addRelease = () =>
+    update({ releases: [...tickets.releases, newTicketRelease(timeZone, null)] });
+  const removeRelease = (index: number) =>
+    update({ releases: tickets.releases.filter((_, current) => current !== index) });
+  const releaseError = (errors: TicketReleaseErrors | undefined) => ({
+    onSale:
+      errors?.onSale === "sameTime" ? t("tickets.desk.sameTime") : errors?.onSale ? t("tickets.desk.onSaleRequired") : undefined,
+    quantity:
+      errors?.quantity === "unlimitedNotLast"
+        ? t("tickets.desk.unlimitedNotLast")
+        : errors?.quantity
+          ? t("tickets.desk.capacityRange", { maximum: maximumCapacity })
+          : undefined,
+    price:
+      errors?.price === "mixed"
+        ? t("tickets.desk.mixedPrices")
+        : errors?.price
+          ? t("tickets.desk.priceRange", {
+              minimum: formatCents(minimumPriceCents, currency, i18n.language),
+              maximum: formatCents(maximumPriceCents, currency, i18n.language),
+            })
+          : undefined,
+  });
 
   return (
     <>
@@ -116,7 +151,7 @@ export function EventTicketsFieldSet({
               id={switchId}
               checked={tickets.enabled}
               disabled={held}
-              onCheckedChange={(enabled) => update({ enabled })}
+              onCheckedChange={setEnabled}
             />
           </Field>
 
@@ -144,36 +179,75 @@ export function EventTicketsFieldSet({
                 </Field>
               ) : null}
 
-              <FormGrid>
-                {paidAvailable ? (
-                  <FormInput
-                    name="ticket-price"
-                    label={t("tickets.desk.price", { currency: currency.toUpperCase() })}
-                    inputMode="decimal"
-                    prefix="$"
-                    placeholder={t("common.free")}
-                    disabled={held || !canCharge}
-                    value={tickets.price}
-                    onChange={(value) => update({ price: String(value) })}
-                    touched={tickets.price.trim() !== "" && priceCents === null}
-                    error={t("tickets.desk.priceRange", {
-                      minimum: formatCents(minimumPriceCents, currency, i18n.language),
-                      maximum: formatCents(maximumPriceCents, currency, i18n.language),
-                    })}
-                  />
+              <Field data-slot="ticket-releases">
+                <FieldLabel>{t("tickets.desk.releases")}</FieldLabel>
+                <FieldDescription>{t("tickets.desk.releasesHint")}</FieldDescription>
+                <FieldDescription>{timeZone}</FieldDescription>
+                <FieldGroup>
+                  {tickets.releases.map((release, index) => {
+                    const locked = release.id != null && lockedReleases.has(release.id);
+                    const error = releaseError(errors.releases?.[index]);
+                    return (
+                      <Stack key={release.id ?? `new-${index}`} gap={2}>
+                        <FormGrid columns={paidAvailable ? "threeWithAction" : "withAction"}>
+                          <FormDateTimePicker
+                            name={`ticket-release-${index}-on-sale`}
+                            label={t("tickets.desk.onSale")}
+                            required
+                            value={release.on_sale_local}
+                            onChange={(on_sale_local) => updateRelease(index, { on_sale_local })}
+                            touched={Boolean(error.onSale)}
+                            error={error.onSale}
+                          />
+                          <FormInput
+                            name={`ticket-release-${index}-quantity`}
+                            label={t(ticketedDates > 1 ? "tickets.desk.quantityPerDate" : "tickets.desk.quantity")}
+                            format="integer"
+                            placeholder={t("tickets.desk.capacityPlaceholder")}
+                            value={release.quantity}
+                            onChange={(value) => updateRelease(index, { quantity: String(value) })}
+                            touched={Boolean(error.quantity)}
+                            error={error.quantity}
+                          />
+                          {paidAvailable ? (
+                            <FormInput
+                              name={`ticket-release-${index}-price`}
+                              label={t("tickets.desk.price", { currency: currency.toUpperCase() })}
+                              inputMode="decimal"
+                              prefix="$"
+                              placeholder={t("common.free")}
+                              disabled={locked || !canCharge}
+                              value={release.price}
+                              onChange={(value) => updateRelease(index, { price: String(value) })}
+                              touched={Boolean(error.price)}
+                              error={error.price}
+                            />
+                          ) : null}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onMouseDown={() => removeRelease(index)}
+                            disabled={locked || tickets.releases.length === 1}
+                            aria-label={t("tickets.desk.removeRelease")}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </FormGrid>
+                        {locked ? <FieldDescription>{t("tickets.desk.releaseLocked")}</FieldDescription> : null}
+                      </Stack>
+                    );
+                  })}
+                </FieldGroup>
+                {tickets.releases.length < maximumReleases ? (
+                  <Stack align="start">
+                    <Button type="button" variant="outline" size="sm" onMouseDown={addRelease}>
+                      <Plus className="size-4" />
+                      {t("tickets.desk.addRelease")}
+                    </Button>
+                  </Stack>
                 ) : null}
-                <FormInput
-                  name="ticket-capacity"
-                  label={t("tickets.desk.capacity")}
-                  format="integer"
-                  placeholder={t("tickets.desk.capacityPlaceholder")}
-                  value={tickets.capacity}
-                  onChange={(value) => update({ capacity: String(value) })}
-                  touched={Boolean(errors.capacity)}
-                  error={t("tickets.desk.capacityRange", { maximum: maximumCapacity })}
-                />
-              </FormGrid>
-              {paidAvailable && held ? <FieldDescription>{t("tickets.desk.priceLocked")}</FieldDescription> : null}
+              </Field>
               {paidAvailable && !canCharge && !held ? (
                 <Stack gap={2} align="start">
                   <FieldDescription>{t("tickets.desk.payoutsNeeded")}</FieldDescription>
@@ -184,7 +258,7 @@ export function EventTicketsFieldSet({
                   </Button>
                 </Stack>
               ) : null}
-              {priceCents ? <FieldDescription>{t("tickets.desk.fees")}</FieldDescription> : null}
+              {paidReleases ? <FieldDescription>{t("tickets.desk.fees")}</FieldDescription> : null}
 
               {savedTickets ? (
                 <>

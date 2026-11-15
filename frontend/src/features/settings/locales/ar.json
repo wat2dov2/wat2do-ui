@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "تغييرات غير محفوظة",
-    "unsavedChangesDescription": "احفظ أو ألغ تغييرات الإعدادات الخاصة بك.",
     "saveSuccess": "تم حفظ إعداداتك.",
     "saveError": "لم نتمكن من حفظ إعداداتك. التغييرات الخاصة بك لا تزال هنا.",
     "tabs": {

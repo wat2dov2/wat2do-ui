@@ -47,13 +47,26 @@ export interface EventFormOccurrence {
   tickets: boolean;
 }
 
+/**
+ * One release of an event's tickets as its club sets it: it goes on sale at
+ * its time and stays on sale until it sells out or the date is over.
+ */
+export interface EventFormTicketRelease {
+  /** A saved release's id; absent while it is new. */
+  id?: string;
+  /** When it goes on sale, as typed in the form's time zone ("yyyy-MM-ddTHH:mm"). */
+  on_sale_local: string;
+  /** Tickets for each date with tickets, as typed; empty is no limit. */
+  quantity: string;
+  /** The price as typed; empty is free. */
+  price: string;
+}
+
 /** An event's tickets as its club sets them in the event's form. */
 export interface EventFormTickets {
   enabled: boolean;
-  /** The price as typed; empty is free. */
-  price: string;
-  /** Tickets per date as typed; empty is no limit. */
-  capacity: string;
+  /** In the order they go on sale. */
+  releases: EventFormTicketRelease[];
   /** Nobody new gets a ticket while paused. */
   paused: boolean;
 }

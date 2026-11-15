@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Alterações não salvas",
-    "unsavedChangesDescription": "Salve ou cancele as alterações das suas configurações.",
     "saveSuccess": "Suas configurações foram salvas.",
     "saveError": "Não foi possível salvar suas configurações. Suas alterações ainda estão aqui.",
     "tabs": {

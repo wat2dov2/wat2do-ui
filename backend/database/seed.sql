@@ -902,8 +902,8 @@ WHERE school.id = event.school_id
 
 -- Free QR tickets on a few upcoming club events, so the ticket card, the
 -- club's desk and the door scanner have something to show locally.
-INSERT INTO public.event_ticketing (event_id, price_cents, capacity)
-SELECT event.id, 0, 40
+INSERT INTO public.event_ticketing (event_id)
+SELECT event.id
 FROM public.events AS event
 WHERE event.ingestion_source = 'seed'
   AND event.club_id IS NOT NULL
@@ -922,3 +922,15 @@ SELECT event_date.event_id, event_date.id
 FROM public.event_dates AS event_date
 JOIN public.event_ticketing AS ticketing ON ticketing.event_id = event_date.event_id
 ON CONFLICT (event_date_id) DO NOTHING;
+
+-- Their tickets go on sale in two free releases: 40 per date on sale now,
+-- and 20 more from two days on.
+INSERT INTO public.event_ticket_releases (event_id, on_sale_at, quantity, price_cents)
+SELECT ticketing.event_id, release.on_sale_at, release.quantity, 0
+FROM public.event_ticketing AS ticketing
+CROSS JOIN (VALUES (now() - interval '1 day', 40), (now() + interval '2 days', 20))
+  AS release (on_sale_at, quantity)
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.event_ticket_releases AS existing
+    WHERE existing.event_id = ticketing.event_id
+);

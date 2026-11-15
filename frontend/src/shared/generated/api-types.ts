@@ -2489,11 +2489,7 @@ export interface components {
         ClubEventTicketSummary: {
             /** Format: int64 */
             event_id: number;
-            /** Format: int32 */
-            price_cents: number;
             currency: string | null;
-            /** Format: int32 */
-            capacity: number | null;
             paused: boolean;
             /** Format: int64 */
             issued: number;
@@ -3191,19 +3187,17 @@ export interface components {
             attendees: components["schemas"]["TicketAttendee"][];
         };
         /**
-         * @description How people get into an event, or null when it has no tickets. A price of
-         *     zero means free tickets, one per person and date. `dates` lists only the
-         *     dates that have tickets.
+         * @description How people get into an event, or null when it has no tickets. Free
+         *     tickets are one per person and date. `dates` lists only the dates that
+         *     have tickets, and `releases` goes on sale in order.
          */
         EventTicketingResponse: {
             /** Format: int64 */
             event_id: number;
-            /** Format: int32 */
-            price_cents: number;
+            /** @description Every release is free. */
+            free: boolean;
             /** @description "cad" or "usd" for paid tickets; null for free ones. */
             currency: string | null;
-            /** Format: int32 */
-            capacity: number | null;
             paused: boolean;
             /** @description Some date is open and the event takes tickets right now. */
             available: boolean;
@@ -3212,20 +3206,13 @@ export interface components {
              * @description The most tickets one person gets at a time: one when they are free.
              */
             maximum_per_order: number;
+            releases: components["schemas"]["TicketReleaseResponse"][];
             dates: components["schemas"]["TicketDateAvailability"][];
         };
         /** @description A club turning tickets on for its event, or changing them. */
         EventTicketingUpdate: {
-            /**
-             * Format: int32
-             * @description Zero for free tickets.
-             */
-            price_cents: number;
-            /**
-             * Format: int32
-             * @description Tickets per date; null for no limit.
-             */
-            capacity?: number | null;
+            /** @description At least one release; they go on sale in order of `on_sale_at`. */
+            releases: components["schemas"]["TicketReleaseInput"][];
             paused: boolean;
             /** @description The event's dates that have tickets: at least one. */
             event_date_ids: string[];
@@ -5009,10 +4996,21 @@ export interface components {
             /** Format: date-time */
             dtend_utc: string | null;
             /**
+             * Format: int32
+             * @description What a ticket costs now: the price of the release on sale, or of the
+             *     next one while none is.
+             */
+            price_cents: number;
+            /**
              * Format: int64
-             * @description Null when the event has no capacity limit.
+             * @description Tickets left in that release; null when it has no limit.
              */
             remaining: number | null;
+            /**
+             * Format: date-time
+             * @description When the next release goes on sale, while none is on sale for this date.
+             */
+            on_sale_at: string | null;
             /** @description Someone could take or buy a ticket for this date right now. */
             open: boolean;
         };
@@ -5051,6 +5049,45 @@ export interface components {
         TicketRefundsResponse: {
             /** Format: int64 */
             refunded: number;
+        };
+        /** @description One release as the club sets it; a release already saved keeps its `id`. */
+        TicketReleaseInput: {
+            /** Format: uuid */
+            id?: string | null;
+            /** Format: date-time */
+            on_sale_at: string;
+            /**
+             * Format: int32
+             * @description Tickets for each date with tickets; null for no limit.
+             */
+            quantity?: number | null;
+            /**
+             * Format: int32
+             * @description Zero for free tickets.
+             */
+            price_cents: number;
+        };
+        /**
+         * @description One release of an event's tickets: it goes on sale at `on_sale_at` and
+         *     stays on sale until it sells out or the date is over.
+         */
+        TicketReleaseResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            on_sale_at: string;
+            /**
+             * Format: int32
+             * @description Tickets for each date with tickets; null for no limit.
+             */
+            quantity: number | null;
+            /**
+             * Format: int32
+             * @description Zero for free tickets.
+             */
+            price_cents: number;
+            /** @description Someone got a ticket from it, so its price stays and it can't be removed. */
+            has_tickets: boolean;
         };
         /** @description One admission as its holder, or a club member opening its link, sees it. */
         TicketResponse: {

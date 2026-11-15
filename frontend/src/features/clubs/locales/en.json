@@ -40,7 +40,6 @@
     "addClubDescription": "This club will be listed for {{school}}.",
     "optionalDetailsDescription": "Add links and club type details that help students recognize the club.",
     "editClub": "Edit Club",
-    "updateClub": "Update Club",
     "editClubDescription": "Update the club information below",
     "clubCreatedMessage": "Club \"{{name}}\" has been created successfully!",
     "clubUpdatedMessage": "Club \"{{name}}\" has been updated.",

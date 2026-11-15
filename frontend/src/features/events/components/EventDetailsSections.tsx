@@ -58,8 +58,10 @@ import {
   EventTicketCard,
   HeldTicket,
   TicketDatePicker,
+  currentTicketPriceCents,
   useEventTicketing,
   useFreeTicket,
+  useTicketUnavailableText,
 } from "@/features/tickets";
 import type { ApiEventTicketingResponse } from "@/shared/generated";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
@@ -177,9 +179,9 @@ function EventCostCell({ event }: { event: Event }) {
   // An event with tickets costs what its tickets cost.
   const { data: ticketing } = useEventTicketing(ticketedEventId(event));
   const cost = ticketing
-    ? ticketing.price_cents === 0
+    ? ticketing.free
       ? t("common.free")
-      : formatCents(ticketing.price_cents, ticketing.currency ?? "cad", i18n.language)
+      : formatCents(currentTicketPriceCents(ticketing), ticketing.currency ?? "cad", i18n.language)
     : event.price == null
       ? null
       : event.price === 0
@@ -222,7 +224,7 @@ function EventAdmissionCard({
     .filter((id) => !ticketed.has(id));
   return (
     <Stack gap={6}>
-      {ticketing.price_cents === 0 ? (
+      {ticketing.free ? (
         <EventFreeTicketCard event={event} school={school} ticketing={ticketing} />
       ) : (
         <EventTicketCard event={event} ticketing={ticketing} />
@@ -253,9 +255,12 @@ function EventFreeTicketCard({
   // "Get tickets for another date" stays open until that ticket lands.
   const [addingAt, setAddingAt] = useState<number | null>(null);
   const adding = addingAt === free.held.length;
-  const unavailableText = free.unavailable
-    ? t(`tickets.card.unavailable.${free.unavailable}`)
-    : undefined;
+  const unavailableText = useTicketUnavailableText(event, ticketing, free.unavailable);
+  // The count of what is left rides in the button, when the club set a limit.
+  const getLabel =
+    free.remaining == null
+      ? t("tickets.card.get")
+      : t("tickets.card.getLeft", { count: free.remaining });
   const datePicker = (
     <TicketDatePicker
       event={event}
@@ -276,7 +281,7 @@ function EventFreeTicketCard({
       <Stack gap={3}>
         {datePicker}
         <LoadingButton type="button" isLoading={free.isPending} onClick={free.take}>
-          {t("tickets.card.get")}
+          {getLabel}
         </LoadingButton>
       </Stack>
     ) : (
@@ -304,7 +309,7 @@ function EventFreeTicketCard({
   return (
     <EventRegistrationPrompt
       school={event.school ?? school}
-      label={t("tickets.card.get")}
+      label={getLabel}
       unavailable={free.unavailable !== null}
       unavailableReason={unavailableText}
       isPending={free.isPending}

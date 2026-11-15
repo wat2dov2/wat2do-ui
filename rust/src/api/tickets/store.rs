@@ -1,19 +1,20 @@
 //! Reads and writes of the ticket tables.
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use chrono::{DateTime, Utc};
-use sqlx::{PgExecutor, PgPool};
+use sqlx::{PgConnection, PgExecutor, PgPool};
 use uuid::Uuid;
 
-use super::model::{OrderRow, PaymentAccount, TicketRow, TicketingRow};
+use super::model::{OrderRow, PaymentAccount, ReleaseRow, TicketRow, TicketingRow};
+use super::releases::SeatsTaken;
 use crate::db::read_with_retry;
 
 /// `SELECT` of `event_ticketing` with what follows it.
 macro_rules! ticketing_select {
     ($rest:literal) => {
         concat!(
-            "SELECT event_id, price_cents, currency, capacity, paused, \
+            "SELECT event_id, currency, paused, \
              ARRAY(SELECT d.event_date_id FROM public.event_ticketing_dates d \
                    WHERE d.event_id = event_ticketing.event_id) AS dates \
              FROM public.event_ticketing ",
@@ -45,20 +46,38 @@ macro_rules! order_select {
         concat!(
             "SELECT id, event_id, event_date_id, club_id, buyer_user_id, buyer_email, quantity, \
              unit_amount_cents, currency, status, stripe_account_id, \
-             stripe_checkout_session_id, stripe_payment_intent_id, reserved_until \
+             stripe_checkout_session_id, stripe_payment_intent_id, reserved_until, release_id \
              FROM public.ticket_orders ",
             $rest
         )
     };
 }
 
+/// An event's releases, in the order they go on sale.
+macro_rules! releases_select {
+    () => {
+        "SELECT id, on_sale_at, quantity, price_cents FROM public.event_ticket_releases \
+         WHERE event_id = $1 ORDER BY on_sale_at"
+    };
+}
+
 pub async fn ticketing(db: &PgPool, event_id: i64) -> Result<Option<TicketingRow>, sqlx::Error> {
-    read_with_retry(|| {
+    let row = read_with_retry(|| {
         sqlx::query_as::<_, TicketingRow>(ticketing_select!("WHERE event_id = $1"))
             .bind(event_id)
             .fetch_optional(db)
     })
-    .await
+    .await?;
+    let Some(mut row) = row else {
+        return Ok(None);
+    };
+    row.releases = read_with_retry(|| {
+        sqlx::query_as::<_, ReleaseRow>(releases_select!())
+            .bind(event_id as i32)
+            .fetch_all(db)
+    })
+    .await?;
+    Ok(Some(row))
 }
 
 /// The event's row, locked until the transaction ends, and whether it is
@@ -76,75 +95,124 @@ pub async fn lock_event(
         .await
 }
 
-/// The event's ticketing row, locked until the transaction ends (after
-/// `lock_event`), so two people can never both take the last seat.
+/// The event's ticketing row with its releases, locked until the transaction
+/// ends (after `lock_event`), so two people can never both take the last seat.
 pub async fn lock_ticketing(
-    executor: impl PgExecutor<'_>,
+    connection: &mut PgConnection,
     event_id: i64,
 ) -> Result<Option<TicketingRow>, sqlx::Error> {
-    sqlx::query_as::<_, TicketingRow>(ticketing_select!("WHERE event_id = $1 FOR UPDATE"))
-        .bind(event_id)
-        .fetch_optional(executor)
-        .await
+    let row =
+        sqlx::query_as::<_, TicketingRow>(ticketing_select!("WHERE event_id = $1 FOR UPDATE"))
+            .bind(event_id)
+            .fetch_optional(&mut *connection)
+            .await?;
+    let Some(mut row) = row else {
+        return Ok(None);
+    };
+    row.releases = sqlx::query_as::<_, ReleaseRow>(releases_select!())
+        .bind(event_id as i32)
+        .fetch_all(&mut *connection)
+        .await?;
+    Ok(Some(row))
 }
 
-/// Seats one date has given out: valid tickets, plus seats a buyer still holds
-/// on Stripe Checkout.
+/// Seats each release has given out on each date of an event (`SeatsTaken`):
+/// valid tickets, plus seats a buyer still holds on Stripe Checkout.
 pub async fn seats_taken(
     executor: impl PgExecutor<'_>,
-    event_date_id: Uuid,
+    event_id: i64,
     now: DateTime<Utc>,
-) -> Result<i64, sqlx::Error> {
-    sqlx::query_scalar::<_, i64>(
-        "SELECT (SELECT count(*) FROM public.tickets \
-                 WHERE event_date_id = $1 AND status = 'valid') \
-              + (SELECT coalesce(sum(quantity), 0) FROM public.ticket_orders \
-                 WHERE event_date_id = $1 AND status = 'pending' AND reserved_until > $2)::int8",
+) -> Result<SeatsTaken, sqlx::Error> {
+    let rows: Vec<(Uuid, Uuid, i64)> = sqlx::query_as(
+        "SELECT release_id, event_date_id, sum(seats)::int8 FROM ( \
+             SELECT release_id, event_date_id, count(*) AS seats FROM public.tickets \
+             WHERE event_id = $1 AND status = 'valid' GROUP BY release_id, event_date_id \
+             UNION ALL \
+             SELECT release_id, event_date_id, sum(quantity) FROM public.ticket_orders \
+             WHERE event_id = $1 AND status = 'pending' AND reserved_until > $2 \
+             GROUP BY release_id, event_date_id) AS taken \
+         GROUP BY release_id, event_date_id",
     )
-    .bind(event_date_id)
+    .bind(event_id as i32)
     .bind(now)
-    .fetch_one(executor)
-    .await
+    .fetch_all(executor)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|(release, date, seats)| ((release, date), seats))
+        .collect())
 }
 
-/// `seats_taken` for every date of an event that has given any out.
-pub async fn seats_taken_by_date(
+/// `seats_taken` outside a transaction, as anyone viewing the event reads it.
+pub async fn current_seats_taken(
     db: &PgPool,
     event_id: i64,
     now: DateTime<Utc>,
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = read_with_retry(|| {
-        sqlx::query_as(
-            "SELECT event_date_id, sum(seats)::int8 FROM ( \
-                 SELECT event_date_id, count(*) AS seats FROM public.tickets \
-                 WHERE event_id = $1 AND status = 'valid' GROUP BY event_date_id \
-                 UNION ALL \
-                 SELECT event_date_id, sum(quantity) FROM public.ticket_orders \
-                 WHERE event_id = $1 AND status = 'pending' AND reserved_until > $2 \
-                 GROUP BY event_date_id) AS taken \
-             GROUP BY event_date_id",
-        )
-        .bind(event_id)
-        .bind(now)
-        .fetch_all(db)
-    })
-    .await?;
-    Ok(rows.into_iter().collect())
+) -> Result<SeatsTaken, sqlx::Error> {
+    read_with_retry(|| seats_taken(db, event_id, now)).await
 }
 
-/// Valid tickets per date, the floor a new capacity cannot go under.
-pub async fn valid_tickets_by_date(
+/// Valid tickets per release and date, the floor a release's new limit
+/// cannot go under.
+pub async fn valid_tickets_by_release(
     executor: impl PgExecutor<'_>,
     event_id: i64,
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
-        "SELECT event_date_id, count(*) FROM public.tickets \
-         WHERE event_id = $1 AND status = 'valid' GROUP BY event_date_id",
+) -> Result<SeatsTaken, sqlx::Error> {
+    let rows: Vec<(Uuid, Uuid, i64)> = sqlx::query_as(
+        "SELECT release_id, event_date_id, count(*) FROM public.tickets \
+         WHERE event_id = $1 AND status = 'valid' GROUP BY release_id, event_date_id",
     )
-    .bind(event_id)
+    .bind(event_id as i32)
     .fetch_all(executor)
     .await?;
-    Ok(rows.into_iter().collect())
+    Ok(rows
+        .into_iter()
+        .map(|(release, date, count)| ((release, date), count))
+        .collect())
+}
+
+/// The event's releases someone got a ticket from (whatever became of it),
+/// or is paying for one from now: their price stays and they stay.
+pub async fn releases_in_use(
+    executor: impl PgExecutor<'_>,
+    event_id: i64,
+    now: DateTime<Utc>,
+) -> Result<HashSet<Uuid>, sqlx::Error> {
+    let ids: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT release_id FROM public.tickets WHERE event_id = $1 \
+         UNION \
+         SELECT release_id FROM public.ticket_orders \
+         WHERE event_id = $1 AND (status = 'paid' OR (status = 'pending' AND reserved_until > $2))",
+    )
+    .bind(event_id as i32)
+    .bind(now)
+    .fetch_all(executor)
+    .await?;
+    Ok(ids.into_iter().collect())
+}
+
+/// `releases_in_use` outside a transaction, as anyone viewing the event reads it.
+pub async fn current_releases_in_use(
+    db: &PgPool,
+    event_id: i64,
+    now: DateTime<Utc>,
+) -> Result<HashSet<Uuid>, sqlx::Error> {
+    read_with_retry(|| releases_in_use(db, event_id, now)).await
+}
+
+/// `user_id` is on the club's team.
+pub async fn is_club_member(
+    executor: impl PgExecutor<'_>,
+    club_id: i64,
+    user_id: Uuid,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM public.club_members WHERE club_id = $1 AND user_id = $2)",
+    )
+    .bind(club_id)
+    .bind(user_id)
+    .fetch_one(executor)
+    .await
 }
 
 /// Any ticket was ever issued for the event, or a buyer is on Checkout now,
@@ -304,15 +372,17 @@ pub async fn insert_free_ticket(
     executor: impl PgExecutor<'_>,
     event_id: i64,
     event_date_id: Uuid,
+    release_id: Uuid,
     user_id: Uuid,
     code: &str,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO public.tickets (event_id, event_date_id, holder_user_id, code) \
-         VALUES ($1, $2, $3, $4)",
+        "INSERT INTO public.tickets (event_id, event_date_id, release_id, holder_user_id, code) \
+         VALUES ($1, $2, $3, $4, $5)",
     )
     .bind(event_id as i32)
     .bind(event_date_id)
+    .bind(release_id)
     .bind(user_id)
     .bind(code)
     .execute(executor)

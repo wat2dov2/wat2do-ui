@@ -46,18 +46,56 @@ export function refundRequestState(
 }
 
 export type TicketDate = ApiEventTicketingResponse["dates"][number];
-export type TicketUnavailable = "cancelled" | "paused" | "soldOut" | "closed" | "notYet";
+export type TicketUnavailable =
+  | "cancelled"
+  | "ownEvent"
+  | "paused"
+  | "onSale"
+  | "soldOut"
+  | "closed"
+  | "notYet";
 
-/** Why nobody can get a ticket right now, or null when they can. */
+/**
+ * Why nobody can get a ticket right now, or null when they can. The hosting
+ * club's own team (`ownEvent`) never gets tickets to its event.
+ */
 export function ticketUnavailableReason(
   event: Pick<Event, "cancelled">,
   ticketing: ApiEventTicketingResponse,
   openDates: TicketDate[],
+  ownEvent: boolean,
 ): TicketUnavailable | null {
   if (event.cancelled) return "cancelled";
+  if (ownEvent) return "ownEvent";
   if (ticketing.paused) return "paused";
   if (!openDates.length) {
+    if (ticketsOnSaleAt(ticketing)) return "onSale";
     return ticketing.dates.some((date) => date.remaining === 0) ? "soldOut" : "closed";
   }
   return ticketing.available ? null : "notYet";
+}
+
+/** When the next tickets go on sale, while no date has any on sale; null otherwise. */
+export function ticketsOnSaleAt(ticketing: ApiEventTicketingResponse | null | undefined): string | null {
+  if (!ticketing || ticketing.dates.some((date) => date.open)) return null;
+  const times = ticketing.dates.flatMap((date) => (date.on_sale_at ? [date.on_sale_at] : []));
+  return times.sort((a, b) => Date.parse(a) - Date.parse(b))[0] ?? null;
+}
+
+/** What a ticket costs now: the first open date's price, else the first date's. */
+export function currentTicketPriceCents(ticketing: ApiEventTicketingResponse): number {
+  const date = ticketing.dates.find((candidate) => candidate.open) ?? ticketing.dates[0];
+  return date?.price_cents ?? ticketing.releases[0]?.price_cents ?? 0;
+}
+
+/** "Sat, Nov 15, 9:00 AM" on the event's campus clock, for when tickets go on sale. */
+export function formatOnSale(iso: string, timeZone: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(iso));
 }

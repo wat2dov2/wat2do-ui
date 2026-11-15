@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Modifications non enregistrées",
-    "unsavedChangesDescription": "Enregistrez ou annulez vos modifications de paramètres.",
     "saveSuccess": "Vos paramètres ont été enregistrés.",
     "saveError": "Nous n'avons pas pu enregistrer vos paramètres. Vos modifications sont toujours présentes.",
     "tabs": {

@@ -15,7 +15,7 @@ use uuid::Uuid;
 
 use super::model::CheckInResult;
 use super::stripe::WebhookEvent;
-use super::ticketing::{self, TicketingInput};
+use super::ticketing::{self, ReleaseInput, TicketingInput};
 use super::{admission, door, store};
 use crate::api::AppState;
 use crate::api::auth::User;
@@ -23,8 +23,9 @@ use crate::api::errors::ApiError;
 use crate::api::events::going;
 use crate::api::messages::{
     EVENT_HAS_PAID_TICKETS, TICKET_ALREADY_USED, TICKET_CAPACITY_BELOW_ISSUED,
-    TICKET_DATE_HAS_TICKETS, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED, TICKETS_ALREADY_TAKEN,
-    TICKETS_NOT_FOR_DATE, TICKETS_SOLD_OUT,
+    TICKET_DATE_HAS_TICKETS, TICKET_RELEASE_HAS_TICKETS, TICKETED_DATE_IN_USE,
+    TICKETED_EVENT_CANCELLED, TICKETS_ALREADY_TAKEN, TICKETS_NOT_FOR_DATE, TICKETS_NOT_ON_SALE,
+    TICKETS_OWN_EVENT, TICKETS_SOLD_OUT,
 };
 use crate::settings::{Settings, test_settings};
 
@@ -138,14 +139,43 @@ async fn club_event_at(
     (i64::from(event), dates)
 }
 
-/// Free tickets to `dates`.
+/// Free tickets to `dates`, in one release on sale since an hour ago.
 fn free(dates: &[Uuid], capacity: Option<i32>) -> TicketingInput {
     TicketingInput {
-        price_cents: 0,
-        capacity,
+        releases: vec![ReleaseInput {
+            id: None,
+            on_sale_at: Utc::now() - chrono::Duration::hours(1),
+            quantity: capacity,
+            price_cents: 0,
+        }],
         paused: false,
         dates: dates.to_vec(),
     }
+}
+
+/// `free`, keeping the event's saved release (so its tickets stay with it).
+async fn free_again(
+    db: &PgPool,
+    event: i64,
+    dates: &[Uuid],
+    capacity: Option<i32>,
+) -> TicketingInput {
+    let saved = store::ticketing(db, event).await.unwrap().unwrap();
+    let mut input = free(dates, capacity);
+    input.releases[0].id = Some(saved.releases[0].id);
+    input.releases[0].on_sale_at = saved.releases[0].on_sale_at;
+    input
+}
+
+/// Seats one date has given out across its releases.
+async fn seats(db: &PgPool, event: i64, date: Uuid) -> i64 {
+    store::seats_taken(db, event, Utc::now())
+        .await
+        .unwrap()
+        .iter()
+        .filter(|((_, taken_date), _)| *taken_date == date)
+        .map(|(_, seats)| seats)
+        .sum()
 }
 
 fn detail(error: ApiError) -> String {
@@ -233,8 +263,7 @@ async fn people_racing_for_the_last_seats_never_overfill_a_date() {
     });
     let results = futures_util::future::join_all(takes).await;
     assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 3);
-    let taken = store::seats_taken(&db, dates[0], Utc::now()).await.unwrap();
-    assert_eq!(taken, 3);
+    assert_eq!(seats(&db, event, dates[0]).await, 3);
 }
 
 #[tokio::test]
@@ -288,17 +317,32 @@ async fn tickets_go_only_to_the_dates_the_club_picks() {
         .await
         .unwrap();
     // A date people hold tickets to keeps its tickets.
+    let only_second = free_again(&db, event, &dates[1..], None).await;
     assert_eq!(
         detail(
-            ticketing::configure(&state, event, free(&dates[1..], None), &officer)
+            ticketing::configure(&state, event, only_second, &officer)
                 .await
                 .unwrap_err()
         ),
         TICKET_DATE_HAS_TICKETS
     );
-    let both = ticketing::configure(&state, event, free(&dates, None), &officer)
-        .await
-        .unwrap();
+    // Its release stays too.
+    assert_eq!(
+        detail(
+            ticketing::configure(&state, event, free(&dates, None), &officer)
+                .await
+                .unwrap_err()
+        ),
+        TICKET_RELEASE_HAS_TICKETS
+    );
+    let both = ticketing::configure(
+        &state,
+        event,
+        free_again(&db, event, &dates, None).await,
+        &officer,
+    )
+    .await
+    .unwrap();
     assert_eq!(both.dates.len(), 2);
     let desk = door::desk(&state, event, &officer).await.unwrap();
     assert_eq!(desk.dates.len(), 2);
@@ -360,7 +404,8 @@ async fn capacity_never_drops_below_the_tickets_taken() {
             .await
             .unwrap();
     }
-    let refused = ticketing::configure(&state, event, free(&dates, Some(1)), &officer)
+    let lower = free_again(&db, event, &dates, Some(1)).await;
+    let refused = ticketing::configure(&state, event, lower, &officer)
         .await
         .unwrap_err();
     assert_eq!(detail(refused), TICKET_CAPACITY_BELOW_ISSUED);
@@ -452,11 +497,17 @@ async fn pending_order(
     .execute(db)
     .await
     .unwrap();
-    sqlx::query(
-        "INSERT INTO public.event_ticketing (event_id, price_cents, currency) VALUES ($1, 1500, 'cad')",
+    sqlx::query("INSERT INTO public.event_ticketing (event_id, currency) VALUES ($1, 'cad')")
+        .bind(event as i32)
+        .execute(db)
+        .await
+        .unwrap();
+    let release: Uuid = sqlx::query_scalar(
+        "INSERT INTO public.event_ticket_releases (event_id, on_sale_at, quantity, price_cents) \
+         VALUES ($1, now() - interval '1 day', 10, 1500) RETURNING id",
     )
     .bind(event as i32)
-    .execute(db)
+    .fetch_one(db)
     .await
     .unwrap();
     sqlx::query(
@@ -469,13 +520,15 @@ async fn pending_order(
     .await
     .unwrap();
     let order: Uuid = sqlx::query_scalar(
-        "INSERT INTO public.ticket_orders (event_id, event_date_id, club_id, buyer_user_id, \
-         buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, \
+        "INSERT INTO public.ticket_orders (event_id, event_date_id, release_id, club_id, \
+         buyer_user_id, buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, \
          stripe_checkout_session_id, reserved_until) \
-         VALUES ($1, $2, $3, $4, $5, 2, 1500, 'cad', $6, $7, now() + interval '1 hour') RETURNING id",
+         VALUES ($1, $2, $3, $4, $5, $6, 2, 1500, 'cad', $7, $8, now() + interval '1 hour') \
+         RETURNING id",
     )
     .bind(event as i32)
     .bind(dates[0])
+    .bind(release)
     .bind(club)
     .bind(buyer.id)
     .bind(&buyer.email)
@@ -543,7 +596,7 @@ async fn a_paid_checkout_becomes_tickets_exactly_once() {
     let session = format!("cs_test_{}", Uuid::new_v4().simple());
     let (event, date, order) = pending_order(&db, &officer, &buyer, &session).await;
     // Two seats are held while the buyer is on Checkout.
-    assert_eq!(store::seats_taken(&db, date, Utc::now()).await.unwrap(), 2);
+    assert_eq!(seats(&db, event, date).await, 2);
 
     admission::handle_webhook(&state, paid(&session, order))
         .await
@@ -553,12 +606,27 @@ async fn a_paid_checkout_becomes_tickets_exactly_once() {
         .unwrap();
     let tickets = store::tickets_for_order(&db, order).await.unwrap();
     assert_eq!(tickets.len(), 2, "a repeated webhook issues nothing more");
+    // The tickets come from the order's release, at its price.
+    let releases: Vec<(Uuid, Uuid)> = sqlx::query_as(
+        "SELECT t.release_id, o.release_id FROM public.tickets t \
+         JOIN public.ticket_orders o ON o.id = t.order_id WHERE t.order_id = $1",
+    )
+    .bind(order)
+    .fetch_all(&db)
+    .await
+    .unwrap();
+    assert!(releases.iter().all(|(ticket, ordered)| ticket == ordered));
+    assert!(
+        tickets
+            .iter()
+            .all(|ticket| ticket.unit_amount_cents == Some(1500))
+    );
     assert!(
         tickets
             .iter()
             .all(|ticket| ticket.holder_user_id == buyer.id)
     );
-    assert_eq!(store::seats_taken(&db, date, Utc::now()).await.unwrap(), 2);
+    assert_eq!(seats(&db, event, date).await, 2);
     assert_eq!(
         going::occurrence_ids(&db, buyer.id, event).await.unwrap(),
         [date]
@@ -587,7 +655,7 @@ async fn an_expired_checkout_frees_its_seats() {
     let officer = person(&db, "officer").await;
     let buyer = person(&db, "buyer").await;
     let session = format!("cs_test_{}", Uuid::new_v4().simple());
-    let (_, date, order) = pending_order(&db, &officer, &buyer, &session).await;
+    let (event, date, order) = pending_order(&db, &officer, &buyer, &session).await;
     admission::handle_webhook(
         &state,
         WebhookEvent {
@@ -597,7 +665,7 @@ async fn an_expired_checkout_frees_its_seats() {
     )
     .await
     .unwrap();
-    assert_eq!(store::seats_taken(&db, date, Utc::now()).await.unwrap(), 0);
+    assert_eq!(seats(&db, event, date).await, 0);
 }
 
 #[tokio::test]
@@ -649,6 +717,117 @@ async fn removing_a_date_or_the_event_takes_its_free_tickets_along() {
         .unwrap();
     assert!(
         store::tickets_for_holder(&db, guest.id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[tokio::test]
+async fn releases_add_up_and_each_goes_on_sale_at_its_time() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let (event, dates) = club_event(&db, &officer).await;
+    let mut input = free(&dates, Some(1));
+    input.releases.push(ReleaseInput {
+        id: None,
+        on_sale_at: Utc::now() + chrono::Duration::days(2),
+        quantity: Some(1),
+        price_cents: 0,
+    });
+    let offered = ticketing::configure(&state, event, input, &officer)
+        .await
+        .unwrap();
+    assert_eq!(offered.releases.len(), 2);
+    let (ada, ben) = (person(&db, "ada").await, person(&db, "ben").await);
+    admission::take_free(&state, event, dates[0], &ada)
+        .await
+        .unwrap();
+    // The first release sold out, and the second isn't on sale yet.
+    let waiting = ticketing::current(&state, event).await.unwrap().unwrap();
+    assert_eq!(
+        waiting.dates[0].on_sale_at,
+        Some(waiting.releases[1].on_sale_at)
+    );
+    assert!(!waiting.dates[0].open);
+    assert_eq!(
+        detail(
+            admission::take_free(&state, event, dates[0], &ben)
+                .await
+                .unwrap_err()
+        ),
+        TICKETS_NOT_ON_SALE
+    );
+
+    // Once it goes on sale, its ticket comes from it.
+    let mut moved = waiting
+        .releases
+        .iter()
+        .map(|release| ReleaseInput {
+            id: Some(release.id),
+            on_sale_at: release.on_sale_at,
+            quantity: release.quantity,
+            price_cents: release.price_cents,
+        })
+        .collect::<Vec<_>>();
+    moved[1].on_sale_at = Utc::now() - chrono::Duration::minutes(1);
+    ticketing::configure(
+        &state,
+        event,
+        TicketingInput {
+            releases: moved,
+            paused: false,
+            dates: dates.clone(),
+        },
+        &officer,
+    )
+    .await
+    .unwrap();
+    admission::take_free(&state, event, dates[0], &ben)
+        .await
+        .unwrap();
+    let from: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT release_id FROM public.tickets WHERE event_id = $1 ORDER BY created_at",
+    )
+    .bind(event as i32)
+    .fetch_all(&db)
+    .await
+    .unwrap();
+    assert_eq!(from, [waiting.releases[0].id, waiting.releases[1].id]);
+    let cy = person(&db, "cy").await;
+    assert_eq!(
+        detail(
+            admission::take_free(&state, event, dates[0], &cy)
+                .await
+                .unwrap_err()
+        ),
+        TICKETS_SOLD_OUT
+    );
+    let desk = door::desk(&state, event, &officer).await.unwrap();
+    assert_eq!(desk.dates[0].remaining, Some(0));
+    assert_eq!(desk.dates[1].remaining, Some(2));
+}
+
+#[tokio::test]
+async fn the_hosting_club_team_never_gets_tickets_to_its_own_event() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let (event, dates) = club_event(&db, &officer).await;
+    ticketing::configure(&state, event, free(&dates, None), &officer)
+        .await
+        .unwrap();
+    assert_eq!(
+        detail(
+            admission::take_free(&state, event, dates[0], &officer)
+                .await
+                .unwrap_err()
+        ),
+        TICKETS_OWN_EVENT
+    );
+    assert!(
+        store::tickets_for_holder(&db, officer.id)
             .await
             .unwrap()
             .is_empty()

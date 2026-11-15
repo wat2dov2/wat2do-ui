@@ -40,7 +40,6 @@
     "addClubDescription": "Cette organisation sera répertoriée pour {{school}}.",
     "optionalDetailsDescription": "Ajoutez des liens et des détails sur le type d'organisation qui aident les étudiants à reconnaître l'organisation.",
     "editClub": "Modifier l'organisation",
-    "updateClub": "Mettre à jour l'organisation",
     "editClubDescription": "Mettez à jour les informations de l'organisation ci-dessous",
     "clubCreatedMessage": "L'organisation \"{{name}}\" a été créée avec succès !",
     "clubUpdatedMessage": "L'organisation \"{{name}}\" a été mise à jour.",

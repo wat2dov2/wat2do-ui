@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Unsaved changes",
-    "unsavedChangesDescription": "Save or cancel your settings changes.",
     "saveSuccess": "Your settings were saved.",
     "saveError": "We couldn't save your settings. Your changes are still here.",
     "tabs": {

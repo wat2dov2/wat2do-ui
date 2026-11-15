@@ -58,6 +58,11 @@ export function useForm<T extends object>(
   );
 
   const isValid = Object.keys(errors).length === 0;
+  // Differs from what the form opened with (the saved record, when editing).
+  const isDirty = useMemo(
+    () => JSON.stringify(formData) !== JSON.stringify(getInitialFormData()),
+    [formData, getInitialFormData],
+  );
 
   return {
     formData,
@@ -67,6 +72,7 @@ export function useForm<T extends object>(
     touched,
     handleBlur,
     isValid,
+    isDirty,
     reset,
   };
 }

@@ -113,12 +113,12 @@ test("the door scanner checks in a typed code and says so at a glance", async ({
     json: {
       ticketing: {
         event_id: EVENT_ID,
-        price_cents: 0,
+        free: true,
         currency: null,
-        capacity: 40,
         paused: false,
         available: true,
         maximum_per_order: 1,
+        releases: [{ id: "release-1", on_sale_at: "2030-11-01T12:00:00Z", quantity: 40, price_cents: 0, has_tickets: true }],
         dates: [],
       },
       issued: 12,
@@ -143,7 +143,7 @@ test("the door scanner checks in a typed code and says so at a glance", async ({
   await expect(page.getByText("Already checked in")).toBeVisible();
 });
 
-test("the club's team turns tickets on for some of an event's dates in the event's edit form", async ({ page, next }) => {
+test("the club's team turns tickets on for some of an event's dates in the event's edit form, and saves from the save bar", async ({ page, next }) => {
   await signIn(page, next, [{ id: 7, club_name: "Board Game Club", school: "uwaterloo" }]);
   const dates = ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"];
   const event = {
@@ -161,8 +161,8 @@ test("the club's team turns tickets on for some of an event's dates in the event
   await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}/ticketing`, async (request) => {
     if (request.method === "PUT") {
       saved = await request.json();
-      return { json: { event_id: EVENT_ID, price_cents: 0, currency: null, capacity: 40, paused: false,
-        available: true, maximum_per_order: 1, dates: [] } };
+      return { json: { event_id: EVENT_ID, free: true, currency: null, paused: false, available: true,
+        maximum_per_order: 1, releases: [], dates: [] } };
     }
     return { json: null };
   });
@@ -177,16 +177,62 @@ test("the club's team turns tickets on for some of an event's dates in the event
   await expect(actions.getByRole("link", { name: "Tickets" })).toHaveCount(0);
   await actions.getByRole("button", { name: "Edit" }).click();
   const form = page.getByRole("dialog");
+  const saveBar = page.getByTestId("save-bar");
+  // An edit has no Update button: the save bar shows once something changed.
+  await expect(form.getByRole("button", { name: "Update Event" })).toHaveCount(0);
+  await expect(saveBar).toHaveCount(0);
   const tickets = form.locator('[data-slot="event-tickets"]');
   await expect(tickets.getByRole("link", { name: "Club Payout Terms" })).toBeVisible();
   await tickets.getByRole("switch").first().click();
-  // Free only while paid tickets are off: no price, every date ticked to start with.
+  await expect(saveBar).toBeVisible();
+  // Free only while paid tickets are off: no price, every date ticked to start with,
+  // and one release on sale from now.
   await expect(tickets.getByLabel(/Ticket price/)).toHaveCount(0);
   await expect(tickets.getByRole("checkbox")).toHaveCount(2);
+  await expect(tickets.getByLabel("Tickets per date")).toHaveCount(1);
   await tickets.getByRole("checkbox").nth(1).click();
-  await tickets.getByLabel("Tickets per date").fill("40");
-  await form.getByRole("button", { name: "Update Event" }).click();
+  await tickets.getByRole("textbox", { name: "Tickets", exact: true }).fill("40");
+
+  // A second release needs its own on-sale time before anything saves.
+  await tickets.getByRole("button", { name: "Add a release" }).click();
+  await saveBar.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(tickets.getByText("Pick when this release goes on sale.")).toBeVisible();
+  expect(saved).toBeNull();
+  await tickets.getByRole("button", { name: "Remove release" }).nth(1).click();
+
+  await saveBar.getByRole("button", { name: "Save", exact: true }).click();
   await expect.poll(() => saved).toEqual({
-    price_cents: 0, capacity: 40, paused: false, event_date_ids: [dates[0]],
+    releases: [{ id: null, on_sale_at: expect.any(String), quantity: 40, price_cents: 0 }],
+    paused: false,
+    event_date_ids: [dates[0]],
   });
+});
+
+test("discarding an event edit puts the form back and hides the save bar", async ({ page, next }) => {
+  await signIn(page, next, [{ id: 7, club_name: "Board Game Club", school: "uwaterloo" }]);
+  const event = {
+    id: EVENT_ID, club_id: 7, title: "Board Games Night", school: "uwaterloo", club: "Board Game Club",
+    description: "Games and snacks", location: "SLC Great Hall", map_location: null, price: 0, food: [],
+    registration: false, source_image_url: null, category: null, cancelled: false,
+    added_at: "2030-11-01T00:00:00Z",
+    occurrences: [{
+      id: "00000000-0000-0000-0000-000000000001", event_id: EVENT_ID,
+      dtstart_utc: "2030-11-20T23:00:00Z", dtend_utc: "2030-11-21T02:00:00Z",
+    }],
+  };
+  await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}`, () => ({ json: event }));
+  await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}/ticketing`, () => ({ json: null }));
+  await mockApi(page, next, (url) => url.pathname === "/api/clubs/7/payouts", () => ({ json: {
+    paid_tickets_enabled: false, connected: false, charges_enabled: false, payouts_enabled: false,
+    details_submitted: false, requirements_due: [], country: "CA", currency: "cad",
+  } }));
+
+  await page.goto(`/events/${EVENT_ID}`);
+  await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Edit" }).click();
+  const form = page.getByRole("dialog");
+  const title = form.getByLabel(/Event Title/i);
+  await title.fill("Board Games Night II");
+  await page.getByTestId("save-bar").getByRole("button", { name: "Discard" }).click();
+  await expect(title).toHaveValue("Board Games Night");
+  await expect(page.getByTestId("save-bar")).toHaveCount(0);
 });

@@ -2,11 +2,16 @@
 //! them off, everyone's view of what is left, and the rules that keep an
 //! event's edits and deletion from stranding the tickets people hold.
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use super::model::{EventTicketingResponse, TicketDateAvailability, TicketingRow};
+use super::model::{
+    EventTicketingResponse, ReleaseRow, TicketDateAvailability, TicketReleaseResponse, TicketingRow,
+};
+use super::releases::{self, Offer, SeatsTaken};
 use super::{payouts, store};
 use crate::api::AppState;
 use crate::api::auth::User;
@@ -15,22 +20,32 @@ use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::event_by_id;
 use crate::api::messages::{
     EVENT_ALREADY_PAST, EVENT_HAS_PAID_TICKETS, EVENT_NOT_FOUND, TICKET_CAPACITY_BELOW_ISSUED,
-    TICKET_CAPACITY_TOO_HIGH, TICKET_DATE_HAS_TICKETS, TICKET_DATE_NOT_FOUND, TICKET_PRICE_LOCKED,
-    TICKET_PRICE_OUT_OF_RANGE, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED,
-    TICKETED_EVENT_CLUB_LOCKED, TICKETS_ALREADY_TAKEN, TICKETS_CLOSED, TICKETS_NOT_FOR_DATE,
-    TICKETS_PAUSED, TICKETS_REQUIRE_CLUB,
+    TICKET_DATE_HAS_TICKETS, TICKET_DATE_NOT_FOUND, TICKET_PRICE_LOCKED,
+    TICKET_RELEASE_HAS_TICKETS, TICKET_RELEASE_NOT_FOUND, TICKETED_DATE_IN_USE,
+    TICKETED_EVENT_CANCELLED, TICKETED_EVENT_CLUB_LOCKED, TICKETS_ALREADY_TAKEN, TICKETS_CLOSED,
+    TICKETS_NOT_FOR_DATE, TICKETS_NOT_ON_SALE, TICKETS_OWN_EVENT, TICKETS_PAUSED,
+    TICKETS_REQUIRE_CLUB, TICKETS_SOLD_OUT,
 };
 use crate::api::routes::clubs::managed_club;
 use crate::controlbox::TICKETING;
 
-/// What a club submits for its event; a price of zero means free tickets.
+/// What a club submits for its event.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TicketingInput {
-    pub price_cents: i32,
-    pub capacity: Option<i32>,
+    /// At least one; a saved release keeps its id.
+    pub releases: Vec<ReleaseInput>,
     pub paused: bool,
     /// The event's dates that have tickets.
     pub dates: Vec<Uuid>,
+}
+
+/// One release as the club sets it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReleaseInput {
+    pub id: Option<Uuid>,
+    pub on_sale_at: DateTime<Utc>,
+    pub quantity: Option<i32>,
+    pub price_cents: i32,
 }
 
 /// The event, when `user` is on the team of the club hosting it, or an admin.
@@ -95,13 +110,16 @@ pub fn closes_at(occurrence: &Occurrence) -> DateTime<Utc> {
     occurrence.dtend_utc.unwrap_or(occurrence.dtstart_utc)
 }
 
-/// Why nobody can take a ticket for `occurrence` right now, as an error
+/// The release a ticket to `occurrence` comes from right now, with what it
+/// has left (`None` without a limit), or why nobody can get one: tickets
+/// off this date, paused, the date over, nothing on sale yet, or sold out
 /// (`lock_for_change` already refused a cancelled event).
-pub fn refuse_unless_open(
-    row: &TicketingRow,
+pub fn release_on_sale<'a>(
+    row: &'a TicketingRow,
+    taken: &SeatsTaken,
     occurrence: &Occurrence,
     now: DateTime<Utc>,
-) -> Result<(), ApiError> {
+) -> Result<(&'a ReleaseRow, Option<i64>), ApiError> {
     if !row.dates.contains(&occurrence.id) {
         return Err(ApiError::validation(TICKETS_NOT_FOR_DATE));
     }
@@ -110,6 +128,24 @@ pub fn refuse_unless_open(
     }
     if closes_at(occurrence) <= now {
         return Err(ApiError::validation(TICKETS_CLOSED));
+    }
+    match releases::offer(&row.releases, taken, occurrence.id, now) {
+        Offer::OnSale { release, remaining } => Ok((release, remaining)),
+        Offer::NotYet { .. } => Err(ApiError::validation(TICKETS_NOT_ON_SALE)),
+        Offer::SoldOut => Err(ApiError::validation(TICKETS_SOLD_OUT)),
+    }
+}
+
+/// The hosting club's own team runs the event, so it never takes tickets to it.
+pub async fn refuse_own_event(
+    connection: &mut PgConnection,
+    event: &Event,
+    user: &User,
+) -> Result<(), ApiError> {
+    if let Some(club_id) = event.club_id
+        && store::is_club_member(&mut *connection, club_id, user.id).await?
+    {
+        return Err(ApiError::validation(TICKETS_OWN_EVENT));
     }
     Ok(())
 }
@@ -134,23 +170,13 @@ pub async fn view(
     row: &TicketingRow,
     now: DateTime<Utc>,
 ) -> Result<EventTicketingResponse, ApiError> {
-    let taken = store::seats_taken_by_date(&state.db, event.id, now).await?;
+    let taken = store::current_seats_taken(&state.db, event.id, now).await?;
+    let in_use = store::current_releases_in_use(&state.db, event.id, now).await?;
     let dates: Vec<TicketDateAvailability> = event
         .occurrences
         .iter()
         .filter(|occurrence| row.dates.contains(&occurrence.id))
-        .map(|occurrence| {
-            let remaining = row.capacity.map(|capacity| {
-                (i64::from(capacity) - taken.get(&occurrence.id).copied().unwrap_or(0)).max(0)
-            });
-            TicketDateAvailability {
-                event_date_id: occurrence.id,
-                dtstart_utc: occurrence.dtstart_utc,
-                dtend_utc: occurrence.dtend_utc,
-                remaining,
-                open: closes_at(occurrence) > now && remaining != Some(0),
-            }
-        })
+        .map(|occurrence| date_availability(row, &taken, occurrence, now))
         .collect();
     // A paid event takes money only while its club's Stripe account can.
     let payable = row.is_free()
@@ -163,9 +189,8 @@ pub async fn view(
             });
     Ok(EventTicketingResponse {
         event_id: event.id,
-        price_cents: row.price_cents,
+        free: row.is_free(),
         currency: row.currency.clone(),
-        capacity: row.capacity,
         paused: row.paused,
         available: payable && !row.paused && !event.cancelled && dates.iter().any(|date| date.open),
         maximum_per_order: if row.is_free() {
@@ -173,12 +198,58 @@ pub async fn view(
         } else {
             TICKETING.maximum_tickets_per_order
         },
+        releases: row
+            .releases
+            .iter()
+            .map(|release| TicketReleaseResponse {
+                id: release.id,
+                on_sale_at: release.on_sale_at,
+                quantity: release.quantity,
+                price_cents: release.price_cents,
+                has_tickets: in_use.contains(&release.id),
+            })
+            .collect(),
         dates,
     })
 }
 
-/// Turn tickets on for an event, or change them: the price, the limit,
-/// pausing, and which of its dates have tickets.
+/// What one date with tickets offers at `now`.
+fn date_availability(
+    row: &TicketingRow,
+    taken: &SeatsTaken,
+    occurrence: &Occurrence,
+    now: DateTime<Utc>,
+) -> TicketDateAvailability {
+    let closes = closes_at(occurrence);
+    let offer = releases::offer(&row.releases, taken, occurrence.id, now);
+    let open = closes > now && matches!(offer, Offer::OnSale { .. });
+    let (price_cents, remaining, on_sale_at) = match offer {
+        Offer::OnSale { release, remaining } => (release.price_cents, remaining, None),
+        Offer::NotYet { release } => (
+            release.price_cents,
+            release.quantity.map(i64::from),
+            // A release that opens after the date is over never opens for it.
+            Some(release.on_sale_at).filter(|at| *at < closes),
+        ),
+        Offer::SoldOut => (
+            row.releases.last().map_or(0, |release| release.price_cents),
+            Some(0),
+            None,
+        ),
+    };
+    TicketDateAvailability {
+        event_date_id: occurrence.id,
+        dtstart_utc: occurrence.dtstart_utc,
+        dtend_utc: occurrence.dtend_utc,
+        price_cents,
+        remaining,
+        on_sale_at,
+        open,
+    }
+}
+
+/// Turn tickets on for an event, or change them: its releases, pausing,
+/// and which of its dates have tickets.
 pub async fn configure(
     state: &AppState,
     event_id: i64,
@@ -195,12 +266,6 @@ pub async fn configure(
     if event.has_ended(now) {
         return Err(ApiError::validation(EVENT_ALREADY_PAST));
     }
-    if input
-        .capacity
-        .is_some_and(|capacity| capacity > TICKETING.maximum_capacity)
-    {
-        return Err(ApiError::validation(TICKET_CAPACITY_TOO_HIGH));
-    }
     if input.dates.iter().any(|date| {
         !event
             .occurrences
@@ -209,26 +274,56 @@ pub async fn configure(
     }) {
         return Err(ApiError::validation(TICKET_DATE_NOT_FOUND));
     }
-    let paid_currency = if input.price_cents == 0 {
+    let releases = releases::check(
+        input
+            .releases
+            .iter()
+            .map(|release| ReleaseRow {
+                id: release.id.unwrap_or_else(Uuid::new_v4),
+                on_sale_at: release.on_sale_at,
+                quantity: release.quantity,
+                price_cents: release.price_cents,
+            })
+            .collect(),
+    )?;
+    let paid_currency = if releases.iter().all(|release| release.price_cents == 0) {
         None
     } else {
         payouts::require_paid_tickets(state.settings)?;
-        if !(TICKETING.minimum_price_cents..=TICKETING.maximum_price_cents)
-            .contains(&input.price_cents)
-        {
-            return Err(ApiError::validation(TICKET_PRICE_OUT_OF_RANGE));
-        }
         let account = payouts::ready_account(&state.db, club_id).await?;
         Some(payouts::currency(&account.country))
     };
 
     let mut transaction = state.db.begin().await?;
     let existing = lock_for_change(&mut transaction, event_id).await?;
+    let saved: HashMap<Uuid, &ReleaseRow> = existing
+        .iter()
+        .flat_map(|row| row.releases.iter())
+        .map(|release| (release.id, release))
+        .collect();
+    if input
+        .releases
+        .iter()
+        .filter_map(|release| release.id)
+        .any(|id| !saved.contains_key(&id))
+    {
+        return Err(ApiError::validation(TICKET_RELEASE_NOT_FOUND));
+    }
     if let Some(existing) = &existing {
-        if existing.price_cents != input.price_cents
-            && store::has_tickets_or_holds(&mut *transaction, event_id, None, now).await?
-        {
-            return Err(ApiError::conflict(TICKET_PRICE_LOCKED));
+        let in_use = store::releases_in_use(&mut *transaction, event_id, now).await?;
+        // A release people got tickets from keeps its price, and stays.
+        for id in &in_use {
+            match releases.iter().find(|release| release.id == *id) {
+                None => return Err(ApiError::conflict(TICKET_RELEASE_HAS_TICKETS)),
+                Some(release)
+                    if saved
+                        .get(id)
+                        .is_some_and(|old| old.price_cents != release.price_cents) =>
+                {
+                    return Err(ApiError::conflict(TICKET_PRICE_LOCKED));
+                }
+                Some(_) => {}
+            }
         }
         // A date people hold tickets to keeps them: pausing stops new ones.
         let dropped: Vec<Uuid> = existing
@@ -242,14 +337,16 @@ pub async fn configure(
         {
             return Err(ApiError::conflict(TICKET_DATE_HAS_TICKETS));
         }
-    }
-    if let Some(capacity) = input.capacity
-        && store::valid_tickets_by_date(&mut *transaction, event_id)
-            .await?
-            .values()
-            .any(|count| *count > i64::from(capacity))
-    {
-        return Err(ApiError::conflict(TICKET_CAPACITY_BELOW_ISSUED));
+        let issued = store::valid_tickets_by_release(&mut *transaction, event_id).await?;
+        if issued.iter().any(|((release_id, _), count)| {
+            releases
+                .iter()
+                .find(|release| release.id == *release_id)
+                .and_then(|release| release.quantity)
+                .is_some_and(|quantity| i64::from(quantity) < *count)
+        }) {
+            return Err(ApiError::conflict(TICKET_CAPACITY_BELOW_ISSUED));
+        }
     }
     // A Stripe account settles in one currency: the first paid price fixes it.
     let currency = match (&existing, paid_currency) {
@@ -257,20 +354,18 @@ pub async fn configure(
         (_, currency) => currency,
     };
     sqlx::query(
-        "INSERT INTO public.event_ticketing (event_id, price_cents, currency, capacity, paused, updated_by) \
-         VALUES ($1, $2, $3, $4, $5, $6) \
-         ON CONFLICT (event_id) DO UPDATE SET price_cents = excluded.price_cents, \
-         currency = excluded.currency, capacity = excluded.capacity, paused = excluded.paused, \
-         updated_by = excluded.updated_by",
+        "INSERT INTO public.event_ticketing (event_id, currency, paused, updated_by) \
+         VALUES ($1, $2, $3, $4) \
+         ON CONFLICT (event_id) DO UPDATE SET currency = excluded.currency, \
+         paused = excluded.paused, updated_by = excluded.updated_by",
     )
     .bind(event_id as i32)
-    .bind(input.price_cents)
     .bind(&currency)
-    .bind(input.capacity)
     .bind(input.paused)
     .bind(manager.id)
     .execute(&mut *transaction)
     .await?;
+    save_releases(&mut transaction, event_id, &releases, now).await?;
     sqlx::query(
         "DELETE FROM public.event_ticketing_dates \
          WHERE event_id = $1 AND NOT (event_date_id = ANY($2))",
@@ -288,10 +383,15 @@ pub async fn configure(
     .execute(&mut *transaction)
     .await?;
     // The event's own price and registration flag follow its tickets, so its
-    // card, filters and search show what people pay.
+    // card, filters and search show the least anyone pays.
+    let lowest_cents = releases
+        .iter()
+        .map(|release| release.price_cents)
+        .min()
+        .unwrap_or(0);
     sqlx::query("UPDATE public.events SET price = $2, registration = true WHERE id = $1")
         .bind(event_id as i32)
-        .bind(f64::from(input.price_cents) / 100.0)
+        .bind(f64::from(lowest_cents) / 100.0)
         .execute(&mut *transaction)
         .await?;
     transaction.commit().await?;
@@ -305,6 +405,54 @@ pub async fn configure(
         .await?
         .ok_or_else(|| ApiError::Internal(anyhow::anyhow!("ticketing for {event_id} vanished")))?;
     view(state, &event, &row, now).await
+}
+
+/// Write the event's releases as the club set them: the ones it left out go
+/// (with the checkouts that ended on them, which hold nothing), the rest are
+/// added or changed. Two releases may trade sale times: the unique (event,
+/// time) key is checked when the transaction commits.
+async fn save_releases(
+    connection: &mut PgConnection,
+    event_id: i64,
+    releases: &[ReleaseRow],
+    now: DateTime<Utc>,
+) -> Result<(), sqlx::Error> {
+    let ids: Vec<Uuid> = releases.iter().map(|release| release.id).collect();
+    sqlx::query(
+        "DELETE FROM public.ticket_orders WHERE event_id = $1 AND NOT (release_id = ANY($2)) \
+         AND (status IN ('expired', 'failed') OR (status = 'pending' AND reserved_until <= $3))",
+    )
+    .bind(event_id as i32)
+    .bind(&ids)
+    .bind(now)
+    .execute(&mut *connection)
+    .await?;
+    sqlx::query(
+        "DELETE FROM public.event_ticket_releases WHERE event_id = $1 AND NOT (id = ANY($2))",
+    )
+    .bind(event_id as i32)
+    .bind(&ids)
+    .execute(&mut *connection)
+    .await?;
+    let on_sale: Vec<DateTime<Utc>> = releases.iter().map(|release| release.on_sale_at).collect();
+    let quantities: Vec<Option<i32>> = releases.iter().map(|release| release.quantity).collect();
+    let prices: Vec<i32> = releases.iter().map(|release| release.price_cents).collect();
+    sqlx::query(
+        "INSERT INTO public.event_ticket_releases (id, event_id, on_sale_at, quantity, price_cents) \
+         SELECT id, $1, on_sale_at, quantity, price_cents \
+         FROM unnest($2::uuid[], $3::timestamptz[], $4::int4[], $5::int4[]) \
+           AS release (id, on_sale_at, quantity, price_cents) \
+         ON CONFLICT (id) DO UPDATE SET on_sale_at = excluded.on_sale_at, \
+         quantity = excluded.quantity, price_cents = excluded.price_cents",
+    )
+    .bind(event_id as i32)
+    .bind(&ids)
+    .bind(&on_sale)
+    .bind(&quantities)
+    .bind(&prices)
+    .execute(&mut *connection)
+    .await?;
+    Ok(())
 }
 
 /// Turn tickets off for an event nobody has a ticket to yet; afterwards the
@@ -395,38 +543,105 @@ mod tests {
     use super::*;
     use crate::api::tickets::tests::event_with_dates;
 
-    fn row(paused: bool) -> TicketingRow {
+    fn row(paused: bool, on_sale_at: DateTime<Utc>, quantity: Option<i32>) -> TicketingRow {
         TicketingRow {
             event_id: 42,
-            price_cents: 0,
             currency: None,
-            capacity: None,
             paused,
             dates: vec![Uuid::from_u128(1)],
+            releases: vec![ReleaseRow {
+                id: Uuid::from_u128(7),
+                on_sale_at,
+                quantity,
+                price_cents: 0,
+            }],
+        }
+    }
+
+    fn refusal(result: Result<(&ReleaseRow, Option<i64>), ApiError>) -> String {
+        match result {
+            Err(ApiError::Validation { detail, .. }) => detail,
+            other => panic!("expected a refusal, got {other:?}"),
         }
     }
 
     #[test]
-    fn a_ticketed_date_takes_tickets_until_it_ends() {
+    fn a_ticketed_date_takes_tickets_from_its_release_until_it_ends() {
         let event = event_with_dates(42, &[(2026, 11, 20, 23)]);
         let occurrence = &event.occurrences[0];
         let start = Utc.with_ymd_and_hms(2026, 11, 20, 23, 0, 0).unwrap();
+        let on_sale = start - Duration::days(5);
+        let taken = SeatsTaken::new();
         // The test event runs three hours.
         assert_eq!(closes_at(occurrence), start + Duration::hours(3));
-        assert!(refuse_unless_open(&row(false), occurrence, start).is_ok());
-        assert!(matches!(
-            refuse_unless_open(&row(false), occurrence, start + Duration::hours(3)),
-            Err(ApiError::Validation { detail, .. }) if detail == TICKETS_CLOSED
-        ));
-        assert!(matches!(
-            refuse_unless_open(&row(true), occurrence, start),
-            Err(ApiError::Validation { detail, .. }) if detail == TICKETS_PAUSED
-        ));
-        let mut untouched = row(false);
+        let open = row(false, on_sale, Some(2));
+        let (release, remaining) = release_on_sale(&open, &taken, occurrence, start).unwrap();
+        assert_eq!((release.id, remaining), (Uuid::from_u128(7), Some(2)));
+        assert_eq!(
+            refusal(release_on_sale(
+                &open,
+                &taken,
+                occurrence,
+                start + Duration::hours(3)
+            )),
+            TICKETS_CLOSED
+        );
+        assert_eq!(
+            refusal(release_on_sale(
+                &row(true, on_sale, None),
+                &taken,
+                occurrence,
+                start
+            )),
+            TICKETS_PAUSED
+        );
+        assert_eq!(
+            refusal(release_on_sale(
+                &open,
+                &taken,
+                occurrence,
+                on_sale - Duration::minutes(1)
+            )),
+            TICKETS_NOT_ON_SALE
+        );
+        let full = SeatsTaken::from([((Uuid::from_u128(7), occurrence.id), 2)]);
+        assert_eq!(
+            refusal(release_on_sale(&open, &full, occurrence, start)),
+            TICKETS_SOLD_OUT
+        );
+        let mut untouched = row(false, on_sale, None);
         untouched.dates.clear();
-        assert!(matches!(
-            refuse_unless_open(&untouched, occurrence, start),
-            Err(ApiError::Validation { detail, .. }) if detail == TICKETS_NOT_FOR_DATE
-        ));
+        assert_eq!(
+            refusal(release_on_sale(&untouched, &taken, occurrence, start)),
+            TICKETS_NOT_FOR_DATE
+        );
+    }
+
+    #[test]
+    fn a_date_says_when_its_tickets_go_on_sale() {
+        let event = event_with_dates(42, &[(2026, 11, 20, 23)]);
+        let occurrence = &event.occurrences[0];
+        let on_sale = Utc.with_ymd_and_hms(2026, 11, 15, 14, 0, 0).unwrap();
+        let waiting = row(false, on_sale, Some(30));
+        let before = date_availability(
+            &waiting,
+            &SeatsTaken::new(),
+            occurrence,
+            on_sale - Duration::hours(1),
+        );
+        assert_eq!(
+            (before.open, before.on_sale_at, before.remaining),
+            (false, Some(on_sale), Some(30))
+        );
+        let after = date_availability(&waiting, &SeatsTaken::new(), occurrence, on_sale);
+        assert_eq!((after.open, after.on_sale_at), (true, None));
+        // A release that opens after the date is over never opens for it.
+        let late = row(
+            false,
+            Utc.with_ymd_and_hms(2026, 11, 22, 0, 0, 0).unwrap(),
+            None,
+        );
+        let never = date_availability(&late, &SeatsTaken::new(), occurrence, on_sale);
+        assert_eq!((never.open, never.on_sale_at), (false, None));
     }
 }

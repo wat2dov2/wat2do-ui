@@ -162,8 +162,20 @@ TICKETED_EVENT_CANCELLED = "This event was cancelled"
 TICKET_QUANTITY_TOO_HIGH = "That's more tickets than one order allows"
 TICKET_PRICE_OUT_OF_RANGE = "Enter a ticket price within the allowed range"
 TICKET_CAPACITY_TOO_HIGH = "That capacity is too high"
-TICKET_PRICE_LOCKED = "The price can't change once people have tickets"
-TICKET_CAPACITY_BELOW_ISSUED = "Capacity can't be lower than the tickets already taken for a date"
+TICKET_PRICE_LOCKED = "A release's price can't change once people have tickets from it"
+TICKET_CAPACITY_BELOW_ISSUED = (
+    "A release can't have fewer tickets than people already took from it for a date"
+)
+TICKET_RELEASES_TOO_MANY = "That's more ticket releases than one event can have"
+TICKET_RELEASES_SAME_TIME = "Two releases can't go on sale at the same time"
+TICKET_RELEASES_MIXED_PRICES = "Make every release free, or give every release a price"
+TICKET_RELEASE_UNLIMITED_NOT_LAST = "Only the last release can have no limit"
+TICKET_RELEASE_NOT_FOUND = "That release isn't part of this event"
+TICKET_RELEASE_HAS_TICKETS = (
+    "People have tickets from a release you removed. Keep it, or pause tickets instead."
+)
+TICKETS_NOT_ON_SALE = "Tickets for this date aren't on sale yet"
+TICKETS_OWN_EVENT = "You run this event, so you can't get tickets to it"
 TICKETS_ALREADY_TAKEN = "People already have tickets for this event. Pause tickets instead."
 TICKET_REFUNDS_NEED_CANCELLATION = "Cancel the event first to refund every ticket"
 EVENT_HAS_PAID_TICKETS = (

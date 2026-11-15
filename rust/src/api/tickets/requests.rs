@@ -4,8 +4,8 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::ticketing::TicketingInput;
-use crate::api::body::{Body, Input, Str};
+use super::ticketing::{ReleaseInput, TicketingInput};
+use crate::api::body::{Body, Extra, Input, Str};
 use crate::api::errors::ApiError;
 use crate::api::validation::Limits;
 
@@ -27,16 +27,60 @@ fn optional_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i
 
 /// `EventTicketingUpdate`.
 pub fn ticketing(mut body: Body) -> Result<TicketingInput, ApiError> {
-    let limit = i64::from(i32::MAX);
-    let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
-    let capacity = optional_int(&mut body, "capacity", Limits::default().gt(0).le(limit));
+    let releases = match body.list("releases", 1, usize::MAX, |body, loc, value| {
+        body.nested_item(loc, value, Extra::Forbid, release)
+    }) {
+        Input::Given(releases) => Some(releases),
+        Input::Missing if !body.has_field("releases") => {
+            body.missing("releases");
+            None
+        }
+        Input::Null => {
+            body.type_error("releases", "list_type", "Input should be a valid list");
+            None
+        }
+        Input::Missing => None,
+    };
     let paused = body.required_bool("paused");
     let dates = body.required_uuid_list("event_date_ids", 1, usize::MAX);
     body.finish().map(|()| TicketingInput {
-        price_cents: price_cents.unwrap_or_default() as i32,
-        capacity: capacity.map(|capacity| capacity as i32),
+        releases: releases.unwrap_or_default(),
         paused: paused.unwrap_or_default(),
         dates: dates.unwrap_or_default(),
+    })
+}
+
+/// `TicketReleaseInput`.
+fn release(body: &mut Body) -> Option<ReleaseInput> {
+    let limit = i64::from(i32::MAX);
+    let id = body.uuid("id");
+    let on_sale_at = match body.aware_datetime("on_sale_at") {
+        Input::Given(at) => Some(at),
+        Input::Missing if !body.has_field("on_sale_at") => {
+            body.missing("on_sale_at");
+            None
+        }
+        Input::Null => {
+            body.type_error(
+                "on_sale_at",
+                "datetime_type",
+                "Input should be a valid datetime",
+            );
+            None
+        }
+        Input::Missing => None,
+    };
+    let quantity = optional_int(body, "quantity", Limits::default().gt(0).le(limit));
+    let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
+    body.check_extras();
+    if body.has_issues() {
+        return None;
+    }
+    Some(ReleaseInput {
+        id: id.value(),
+        on_sale_at: on_sale_at?,
+        quantity: quantity.map(|quantity| quantity as i32),
+        price_cents: price_cents? as i32,
     })
 }
 
@@ -75,10 +119,10 @@ pub fn refund_request(mut body: Body) -> Result<Option<String>, ApiError> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{TimeZone, Utc};
     use serde_json::json;
 
     use super::*;
-    use crate::api::body::Extra;
 
     fn body(value: Value) -> Body {
         Body::from_json(value, Extra::Forbid).unwrap()
@@ -95,62 +139,66 @@ mod tests {
     }
 
     #[test]
-    fn ticketing_settings_have_no_limit_unless_given_one() {
+    fn ticketing_settings_read_each_release() {
         let date = Uuid::from_u128(5);
+        let saved = Uuid::from_u128(9);
+        let parsed = ticketing(body(json!({
+            "releases": [
+                {"on_sale_at": "2026-11-10T14:00:00Z", "quantity": 50, "price_cents": 500, "id": saved},
+                {"on_sale_at": "2026-11-15T14:00:00-05:00", "quantity": null, "price_cents": 800}
+            ],
+            "paused": true,
+            "event_date_ids": [date]
+        })))
+        .unwrap();
         assert_eq!(
-            ticketing(body(
-                json!({"price_cents": 0, "paused": false, "event_date_ids": [date]})
-            ))
-            .unwrap(),
+            parsed,
             TicketingInput {
-                price_cents: 0,
-                capacity: None,
-                paused: false,
-                dates: vec![date],
-            }
-        );
-        assert_eq!(
-            ticketing(body(json!({
-                "price_cents": 1500, "capacity": 80, "paused": true, "event_date_ids": [date]
-            })))
-            .unwrap(),
-            TicketingInput {
-                price_cents: 1500,
-                capacity: Some(80),
+                releases: vec![
+                    ReleaseInput {
+                        id: Some(saved),
+                        on_sale_at: Utc.with_ymd_and_hms(2026, 11, 10, 14, 0, 0).unwrap(),
+                        quantity: Some(50),
+                        price_cents: 500,
+                    },
+                    ReleaseInput {
+                        id: None,
+                        on_sale_at: Utc.with_ymd_and_hms(2026, 11, 15, 19, 0, 0).unwrap(),
+                        quantity: None,
+                        price_cents: 800,
+                    },
+                ],
                 paused: true,
                 dates: vec![date],
             }
-        );
-        assert_eq!(
-            ticketing(body(json!({
-                "price_cents": 0, "capacity": null, "paused": false, "event_date_ids": [date]
-            })))
-            .unwrap()
-            .capacity,
-            None
         );
     }
 
     #[test]
     fn ticketing_settings_refuse_bad_values_together() {
         let error = ticketing(body(json!({
-            "price_cents": -1, "capacity": 0, "paused": false, "event_date_ids": [], "extra": 1
+            "releases": [{"on_sale_at": "soon", "quantity": 0, "price_cents": -1, "extra": 1}],
+            "paused": false,
+            "event_date_ids": [],
+            "extra": 1
         })))
         .unwrap_err();
         assert_eq!(
             locs(error),
             [
-                r#"["body","price_cents"]"#,
-                r#"["body","capacity"]"#,
+                r#"["body","releases",0,"on_sale_at"]"#,
+                r#"["body","releases",0,"quantity"]"#,
+                r#"["body","releases",0,"price_cents"]"#,
+                r#"["body","releases",0,"extra"]"#,
                 r#"["body","event_date_ids"]"#,
                 r#"["body","extra"]"#
             ]
         );
-        let missing = ticketing(body(json!({}))).unwrap_err();
+        let missing = ticketing(body(json!({"releases": []}))).unwrap_err();
         assert_eq!(
             locs(missing),
             [
-                r#"["body","price_cents"]"#,
+                r#"["body","releases"]"#,
                 r#"["body","paused"]"#,
                 r#"["body","event_date_ids"]"#
             ]

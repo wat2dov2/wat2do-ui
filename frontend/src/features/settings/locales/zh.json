@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "有未保存的更改",
-    "unsavedChangesDescription": "保存或取消你的设置更改。",
     "saveSuccess": "你的设置已保存。",
     "saveError": "无法保存设置。你的更改仍保留在此处。",
     "tabs": {

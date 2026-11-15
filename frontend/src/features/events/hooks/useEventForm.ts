@@ -223,6 +223,15 @@ export function useEventForm(options: UseEventFormOptions) {
     [setFormData, fixedClubId, resetImage],
   );
 
+  /** Back to what the form opened with: its fields, poster and food draft. */
+  const { reset: resetForm } = form;
+  const resetFood = foodTag.reset;
+  const discard = useCallback(() => {
+    resetForm();
+    resetFood();
+    resetImage(initialData?.source_image_url ?? "");
+  }, [resetForm, resetFood, resetImage, initialData?.source_image_url]);
+
   const markAllFieldsTouched = useCallback(() => {
     // useForm does not expose setTouched; touch each required field via handleBlur.
     const allTouched = markAllFieldsTouchedFn();
@@ -252,6 +261,9 @@ export function useEventForm(options: UseEventFormOptions) {
     touched: form.touched,
     handleBlur: form.handleBlur,
     isValid,
+    /** A field or the poster changed since the form opened. */
+    isDirty: form.isDirty || imageFile != null,
+    discard,
 
     imagePreview,
     imageFile,

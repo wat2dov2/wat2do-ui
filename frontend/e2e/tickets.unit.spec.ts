@@ -9,14 +9,18 @@ import {
 import {
   eventTicketingUpdate,
   eventTicketsErrors,
-  ticketCapacity,
   ticketPriceCents,
+  ticketQuantity,
 } from "../src/features/tickets/lib/eventTicketsForm";
 import {
+  currentTicketPriceCents,
   formatTicketCode,
   refundRequestState,
   ticketCodeFrom,
+  ticketsOnSaleAt,
+  ticketUnavailableReason,
 } from "../src/features/tickets/lib/ticketFormat";
+import type { ApiEventTicketingResponse } from "../src/shared/generated";
 import { api } from "../src/shared/services/apiClient";
 import type { Event, EventFormData } from "../src/shared/types";
 import { formatCents } from "../src/shared/utils/currency";
@@ -108,12 +112,15 @@ test.describe("what the ticket requests send", () => {
     });
   });
 
-  test("free tickets are a price of zero, and settings always say whether they are paused and which dates", async () => {
-    await configureEventTicketing(42, { price_cents: 0, capacity: null, paused: false, event_date_ids: ["date-1"] });
+  test("settings send each release, whether tickets are paused and which dates", async () => {
+    const releases = [
+      { id: null, on_sale_at: "2030-11-10T14:00:00.000Z", quantity: 50, price_cents: 0 },
+    ];
+    await configureEventTicketing(42, { releases, paused: false, event_date_ids: ["date-1"] });
     expect(sent[0]).toEqual({
       method: "PUT",
       path: "/events/42/ticketing",
-      data: { price_cents: 0, capacity: null, paused: false, event_date_ids: ["date-1"] },
+      data: { releases, paused: false, event_date_ids: ["date-1"] },
     });
   });
 
@@ -148,31 +155,50 @@ test.describe("tickets in the event's form", () => {
     price: 0,
     food: [],
     registration: false,
-    tickets: { enabled: true, price: "", capacity: "", paused: false },
+    tickets: {
+      enabled: true,
+      releases: [
+        { id: "release-1", on_sale_local: "2026-11-10T09:00", quantity: "50", price: "5" },
+        { on_sale_local: "2026-11-15T09:00", quantity: "", price: "8" },
+      ],
+      paused: false,
+    },
     ...overrides,
   });
+  const withReleases = (releases: EventFormData["tickets"]["releases"]) =>
+    form({ tickets: { enabled: true, releases, paused: false } });
 
-  test("an empty price is free and an empty limit is no limit", () => {
+  test("an empty price is free and an empty number of tickets is no limit", () => {
     expect(ticketPriceCents("")).toBe(0);
     expect(ticketPriceCents("12,50")).toBe(1250);
     expect(ticketPriceCents("-3")).toBeNull();
-    expect(ticketCapacity("")).toBeNull();
-    expect(ticketCapacity("40")).toBe(40);
-    expect(ticketCapacity("0")).toBeUndefined();
-    expect(ticketCapacity("2.5")).toBeUndefined();
+    expect(ticketQuantity("")).toBeNull();
+    expect(ticketQuantity("40")).toBe(40);
+    expect(ticketQuantity("0")).toBeUndefined();
+    expect(ticketQuantity("2.5")).toBeUndefined();
   });
 
-  test("tickets need a date, a sensible price and limit, and nothing while they are off", () => {
+  test("releases need a time, sensible numbers, one price kind, and no limit only on the last", () => {
     expect(eventTicketsErrors(form())).toEqual({});
+    expect(eventTicketsErrors(withReleases([
+      { on_sale_local: "", quantity: "abc", price: "-1" },
+    ]))).toEqual({ releases: [{ onSale: "required", quantity: "range", price: "range" }] });
+    expect(eventTicketsErrors(withReleases([
+      { on_sale_local: "2026-11-10T09:00", quantity: "", price: "" },
+      { on_sale_local: "2026-11-15T09:00", quantity: "5", price: "" },
+    ]))).toEqual({ releases: [{ quantity: "unlimitedNotLast" }, {}] });
+    expect(eventTicketsErrors(withReleases([
+      { on_sale_local: "2026-11-10T09:00", quantity: "5", price: "" },
+      { on_sale_local: "2026-11-10T09:00", quantity: "5", price: "8" },
+    ]))).toEqual({ releases: [{ onSale: "sameTime", price: "mixed" }, { onSale: "sameTime", price: "mixed" }] });
     const noDates = form({
       occurrences: form().occurrences.map((occurrence) => ({ ...occurrence, tickets: false })),
-      tickets: { enabled: true, price: "abc", capacity: "-1", paused: false },
     });
-    expect(eventTicketsErrors(noDates)).toEqual({ price: true, capacity: true, dates: true });
+    expect(eventTicketsErrors(noDates)).toEqual({ dates: true });
     expect(eventTicketsErrors({ ...noDates, tickets: NO_EVENT_TICKETS })).toEqual({});
   });
 
-  test("the saved event's ticked dates are sent by id, a new one matched by when it starts", () => {
+  test("the saved event's releases and ticked dates are sent, a new date matched by when it starts", () => {
     const saved = {
       id: 42,
       occurrences: [
@@ -181,7 +207,49 @@ test.describe("tickets in the event's form", () => {
         { id: "date-3", dtstart_utc: "2026-12-16T00:00:00Z" },
       ],
     } as unknown as Event;
-    expect(eventTicketingUpdate(saved, form({ tickets: { enabled: true, price: "15", capacity: "80", paused: true } })))
-      .toEqual({ price_cents: 1500, capacity: 80, paused: true, event_date_ids: ["date-1", "date-2"] });
+    expect(eventTicketingUpdate(saved, form({ tickets: { ...form().tickets, paused: true } }))).toEqual({
+      releases: [
+        { id: "release-1", on_sale_at: "2026-11-10T14:00:00.000Z", quantity: 50, price_cents: 500 },
+        { id: null, on_sale_at: "2026-11-15T14:00:00.000Z", quantity: null, price_cents: 800 },
+      ],
+      paused: true,
+      event_date_ids: ["date-1", "date-2"],
+    });
+  });
+});
+
+test.describe("what an event's tickets offer now", () => {
+  const ticketing = (dates: Partial<ApiEventTicketingResponse["dates"][number]>[]): ApiEventTicketingResponse => ({
+    event_id: 42,
+    free: false,
+    currency: "cad",
+    paused: false,
+    available: dates.some((date) => date.open !== false),
+    maximum_per_order: 6,
+    releases: [{ id: "release-1", on_sale_at: "2030-11-10T14:00:00Z", quantity: 50, price_cents: 500, has_tickets: false }],
+    dates: dates.map((date, index) => ({
+      event_date_id: `date-${index}`, dtstart_utc: "2030-11-20T23:00:00Z", dtend_utc: null,
+      price_cents: 500, remaining: 50, on_sale_at: null, open: true, ...date,
+    })),
+  });
+  const running = { cancelled: false };
+
+  test("before any release goes on sale, the earliest on-sale time says when", () => {
+    const waiting = ticketing([
+      { open: false, on_sale_at: "2030-11-15T14:00:00Z" },
+      { open: false, on_sale_at: "2030-11-10T14:00:00Z" },
+    ]);
+    expect(ticketsOnSaleAt(waiting)).toBe("2030-11-10T14:00:00Z");
+    expect(ticketUnavailableReason(running, waiting, [], false)).toBe("onSale");
+    expect(ticketsOnSaleAt(ticketing([{}]))).toBeNull();
+  });
+
+  test("the club's own team never gets tickets, and a ticket costs its release's price", () => {
+    const open = ticketing([{ price_cents: 800 }]);
+    expect(ticketUnavailableReason(running, open, open.dates, true)).toBe("ownEvent");
+    expect(ticketUnavailableReason(running, open, open.dates, false)).toBeNull();
+    expect(currentTicketPriceCents(open)).toBe(800);
+    const soldOut = ticketing([{ open: false, remaining: 0 }]);
+    expect(ticketUnavailableReason(running, soldOut, [], false)).toBe("soldOut");
   });
 });

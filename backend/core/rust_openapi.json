@@ -8928,9 +8928,7 @@
         "description": "One event with tickets on a club's dashboard.",
         "required": [
           "event_id",
-          "price_cents",
           "currency",
-          "capacity",
           "paused",
           "issued",
           "checked_in",
@@ -8942,22 +8940,11 @@
             "type": "integer",
             "format": "int64"
           },
-          "price_cents": {
-            "type": "integer",
-            "format": "int32"
-          },
           "currency": {
             "type": [
               "string",
               "null"
             ]
-          },
-          "capacity": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32"
           },
           "paused": {
             "type": "boolean"
@@ -11019,15 +11006,15 @@
       },
       "EventTicketingResponse": {
         "type": "object",
-        "description": "How people get into an event, or null when it has no tickets. A price of\nzero means free tickets, one per person and date. `dates` lists only the\ndates that have tickets.",
+        "description": "How people get into an event, or null when it has no tickets. Free\ntickets are one per person and date. `dates` lists only the dates that\nhave tickets, and `releases` goes on sale in order.",
         "required": [
           "event_id",
-          "price_cents",
+          "free",
           "currency",
-          "capacity",
           "paused",
           "available",
           "maximum_per_order",
+          "releases",
           "dates"
         ],
         "properties": {
@@ -11035,9 +11022,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "price_cents": {
-            "type": "integer",
-            "format": "int32"
+          "free": {
+            "type": "boolean",
+            "description": "Every release is free."
           },
           "currency": {
             "type": [
@@ -11045,13 +11032,6 @@
               "null"
             ],
             "description": "\"cad\" or \"usd\" for paid tickets; null for free ones."
-          },
-          "capacity": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32"
           },
           "paused": {
             "type": "boolean"
@@ -11065,6 +11045,12 @@
             "format": "int32",
             "description": "The most tickets one person gets at a time: one when they are free."
           },
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketReleaseResponse"
+            }
+          },
           "dates": {
             "type": "array",
             "items": {
@@ -11077,23 +11063,17 @@
         "type": "object",
         "description": "A club turning tickets on for its event, or changing them.",
         "required": [
-          "price_cents",
+          "releases",
           "paused",
           "event_date_ids"
         ],
         "properties": {
-          "price_cents": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Zero for free tickets."
-          },
-          "capacity": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int32",
-            "description": "Tickets per date; null for no limit."
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketReleaseInput"
+            },
+            "description": "At least one release; they go on sale in order of `on_sale_at`."
           },
           "paused": {
             "type": "boolean"
@@ -16797,7 +16777,9 @@
           "event_date_id",
           "dtstart_utc",
           "dtend_utc",
+          "price_cents",
           "remaining",
+          "on_sale_at",
           "open"
         ],
         "properties": {
@@ -16816,13 +16798,26 @@
             ],
             "format": "date-time"
           },
+          "price_cents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "What a ticket costs now: the price of the release on sale, or of the\nnext one while none is."
+          },
           "remaining": {
             "type": [
               "integer",
               "null"
             ],
             "format": "int64",
-            "description": "Null when the event has no capacity limit."
+            "description": "Tickets left in that release; null when it has no limit."
+          },
+          "on_sale_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the next release goes on sale, while none is on sale for this date."
           },
           "open": {
             "type": "boolean",
@@ -16938,6 +16933,78 @@
           "refunded": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "TicketReleaseInput": {
+        "type": "object",
+        "description": "One release as the club sets it; a release already saved keeps its `id`.",
+        "required": [
+          "on_sale_at",
+          "price_cents"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "on_sale_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quantity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Tickets for each date with tickets; null for no limit."
+          },
+          "price_cents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero for free tickets."
+          }
+        }
+      },
+      "TicketReleaseResponse": {
+        "type": "object",
+        "description": "One release of an event's tickets: it goes on sale at `on_sale_at` and\nstays on sale until it sells out or the date is over.",
+        "required": [
+          "id",
+          "on_sale_at",
+          "quantity",
+          "price_cents",
+          "has_tickets"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "on_sale_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quantity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Tickets for each date with tickets; null for no limit."
+          },
+          "price_cents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero for free tickets."
+          },
+          "has_tickets": {
+            "type": "boolean",
+            "description": "Someone got a ticket from it, so its price stays and it can't be removed."
           }
         }
       },

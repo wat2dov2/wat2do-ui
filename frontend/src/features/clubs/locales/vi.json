@@ -40,7 +40,6 @@
     "addClubDescription": "Tổ chức này sẽ được liệt kê cho {{school}}.",
     "optionalDetailsDescription": "Thêm liên kết và chi tiết loại tổ chức giúp sinh viên nhận diện tổ chức.",
     "editClub": "Chỉnh sửa Tổ chức",
-    "updateClub": "Cập nhật Tổ chức",
     "editClubDescription": "Cập nhật thông tin tổ chức bên dưới",
     "clubCreatedMessage": "Tổ chức \"{{name}}\" đã được tạo thành công!",
     "clubUpdatedMessage": "Tổ chức \"{{name}}\" đã được cập nhật.",

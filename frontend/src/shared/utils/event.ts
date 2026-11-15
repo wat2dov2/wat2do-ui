@@ -75,17 +75,23 @@ function eventOccurrencesToFormOccurrences(
 /** No tickets: what a new event's form starts with. */
 export const NO_EVENT_TICKETS: EventFormTickets = {
   enabled: false,
-  price: "",
-  capacity: "",
+  releases: [],
   paused: false,
 };
 
-function eventTicketsToForm(ticketing: ApiEventTicketingResponse | null): EventFormTickets {
+function eventTicketsToForm(
+  ticketing: ApiEventTicketingResponse | null,
+  timeZone: string,
+): EventFormTickets {
   if (!ticketing) return NO_EVENT_TICKETS;
   return {
     enabled: true,
-    price: ticketing.price_cents > 0 ? (ticketing.price_cents / 100).toFixed(2) : "",
-    capacity: ticketing.capacity ? String(ticketing.capacity) : "",
+    releases: ticketing.releases.map((release) => ({
+      id: release.id,
+      on_sale_local: toLocalDateTimeInput(release.on_sale_at, timeZone),
+      quantity: release.quantity ? String(release.quantity) : "",
+      price: release.price_cents > 0 ? (release.price_cents / 100).toFixed(2) : "",
+    })),
     paused: ticketing.paused,
   };
 }
@@ -112,7 +118,7 @@ export function eventToFormData(
     food: event.food || [],
     registration: event.registration ?? false,
     source_image_url: event.source_image_url ?? null,
-    tickets: eventTicketsToForm(ticketing),
+    tickets: eventTicketsToForm(ticketing, timeZone),
   };
 }
 
