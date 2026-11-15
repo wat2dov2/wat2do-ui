@@ -129,6 +129,8 @@
       "pauseHint": "Nadie más podrá conseguir un boleto hasta que desactives esta opción.",
       "fees": "Stripe se queda con cerca del 2.9% + 30 centavos de cada pedido. Tu organización recibe el resto.",
       "goingNote": "Todas las personas que ya dijeron que van a ir reciben un boleto por correo.",
+      "payoutNoteSetup": "Cada registro de entrada válido le da a tu organización {{rate}}. Al activar los boletos, tu organización acepta los <terms>Términos de pago a organizaciones</terms>.",
+      "payoutNote": "Cada registro de entrada válido le da a tu organización {{rate}}, según los <terms>Términos de pago a organizaciones</terms>.",
       "payoutsNeeded": "Primero configura los cobros, para que el dinero tenga a dónde llegar.",
       "setUpPayouts": "Configurar cobros",
       "turnOnFree": "Activar boletos gratis",

@@ -1,0 +1,445 @@
+{
+  "legal": {
+    "common": {
+      "effective": "Epektibo simula {{date}}",
+      "summary": "Ang maikling bersyon",
+      "contents": "Nasa pahinang ito",
+      "translationNotice": "Ibinibigay namin ang salin na ito para sa iyong kaginhawahan. Kung may pagkakaiba ito sa bersyong Ingles, ang bersyong Ingles ang masusunod."
+    },
+    "clubPayoutTerms": {
+      "title": "Mga Tuntunin sa Bayad sa Organisasyon",
+      "intro": "Ipinapaliwanag ng mga tuntuning ito kung paano binabayaran ng Wat2Do ang mga organisasyon ng estudyante para sa mga taong chine-check in nila sa kanilang mga kaganapan gamit ang libreng QR na tiket ng Wat2Do. Kasunduan ito sa pagitan ng organisasyon mo at ng Wat2Do, kaya basahin ito nang buo bago umasa rito ang organisasyon mo. Kung may hindi malinaw, mag-email sa amin sa <email>{{email}}</email>.",
+      "summary": {
+        "rate": "Binabayaran ng Wat2Do ang organisasyon mo ng {{rate}} para sa bawat kwalipikadong dadalo na chine-check in mo sa pasukan gamit ang QR na tiket ng Wat2Do.",
+        "who": "Kailangang may na-claim na Wat2Do page ang organisasyon mo sa isa sa mga paaralang ito: {{schools}}. Kailangang nakalista ang kaganapan sa Wat2Do at naka-on ang mga tiket ng Wat2Do para dito.",
+        "attendees": "Isang beses lang binibilang ang bawat dadalo sa bawat petsa ng kaganapan, at dapat ay gamit niya ang sarili niyang Wat2Do account at personal siyang nasa kaganapan.",
+        "limits": "Hanggang {{maxPerEventDate}} ang ibinabayad namin para sa isang petsa ng kaganapan, at hanggang {{monthlyCap}} sa isang organisasyon para sa isang buwan ng kalendaryo.",
+        "payment": "Ipinapadala namin ang mga payout ng bawat buwan sa pamamagitan ng Interac e-Transfer, hindi lalampas sa ika-{{payoutDay}} ng susunod na buwan.",
+        "fraud": "Hindi kami nagbabayad para sa mga check-in na hindi tunay na dadalo. Puwede naming i-hold ang isang payout habang sinusuri namin ito, at bawiin ang mga payout para sa mga check-in na lumabas na hindi pala dapat bilangin.",
+        "leave": "Puwedeng umalis ang organisasyon mo anumang oras, at mababayaran pa rin ito para sa mga kwalipikadong check-in nito bago ito umalis.",
+        "full": "May mga detalyeng hindi kasama sa buod na ito. Ang buong tuntunin sa ibaba ang masusunod."
+      },
+      "sections": {
+        "about": {
+          "title": "Sino ang saklaw ng mga tuntuning ito",
+          "p1": "Pinapatakbo ng Wat2Do (“kami”) ang wat2do.io, kung saan nalalaman ng mga estudyante kung ano ang nangyayari sa kanilang paaralan. Sa mga tuntuning ito, ang “organisasyon mo” (o “ikaw”) ay tumutukoy sa isang organisasyon, samahan, team o grupo ng mga estudyante na na-claim na ang Wat2Do page, at kumikilos sa pamamagitan ng mga taong namamahala sa page na iyon sa Wat2Do (ang mga “tagapamahala ng organisasyon”).",
+          "p2": "Ang tagapamahala ng organisasyon na nag-on ng mga tiket ng Wat2Do para sa isang kaganapan, o nagpadala sa amin ng mga detalye ng payout, ay tumatanggap sa mga tuntuning ito para sa organisasyon, at kinukumpirma niyang siya ay hindi bababa sa 18 taong gulang at may pahintulot na gumawa ng desisyong iyon para dito. Kung hindi ito totoo para sa iyo, huwag munang sumali hangga't hindi pumapayag ang isang taong may ganoong kakayahan.",
+          "p3": "Mga payout sa organisasyon lang ang saklaw ng mga tuntuning ito. Ipinapaliwanag ng aming <dataPolicy>Patakaran sa Data</dataPolicy> kung paano namin pinangangasiwaan ang personal na impormasyon."
+        },
+        "eligibility": {
+          "title": "Aling mga organisasyon ang puwedeng sumali",
+          "p1": "Puwedeng sumali ang organisasyon mo habang totoo ang lahat ng ito:",
+          "conditions": {
+            "school": "Isa itong organisasyon, samahan, team o grupo na pinapatakbo ng mga estudyante sa isa sa mga paaralang ito: {{schools}}.",
+            "claimed": "Na-claim na ng isang tagapamahala ng organisasyon ang page nito sa Wat2Do.",
+            "rules": "Ito mismo ang nagpapatakbo ng sarili nitong mga kaganapan, at sinusunod nito ang mga patakaran ng paaralan at ng student union nito para sa mga organisasyon, kasama ang mga patakaran nila tungkol sa pera ng organisasyon.",
+            "transfer": "Kaya nitong tumanggap ng Interac e-Transfer sa Canadian dollar."
+          },
+          "p2": "Hindi puwedeng sumali ang mga departamento, opisina at serbisyo ng unibersidad, mga negosyo, at mga tao o kumpanyang nagpapatakbo ng mga kaganapan para kumita. Puwede kaming magdagdag ng mga paaralan sa hinaharap sa pamamagitan ng pag-update ng mga tuntuning ito."
+        },
+        "events": {
+          "title": "Aling mga kaganapan ang binibilang",
+          "p1": "Kumikita ng payout ang isang kaganapan kapag totoo ang lahat ng ito:",
+          "conditions": {
+            "listed": "Ang organisasyon mo ang nagpapatakbo nito, at nakalista ito sa Wat2Do page ng organisasyon mo kasama ang tunay nitong pamagat, petsa, oras at lugar.",
+            "tickets": "Naka-on ang mga tiket ng Wat2Do para dito bago ito magsimula, at chine-check in mo ang mga tao gamit ang check-in scanner ng Wat2Do.",
+            "inPerson": "Personal itong ginaganap, sa lugar at oras na nakalista, at puwedeng pumunta ang mga estudyante ng paaralan mo.",
+            "rules": "Legal ito at sumusunod sa mga patakaran ng paaralan mo at ng student union."
+          },
+          "p2": "Hindi kumikita ng payout ang mga kaganapang ito, kahit mag-scan ka ng mga tiket dito:",
+          "excluded": {
+            "meetings": "Anumang uri ng pulong, kasama ang mga general, executive at taunang pulong, mga eleksyon at mga info session.",
+            "practices": "Mga practice, training, aralin, klase, tutoring, study session at office hours.",
+            "recruiting": "Mga kaganapan para sa recruitment, interview at audition.",
+            "sales": "Mga mesa para sa pagbebenta at fundraising.",
+            "religious": "Mga serbisyong panrelihiyon.",
+            "private": "Mga kaganapang para lang sa executive team mo o sa isang listahan ng mga imbitado.",
+            "notHeld": "Mga kaganapang hindi naganap ayon sa nakalista sa Wat2Do."
+          }
+        },
+        "scans": {
+          "title": "Aling mga check-in ang binibilang",
+          "p1": "Itinuturing lang na kwalipikadong scan ang isang check-in, at kumikita lang ito ng payout, kapag totoo ang lahat ng ito:",
+          "conditions": {
+            "ticket": "Ang tiket ay valid na tiket ng Wat2Do para sa petsang iyon ng kaganapan, at nasa sariling Wat2Do account ng dadalo.",
+            "present": "Personal na nasa kaganapan ang dadalo kapag ini-scan mo siya.",
+            "scanner": "Chine-check in ito ng isang tagapamahala ng organisasyon gamit ang check-in ng Wat2Do, sa pag-scan o pag-type ng code nito, habang bukas ang check-in para sa petsang iyon: mula {{opensHours}} bago ang simula hanggang {{closesHours}} pagkatapos ng pagtatapos.",
+            "first": "Ito ang unang check-in ng account na iyon para sa petsang iyon ng kaganapan. Kapag na-scan muli ang parehong tao, isang beses lang ito bibilangin.",
+            "notManager": "Hindi namamahala sa organisasyon mo sa Wat2Do ang dadalo."
+          },
+          "p2": "Hindi kailanman binibilang ang mga ito:",
+          "excluded": {
+            "absent": "Mga tiket na na-scan nang wala roon ang dadalo, gaya ng mga screenshot o code na ipinadala nang maaga.",
+            "fakeAccounts": "Mga account na ginawa, binili o kontrolado ng organisasyon mo o ng mga miyembro nito para magdagdag ng check-in, at mga account na hindi pag-aari ng isang tunay na tao.",
+            "paid": "Mga check-in ng mga taong binayaran o ginantimpalaan para magpa-check in, sa halip na pumunta para sa kaganapan.",
+            "undone": "Mga check-in na in-undo, at mga tiket na na-refund o kinansela.",
+            "tests": "Mga check-in na ginawa para subukan ang scanner.",
+            "otherTools": "Mga check-in na ginawa sa labas ng sariling scanner ng Wat2Do, o sa anumang awtomatikong paraan."
+          },
+          "p3": "Ipinapakita ng panel ng organisasyon mo ang mga check-in para sa bawat petsa ng kaganapan. Binabayaran namin ang mga kwalipikadong scan sa aming mga rekord kapag tapos na ang mga pagsusuring inilarawan sa “Pagsusuri at pandaraya”."
+        },
+        "amount": {
+          "title": "Magkano ang ibinabayad namin",
+          "p1": "Nagbabayad kami ng {{rate}} para sa bawat kwalipikadong scan.",
+          "p2": "Hanggang {{maxPerEventDate}} lang ang ibinabayad namin para sa alinmang isang petsa ng kaganapan, at hanggang {{monthlyCap}} lang sa organisasyon mo para sa lahat ng petsa ng kaganapan nito sa isang buwan ng kalendaryo. Hindi kumikita ng payout ang mga kwalipikadong scan na lampas sa alinmang limit.",
+          "p3": "Ang rate at mga limit na naaangkop sa isang petsa ng kaganapan ay ang mga nasa tuntuning ito sa petsang iyon.",
+          "p4": "Ang mga payout ay pampromosyong bayad mula sa Wat2Do sa organisasyon mo. Hindi ito sahod o bayad para sa serbisyo, at hindi nito ginagawang organizer, host o sponsor ng kaganapan mo ang Wat2Do. Hiwalay ito sa pera mula sa mga bayad na tiket, na diretsong napupunta sa sariling Stripe account ng organisasyon mo."
+        },
+        "payment": {
+          "title": "Paano at kailan kami nagbabayad",
+          "p1": "Pagkatapos ng bawat buwan ng kalendaryo, binibilang namin ang mga kwalipikadong scan ng organisasyon mo para sa mga petsa ng kaganapan sa buwang iyon, at nag-e-email kami ng buod sa mga tagapamahala ng organisasyon mo.",
+          "p2": "Hindi lalampas sa ika-{{payoutDay}} ng susunod na buwan, ipinapadala namin ang payout sa pamamagitan ng Interac e-Transfer, sa Canadian dollar, sa payout email ng organisasyon mo, at kami ang nagbabayad ng anumang singil ng aming bangko sa pagpapadala nito. Kung hindi business day sa Ontario ang araw na iyon, ipinapadala namin ito nang hindi lalampas sa susunod na business day.",
+          "p3": "Isang payout email ang ibinibigay sa amin ng organisasyon mo. Dapat itong makatanggap ng Interac e-Transfer at pag-aari ng organisasyon mo, o ng sinumang humahawak ng pera ng organisasyon mo ayon sa mga patakaran ng student union mo, gaya ng opisina ng union para sa mga organisasyon o ng treasurer ng organisasyon mo. Kung wala kaming payout email, hihingin namin ito sa mga tagapamahala ng organisasyon mo. Kapag na-deposit na ang isang payout, hindi na ito mababawi, kaya sabihan kami agad kapag nagbago ang payout email mo.",
+          "expired": "Kung mag-expire ang isang e-Transfer bago may mag-deposit nito, ipapadala namin ito muli kapag nakumpirma ng organisasyon mo ang payout email nito.",
+          "p4": "Kung hindi pa nagbibigay sa amin ang organisasyon mo ng paraan para mabayaran ito sa loob ng {{deadlineDays}} pagkatapos ng isang petsa ng kaganapan, mapapaso na ang payout para sa petsang iyon at hindi na namin ito utang.",
+          "p5": "Dapat pangasiwaan ng organisasyon mo ang mga payout ayon sa mga patakaran ng paaralan at ng student union nito, halimbawa sa pagdeposito ng mga ito sa sariling account ng organisasyon. Kung kailangang aprubahan ng union mo ang pera o sponsorship mula sa labas, kunin muna ang pag-aprubang iyon bago tumanggap ng mga payout ang organisasyon mo."
+        },
+        "taxes": {
+          "title": "Mga buwis",
+          "p1": "Responsibilidad ng organisasyon mo ang anumang buwis sa mga payout nito, at kasama na sa bawat payout ang anumang GST o HST na naaangkop dito. Hindi kami nagkakaltas ng buwis maliban kung iniaatas ito sa amin ng batas.",
+          "p2": "Kung iniaatas ng batas na i-report namin ang mga payout sa isang awtoridad sa buwis, halimbawa sa isang T4A slip, puwede naming hingin sa organisasyon mo ang impormasyong kailangan namin, kasama ang Social Insurance Number kung iniaatas lang ito ng batas, at i-hold ang mga payout nito hangga't wala pa sa amin ang impormasyong iyon."
+        },
+        "reviews": {
+          "title": "Pagsusuri at pandaraya",
+          "p1": "Sinusuri namin ang mga check-in bago kami magbayad, at puwede naming suriin muli ang mga ito sa ibang pagkakataon.",
+          "p2": "Puwede naming hingan ang organisasyon mo ng makatwirang patunay na naganap ang isang kaganapan ayon sa nakalista at tunay ang mga check-in nito, gaya ng mga larawan, mga post tungkol sa kaganapan o bilang ng mga dumalo. Kung hindi ito ipadala ng organisasyon mo sa loob ng {{proofDays}} mula sa aming hiling, puwede naming ituring na hindi kwalipikado ang mga check-in na iyon.",
+          "p3": "Puwede naming i-hold ang payout para sa mga check-in na sinusuri namin nang hanggang {{holdDays}} pagkatapos ng petsa ng payout nito, at pagkatapos ay bayaran ang mga makikita naming kwalipikado. Hindi kami nagbabayad para sa mga check-in na makatwiran naming pinaniniwalaang hindi kwalipikadong scan.",
+          "clawback": "Kung, sa loob ng {{clawbackDays}} pagkatapos magbayad, matuklasan namin na may kasamang mga check-in na hindi kwalipikadong scan ang isang payout, may utang sa amin ang organisasyon mo na katumbas ng halagang iyon. Ibabawas muna namin ito sa mga susunod na payout ng organisasyon mo, at hihilingin naming bayaran ng organisasyon mo ang anumang matitira. Babayaran pa rin ang mga payout para sa iba pa nitong kwalipikadong check-in.",
+          "p4": "Kung sadyang lumabag ang isang organisasyon sa mga tuntuning ito o lumabag nang higit sa isang beses, halimbawa sa pag-scan ng mga pekeng account o ng mga tiket na walang dadalo, puwede namin itong alisin sa programa, kanselahin ang mga payout na utang pa para sa mga kaganapang sangkot, at limitahan ang paggamit nito ng Wat2Do.",
+          "p5": "Ginagawa namin ang mga desisyong ito nang makatwiran at may mabuting loob, at sinasabi namin sa organisasyon mo ang dahilan."
+        },
+        "disputes": {
+          "title": "Mga tanong at hindi pagkakasundo",
+          "p1": "Kung sa tingin mo ay mali ang isang payout, mag-email sa <email>{{email}}</email> sa loob ng {{disputeDays}} pagkatapos namin itong ipadala, o pagkatapos ng petsa ng payout nito kung hindi ito kailanman dumating. Banggitin ang kaganapan at sabihin sa amin kung ano sa tingin mo ang mali.",
+          "p2": "Sinisiyasat namin ito, kasama ang isang taong hindi gumawa ng unang desisyon kung posible, at sumasagot kami ng aming desisyon sa loob ng {{replyDays}}. Kung may utang pa kami sa organisasyon mo, babayaran namin ito kasabay ng susunod na payout o mas maaga pa.",
+          "talkFirst": "Bago dumulog sa korte ang alinmang panig tungkol sa mga tuntuning ito, susubukan muna nating dalawa nang may mabuting loob na ayusin ang usapin sa pamamagitan ng email sa loob ng 30 araw."
+        },
+        "responsibilities": {
+          "title": "Mga responsibilidad ng organisasyon mo",
+          "p1": "Responsable ang organisasyon mo sa mga kaganapan nito, kasama ang pagpaplano, kaligtasan, accessibility, pagkain, alak, kapasidad, insurance at mga refund, at sa pagsunod sa batas at sa mga patakaran ng paaralan mo.",
+          "p2": "Panatilihing tama ang mga listing ng kaganapan mo, at sabihin sa mga dadalo na ii-scan mo ang kanilang mga tiket ng Wat2Do sa pasukan.",
+          "p3": "Gamitin lang ang mga detalye ng dadalo na nakikita mo sa Wat2Do para patakbuhin ang kaganapan mo. Huwag itong kopyahin, ibenta o ibahagi.",
+          "p4": "Panatilihing ligtas ang login mo sa Wat2Do, at sabihan kami sa <email>{{email}}</email> kung sa tingin mo ay may gumamit nang mali sa page ng organisasyon mo.",
+          "describe": "Ilarawan nang tama ang mga payout: napupunta ang mga ito sa organisasyon mo, hindi sa mga taong chine-check in mo. Huwag ipahiwatig na ang paaralan mo o ang student union ang nagpapatakbo o nag-eendorso sa Wat2Do o sa mga payout na ito."
+        },
+        "names": {
+          "title": "Mga pangalan at logo",
+          "p1": "Puwede naming sabihin sa publiko na kasali ang organisasyon mo, gamit ang pangalan at logo sa Wat2Do page nito. Puwede mong sabihin sa mga tao na gumagamit ng mga tiket ng Wat2Do ang kaganapan mo, pero huwag gamitin ang pangalan o logo ng Wat2Do sa paraang nagpapahiwatig na kami ang nagpapatakbo o nag-i-sponsor ng kaganapan mo."
+        },
+        "privacy": {
+          "title": "Personal na impormasyon",
+          "p1": "Para patakbuhin ang mga payout, ginagamit namin ang mga rekord ng check-in ng organisasyon mo, ang mga account na may hawak ng mga tiket na ini-scan mo, ang mga pangalan at email address ng mga tagapamahala ng organisasyon mo, at ang payout email ng organisasyon mo. Ginagamit namin ang mga ito para bilangin at suriin ang mga scan, magpadala ng mga payout, pigilan ang pandaraya at itago ang mga rekord na iniaatas ng batas.",
+          "p2": "Ipinapaliwanag ng aming <dataPolicy>Patakaran sa Data</dataPolicy> kung paano namin pinangangasiwaan ang personal na impormasyon, kasama ang sa mga dadalo, at ang mga pagpipilian ng mga tao tungkol dito."
+        },
+        "changes": {
+          "title": "Mga pagbabago at pag-alis",
+          "p1": "Puwede naming baguhin ang mga tuntuning ito, kasama ang rate at mga limit, o tuluyang itigil ang mga payout. Ipinopost namin ang bawat pagbabago sa pahinang ito na may bagong petsa ng pagkabisa.",
+          "p2": "Ang pagbabagong magpapababa sa ibinabayad sa mga organisasyon, o ang pagtigil ng mga payout, ay naaangkop lang sa mga petsa ng kaganapan na hindi bababa sa {{noticeDays}} pagkatapos namin itong i-post, at nag-e-email kami sa mga tagapamahala ng organisasyon kapag ipinost namin ito. Naaangkop ang iba pang pagbabago sa mga petsa ng kaganapan pagkatapos namin itong i-post.",
+          "p3": "Walang pagbabagong magpapababa sa mga payout para sa mga petsa ng kaganapan bago ito magkabisa.",
+          "p4": "Puwedeng umalis ang organisasyon mo anumang oras sa pamamagitan ng pag-email sa <email>{{email}}</email> o pag-off ng mga tiket ng Wat2Do para sa mga kaganapan nito. Babayaran pa rin namin ang mga kwalipikadong scan mula bago ito umalis.",
+          "survival": "Kung umalis ang organisasyon mo o matigil ang mga payout, patuloy na naaangkop ang mga bahagi ng mga tuntuning ito tungkol sa mga payout na nakuha na, mga buwis, pagsusuri, pagbawi ng mga payout, at ang bahaging legal.",
+          "archive": "Itinatago namin ang mga nakaraang bersyon ng mga tuntuning ito, at padadalhan ka namin ng kopya kung mag-email ka sa amin."
+        },
+        "legal": {
+          "title": "Ang bahaging legal",
+          "p1": "Independiyente sa isa't isa ang organisasyon mo at ang Wat2Do. Walang anuman sa mga tuntuning ito ang gumagawa sa alinman sa dalawa na partner, employer, empleyado o ahente ng isa pa.",
+          "p2": "Ibinibigay namin ang check-in scanner ng Wat2Do at ang iba pang bahagi ng site kung ano ang mga ito. Sinisikap naming panatilihing gumagana ang check-in pero hindi namin maipapangakong hindi ito kailanman papalya. Kung pumalya ito habang nagaganap ang kaganapan mo, puwede naming bilangin ang mga check-in na maipapakita sa amin ng organisasyon mo sa ibang paraan, pero hindi namin ito obligasyon.",
+          "p3": "Hangga't pinapayagan ng batas, ang kabuuang pananagutan ng bawat panig sa isa't isa sa ilalim ng mga tuntuning ito ay limitado sa mas malaki sa pagitan ng {{liabilityFloor}} at ng mga payout na ibinayad o inutang namin sa organisasyon mo sa loob ng 12 buwan bago ang paghahabol, at walang panig na mananagot sa mga hindi direktang pagkalugi, gaya ng nawalang kita o gastos ng isang kaganapan. Hindi naaangkop ang mga limitasyong ito sa mga payout na utang namin, o sa pandaraya o sadyang maling gawain.",
+          "p4": "Ang batas ng Ontario at ang mga pederal na batas ng Canada na naaangkop sa Ontario ang namamahala sa mga tuntuning ito, at ang mga korte ng Ontario ang magpapasya sa anumang hindi pagkakasundo tungkol dito.",
+          "delays": "Walang panig na mananagot sa mga pagkaantalang dulot ng mga pangyayaring labas sa makatwiran nitong kontrol, gaya ng mga outage sa aming mga provider o bangko, pero hindi kinakansela ng mga pangyayaring iyon ang mga payout na nakuha na.",
+          "p5": "Kung matuklasan ng korte na hindi maipapatupad ang isang bahagi ng mga tuntuning ito, patuloy na naaangkop ang iba pa. Kung hindi namin agad ipatupad ang isang tuntunin, puwede pa rin namin itong ipatupad sa ibang pagkakataon. Hindi puwedeng ilipat ng organisasyon mo sa iba ang mga karapatan nito sa ilalim ng mga tuntuning ito.",
+          "notices": "Ipinapadala namin ang mga abiso tungkol sa mga tuntuning ito sa mga Wat2Do email address ng mga tagapamahala ng organisasyon mo, at ipinapadala mo naman ang sa iyo sa <email>{{email}}</email>.",
+          "p6": "Ang mga tuntuning ito ang buong kasunduan sa pagitan ng organisasyon mo at ng Wat2Do tungkol sa mga payout. Isinulat namin ang mga ito sa Ingles; kung may pagkakaiba ang isang salin, ang bersyong Ingles ang masusunod."
+        },
+        "contact": {
+          "title": "Makipag-ugnayan",
+          "p1": "Ipadala ang mga tanong tungkol sa mga tuntuning ito o sa isang payout sa <email>{{email}}</email>, kasama ang pangalan ng organisasyon mo.",
+          "formats": "Kung kailangan mo ang mga tuntuning ito sa ibang format, gaya ng malalaking letra, mag-email sa amin at ibibigay namin ito."
+        }
+      }
+    },
+    "dataPolicy": {
+      "title": "Patakaran sa Data",
+      "intro": "Ipinapaliwanag ng patakarang ito kung anong personal na impormasyon ang kinokolekta ng Wat2Do, kung bakit, kung kanino namin ito ibinabahagi, kung gaano katagal namin ito itinatago at ang mga pagpipilian mo. Saklaw nito ang wat2do.io at ang bawat school site dito (gaya ng uwaterloo.wat2do.io), ang mga email na ipinapadala namin at ang mga Instagram account na pinapatakbo namin para sa bawat paaralan. Kung may tanong ka, mag-email sa amin sa <email>{{email}}</email>.",
+      "summary": {
+        "collect": "Kinokolekta namin ang ibinibigay mo sa amin (ang email, paaralan, kolehiyo at mga interes mo), ang ginagawa mo sa Wat2Do (mga kaganapang pinupuntahan o sine-save mo, mga tiket, mga organisasyong sinusundan mo) at ilang teknikal na detalye, gaya ng naka-scramble na anyo ng IP address mo.",
+        "noSale": "Hindi namin ibinebenta ang personal na impormasyon mo, at hindi kami nagpapakita ng mga ad.",
+        "share": "Kapag minarkahan mong pupunta ka, makikita ng ibang bisita ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo, at makikita ng mga organisasyon ang pangalan at email address mo kapag may tiket ka sa kanilang kaganapan. Pinapatakbo para sa amin ng mga kumpanya gaya ng Amazon Web Services, Cloudflare at Google ang ilang bahagi ng Wat2Do, at ang ilan sa kanila ay nasa labas ng Canada.",
+        "analytics": "Gumagamit kami ng Google Analytics para bilangin ang mga pagbisita, at tinatanggal namin ang mga code at email address sa mga address ng page na natatanggap nito.",
+        "public": "Gumagamit din kami ng pampublikong impormasyon: mga kaganapan ng organisasyon mula sa mga pampublikong post sa Instagram, at ang mga contact email na inilalathala ng mga organisasyon online.",
+        "choices": "Puwede mong i-off ang aming mga email anumang oras, baguhin ang profile mo sa Settings, at hilingin sa amin na ipakita sa iyo, itama o burahin ang impormasyon mo.",
+        "contact": "Ipadala ang mga tanong at kahilingan sa <email>{{email}}</email>."
+      },
+      "sections": {
+        "who": {
+          "title": "Sino kami",
+          "p1": "Ang Wat2Do ay isang website na nagpapakita sa mga estudyante kung ano ang nangyayari sa kanilang paaralan. Sinimulan ito ng mga estudyante sa University of Waterloo, at pinapatakbo namin ito mula sa Canada. Sa patakarang ito, ang “Wat2Do” at “kami” ay tumutukoy sa mga taong nagpapatakbo nito.",
+          "p2": "Ang aming founder ang taong namamahala sa pagprotekta ng personal na impormasyon (ang aming privacy officer) at responsable sa kung paano ito pinangangasiwaan ng Wat2Do. Puwede mo siyang maabot sa <email>{{email}}</email>.",
+          "governance": "Inaaprubahan ng aming privacy officer kung paano namin kinokolekta at ginagamit ang personal na impormasyon, sinasagot niya ang mga kahilingan at reklamo, nagtatago siya ng talaan ng mga insidente sa privacy, at sinusuri niya ang patakarang ito nang hindi bababa sa isang beses kada taon."
+        },
+        "collect": {
+          "title": "Ano ang kinokolekta namin",
+          "p1": "Nakadepende ang kinokolekta namin sa kung paano mo ginagamit ang Wat2Do. Puwede kang mag-browse ng mga kaganapan, organisasyon at posisyon nang walang account, at email address mo lang ang kailangan para sa isang account; ikaw ang bahala kung ano pa ang idaragdag mo. Kinokolekta namin ang impormasyong ito mula sa iyo:",
+          "fromYou": {
+            "account": {
+              "term": "Ang account mo.",
+              "text": "Ang email address mo, na ginagamit mo sa pag-sign in gamit ang isang beses na code o link, o sa pamamagitan ng Google. Sa Google sign-in, ang na-verify mong email address lang ang itinatago namin, hindi ang pangalan o larawan mo sa Google. Hindi kami kailanman humihingi ng password."
+            },
+            "profile": {
+              "term": "Ang profile mo.",
+              "text": "Ang paaralan mo, na kinukuha namin mula sa school site kung saan ka nag-sign up, at anumang idinagdag mo: larawan, ang kolehiyo mo, ang mga interes mo, kung nasa unang taon ka at ang wika mo."
+            },
+            "activity": {
+              "term": "Ang ginagawa mo sa Wat2Do.",
+              "text": "Mga kaganapang minarkahan mong pupuntahan o sine-save mo, mga organisasyong sinusundan mo, mga tiket na nakukuha mo, kung kailan ka chine-check in ng isang organisasyon at mga kahilingan sa refund na ipinapadala mo."
+            },
+            "submissions": {
+              "term": "Ang ipinapadala mo sa amin.",
+              "text": "Mga kaganapan, posisyon at organisasyong isinusumite mo, kasama ang email address mo para masabi namin sa iyo ang aming desisyon, mga poster na ipinapabasa mo sa amin at mga kaganapang iniuulat mo."
+            },
+            "clubs": {
+              "term": "Kung nagpapatakbo ka ng organisasyon.",
+              "text": "Ang organisasyong pinamamahalaan mo at ang tungkulin mo rito, ang mga email address ng mga taong iniimbitahan mo, ang patunay na ina-upload mo kapag nag-claim ka ng organisasyon, at ang payout email ng organisasyon mo kung kasali ito sa mga payout sa organisasyon."
+            },
+            "promoters": {
+              "term": "Kung nagpo-promote ka ng Wat2Do.",
+              "text": "Ang payout email mo, kung kailan mo tinanggap ang mga tuntunin ng promoter at ang mga poster na ginagawa mo."
+            },
+            "messages": {
+              "term": "Mga mensahe.",
+              "text": "Ang isinusulat mo sa aming contact form at sa form para magmungkahi ng negosyo, na dumarating sa aming mga email inbox, at mga mensaheng ipinapadala mo sa aming mga Instagram account."
+            }
+          },
+          "p2": "Awtomatiko naming kinokolekta ang ilang impormasyon:",
+          "automatic": {
+            "usage": {
+              "term": "Kung paano mo ginagamit ang site.",
+              "text": "Mga click, view at share ng kaganapan, na naka-link sa account mo kapag naka-sign in ka, at kung hindi, sa isang random na ID na tumatagal lang sa isang browser tab. Itinatago rin namin ang mga salitang hinahanap mo at ang mga filter na ginagamit mo, nang hindi ini-link ang mga ito sa iyo."
+            },
+            "network": {
+              "term": "Device at network.",
+              "text": "Isang naka-scramble (naka-hash) na anyo ng IP address mo, na ginagamit namin para limitahan ang pang-aabuso at matukoy ang mga pekeng click at scan ng poster. Hindi namin iniimbak sa aming database ang mismong IP address mo, pero nakikita ito ng mga kumpanyang naghahatid ng site, at itinatala ito ng aming mga server log kapag lumampas ang isang request sa aming mga rate limit. Para sa mga scan ng poster, itinatago rin namin ang uri ng browser at system mo, gaya ng Chrome sa iOS."
+            },
+            "location": {
+              "term": "Lokasyon, kung papayagan mo lang.",
+              "text": "Kapag nag-scan ka ng Wat2Do poster na wala pang lokasyon, puwedeng humingi ang browser mo ng pahintulot na ibahagi ang lokasyon mo. Kung papayagan mo, ise-save namin ito bilang lokasyon ng poster, hindi kasama ng scan mo o ng account mo."
+            }
+          },
+          "p3": "Kinokolekta rin namin ang impormasyon mula sa mga pampublikong mapagkukunan:",
+          "public": {
+            "posts": {
+              "term": "Mga post ng organisasyon.",
+              "text": "Binabasa namin ang mga pampublikong post sa Instagram ng mga organisasyon ng estudyante para ilista ang kanilang mga kaganapan at posisyon. Itinatago namin ang text, mga larawan at video ng bawat post, ang account na nag-post nito at ang mga username na naka-tag dito, at kinokopya namin ang mga profile picture ng mga organisasyon para gamitin bilang kanilang logo."
+            },
+            "contacts": {
+              "term": "Mga contact detail ng organisasyon.",
+              "text": "Kinokolekta namin ang mga email address na inilalathala ng mga organisasyon sa sarili nilang mga page at sa mga direktoryo ng paaralan, para maimbitahan namin silang i-claim ang kanilang Wat2Do page."
+            },
+            "instagram": {
+              "term": "Mga Instagram account.",
+              "text": "Nakakatanggap ang aming mga school account ng mga notification at mensahe, at binabasa namin ang mga listahan ng mga account na sinusundan ng mga organisasyon para makahanap ng iba pang organisasyon. Itinatago namin ang mga handle at pangalan ng mga pampublikong account na baka sundan namin."
+            },
+            "feedback": {
+              "term": "Mga pampublikong post tungkol sa mga app para sa estudyante.",
+              "text": "Binabasa namin ang mga pampublikong post sa X at Reddit tungkol sa mga app na tulad ng sa amin para malaman kung ano ang gusto ng mga estudyante, at itinatago namin ang bawat post, ang handle ng sumulat nito at ang link nito."
+            }
+          }
+        },
+        "use": {
+          "title": "Paano namin ito ginagamit",
+          "p1": "Ginagamit lang namin ang personal na impormasyon para sa mga layuning ito:",
+          "purposes": {
+            "account": "Para patakbuhin ang account mo, i-sign in ka at panatilihin kang naka-sign in.",
+            "show": "Para ipakita sa iyo kung ano ang nangyayari sa paaralan mo, at ang mga kaganapang na-save mo, pupuntahan mo o may hawak kang tiket.",
+            "emails": "Para ipadala ang mga email na kontrolado mo: ang pang-umagang email ng mga kaganapan, mga paalala bago ang mga kaganapang pupuntahan mo at mga alerto kapag may nagbago sa isa sa mga ito. Nagpapadala rin kami ng mga email na kailangan mo, gaya ng mga sign-in code, tiket at ang aming mga desisyon sa mga isinumite mo.",
+            "tickets": "Para mag-isyu ng mga tiket at hayaan ang mga organisasyon na i-check in ka.",
+            "payouts": "Para bayaran ang mga promoter at organisasyong kasali sa aming mga payout program, at para itago ang mga rekord na iniaatas ng batas.",
+            "safety": "Para panatilihing ligtas ang Wat2Do: para limitahan ang pang-aabuso, matukoy ang mga pekeng account, click at scan, at imbestigahan ang mga problema.",
+            "improve": "Para bilangin ang mga pagbisita at makita kung aling mga page at feature ang ginagamit ng mga tao, gamit ang Google Analytics at ang sarili naming mga rekord ng click, para maayos at mapahusay namin ang mga ito.",
+            "clubs": "Para ilista ang mga kaganapan ng organisasyon, imbitahan ang mga organisasyon na i-claim ang kanilang mga page at sagutin ang mga mensahe sa aming mga Instagram account.",
+            "law": "Para sumunod sa batas at sagutin ang mga legal na kahilingan."
+          },
+          "p2": "Gumagamit ng AI ang ilan sa gawaing ito. Binabasa ng Claude, isang model na gawa ng Anthropic, ang mga pampublikong post ng organisasyon at ang mga mensaheng natatanggap ng aming mga Instagram account, para ilista ang mga kaganapan at tumulong na magpasya kung paano sasagot. Binabasa ng mga model ng OpenAI ang mga poster na ipinapabasa mo sa amin. Wala sa mga ito ang nagpapasya ng anuman tungkol sa iyo na may legal o katulad na malaking epekto.",
+          "training": "Hindi namin ginagamit ang personal na impormasyon mo para mag-train ng mga AI model.",
+          "p3": "Hindi namin ibinebenta o pinauupahan ang personal na impormasyon, at hindi namin ito ginagamit para sa advertising."
+        },
+        "emails": {
+          "title": "Mga email",
+          "p1": "Dalawang uri ng email ang ipinapadala namin. Laging dumarating ang mga email na kailangan mo, gaya ng mga sign-in code, tiket, mga desisyon sa mga isinumite mo at mga sagot sa iyo. Naka-on na pagka-sign up mo ang mga notification email tungkol sa mga kaganapan (ang pang-umagang email, mga paalala at mga alerto sa pagbabago), at puwede mong i-off ang bawat isa sa Settings o gamit ang unsubscribe link sa email mismo. Humihinto kami sa loob ng 10 business day, at kadalasan ay agad-agad.",
+          "inbox": "Nagtatago rin kami ng maikling kopya ng mga email na ito, at ng mga email tungkol sa mga ticket, isinumite, at imbitasyon sa organisasyon mo, sa iyong Mga Abiso sa Wat2Do (sa likod ng icon ng kampana), at binubura namin ang bawat kopya pagkalipas ng {{inboxDays}}.",
+          "p2": "Nag-e-email din kami sa mga organisasyon sa mga address na inilalathala nila, tungkol sa sarili nilang Wat2Do page. Puwedeng hilingin ng isang organisasyon na tumigil kami anumang oras."
+        },
+        "sharing": {
+          "title": "Sino ang nakakakita nito, at kanino namin ito ibinabahagi",
+          "p1": "Nakikita ng iba ang ilan sa mga ginagawa mo sa Wat2Do:",
+          "visible": {
+            "going": "Kapag minarkahan mong pupunta ka, makikita ng mga tumitingin sa kaganapan ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo sa listahan ng mga pupunta.",
+            "tickets": "Kapag may tiket ka, makikita ng organisasyong nagpapatakbo ng kaganapan ang pangalan mo (o ang simula ng email address mo), ang email address mo, ang code ng tiket mo, kung kailan ka na-check in at anumang kahilingan sa refund. Kung mag-on ng mga tiket ang isang organisasyon para sa kaganapang sinabi mong pupuntahan mo, bibigyan ka namin ng tiket at makikita ng organisasyon ang parehong mga detalye.",
+            "teams": "Nakikita ng mga taong namamahala sa iisang organisasyon ang mga pangalan, email address at larawan ng isa't isa.",
+            "submissions": "Pampubliko ang mga kaganapan, posisyon at organisasyong inilalathala namin mula sa mga isinumite mo, pero hindi ang email address mo."
+          },
+          "p2": "Ibinabahagi namin ang personal na impormasyon sa mga kumpanyang nagpapatakbo ng ilang bahagi ng Wat2Do para sa amin, at ang kailangan lang ng bawat isa para sa gawaing iyon ang ibinabahagi namin:",
+          "providers": {
+            "aws": {
+              "term": "Amazon Web Services:",
+              "text": "nagho-host ng website at nagpapadala ng aming mga email, mula sa Canada."
+            },
+            "cloudflare": {
+              "term": "Cloudflare:",
+              "text": "naghahatid ng site at nag-iimbak ng mga larawan at video, sa North America."
+            },
+            "google": {
+              "term": "Google:",
+              "text": "Google sign-in, Google Analytics at ang mga mapa sa mga page ng kaganapan."
+            },
+            "ai": {
+              "term": "Anthropic at OpenAI:",
+              "text": "nagbabasa ng mga post, poster at mensahe, gaya ng inilarawan sa itaas."
+            },
+            "stripe": {
+              "term": "Stripe:",
+              "text": "tumatanggap ng bayad kapag nagbebenta ng tiket ang isang organisasyon. Natatanggap ng Stripe ang email address at mga detalye ng card ng mamimili at ginagamit din nito ang mga ito sa ilalim ng sarili nitong privacy policy; hindi namin kailanman nakikita o iniimbak ang mga card number."
+            },
+            "github": {
+              "term": "GitHub:",
+              "text": "pinoproseso ang mga notification na natatanggap ng aming mga school Instagram account."
+            },
+            "meta": {
+              "term": "Meta:",
+              "text": "nagpapatakbo ng Instagram, kung saan kami nagpo-post sa aming mga school account."
+            },
+            "maps": {
+              "term": "Mga serbisyo ng OpenStreetMap:",
+              "text": "nagbibigay ng mga larawan ng mapa at hinahanap sa mapa ang mga address ng kaganapan."
+            },
+            "bank": {
+              "term": "Ang aming bangko:",
+              "text": "nagpapadala ng mga payout sa pamamagitan ng Interac e-Transfer."
+            }
+          },
+          "p3": "Puwede rin naming ibahagi ang personal na impormasyon kapag iniaatas ito ng batas, para protektahan ang kaligtasan, mga karapatan o ari-arian ng isang tao, o bilang bahagi ng merger o pagbebenta ng Wat2Do, at sa ganoong kaso ay patuloy na naaangkop dito ang patakarang ito."
+        },
+        "cookies": {
+          "title": "Mga cookie, analytics at browser storage",
+          "p1": "Ginagamit namin ang mga cookie at browser storage na ito:",
+          "items": {
+            "signIn": {
+              "term": "Mga sign-in cookie:",
+              "text": "pinapanatili kang naka-sign in nang hanggang {{sessionDays}} at ipinapaalam sa mga page na naka-sign in ka. Nagdadagdag ang Google sign-in ng isang cookie na tumatagal nang 10 minuto."
+            },
+            "theme": {
+              "term": "Theme cookie:",
+              "text": "tinatandaan ang light o dark mode sa loob ng isang taon."
+            },
+            "poster": {
+              "term": "Poster visitor cookie:",
+              "text": "isang random na ID, na itinatago nang dalawang taon, na nagbibigay-daan sa amin na bilangin ang mga natatanging scan ng poster nang hindi nalalaman kung sino ka."
+            },
+            "storage": {
+              "term": "Browser storage:",
+              "text": "itinatago ang wika mo, isang kopya ng profile mo para mas mabilis mag-load ang mga page, at mga detalye para sa isang browser tab, gaya ng mga filter mo."
+            },
+            "analytics": {
+              "term": "Google Analytics:",
+              "text": "naglalagay ng sarili nitong mga cookie para sukatin kung ilang tao ang bumibisita at kung aling mga page ang ginagamit nila. Tinatanggal namin ang mga code, link at email address sa mga address ng page na ipinapadala namin dito."
+            }
+          },
+          "p2": "Puwede mong i-block o burahin ang mga cookie sa mga setting ng browser mo, pero kailangan mo ang mga sign-in cookie para manatiling naka-sign in. Para mag-opt out sa Google Analytics sa lahat ng site, gamitin ang opt-out browser add-on ng Google o i-block ang mga cookie nito.",
+          "tracking": "Naglo-load ang aming mga page ng mga mapa mula sa Google at OpenFreeMap, at sinusukat ng Google Analytics ang mga pagbisita, kaya natatanggap ng mga kumpanyang iyon ang IP address mo at mga detalye ng browser mo sa ilalim ng sarili nilang mga privacy policy. Hindi kami gumagamit ng mga advertising network, at hindi binabago ng Wat2Do ang kinokolekta nito bilang tugon sa mga signal na Do Not Track o Global Privacy Control."
+        },
+        "location": {
+          "title": "Saan namin ito iniimbak",
+          "p1": "Tumatakbo ang aming database sa sarili naming server sa Canada. Tumatakbo ang aming website at mga serbisyo sa email sa Amazon Web Services sa Canada, at nag-iimbak ang Cloudflare ng mga larawan at video sa North America. Pinoproseso ng ilan sa mga kumpanyang katrabaho namin, gaya ng Google, Anthropic, OpenAI, Stripe, GitHub at Meta, ang impormasyon sa United States o sa ibang lugar.",
+          "p2": "Ang impormasyong pinoproseso sa labas ng Canada ay sakop ng mga batas ng bansang iyon, at puwedeng ma-access ito ng mga korte, pulis at ahensiyang panseguridad nito. Pumipili kami ng mga provider na nagpoprotekta sa personal na impormasyon, at ipinapadala lang namin sa bawat isa ang kailangan nito.",
+          "quebec": "Kung nasa Quebec ka, puwedeng maipadala ang personal na impormasyon mo sa labas ng Quebec, gaya ng inilarawan sa itaas. Para malaman kung aling mga provider sa labas ng Canada ang humahawak sa impormasyon mo at kung bakit, mag-email sa <email>{{email}}</email>."
+        },
+        "retention": {
+          "title": "Gaano katagal namin ito itinatago",
+          "p1": "Itinatago lang namin ang personal na impormasyon hangga't kailangan namin ito para sa mga layuning nasa itaas, o hangga't iniaatas ng batas:",
+          "periods": {
+            "account": {
+              "term": "Ang account at profile mo:",
+              "text": "hanggang hilingin mo sa amin na burahin ang account mo, na ginagawa namin sa loob ng 30 araw."
+            },
+            "signIn": {
+              "term": "Mga sign-in code at session:",
+              "text": "nag-e-expire ang mga code pagkalipas ng {{codeMinutes}}, at nagtatapos ang isang session {{sessionDays}} pagkatapos mo itong huling gamitin."
+            },
+            "activity": {
+              "term": "Mga pupuntahan, na-save, sinusundan at tiket:",
+              "text": "hanggang alisin mo ang mga ito o burahin ang account mo."
+            },
+            "usage": {
+              "term": "Mga click, paghahanap at scan ng poster:",
+              "text": "itinatago namin ang mga ito nang walang pangalan mo, at kapag binura mo ang account mo, inaalis namin ang pagkaka-link ng mga click mo dito."
+            },
+            "emails": {
+              "term": "Mga rekord ng email:",
+              "text": "habang umiiral ang account mo, nagtatago kami ng rekord kung aling mga email ang ipinadala namin sa iyo, nang walang laman ng mga ito."
+            },
+            "payouts": {
+              "term": "Mga rekord ng payout:",
+              "text": "anim na taon pagkatapos ng payout, gaya ng iniaatas ng batas sa buwis ng Canada."
+            },
+            "outreach": {
+              "term": "Mga contact detail ng organisasyon:",
+              "text": "kasama ang aming mga tala kung nakipag-ugnayan kami sa organisasyon. Kung hihilingin ng isang organisasyon, titigil kami sa pakikipag-ugnayan dito at buburahin namin ang mga contact detail nito."
+            },
+            "messages": {
+              "term": "Mga mensahe:",
+              "text": "hangga't kailangan namin ang mga ito para sagutin ka at magtago ng rekord ng usapan."
+            },
+            "logs": {
+              "term": "Mga log:",
+              "text": "binubura ang mga log ng aming website pagkalipas ng 14 na araw. Puwedeng maglaman ng mga IP address o email address ang sariling mga log ng aming server, at itinatago lang namin ang mga ito hangga't kailangan namin ang mga ito para patakbuhin at ayusin ang Wat2Do."
+            }
+          }
+        },
+        "security": {
+          "title": "Paano namin ito pinoprotektahan",
+          "p1": "Pinoprotektahan namin ang personal na impormasyon gamit ang mga pananggalang na angkop sa pagiging sensitibo nito: mga naka-encrypt na koneksyon, pag-sign in nang walang password, naka-hash na mga sign-in code, session token at IP address, mga patakaran sa database na nagpapanatiling pribado sa mga rekord ng bawat tao, at access na limitado sa mga taong nangangailangan nito.",
+          "p2": "Walang sistemang ganap na ligtas. Kung ang isang paglabag sa aming mga pananggalang na may kinalaman sa personal na impormasyon mo ay magdulot ng tunay na panganib ng malaking pinsala sa iyo, sasabihan ka namin at ang Tanggapan ng Komisyoner sa Privacy ng Canada (Office of the Privacy Commissioner of Canada), gaya ng iniaatas ng batas."
+        },
+        "rights": {
+          "title": "Ang mga pagpipilian at karapatan mo",
+          "p1": "Nang mag-isa, puwede mong:",
+          "choices": {
+            "emails": "I-off ang pang-umagang email, mga paalala at mga alerto sa pagbabago sa Settings, o gamit ang unsubscribe link sa alinman sa mga ito. Darating pa rin ang mga sign-in code at tiket, dahil kailangan mo ang mga ito.",
+            "profile": "Baguhin ang larawan, paaralan, kolehiyo, mga interes at wika mo sa Settings.",
+            "activity": "Alisin ang mga kaganapang pupuntahan mo o na-save mo, at ang mga organisasyong sinusundan mo, kahit kailan mo gusto.",
+            "analytics": "I-block ang mga Google Analytics cookie sa browser mo."
+          },
+          "p2": "Puwede mo ring hilingin sa amin na:",
+          "requests": {
+            "access": "Sabihin sa iyo kung anong personal na impormasyon tungkol sa iyo ang hawak namin, kung paano namin ito ginagamit at kung kanino namin ito naibahagi.",
+            "copy": "Bigyan ka ng kopya ng impormasyong ibinigay mo sa amin, sa isang karaniwang format na nababasa ng computer.",
+            "correct": "Itama ang impormasyong mali o kulang.",
+            "delete": "Burahin ang account mo at ang personal na impormasyon mo.",
+            "withdraw": "Itigil ang paggamit sa impormasyon mo para sa isang layuning pinayagan mo, maliban kung iniaatas ng batas na itago namin ito.",
+            "stopPublishing": "Itigil ang pampublikong pagpapakita ng impormasyon mo, o ipa-de-index ito, kung saan ibinibigay sa iyo ng batas ang karapatang iyon."
+          },
+          "p3": "Mag-email sa <email>{{email}}</email> mula sa address na nasa account mo. Libre ito, at sumasagot kami sa loob ng 30 araw. Baka kailanganin naming kumpirmahing ikaw talaga ito, at puwede naming itago ang ilang impormasyong iniaatas ng batas na itago namin, gaya ng mga rekord ng payout.",
+          "p4": "Kung hindi ka kuntento sa aming sagot, puwede kang magreklamo sa Tanggapan ng Komisyoner sa Privacy ng Canada (Office of the Privacy Commissioner of Canada). Sa Quebec, puwede ka ring lumapit sa Commission d'accès à l'information, at sa Alberta o British Columbia, sa Komisyoner sa Impormasyon at Privacy ng probinsyang iyon."
+        },
+        "others": {
+          "title": "Kung hindi ka gumagamit ng Wat2Do",
+          "p1": "Ang ilang impormasyong hawak namin ay tungkol sa mga taong hindi gumagamit ng Wat2Do: mga username na naka-tag sa pampublikong post ng isang organisasyon, mga mensaheng ipinadala sa aming mga Instagram account at mga email address ng organisasyon na inilathala online.",
+          "p2": "Kapag nag-message ka sa isa sa aming mga Instagram account, binabasa namin ang mensahe mo at anumang post na ibinahagi mo para masagot ito, at tumutulong ang AI na magpasya kung paano. Nagtatago kami ng maikling rekord ng bawat usapan (ang pangalan ng account at ang pinakabagong mensahe) para malaman namin kung alin ang nasagot na namin, at ang mga salita ng isang organisasyon kapag hiniling nito na ayusin namin ang isa sa mga listing nito. Hindi namin kailanman isinusulat ang text ng mensahe sa aming mga log.",
+          "p3": "Pareho ang mga karapatan mo sa iba: puwede mong itanong kung ano ang hawak namin tungkol sa iyo at hilingin sa aming alisin ito. Puwede ring hilingin ng isang organisasyon na huwag itong isama sa aming mga Instagram post, o na tumigil kami sa pakikipag-ugnayan dito."
+        },
+        "children": {
+          "title": "Mga bata",
+          "p1": "Para sa mga estudyante ng unibersidad at college ang Wat2Do. Hindi ito para sa mga batang wala pang 13 taong gulang, at hindi namin sinasadyang kolektahin ang kanilang impormasyon. Sa Quebec, kailangan ng sinumang wala pang 14 na taong gulang ang pahintulot ng magulang o tagapag-alaga bago magbigay sa amin ng personal na impormasyon. Kung sa tingin mo ay nagbigay sa amin ng personal na impormasyon ang isang bata nang walang pahintulot na kailangan niya, mag-email sa amin at buburahin namin ito."
+        },
+        "changes": {
+          "title": "Mga pagbabago sa patakarang ito",
+          "p1": "Ipinopost namin ang bawat pagbabago sa pahinang ito na may bagong petsa ng pagkabisa, at itinatago namin ang mga nakaraang bersyon, na ipapadala namin sa iyo kung hihilingin mo. Bago magkabisa ang isang malaking pagbabago, gaya ng bagong paggamit sa impormasyon mo, sasabihan ka namin sa email o sa Wat2Do at hihingin namin ang pahintulot mo kung saan ito iniaatas ng batas. Hindi namin gagamitin sa bagong paraan ang impormasyong hawak na namin nang walang pahintulot na iniaatas ng batas."
+        },
+        "contact": {
+          "title": "Makipag-ugnayan",
+          "p1": "Ipadala ang mga tanong, kahilingan at reklamo tungkol sa privacy sa <email>{{email}}</email>."
+        }
+      }
+    }
+  }
+}

@@ -35,6 +35,8 @@ export const ROUTES = {
   POSTERS: "/posters",
   /** A poster's QR code: records the scan, then opens the poster's destination. */
   QR: "/qr",
+  DATA_POLICY: "/data-policy",
+  CLUB_PAYOUT_TERMS: "/club-payout-terms",
 
   // Admin
   ADMIN: "/admin",
@@ -114,6 +116,8 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.EVENT_SUBMIT]: "Submit an Event",
   [ROUTES.PROMOTE]: "Promote Events",
   [ROUTES.POSTERS]: "My Posters",
+  [ROUTES.DATA_POLICY]: "Data Policy",
+  [ROUTES.CLUB_PAYOUT_TERMS]: "Club Payout Terms",
   [ROUTES.ADMIN]: "Admin",
   [ROUTES.ADMIN_EVENTS]: "Admin Events",
   [ROUTES.ADMIN_POSITIONS]: "Admin Positions",

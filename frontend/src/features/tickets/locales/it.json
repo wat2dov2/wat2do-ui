@@ -129,6 +129,8 @@
       "pauseHint": "Nessun altro potrà prendere un biglietto finché non disattivi questa opzione.",
       "fees": "Stripe trattiene circa il 2,9% + 30 centesimi su ogni ordine. Il resto va alla tua organizzazione.",
       "goingNote": "Chi ha già detto che ci sarà riceve un biglietto via email.",
+      "payoutNoteSetup": "Ogni check-in idoneo fa guadagnare {{rate}} alla tua organizzazione. Attivando i biglietti, la tua organizzazione accetta i <terms>Termini di pagamento alle organizzazioni</terms>.",
+      "payoutNote": "Ogni check-in idoneo fa guadagnare {{rate}} alla tua organizzazione, secondo i <terms>Termini di pagamento alle organizzazioni</terms>.",
       "payoutsNeeded": "Imposta prima gli accrediti, così i soldi avranno dove arrivare.",
       "setUpPayouts": "Imposta gli accrediti",
       "turnOnFree": "Attiva i biglietti gratuiti",

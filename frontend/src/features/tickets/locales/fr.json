@@ -129,6 +129,8 @@
       "pauseHint": "Personne d'autre ne peut obtenir de billet tant que vous ne désactivez pas cette option.",
       "fees": "Stripe garde environ 2,9 % + 30 ¢ par commande. Le reste revient à votre organisation.",
       "goingNote": "Toutes les personnes qui ont déjà indiqué qu'elles venaient reçoivent un billet par e-mail.",
+      "payoutNoteSetup": "Chaque enregistrement admissible rapporte {{rate}} à votre organisation. En activant les billets, votre organisation accepte les <terms>Conditions de paiement des organisations</terms>.",
+      "payoutNote": "Chaque enregistrement admissible rapporte {{rate}} à votre organisation, selon les <terms>Conditions de paiement des organisations</terms>.",
       "payoutsNeeded": "Configurez d'abord les versements pour pouvoir recevoir l'argent.",
       "setUpPayouts": "Configurer les versements",
       "turnOnFree": "Activer les billets gratuits",

@@ -123,6 +123,8 @@
       "pauseHint": "이 설정을 끄기 전까지는 아무도 새로 티켓을 받을 수 없어요.",
       "fees": "Stripe는 주문마다 약 2.9% + 30센트를 가져가요. 나머지는 조직이 받아요.",
       "goingNote": "이미 참석한다고 한 모든 사람에게 이메일로 티켓을 보내요.",
+      "payoutNoteSetup": "자격을 갖춘 체크인 한 건마다 조직이 {{rate}}씩 받아요. 티켓을 켜면 조직이 <terms>조직 지급 약관</terms>에 동의하게 돼요.",
+      "payoutNote": "자격을 갖춘 체크인 한 건마다 <terms>조직 지급 약관</terms>에 따라 조직이 {{rate}}씩 받아요.",
       "payoutsNeeded": "판매 금액을 받을 수 있도록 먼저 정산을 설정하세요.",
       "setUpPayouts": "정산 설정",
       "turnOnFree": "무료 티켓 켜기",

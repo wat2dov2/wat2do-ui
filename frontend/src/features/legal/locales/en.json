@@ -1,0 +1,445 @@
+{
+  "legal": {
+    "common": {
+      "effective": "Effective {{date}}",
+      "summary": "The short version",
+      "contents": "On this page",
+      "translationNotice": "We provide this translation for convenience. If it differs from the English version, the English version applies."
+    },
+    "clubPayoutTerms": {
+      "title": "Club Payout Terms",
+      "intro": "These terms explain how Wat2Do pays student clubs for the people they check in at their events with Wat2Do's free QR tickets. They are an agreement between your club and Wat2Do, so read them in full before your club relies on them. If anything is unclear, email us at <email>{{email}}</email>.",
+      "summary": {
+        "rate": "Wat2Do pays your club {{rate}} for each eligible attendee you check in at the door with Wat2Do's QR tickets.",
+        "who": "Your club needs a claimed Wat2Do page at one of these schools: {{schools}}. The event has to be listed on Wat2Do with Wat2Do tickets turned on.",
+        "attendees": "Each attendee counts once per event date, with their own Wat2Do account, at the event in person.",
+        "limits": "We pay up to {{maxPerEventDate}} for one event date, and up to {{monthlyCap}} to one club for a calendar month.",
+        "payment": "We send each month's payouts by Interac e-Transfer by the {{payoutDay}} of the next month.",
+        "fraud": "We don't pay for check-ins that aren't real attendees. We may hold a payout while we check, and take back payouts for check-ins that turn out not to count.",
+        "leave": "Your club can leave at any time and still gets paid for its eligible check-ins from before it left.",
+        "full": "This summary leaves details out. The full terms below are what apply."
+      },
+      "sections": {
+        "about": {
+          "title": "Who these terms cover",
+          "p1": "Wat2Do (\"we\" or \"us\") runs wat2do.io, where students find what's happening at their school. In these terms, \"your club\" (or \"you\") means a student club, society, team or group whose Wat2Do page has been claimed, acting through the people who manage that page on Wat2Do (its \"club managers\").",
+          "p2": "A club manager who turns on Wat2Do tickets for an event, or who sends us payout details, accepts these terms for the club, and confirms they are at least 18 and allowed to make that decision for it. If that isn't you, don't take part until someone who can agrees.",
+          "p3": "These terms cover only club payouts. Our <dataPolicy>Data Policy</dataPolicy> explains how we handle personal information."
+        },
+        "eligibility": {
+          "title": "Which clubs can take part",
+          "p1": "Your club can take part while all of these are true:",
+          "conditions": {
+            "school": "It is a student-led club, society, team or group at one of these schools: {{schools}}.",
+            "claimed": "A club manager has claimed its page on Wat2Do.",
+            "rules": "It runs its own events and follows its school's and student union's rules for clubs, including their rules on club money.",
+            "transfer": "It can receive an Interac e-Transfer in Canadian dollars."
+          },
+          "p2": "University departments, offices and services, businesses, and people or companies running events for profit can't take part. We may add schools later by updating these terms."
+        },
+        "events": {
+          "title": "Which events count",
+          "p1": "An event earns payouts when all of these are true:",
+          "conditions": {
+            "listed": "Your club runs it, and it is listed on your club's Wat2Do page with its real title, date, time and place.",
+            "tickets": "Wat2Do tickets are on for it before it starts, and you check people in with Wat2Do's check-in scanner.",
+            "inPerson": "It happens in person, where and when it is listed, and students at your school can come.",
+            "rules": "It is legal and follows your school's and student union's rules."
+          },
+          "p2": "These events don't earn payouts, even if you scan tickets at them:",
+          "excluded": {
+            "meetings": "Meetings of any kind, including general, executive and annual meetings, elections and info sessions.",
+            "practices": "Practices, training, lessons, classes, tutoring, study sessions and office hours.",
+            "recruiting": "Recruiting events, interviews and auditions.",
+            "sales": "Sales and fundraising tables.",
+            "religious": "Religious services.",
+            "private": "Events only for your executive team or for an invited list.",
+            "notHeld": "Events that didn't happen as listed on Wat2Do."
+          }
+        },
+        "scans": {
+          "title": "Which check-ins count",
+          "p1": "A check-in is an eligible scan, and earns a payout, only when all of these are true:",
+          "conditions": {
+            "ticket": "The ticket is a valid Wat2Do ticket for that event date, in the attendee's own Wat2Do account.",
+            "present": "The attendee is at the event in person when you scan them.",
+            "scanner": "A club manager checks it in with Wat2Do's check-in, by scanning or typing its code, while check-in is open for that date: from {{opensHours}} before the start until {{closesHours}} after the end.",
+            "first": "It is that account's first check-in for that event date. Scanning the same person again counts once.",
+            "notManager": "The attendee doesn't manage your club on Wat2Do."
+          },
+          "p2": "These never count:",
+          "excluded": {
+            "absent": "Tickets scanned without the attendee there, such as screenshots or codes sent ahead of time.",
+            "fakeAccounts": "Accounts made, bought or controlled by your club or its members to add check-ins, and accounts that don't belong to a real person.",
+            "paid": "Check-ins of people paid or rewarded to be checked in, rather than coming for the event.",
+            "undone": "Check-ins that are undone, and tickets that are refunded or cancelled.",
+            "tests": "Check-ins made to test the scanner.",
+            "otherTools": "Check-ins made outside Wat2Do's own scanner, or by any automated means."
+          },
+          "p3": "Your club panel shows the check-ins for each event date. We pay the eligible scans in our records once the checks described under \"Reviews and fraud\" are done."
+        },
+        "amount": {
+          "title": "How much we pay",
+          "p1": "We pay {{rate}} for each eligible scan.",
+          "p2": "We pay at most {{maxPerEventDate}} for any one event date, and at most {{monthlyCap}} to your club for all of its event dates in one calendar month. Eligible scans past either limit don't earn payouts.",
+          "p3": "The rate and limits that apply to an event date are the ones in these terms on that date.",
+          "p4": "Payouts are a promotional payment from Wat2Do to your club. They aren't wages or a fee for services, and they don't make Wat2Do an organizer, host or sponsor of your event. They are separate from money for paid tickets, which goes straight to your club's own Stripe account."
+        },
+        "payment": {
+          "title": "How and when we pay",
+          "p1": "After each calendar month ends, we count your club's eligible scans for event dates in that month and email your club managers a summary.",
+          "p2": "By the {{payoutDay}} of the next month, we send the payout by Interac e-Transfer, in Canadian dollars, to your club's payout email, and pay any fee our bank charges to send it. If that day isn't a business day in Ontario, we send it by the next business day.",
+          "p3": "Your club gives us one payout email. It must be able to receive Interac e-Transfers and belong to your club, or to whoever holds your club's money under your student union's rules, such as the union's clubs office or your club's treasurer. If we don't have one, we'll ask your club managers for it. Once a payout is deposited it can't be reversed, so tell us as soon as your payout email changes.",
+          "expired": "If an e-Transfer expires before anyone deposits it, we send it again once your club confirms its payout email.",
+          "p4": "If your club hasn't given us a way to pay it within {{deadlineDays}} after an event date, the payout for that date lapses and we no longer owe it.",
+          "p5": "Your club must handle payouts by its school's and student union's rules, for example by depositing them in the club's own account. If your union must approve outside money or sponsorships, get that approval before your club accepts payouts."
+        },
+        "taxes": {
+          "title": "Taxes",
+          "p1": "Your club is responsible for any taxes on its payouts, and each payout includes any GST or HST that applies to it. We don't withhold tax unless the law requires us to.",
+          "p2": "If the law requires us to report payouts to a tax authority, for example on a T4A slip, we may ask your club for the information we need, including a Social Insurance Number only when the law requires one, and hold its payouts until we have it."
+        },
+        "reviews": {
+          "title": "Reviews and fraud",
+          "p1": "We review check-ins before we pay, and we may review them again later.",
+          "p2": "We may ask your club for reasonable proof that an event happened as listed and that its check-ins are real, such as photos, posts about the event or a headcount. If your club doesn't send it within {{proofDays}} of our request, we may treat those check-ins as not eligible.",
+          "p3": "We may hold the payout for check-ins we're reviewing for up to {{holdDays}} after its payout date, then pay the ones we find eligible. We don't pay for check-ins we reasonably believe aren't eligible scans.",
+          "clawback": "If, within {{clawbackDays}} after paying, we find that a payout covered check-ins that weren't eligible scans, your club owes us that amount. We take it from your club's next payouts first and ask your club to pay back anything left. Payouts for its other, eligible check-ins are still paid.",
+          "p4": "If a club breaks these terms on purpose or more than once, for example by scanning fake accounts or tickets with no attendee, we may remove it from the program, cancel the payouts still owed for the events involved, and limit its use of Wat2Do.",
+          "p5": "We make these decisions reasonably and in good faith, and we tell your club the reason."
+        },
+        "disputes": {
+          "title": "Questions and disputes",
+          "p1": "If you think a payout is wrong, email <email>{{email}}</email> within {{disputeDays}} after we send it, or after its payout date if it never arrived. Name the event and tell us what you think is wrong.",
+          "p2": "We look into it, where possible with someone who didn't make the first decision, and reply with our decision within {{replyDays}}. If we owe your club more, we pay it with the next payout or sooner.",
+          "talkFirst": "Before either side goes to court over these terms, we'll both try in good faith to settle the matter by email for 30 days."
+        },
+        "responsibilities": {
+          "title": "Your club's responsibilities",
+          "p1": "Your club is responsible for its events, including planning, safety, accessibility, food, alcohol, capacity, insurance and refunds, and for following the law and your school's rules.",
+          "p2": "Keep your event listings accurate, and tell attendees that you'll scan their Wat2Do tickets at the door.",
+          "p3": "Use the attendee details you see in Wat2Do only to run your event. Don't copy, sell or share them.",
+          "p4": "Keep your Wat2Do login safe, and tell us at <email>{{email}}</email> if you think someone has misused your club's page.",
+          "describe": "Describe payouts accurately: they go to your club, not to the people you check in. Don't suggest that your school or student union runs or endorses Wat2Do or these payouts."
+        },
+        "names": {
+          "title": "Names and logos",
+          "p1": "We may say publicly that your club takes part, using the name and logo on its Wat2Do page. You may tell people your event uses Wat2Do tickets, but don't use Wat2Do's name or logo in a way that suggests we run or sponsor your event."
+        },
+        "privacy": {
+          "title": "Personal information",
+          "p1": "To run payouts we use your club's check-in records, the accounts that hold the tickets you scan, your club managers' names and email addresses, and your club's payout email. We use them to count and check scans, send payouts, prevent fraud and keep the records the law requires.",
+          "p2": "Our <dataPolicy>Data Policy</dataPolicy> explains how we handle personal information, including attendees', and the choices people have about it."
+        },
+        "changes": {
+          "title": "Changes and leaving",
+          "p1": "We may change these terms, including the rate and the limits, or end payouts altogether. We post every change on this page with a new effective date.",
+          "p2": "A change that pays clubs less, or the end of payouts, applies only to event dates at least {{noticeDays}} after we post it, and we email club managers when we post it. Other changes apply to event dates after we post them.",
+          "p3": "No change reduces the payouts for event dates before it applies.",
+          "p4": "Your club can leave at any time by emailing <email>{{email}}</email> or by turning off Wat2Do tickets for its events. We still pay the eligible scans from before it left.",
+          "survival": "If your club leaves or payouts end, the parts of these terms about payouts already earned, taxes, reviews, taking payouts back and the legal part keep applying.",
+          "archive": "We keep past versions of these terms, and we'll send you a copy if you email us."
+        },
+        "legal": {
+          "title": "The legal part",
+          "p1": "Your club and Wat2Do are independent of each other. Nothing in these terms makes either one the other's partner, employer, employee or agent.",
+          "p2": "We provide Wat2Do's check-in scanner and the rest of the site as they are. We work to keep check-in running but can't promise it never fails. If it fails during your event, we may count check-ins your club can show us another way, though we don't have to.",
+          "p3": "As far as the law allows, each side's total responsibility to the other under these terms is limited to the greater of {{liabilityFloor}} and the payouts we paid or owed your club in the 12 months before the claim, and neither side is responsible for indirect losses, such as lost revenue or the cost of an event. These limits don't apply to payouts we owe, or to fraud or deliberate misconduct.",
+          "p4": "Ontario law and the federal laws of Canada that apply in Ontario govern these terms, and the courts of Ontario decide any dispute about them.",
+          "delays": "Neither side is responsible for delays caused by events beyond its reasonable control, such as outages at our providers or banks, but those events don't cancel payouts already earned.",
+          "p5": "If a court finds part of these terms unenforceable, the rest still applies. If we don't enforce a term right away, we can still enforce it later. Your club can't transfer its rights under these terms to anyone else.",
+          "notices": "We send notices about these terms to your club managers' Wat2Do email addresses, and you send yours to <email>{{email}}</email>.",
+          "p6": "These terms are the whole agreement between your club and Wat2Do about payouts. We wrote them in English; if a translation differs, the English version applies."
+        },
+        "contact": {
+          "title": "Contact",
+          "p1": "Send questions about these terms or a payout to <email>{{email}}</email>, with your club's name.",
+          "formats": "If you need these terms in another format, such as large print, email us and we'll provide it."
+        }
+      }
+    },
+    "dataPolicy": {
+      "title": "Data Policy",
+      "intro": "This policy explains what personal information Wat2Do collects, why, who we share it with, how long we keep it and the choices you have. It covers wat2do.io and every school site on it (such as uwaterloo.wat2do.io), the emails we send and the Instagram accounts we run for each school. If you have a question, email us at <email>{{email}}</email>.",
+      "summary": {
+        "collect": "We collect what you give us (your email, school, faculty and interests), what you do on Wat2Do (events you go to or save, tickets, clubs you follow) and some technical details, such as a scrambled form of your IP address.",
+        "noSale": "We don't sell your personal information, and we don't show ads.",
+        "share": "When you mark yourself as going, other visitors see your first name, last initial and photo, and clubs see your name and email address when you hold a ticket to their event. Companies such as Amazon Web Services, Cloudflare and Google run parts of Wat2Do for us, some of them outside Canada.",
+        "analytics": "We use Google Analytics to count visits, and we strip codes and email addresses from the page addresses it receives.",
+        "public": "We also use public information: club events from public Instagram posts, and the contact emails clubs publish online.",
+        "choices": "You can turn off our emails at any time, change your profile in Settings, and ask us to show you, correct or delete your information.",
+        "contact": "Send questions and requests to <email>{{email}}</email>."
+      },
+      "sections": {
+        "who": {
+          "title": "Who we are",
+          "p1": "Wat2Do is a website that shows students what's happening at their school. Students at the University of Waterloo started it, and we run it from Canada. In this policy, \"Wat2Do\", \"we\" and \"us\" mean the people who run it.",
+          "p2": "Our founder is the person in charge of protecting personal information (our privacy officer) and is responsible for how Wat2Do handles it. You can reach them at <email>{{email}}</email>.",
+          "governance": "Our privacy officer approves how we collect and use personal information, answers requests and complaints, keeps a register of privacy incidents and reviews this policy at least once a year."
+        },
+        "collect": {
+          "title": "What we collect",
+          "p1": "What we collect depends on how you use Wat2Do. You can browse events, clubs and positions without an account, and an account needs only your email address; everything else you add is up to you. We collect this information from you:",
+          "fromYou": {
+            "account": {
+              "term": "Your account.",
+              "text": "Your email address, which you sign in with by a one-time code or link, or through Google. With Google sign-in we keep only your verified email address, not your Google name or photo. We never ask for a password."
+            },
+            "profile": {
+              "term": "Your profile.",
+              "text": "Your school, which we take from the school site you sign up on, and anything you add: a photo, your faculty, your interests, whether you're in first year and your language."
+            },
+            "activity": {
+              "term": "What you do on Wat2Do.",
+              "text": "Events you mark as going or save, clubs you follow, tickets you get, when a club checks you in and refund requests you send."
+            },
+            "submissions": {
+              "term": "What you send us.",
+              "text": "Events, positions and clubs you submit, with your email address so we can tell you our decision, posters you ask us to read and events you report."
+            },
+            "clubs": {
+              "term": "If you run a club.",
+              "text": "The club you manage and your role in it, the email addresses of people you invite, the proof you upload when you claim a club, and your club's payout email if it takes part in club payouts."
+            },
+            "promoters": {
+              "term": "If you promote Wat2Do.",
+              "text": "Your payout email, when you accepted the promoter terms and the posters you make."
+            },
+            "messages": {
+              "term": "Messages.",
+              "text": "What you write in our contact and business nomination forms, which reach our email inboxes, and messages you send to our Instagram accounts."
+            }
+          },
+          "p2": "We collect some information automatically:",
+          "automatic": {
+            "usage": {
+              "term": "How you use the site.",
+              "text": "Clicks, event views and shares, linked to your account when you're signed in and otherwise to a random ID that lasts for one browser tab. We also keep the words you search for and the filters you use, without linking them to you."
+            },
+            "network": {
+              "term": "Device and network.",
+              "text": "A scrambled (hashed) form of your IP address, which we use to limit abuse and spot fake clicks and poster scans. We don't store your IP address itself in our database, but the companies that deliver the site see it, and our server logs record it when a request goes over our rate limits. For poster scans we also keep your browser and system type, such as Chrome on iOS."
+            },
+            "location": {
+              "term": "Location, only if you allow it.",
+              "text": "When you scan a Wat2Do poster that has no location yet, your browser may ask to share your location. If you allow it, we save it as the poster's location, not with your scan or your account."
+            }
+          },
+          "p3": "We also collect information from public sources:",
+          "public": {
+            "posts": {
+              "term": "Club posts.",
+              "text": "We read student clubs' public Instagram posts to list their events and positions. We keep each post's text, images and video, the account that posted it and the usernames tagged in it, and we copy clubs' profile pictures to use as their logos."
+            },
+            "contacts": {
+              "term": "Club contact details.",
+              "text": "We collect the email addresses clubs publish on their own pages and in school directories, so we can invite them to claim their Wat2Do page."
+            },
+            "instagram": {
+              "term": "Instagram accounts.",
+              "text": "Our school accounts receive notifications and messages, and we read the lists of accounts that clubs follow to find other clubs. We keep the handles and names of public accounts we might follow."
+            },
+            "feedback": {
+              "term": "Public posts about student apps.",
+              "text": "We read public posts on X and Reddit about apps like ours to learn what students want, and keep each post, its author's handle and its link."
+            }
+          }
+        },
+        "use": {
+          "title": "How we use it",
+          "p1": "We use personal information only for these purposes:",
+          "purposes": {
+            "account": "To run your account, sign you in and keep you signed in.",
+            "show": "To show you what's on at your school, and the events you've saved, are going to or have tickets for.",
+            "emails": "To send the emails you control: the morning email of events, reminders before events you're going to and alerts when one of them changes. We also send emails you need, such as sign-in codes, tickets and our decisions on your submissions.",
+            "tickets": "To issue tickets and let clubs check you in.",
+            "payouts": "To pay promoters and clubs in our payout programs, and to keep the records the law requires.",
+            "safety": "To keep Wat2Do safe: to limit abuse, detect fake accounts, clicks and scans, and look into problems.",
+            "improve": "To count visits and see which pages and features people use, with Google Analytics and our own click records, so we can fix and improve them.",
+            "clubs": "To list club events, invite clubs to claim their pages and answer messages to our Instagram accounts.",
+            "law": "To follow the law and answer lawful requests."
+          },
+          "p2": "Some of this work uses AI. Claude, a model made by Anthropic, reads public club posts and the messages our Instagram accounts receive, to list events and help decide how to reply. OpenAI's models read the posters you ask us to read. None of this decides anything about you with legal or similarly significant effects.",
+          "training": "We don't use your personal information to train AI models.",
+          "p3": "We don't sell or rent personal information, and we don't use it for advertising."
+        },
+        "emails": {
+          "title": "Emails",
+          "p1": "We send two kinds of email. Emails you need, such as sign-in codes, tickets, decisions on your submissions and replies to you, always arrive. Notification emails about events (the morning email, reminders and change alerts) are on when you sign up, and you can turn each one off in Settings or with the unsubscribe link in it. We stop within 10 business days, and usually right away.",
+          "inbox": "We also keep a short copy of these emails, and of emails about your tickets, submissions and club invitations, in your notifications on Wat2Do (behind the bell icon), and delete each copy after {{inboxDays}}.",
+          "p2": "We also email clubs at the addresses they publish, about their own Wat2Do page. A club can ask us to stop at any time."
+        },
+        "sharing": {
+          "title": "Who sees it, and who we share it with",
+          "p1": "Some of what you do on Wat2Do is visible to others:",
+          "visible": {
+            "going": "When you mark yourself as going, people who view the event can see your first name, last initial and photo among the people going.",
+            "tickets": "When you hold a ticket, the club running the event sees your name (or the start of your email address), your email address, your ticket code, when you were checked in and any refund request. If a club turns on tickets for an event you said you're going to, we issue you a ticket and the club sees the same details.",
+            "teams": "People who manage the same club see each other's names, email addresses and photos.",
+            "submissions": "Events, positions and clubs we publish from your submissions are public, but your email address isn't."
+          },
+          "p2": "We share personal information with companies that run parts of Wat2Do for us, and only what each one needs for that work:",
+          "providers": {
+            "aws": {
+              "term": "Amazon Web Services:",
+              "text": "hosts the website and sends our emails, from Canada."
+            },
+            "cloudflare": {
+              "term": "Cloudflare:",
+              "text": "delivers the site and stores images and videos, in North America."
+            },
+            "google": {
+              "term": "Google:",
+              "text": "Google sign-in, Google Analytics and the maps on event pages."
+            },
+            "ai": {
+              "term": "Anthropic and OpenAI:",
+              "text": "read posts, posters and messages, as described above."
+            },
+            "stripe": {
+              "term": "Stripe:",
+              "text": "takes payment when a club sells tickets. Stripe receives the buyer's email address and card details and also uses them under its own privacy policy; we never see or store card numbers."
+            },
+            "github": {
+              "term": "GitHub:",
+              "text": "processes the notifications our school Instagram accounts receive."
+            },
+            "meta": {
+              "term": "Meta:",
+              "text": "runs Instagram, where we post to our school accounts."
+            },
+            "maps": {
+              "term": "OpenStreetMap services:",
+              "text": "provide map images and find event addresses on the map."
+            },
+            "bank": {
+              "term": "Our bank:",
+              "text": "sends Interac e-Transfer payouts."
+            }
+          },
+          "p3": "We may also share personal information when the law requires it, to protect someone's safety, rights or property, or as part of a merger or sale of Wat2Do, in which case this policy keeps applying to it."
+        },
+        "cookies": {
+          "title": "Cookies, analytics and browser storage",
+          "p1": "We use these cookies and browser storage:",
+          "items": {
+            "signIn": {
+              "term": "Sign-in cookies:",
+              "text": "keep you signed in for up to {{sessionDays}} and let pages know you're signed in. Google sign-in adds one that lasts 10 minutes."
+            },
+            "theme": {
+              "term": "Theme cookie:",
+              "text": "remembers light or dark mode for a year."
+            },
+            "poster": {
+              "term": "Poster visitor cookie:",
+              "text": "a random ID, kept for two years, that lets us count unique poster scans without knowing who you are."
+            },
+            "storage": {
+              "term": "Browser storage:",
+              "text": "keeps your language, a copy of your profile so pages load faster, and details for one browser tab, such as your filters."
+            },
+            "analytics": {
+              "term": "Google Analytics:",
+              "text": "sets its own cookies to measure how many people visit and which pages they use. We remove codes, links and email addresses from the page addresses we send it."
+            }
+          },
+          "p2": "You can block or delete cookies in your browser settings, though you need the sign-in cookies to stay signed in. To opt out of Google Analytics on every site, use Google's opt-out browser add-on or block its cookies.",
+          "tracking": "Our pages load maps from Google and OpenFreeMap, and Google Analytics measures visits, so those companies receive your IP address and browser details under their own privacy policies. We don't use advertising networks, and Wat2Do doesn't change what it collects in response to Do Not Track or Global Privacy Control signals."
+        },
+        "location": {
+          "title": "Where we store it",
+          "p1": "Our database runs on our own server in Canada. Our website and email services run on Amazon Web Services in Canada, and Cloudflare stores images and videos in North America. Some of the companies we work with, such as Google, Anthropic, OpenAI, Stripe, GitHub and Meta, process information in the United States or elsewhere.",
+          "p2": "Information processed outside Canada is subject to that country's laws, and its courts, police and security agencies may be able to access it. We choose providers that protect personal information, and we send each one only what it needs.",
+          "quebec": "If you're in Quebec, your personal information may be communicated outside Quebec, as described above. To learn which providers outside Canada handle your information and why, email <email>{{email}}</email>."
+        },
+        "retention": {
+          "title": "How long we keep it",
+          "p1": "We keep personal information only as long as we need it for the purposes above, or as long as the law requires:",
+          "periods": {
+            "account": {
+              "term": "Your account and profile:",
+              "text": "until you ask us to delete your account, which we do within 30 days."
+            },
+            "signIn": {
+              "term": "Sign-in codes and sessions:",
+              "text": "codes expire after {{codeMinutes}}, and a session ends {{sessionDays}} after you last use it."
+            },
+            "activity": {
+              "term": "Going, saves, follows and tickets:",
+              "text": "until you remove them or delete your account."
+            },
+            "usage": {
+              "term": "Clicks, searches and poster scans:",
+              "text": "we keep them without your name, and when you delete your account we unlink your clicks from it."
+            },
+            "emails": {
+              "term": "Email records:",
+              "text": "while your account exists, we keep a record of which emails we sent you, without their content."
+            },
+            "payouts": {
+              "term": "Payout records:",
+              "text": "six years after the payout, as Canadian tax law requires."
+            },
+            "outreach": {
+              "term": "Club contact details:",
+              "text": "with our notes on whether we contacted the club. If a club asks, we stop contacting it and delete its contact details."
+            },
+            "messages": {
+              "term": "Messages:",
+              "text": "as long as we need them to answer you and keep a record of the conversation."
+            },
+            "logs": {
+              "term": "Logs:",
+              "text": "our website's logs are deleted after 14 days. Our server's own logs can hold IP addresses or email addresses, and we keep them only as long as we need them to run and fix Wat2Do."
+            }
+          }
+        },
+        "security": {
+          "title": "How we protect it",
+          "p1": "We protect personal information with safeguards that fit how sensitive it is: encrypted connections, sign-in without passwords, hashed sign-in codes, session tokens and IP addresses, database rules that keep each person's records private, and access limited to the people who need it.",
+          "p2": "No system is perfectly secure. If a breach of our safeguards involving your personal information creates a real risk of significant harm to you, we'll tell you and the Office of the Privacy Commissioner of Canada, as the law requires."
+        },
+        "rights": {
+          "title": "Your choices and rights",
+          "p1": "On your own, you can:",
+          "choices": {
+            "emails": "Turn off the morning email, reminders and change alerts in Settings, or with the unsubscribe link in any of them. Sign-in codes and tickets still arrive, because you need them.",
+            "profile": "Change your photo, school, faculty, interests and language in Settings.",
+            "activity": "Remove events you're going to or saved, and clubs you follow, whenever you like.",
+            "analytics": "Block Google Analytics cookies in your browser."
+          },
+          "p2": "You can also ask us to:",
+          "requests": {
+            "access": "Tell you what personal information we hold about you, how we use it and who we've shared it with.",
+            "copy": "Give you a copy of the information you gave us, in a common format a computer can read.",
+            "correct": "Correct information that is wrong or incomplete.",
+            "delete": "Delete your account and your personal information.",
+            "withdraw": "Stop using your information for a purpose you agreed to, unless the law requires us to keep it.",
+            "stopPublishing": "Stop showing your information publicly, or have it de-indexed, where the law gives you that right."
+          },
+          "p3": "Email <email>{{email}}</email> from the address on your account. It's free, and we reply within 30 days. We may need to confirm it's you, and we may keep some information the law requires us to keep, such as payout records.",
+          "p4": "If you're not satisfied with our answer, you can complain to the Office of the Privacy Commissioner of Canada. In Quebec you can also go to the Commission d'accès à l'information, and in Alberta or British Columbia to that province's Information and Privacy Commissioner."
+        },
+        "others": {
+          "title": "If you don't use Wat2Do",
+          "p1": "Some information we hold is about people who don't use Wat2Do: usernames tagged in a club's public post, messages sent to our Instagram accounts and club email addresses published online.",
+          "p2": "When you message one of our Instagram accounts, we read your message and any post you share in order to answer it, and AI helps decide how. We keep a short record of each conversation (the account name and the latest message) so we know which ones we've answered, and a club's words when it asks us to fix one of its listings. We never write message text into our logs.",
+          "p3": "You have the same rights as anyone else: you can ask what we hold about you and ask us to remove it. A club can also ask us to leave it out of our Instagram posts, or to stop contacting it."
+        },
+        "children": {
+          "title": "Children",
+          "p1": "Wat2Do is for university and college students. It isn't meant for children under 13, and we don't knowingly collect their information. In Quebec, anyone under 14 needs a parent's or guardian's consent before giving us personal information. If you think a child has given us personal information without the consent they need, email us and we'll delete it."
+        },
+        "changes": {
+          "title": "Changes to this policy",
+          "p1": "We post every change on this page with a new effective date, and we keep past versions, which we'll send you if you ask. Before a significant change applies, such as a new use of your information, we'll tell you by email or on Wat2Do and ask for your consent where the law requires it. We won't use information we already hold in a new way without the consent the law requires."
+        },
+        "contact": {
+          "title": "Contact",
+          "p1": "Send questions, requests and complaints about privacy to <email>{{email}}</email>."
+        }
+      }
+    }
+  }
+}

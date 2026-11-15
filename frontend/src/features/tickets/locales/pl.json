@@ -132,6 +132,8 @@
       "pauseHint": "Dopóki tego nie wyłączysz, nikt nowy nie dostanie biletu.",
       "fees": "Stripe pobiera około 2,9% + 30 centów od każdego zamówienia. Resztę dostaje Twoja organizacja.",
       "goingNote": "Każdy, kto już zadeklarował udział, dostanie bilet e-mailem.",
+      "payoutNoteSetup": "Każde kwalifikujące się zameldowanie daje Twojej organizacji {{rate}}. Włączając bilety, akceptujesz w imieniu organizacji <terms>Warunki wypłat dla organizacji</terms>.",
+      "payoutNote": "Każde kwalifikujące się zameldowanie daje Twojej organizacji {{rate}} zgodnie z <terms>Warunkami wypłat dla organizacji</terms>.",
       "payoutsNeeded": "Najpierw skonfiguruj wypłaty, żeby pieniądze miały dokąd trafić.",
       "setUpPayouts": "Skonfiguruj wypłaty",
       "turnOnFree": "Włącz bezpłatne bilety",

@@ -1,0 +1,445 @@
+{
+  "legal": {
+    "common": {
+      "effective": "In vigore dal {{date}}",
+      "summary": "In breve",
+      "contents": "In questa pagina",
+      "translationNotice": "Forniamo questa traduzione per comodità. Se differisce dalla versione inglese, vale la versione inglese."
+    },
+    "clubPayoutTerms": {
+      "title": "Termini di pagamento alle organizzazioni",
+      "intro": "Questi termini spiegano come Wat2Do paga le organizzazioni studentesche per le persone di cui registrano l'ingresso ai loro eventi con i biglietti QR gratuiti di Wat2Do. Sono un accordo tra la tua organizzazione e Wat2Do, quindi leggili per intero prima che la tua organizzazione faccia affidamento su di essi. Se qualcosa non è chiaro, scrivici a <email>{{email}}</email>.",
+      "summary": {
+        "rate": "Wat2Do paga alla tua organizzazione {{rate}} per ogni partecipante idoneo di cui registri l'ingresso alla porta con i biglietti QR di Wat2Do.",
+        "who": "La tua organizzazione deve avere una pagina Wat2Do rivendicata in una di queste università: {{schools}}. L'evento deve essere pubblicato su Wat2Do con i biglietti Wat2Do attivi.",
+        "attendees": "Ogni partecipante conta una sola volta per data dell'evento, con il proprio account Wat2Do, e deve essere presente all'evento di persona.",
+        "limits": "Paghiamo fino a {{maxPerEventDate}} per una data dell'evento, e fino a {{monthlyCap}} a una stessa organizzazione per un mese solare.",
+        "payment": "Inviamo i pagamenti di ogni mese tramite Interac e-Transfer entro il giorno {{payoutDay}} del mese successivo.",
+        "fraud": "Non paghiamo i check-in che non corrispondono a partecipanti reali. Possiamo trattenere un pagamento mentre facciamo le verifiche, e recuperare i pagamenti relativi ai check-in che alla fine non risultano validi.",
+        "leave": "La tua organizzazione può uscire in qualsiasi momento e viene comunque pagata per i check-in idonei precedenti alla sua uscita.",
+        "full": "Questo riepilogo tralascia alcuni dettagli. Valgono i termini completi qui sotto."
+      },
+      "sections": {
+        "about": {
+          "title": "A chi si applicano questi termini",
+          "p1": "Wat2Do (\"noi\") gestisce wat2do.io, dove gli studenti scoprono cosa succede nella loro università. In questi termini, \"la tua organizzazione\" (o \"tu\") indica un'organizzazione studentesca (club, associazione, squadra o gruppo) la cui pagina Wat2Do è stata rivendicata, e che agisce tramite le persone che gestiscono quella pagina su Wat2Do (i suoi \"manager\").",
+          "p2": "Un manager che attiva i biglietti Wat2Do per un evento, o che ci invia i dati per i pagamenti, accetta questi termini per conto dell'organizzazione, e conferma di avere almeno 18 anni e l'autorità per prendere questa decisione per essa. Se non è il tuo caso, non partecipare finché qualcuno che può farlo non avrà accettato.",
+          "p3": "Questi termini riguardano solo i pagamenti alle organizzazioni. La nostra <dataPolicy>Informativa sui dati</dataPolicy> spiega come trattiamo i dati personali."
+        },
+        "eligibility": {
+          "title": "Quali organizzazioni possono partecipare",
+          "p1": "La tua organizzazione può partecipare finché tutte queste condizioni sono soddisfatte:",
+          "conditions": {
+            "school": "È un'organizzazione guidata da studenti (club, associazione, squadra o gruppo) in una di queste università: {{schools}}.",
+            "claimed": "Uno dei suoi manager ha rivendicato la sua pagina su Wat2Do.",
+            "rules": "Organizza i propri eventi e rispetta le regole della sua università e della sua unione studentesca per le organizzazioni, comprese le loro regole sul denaro delle organizzazioni.",
+            "transfer": "Può ricevere un Interac e-Transfer in dollari canadesi."
+          },
+          "p2": "Non possono partecipare dipartimenti, uffici e servizi universitari, aziende, né persone o società che organizzano eventi a scopo di lucro. Potremo aggiungere altre università in futuro aggiornando questi termini."
+        },
+        "events": {
+          "title": "Quali eventi contano",
+          "p1": "Un evento dà diritto a pagamenti quando tutte queste condizioni sono soddisfatte:",
+          "conditions": {
+            "listed": "La tua organizzazione lo organizza, ed è pubblicato sulla pagina Wat2Do della tua organizzazione con titolo, data, ora e luogo reali.",
+            "tickets": "I biglietti Wat2Do sono attivi per l'evento prima che inizi, e registri l'ingresso delle persone con lo scanner dei biglietti di Wat2Do.",
+            "inPerson": "Si svolge di persona, nel luogo e all'ora indicati, e gli studenti della tua università possono partecipare.",
+            "rules": "È legale e rispetta le regole della tua università e della tua unione studentesca."
+          },
+          "p2": "Questi eventi non danno diritto a pagamenti, anche se durante questi eventi scansioni dei biglietti:",
+          "excluded": {
+            "meetings": "Riunioni di qualsiasi tipo, comprese le assemblee generali, le riunioni del direttivo e le assemblee annuali, le elezioni e le sessioni informative.",
+            "practices": "Allenamenti, formazione, lezioni, corsi, tutoraggio, sessioni di studio e orari di ricevimento.",
+            "recruiting": "Eventi di reclutamento, colloqui e audizioni.",
+            "sales": "Tavoli di vendita e di raccolta fondi.",
+            "religious": "Funzioni religiose.",
+            "private": "Eventi riservati al tuo direttivo o a una lista di invitati.",
+            "notHeld": "Eventi che non si sono svolti come indicato su Wat2Do."
+          }
+        },
+        "scans": {
+          "title": "Quali check-in contano",
+          "p1": "Un check-in è una scansione idonea, e dà diritto a un pagamento, solo quando tutte queste condizioni sono soddisfatte:",
+          "conditions": {
+            "ticket": "Il biglietto è un biglietto Wat2Do valido per quella data dell'evento, nell'account Wat2Do del partecipante stesso.",
+            "present": "Il partecipante è presente all'evento di persona quando scansioni il suo biglietto.",
+            "scanner": "Un manager lo registra con lo strumento di check-in di Wat2Do, scansionandone o digitandone il codice, mentre il check-in è aperto per quella data: da {{opensHours}} prima dell'inizio fino a {{closesHours}} dopo la fine.",
+            "first": "È il primo check-in di quell'account per quella data dell'evento. Se scansioni di nuovo la stessa persona, conta una sola volta.",
+            "notManager": "Il partecipante non è un manager della tua organizzazione su Wat2Do."
+          },
+          "p2": "Questi non contano mai:",
+          "excluded": {
+            "absent": "Biglietti scansionati senza che il partecipante sia presente, come screenshot o codici inviati in anticipo.",
+            "fakeAccounts": "Account creati, acquistati o controllati dalla tua organizzazione o dai suoi membri per aggiungere check-in, e account che non appartengono a una persona reale.",
+            "paid": "Check-in di persone pagate o ricompensate per farsi registrare, anziché venire per l'evento.",
+            "undone": "Check-in annullati, e biglietti rimborsati o cancellati.",
+            "tests": "Check-in fatti per provare lo scanner.",
+            "otherTools": "Check-in fatti al di fuori dello scanner di Wat2Do, o con qualsiasi mezzo automatico."
+          },
+          "p3": "Il pannello della tua organizzazione mostra i check-in di ogni data dell'evento. Paghiamo le scansioni idonee presenti nei nostri registri una volta completati i controlli descritti in \"Verifiche e frodi\"."
+        },
+        "amount": {
+          "title": "Quanto paghiamo",
+          "p1": "Paghiamo {{rate}} per ogni scansione idonea.",
+          "p2": "Paghiamo al massimo {{maxPerEventDate}} per una singola data dell'evento, e al massimo {{monthlyCap}} alla tua organizzazione per tutte le date dei suoi eventi in un mese solare. Le scansioni idonee oltre uno dei due limiti non danno diritto a pagamenti.",
+          "p3": "La tariffa e i limiti che si applicano a una data dell'evento sono quelli previsti da questi termini in quella data.",
+          "p4": "I pagamenti sono somme che Wat2Do versa alla tua organizzazione a titolo promozionale. Non sono stipendi né compensi per servizi, e non rendono Wat2Do organizzatore, ospite o sponsor del tuo evento. Sono separati dal denaro dei biglietti a pagamento, che va direttamente sull'account Stripe della tua organizzazione."
+        },
+        "payment": {
+          "title": "Come e quando paghiamo",
+          "p1": "Alla fine di ogni mese solare, contiamo le scansioni idonee della tua organizzazione per le date degli eventi di quel mese e inviamo un riepilogo via email ai suoi manager.",
+          "p2": "Entro il giorno {{payoutDay}} del mese successivo, inviamo il pagamento tramite Interac e-Transfer, in dollari canadesi, all'email per i pagamenti della tua organizzazione, e paghiamo le eventuali commissioni che la nostra banca applica per l'invio. Se quel giorno non è lavorativo in Ontario, lo inviamo entro il giorno lavorativo successivo.",
+          "p3": "La tua organizzazione ci indica un'unica email per i pagamenti. Deve poter ricevere Interac e-Transfer e appartenere alla tua organizzazione, o a chi gestisce il denaro della tua organizzazione secondo le regole della tua unione studentesca, come l'ufficio organizzazioni dell'unione o il tesoriere della tua organizzazione. Se non ne abbiamo una, la chiederemo ai manager della tua organizzazione. Una volta incassato, un pagamento non può essere annullato, quindi avvisaci appena cambia la tua email per i pagamenti.",
+          "expired": "Se un Interac e-Transfer scade prima che qualcuno lo incassi, lo inviamo di nuovo appena la tua organizzazione conferma la sua email per i pagamenti.",
+          "p4": "Se entro {{deadlineDays}} da una data dell'evento la tua organizzazione non ci ha dato un modo per pagarla, il pagamento per quella data decade e non lo dobbiamo più.",
+          "p5": "La tua organizzazione deve gestire i pagamenti secondo le regole della sua università e della sua unione studentesca, per esempio depositandoli sul conto dell'organizzazione stessa. Se la tua unione deve approvare fondi esterni o sponsorizzazioni, ottieni questa approvazione prima che la tua organizzazione accetti i pagamenti."
+        },
+        "taxes": {
+          "title": "Imposte",
+          "p1": "La tua organizzazione è responsabile di eventuali imposte sui suoi pagamenti, e ogni pagamento include l'eventuale GST o HST applicabile. Non tratteniamo imposte, a meno che la legge non ci obblighi a farlo.",
+          "p2": "Se la legge ci obbliga a dichiarare i pagamenti a un'autorità fiscale, per esempio su un modulo T4A, possiamo chiedere alla tua organizzazione le informazioni di cui abbiamo bisogno, incluso un numero di assicurazione sociale (Social Insurance Number) solo quando la legge lo richiede, e trattenere i suoi pagamenti finché non le abbiamo."
+        },
+        "reviews": {
+          "title": "Verifiche e frodi",
+          "p1": "Verifichiamo i check-in prima di pagare, e possiamo verificarli di nuovo in seguito.",
+          "p2": "Possiamo chiedere alla tua organizzazione prove ragionevoli che un evento si sia svolto come indicato e che i suoi check-in siano reali, come foto, post sull'evento o un conteggio dei presenti. Se la tua organizzazione non le invia entro {{proofDays}} dalla nostra richiesta, possiamo considerare quei check-in non idonei.",
+          "p3": "Possiamo trattenere, fino a {{holdDays}} dopo la sua data di pagamento, il pagamento dei check-in che stiamo verificando, e poi pagare quelli che riteniamo idonei. Non paghiamo i check-in che, per motivi ragionevoli, riteniamo non siano scansioni idonee.",
+          "clawback": "Se, entro {{clawbackDays}} da un pagamento, scopriamo che quel pagamento copriva check-in che non erano scansioni idonee, la tua organizzazione ci deve quell'importo. Lo tratteniamo prima dai pagamenti successivi della tua organizzazione, e le chiediamo di restituire l'eventuale importo residuo. I pagamenti per gli altri suoi check-in, quelli idonei, vengono comunque effettuati.",
+          "p4": "Se un'organizzazione viola questi termini di proposito o più di una volta, per esempio scansionando account falsi o biglietti senza partecipante, possiamo escluderla dal programma, annullare i pagamenti ancora dovuti per gli eventi coinvolti e limitare il suo uso di Wat2Do.",
+          "p5": "Prendiamo queste decisioni in modo ragionevole e in buona fede, e comunichiamo il motivo alla tua organizzazione."
+        },
+        "disputes": {
+          "title": "Domande e contestazioni",
+          "p1": "Se pensi che un pagamento sia sbagliato, scrivi a <email>{{email}}</email> entro {{disputeDays}} dal suo invio, o dalla sua data di pagamento se non è mai arrivato. Indica l'evento e spiegaci cosa pensi che sia sbagliato.",
+          "p2": "Esaminiamo la questione, se possibile con una persona che non ha preso la prima decisione, e ti rispondiamo con la nostra decisione entro {{replyDays}}. Se dobbiamo di più alla tua organizzazione, glielo paghiamo con il pagamento successivo o prima.",
+          "talkFirst": "Prima che una delle parti si rivolga a un tribunale per questioni relative a questi termini, entrambe le parti cercheranno in buona fede di risolvere la questione via email per 30 giorni."
+        },
+        "responsibilities": {
+          "title": "Responsabilità della tua organizzazione",
+          "p1": "La tua organizzazione è responsabile dei suoi eventi, inclusi pianificazione, sicurezza, accessibilità, cibo, alcol, capienza, assicurazione e rimborsi, e del rispetto della legge e delle regole della tua università.",
+          "p2": "Mantieni corretti gli annunci dei tuoi eventi, e avvisa i partecipanti che scansionerai i loro biglietti Wat2Do all'ingresso.",
+          "p3": "Usa i dati dei partecipanti che vedi in Wat2Do solo per gestire il tuo evento. Non copiarli, non venderli e non condividerli.",
+          "p4": "Proteggi l'accesso al tuo account Wat2Do, e avvisaci a <email>{{email}}</email> se pensi che qualcuno abbia usato in modo improprio la pagina della tua organizzazione.",
+          "describe": "Descrivi i pagamenti in modo accurato: vanno alla tua organizzazione, non alle persone di cui registri l'ingresso. Non lasciare intendere che la tua università o la tua unione studentesca gestisca o approvi Wat2Do o questi pagamenti."
+        },
+        "names": {
+          "title": "Nomi e loghi",
+          "p1": "Possiamo dire pubblicamente che la tua organizzazione partecipa, usando il nome e il logo della sua pagina Wat2Do. Puoi dire che il tuo evento usa i biglietti Wat2Do, ma non usare il nome o il logo di Wat2Do in un modo che lasci intendere che organizziamo o sponsorizziamo il tuo evento."
+        },
+        "privacy": {
+          "title": "Dati personali",
+          "p1": "Per gestire i pagamenti usiamo i dati di check-in della tua organizzazione, gli account che hanno i biglietti che scansioni, i nomi e gli indirizzi email dei manager della tua organizzazione, e l'email per i pagamenti della tua organizzazione. Li usiamo per contare e verificare le scansioni, inviare i pagamenti, prevenire le frodi e conservare i registri richiesti dalla legge.",
+          "p2": "La nostra <dataPolicy>Informativa sui dati</dataPolicy> spiega come trattiamo i dati personali, compresi quelli dei partecipanti, e le scelte che ognuno ha al riguardo."
+        },
+        "changes": {
+          "title": "Modifiche e uscita",
+          "p1": "Possiamo modificare questi termini, compresi la tariffa e i limiti, o porre fine del tutto ai pagamenti. Pubblichiamo ogni modifica su questa pagina con una nuova data di entrata in vigore.",
+          "p2": "Una modifica che riduce quanto paghiamo alle organizzazioni, o la fine dei pagamenti, si applica solo alle date degli eventi che cadono almeno {{noticeDays}} dopo la sua pubblicazione, e lo comunichiamo via email ai manager delle organizzazioni quando la pubblichiamo. Le altre modifiche si applicano alle date degli eventi successive alla loro pubblicazione.",
+          "p3": "Nessuna modifica riduce i pagamenti per le date degli eventi precedenti alla sua entrata in vigore.",
+          "p4": "La tua organizzazione può uscire in qualsiasi momento scrivendo a <email>{{email}}</email> o disattivando i biglietti Wat2Do per i suoi eventi. Paghiamo comunque le scansioni idonee precedenti alla sua uscita.",
+          "survival": "Se la tua organizzazione esce o i pagamenti terminano, continuano ad applicarsi le parti di questi termini sui pagamenti già maturati, le imposte, le verifiche, il recupero dei pagamenti e la parte legale.",
+          "archive": "Conserviamo le versioni precedenti di questi termini, e te ne invieremo una copia se ci scrivi."
+        },
+        "legal": {
+          "title": "La parte legale",
+          "p1": "La tua organizzazione e Wat2Do sono indipendenti l'uno dall'altro. Nulla in questi termini rende una delle parti socia, datrice di lavoro, dipendente o agente dell'altra.",
+          "p2": "Forniamo lo scanner dei biglietti di Wat2Do e il resto del sito così come sono. Ci impegniamo a mantenere funzionante il check-in, ma non possiamo promettere che non si guasti mai. Se si guasta durante il tuo evento, possiamo contare i check-in che la tua organizzazione riesce a dimostrarci in un altro modo, anche se non siamo obbligati a farlo.",
+          "p3": "Nei limiti consentiti dalla legge, la responsabilità complessiva di ciascuna parte verso l'altra in base a questi termini è limitata al maggiore tra {{liabilityFloor}} e i pagamenti che abbiamo versato o che dovevamo alla tua organizzazione nei 12 mesi precedenti la richiesta di risarcimento, e nessuna delle parti è responsabile di perdite indirette, come mancati ricavi o il costo di un evento. Questi limiti non si applicano ai pagamenti che dobbiamo, né in caso di frode o dolo.",
+          "p4": "Questi termini sono regolati dalle leggi dell'Ontario e dalle leggi federali del Canada applicabili in Ontario, e i tribunali dell'Ontario decidono qualsiasi controversia che li riguardi.",
+          "delays": "Nessuna delle parti è responsabile dei ritardi causati da circostanze al di fuori del suo ragionevole controllo, come interruzioni dei servizi dei nostri fornitori o delle nostre banche, ma queste circostanze non annullano i pagamenti già maturati.",
+          "p5": "Se un tribunale ritiene inapplicabile una disposizione di questi termini, il resto continua ad applicarsi. Se non facciamo valere subito una disposizione, possiamo comunque farla valere in seguito. La tua organizzazione non può trasferire a nessun altro i diritti che le derivano da questi termini.",
+          "notices": "Inviamo le comunicazioni relative a questi termini agli indirizzi email degli account Wat2Do dei manager della tua organizzazione, e tu invii le tue a <email>{{email}}</email>.",
+          "p6": "Questi termini costituiscono l'intero accordo tra la tua organizzazione e Wat2Do sui pagamenti. Li abbiamo scritti in inglese: se una traduzione differisce, vale la versione inglese."
+        },
+        "contact": {
+          "title": "Contatti",
+          "p1": "Invia domande su questi termini o su un pagamento a <email>{{email}}</email>, indicando il nome della tua organizzazione.",
+          "formats": "Se ti servono questi termini in un altro formato, per esempio a caratteri grandi, scrivici e te li forniremo."
+        }
+      }
+    },
+    "dataPolicy": {
+      "title": "Informativa sui dati",
+      "intro": "Questa informativa spiega quali dati personali raccoglie Wat2Do, perché, con chi li condividiamo, per quanto tempo li conserviamo e quali scelte hai. Riguarda wat2do.io e ogni sito universitario che ospita (come uwaterloo.wat2do.io), le email che inviamo e gli account Instagram che gestiamo per ogni università. Se hai una domanda, scrivici a <email>{{email}}</email>.",
+      "summary": {
+        "collect": "Raccogliamo ciò che ci dai (la tua email, la tua università, la tua facoltà e i tuoi interessi), ciò che fai su Wat2Do (eventi a cui partecipi o che salvi, biglietti, organizzazioni che segui) e alcuni dati tecnici, come una forma offuscata del tuo indirizzo IP.",
+        "noSale": "Non vendiamo i tuoi dati personali e non mostriamo pubblicità.",
+        "share": "Quando segni che parteciperai a un evento, gli altri visitatori vedono il tuo nome, l'iniziale del tuo cognome e la tua foto, e le organizzazioni vedono il tuo nome e il tuo indirizzo email quando hai un biglietto per il loro evento. Aziende come Amazon Web Services, Cloudflare e Google gestiscono parti di Wat2Do per noi, alcune al di fuori del Canada.",
+        "analytics": "Usiamo Google Analytics per contare le visite, e togliamo codici e indirizzi email dagli indirizzi delle pagine che riceve.",
+        "public": "Usiamo anche informazioni pubbliche: gli eventi delle organizzazioni presi da post pubblici di Instagram, e le email di contatto che le organizzazioni pubblicano online.",
+        "choices": "Puoi disattivare le nostre email in qualsiasi momento, modificare il tuo profilo in Impostazioni, e chiederci di mostrarti, correggere o cancellare i tuoi dati.",
+        "contact": "Invia domande e richieste a <email>{{email}}</email>."
+      },
+      "sections": {
+        "who": {
+          "title": "Chi siamo",
+          "p1": "Wat2Do è un sito web che mostra agli studenti cosa succede nella loro università. L'hanno creato studenti della University of Waterloo, e lo gestiamo dal Canada. In questa informativa, \"Wat2Do\" e \"noi\" indicano le persone che lo gestiscono.",
+          "p2": "Chi ha fondato Wat2Do ha il compito di proteggere i dati personali (è il nostro responsabile della privacy) e risponde di come Wat2Do li tratta. Puoi contattare questa persona a <email>{{email}}</email>.",
+          "governance": "Il nostro responsabile della privacy approva come raccogliamo e usiamo i dati personali, risponde a richieste e reclami, tiene un registro degli incidenti di privacy e rivede questa informativa almeno una volta all'anno."
+        },
+        "collect": {
+          "title": "Cosa raccogliamo",
+          "p1": "Ciò che raccogliamo dipende da come usi Wat2Do. Puoi consultare eventi, organizzazioni e posizioni senza un account, e per un account serve solo il tuo indirizzo email: tutto il resto che aggiungi è una tua scelta. Raccogliamo queste informazioni da te:",
+          "fromYou": {
+            "account": {
+              "term": "Il tuo account.",
+              "text": "Il tuo indirizzo email, con cui accedi tramite un codice o un link monouso, oppure tramite Google. Con l'accesso tramite Google conserviamo solo il tuo indirizzo email verificato, non il tuo nome o la tua foto di Google. Non ti chiediamo mai una password."
+            },
+            "profile": {
+              "term": "Il tuo profilo.",
+              "text": "La tua università, che ricaviamo dal sito universitario su cui ti registri, e tutto ciò che aggiungi: una foto, la tua facoltà, i tuoi interessi, se sei al primo anno e la tua lingua."
+            },
+            "activity": {
+              "term": "Cosa fai su Wat2Do.",
+              "text": "Gli eventi che segni con \"Partecipo\" o che salvi, le organizzazioni che segui, i biglietti che ottieni, quando un'organizzazione registra il tuo ingresso e le richieste di rimborso che invii."
+            },
+            "submissions": {
+              "term": "Cosa ci invii.",
+              "text": "Eventi, posizioni e organizzazioni che proponi, con il tuo indirizzo email per poterti comunicare la nostra decisione, le locandine che ci chiedi di leggere e gli eventi che segnali."
+            },
+            "clubs": {
+              "term": "Se gestisci un'organizzazione.",
+              "text": "L'organizzazione che gestisci e il tuo ruolo al suo interno, gli indirizzi email delle persone che inviti, la prova che carichi quando rivendichi un'organizzazione, e l'email per i pagamenti della tua organizzazione se partecipa ai pagamenti alle organizzazioni."
+            },
+            "promoters": {
+              "term": "Se promuovi Wat2Do.",
+              "text": "La tua email per i pagamenti, quando hai accettato i termini per i promotori e i poster che crei."
+            },
+            "messages": {
+              "term": "Messaggi.",
+              "text": "Ciò che scrivi nei nostri moduli di contatto e di proposta di attività, che arrivano nelle nostre caselle email, e i messaggi che invii ai nostri account Instagram."
+            }
+          },
+          "p2": "Raccogliamo alcune informazioni automaticamente:",
+          "automatic": {
+            "usage": {
+              "term": "Come usi il sito.",
+              "text": "Clic, visualizzazioni e condivisioni di eventi, collegati al tuo account quando hai effettuato l'accesso e, altrimenti, a un ID casuale che dura quanto una scheda del browser. Conserviamo anche le parole che cerchi e i filtri che usi, senza collegarli a te."
+            },
+            "network": {
+              "term": "Dispositivo e rete.",
+              "text": "Una forma offuscata (hash) del tuo indirizzo IP, che usiamo per limitare gli abusi e individuare clic falsi e scansioni false dei poster. Non salviamo il tuo indirizzo IP vero e proprio nel nostro database, ma le aziende che distribuiscono il sito lo vedono, e i log del nostro server lo registrano quando una richiesta supera i nostri limiti di frequenza. Per le scansioni dei poster conserviamo anche il tipo di browser e di sistema, come Chrome su iOS."
+            },
+            "location": {
+              "term": "Posizione, solo se la consenti.",
+              "text": "Quando scansioni un poster Wat2Do che non ha ancora una posizione, il tuo browser può chiederti di condividere la tua posizione. Se lo consenti, la salviamo come posizione del poster, non con la tua scansione né con il tuo account."
+            }
+          },
+          "p3": "Raccogliamo anche informazioni da fonti pubbliche:",
+          "public": {
+            "posts": {
+              "term": "Post delle organizzazioni.",
+              "text": "Leggiamo i post pubblici di Instagram delle organizzazioni studentesche per elencarne eventi e posizioni. Conserviamo testo, immagini e video di ogni post, l'account che l'ha pubblicato e i nomi utente taggati, e copiamo le immagini del profilo delle organizzazioni per usarle come loghi."
+            },
+            "contacts": {
+              "term": "Contatti delle organizzazioni.",
+              "text": "Raccogliamo gli indirizzi email che le organizzazioni pubblicano sulle proprie pagine e negli elenchi delle università, così possiamo invitarle a rivendicare la loro pagina Wat2Do."
+            },
+            "instagram": {
+              "term": "Account Instagram.",
+              "text": "I nostri account delle università ricevono notifiche e messaggi, e leggiamo gli elenchi degli account che le organizzazioni seguono per trovare altre organizzazioni. Conserviamo i nomi utente e i nomi degli account pubblici che potremmo seguire."
+            },
+            "feedback": {
+              "term": "Post pubblici sulle app per studenti.",
+              "text": "Leggiamo post pubblici su X e Reddit su app come la nostra per capire cosa vogliono gli studenti, e conserviamo ogni post, il nome utente del suo autore e il suo link."
+            }
+          }
+        },
+        "use": {
+          "title": "Come li usiamo",
+          "p1": "Usiamo i dati personali solo per questi scopi:",
+          "purposes": {
+            "account": "Per gestire il tuo account, farti accedere e mantenere il tuo accesso.",
+            "show": "Per mostrarti cosa succede nella tua università, e gli eventi che hai salvato, a cui partecipi o per cui hai biglietti.",
+            "emails": "Per inviarti le email che controlli tu: l'email mattutina con gli eventi, i promemoria prima degli eventi a cui partecipi e gli avvisi quando uno di questi cambia. Inviamo anche le email di cui hai bisogno, come i codici di accesso, i biglietti e le nostre decisioni sulle tue proposte.",
+            "tickets": "Per emettere biglietti e permettere alle organizzazioni di registrare il tuo ingresso.",
+            "payouts": "Per pagare i promotori e le organizzazioni dei nostri programmi di pagamento, e per conservare i registri richiesti dalla legge.",
+            "safety": "Per mantenere Wat2Do sicuro: limitare gli abusi, individuare account, clic e scansioni falsi, e indagare sui problemi.",
+            "improve": "Per contare le visite e vedere quali pagine e funzioni usano le persone, con Google Analytics e i nostri dati sui clic, così da poterle correggere e migliorare.",
+            "clubs": "Per elencare gli eventi delle organizzazioni, invitare le organizzazioni a rivendicare le loro pagine e rispondere ai messaggi inviati ai nostri account Instagram.",
+            "law": "Per rispettare la legge e rispondere a richieste legittime."
+          },
+          "p2": "Una parte di questo lavoro usa l'IA. Claude, un modello creato da Anthropic, legge i post pubblici delle organizzazioni e i messaggi che ricevono i nostri account Instagram, per elencare eventi e aiutare a decidere come rispondere. I modelli di OpenAI leggono le locandine che ci chiedi di leggere. Niente di tutto ciò prende decisioni su di te con effetti giuridici o altrettanto significativi.",
+          "training": "Non usiamo i tuoi dati personali per addestrare modelli di IA.",
+          "p3": "Non vendiamo né affittiamo dati personali, e non li usiamo per la pubblicità."
+        },
+        "emails": {
+          "title": "Email",
+          "p1": "Inviamo due tipi di email. Le email di cui hai bisogno, come i codici di accesso, i biglietti, le decisioni sulle tue proposte e le nostre risposte, arrivano sempre. Le email di notifica sugli eventi (l'email mattutina, i promemoria e gli avvisi di modifica) sono attive quando ti registri, e puoi disattivarle una per una in Impostazioni o con il link di annullamento dell'iscrizione che contengono. Smettiamo di inviarle entro 10 giorni lavorativi, e di solito subito.",
+          "inbox": "Conserviamo anche una breve copia di queste email, e delle email sui tuoi biglietti, sulle tue proposte e sugli inviti alle organizzazioni, nelle tue notifiche su Wat2Do (dietro l'icona della campanella), ed eliminiamo ogni copia dopo {{inboxDays}}.",
+          "p2": "Scriviamo anche alle organizzazioni, agli indirizzi che pubblicano, riguardo alla loro pagina Wat2Do. Un'organizzazione può chiederci di smettere in qualsiasi momento."
+        },
+        "sharing": {
+          "title": "Chi li vede e con chi li condividiamo",
+          "p1": "Parte di ciò che fai su Wat2Do è visibile ad altre persone:",
+          "visible": {
+            "going": "Quando segni che parteciperai, chi visualizza l'evento può vedere il tuo nome, l'iniziale del tuo cognome e la tua foto tra le persone che partecipano.",
+            "tickets": "Quando hai un biglietto, l'organizzazione che gestisce l'evento vede il tuo nome (o l'inizio del tuo indirizzo email), il tuo indirizzo email, il codice del tuo biglietto, quando è stato registrato il tuo ingresso ed eventuali richieste di rimborso. Se un'organizzazione attiva i biglietti per un evento a cui hai detto che parteciperai, ti emettiamo un biglietto e l'organizzazione vede gli stessi dati.",
+            "teams": "Le persone che gestiscono la stessa organizzazione vedono a vicenda nomi, indirizzi email e foto.",
+            "submissions": "Eventi, posizioni e organizzazioni che pubblichiamo dalle tue proposte sono pubblici, ma il tuo indirizzo email no."
+          },
+          "p2": "Condividiamo dati personali con aziende che gestiscono parti di Wat2Do per noi, e solo ciò di cui ognuna ha bisogno per quel lavoro:",
+          "providers": {
+            "aws": {
+              "term": "Amazon Web Services:",
+              "text": "ospita il sito web e invia le nostre email, dal Canada."
+            },
+            "cloudflare": {
+              "term": "Cloudflare:",
+              "text": "distribuisce il sito e archivia immagini e video, in Nord America."
+            },
+            "google": {
+              "term": "Google:",
+              "text": "l'accesso con Google, Google Analytics e le mappe nelle pagine degli eventi."
+            },
+            "ai": {
+              "term": "Anthropic e OpenAI:",
+              "text": "leggono post, locandine e messaggi, come descritto sopra."
+            },
+            "stripe": {
+              "term": "Stripe:",
+              "text": "gestisce il pagamento quando un'organizzazione vende biglietti. Stripe riceve l'indirizzo email e i dati della carta dell'acquirente e li usa anche secondo la propria informativa sulla privacy; noi non vediamo né conserviamo mai i numeri delle carte."
+            },
+            "github": {
+              "term": "GitHub:",
+              "text": "elabora le notifiche che ricevono i nostri account Instagram delle università."
+            },
+            "meta": {
+              "term": "Meta:",
+              "text": "gestisce Instagram, dove pubblichiamo sui nostri account delle università."
+            },
+            "maps": {
+              "term": "Servizi di OpenStreetMap:",
+              "text": "forniscono le immagini delle mappe e trovano gli indirizzi degli eventi sulla mappa."
+            },
+            "bank": {
+              "term": "La nostra banca:",
+              "text": "invia i pagamenti tramite Interac e-Transfer."
+            }
+          },
+          "p3": "Possiamo anche condividere dati personali quando la legge lo richiede, per proteggere la sicurezza, i diritti o i beni di qualcuno, o nell'ambito di una fusione o di una vendita di Wat2Do, nel qual caso questa informativa continua ad applicarsi a quei dati."
+        },
+        "cookies": {
+          "title": "Cookie, statistiche e archiviazione del browser",
+          "p1": "Usiamo questi cookie e questa archiviazione del browser:",
+          "items": {
+            "signIn": {
+              "term": "Cookie di accesso:",
+              "text": "mantengono il tuo accesso fino a {{sessionDays}} e fanno sapere alle pagine che hai effettuato l'accesso. L'accesso con Google ne aggiunge uno che dura 10 minuti."
+            },
+            "theme": {
+              "term": "Cookie del tema:",
+              "text": "ricorda la modalità chiara o scura per un anno."
+            },
+            "poster": {
+              "term": "Cookie visitatore dei poster:",
+              "text": "un ID casuale, conservato per due anni, che ci permette di contare le scansioni uniche dei poster senza sapere chi sei."
+            },
+            "storage": {
+              "term": "Archiviazione del browser:",
+              "text": "conserva la tua lingua, una copia del tuo profilo per far caricare più velocemente le pagine, e dati relativi a una scheda del browser, come i tuoi filtri."
+            },
+            "analytics": {
+              "term": "Google Analytics:",
+              "text": "imposta i propri cookie per misurare quante persone visitano il sito e quali pagine usano. Togliamo codici, link e indirizzi email dagli indirizzi delle pagine che gli inviamo."
+            }
+          },
+          "p2": "Puoi bloccare o eliminare i cookie dalle impostazioni del browser, ma i cookie di accesso ti servono per mantenere l'accesso. Per disattivare Google Analytics su tutti i siti, usa il componente aggiuntivo del browser per la disattivazione di Google Analytics, offerto da Google, o blocca i suoi cookie.",
+          "tracking": "Le nostre pagine caricano mappe di Google e OpenFreeMap, e Google Analytics misura le visite, quindi queste aziende ricevono il tuo indirizzo IP e i dati del tuo browser secondo le proprie informative sulla privacy. Non usiamo reti pubblicitarie, e Wat2Do non cambia ciò che raccoglie in risposta ai segnali Do Not Track o Global Privacy Control."
+        },
+        "location": {
+          "title": "Dove li conserviamo",
+          "p1": "Il nostro database funziona su un nostro server in Canada. Il nostro sito web e i nostri servizi email funzionano su Amazon Web Services in Canada, e Cloudflare archivia immagini e video in Nord America. Alcune delle aziende con cui lavoriamo, come Google, Anthropic, OpenAI, Stripe, GitHub e Meta, trattano informazioni negli Stati Uniti o altrove.",
+          "p2": "Le informazioni trattate al di fuori del Canada sono soggette alle leggi di quel paese, e i suoi tribunali, la sua polizia e le sue agenzie di sicurezza potrebbero avervi accesso. Scegliamo fornitori che proteggono i dati personali, e inviamo a ciascuno solo ciò di cui ha bisogno.",
+          "quebec": "Se ti trovi in Quebec, i tuoi dati personali possono essere comunicati al di fuori del Quebec, come descritto sopra. Per sapere quali fornitori al di fuori del Canada trattano i tuoi dati e perché, scrivi a <email>{{email}}</email>."
+        },
+        "retention": {
+          "title": "Per quanto tempo li conserviamo",
+          "p1": "Conserviamo i dati personali solo per il tempo necessario agli scopi indicati sopra, o per il tempo richiesto dalla legge:",
+          "periods": {
+            "account": {
+              "term": "Il tuo account e il tuo profilo:",
+              "text": "finché non ci chiedi di cancellare il tuo account, cosa che facciamo entro 30 giorni."
+            },
+            "signIn": {
+              "term": "Codici di accesso e sessioni:",
+              "text": "i codici scadono dopo {{codeMinutes}}, e una sessione termina {{sessionDays}} dopo l'ultima volta che la usi."
+            },
+            "activity": {
+              "term": "Eventi segnati con \"Partecipo\", eventi salvati, organizzazioni seguite e biglietti:",
+              "text": "finché non li rimuovi o non cancelli il tuo account."
+            },
+            "usage": {
+              "term": "Clic, ricerche e scansioni dei poster:",
+              "text": "li conserviamo senza il tuo nome, e quando cancelli il tuo account scolleghiamo i tuoi clic da esso."
+            },
+            "emails": {
+              "term": "Registro delle email:",
+              "text": "finché il tuo account esiste, teniamo traccia di quali email ti abbiamo inviato, senza il loro contenuto."
+            },
+            "payouts": {
+              "term": "Registri dei pagamenti:",
+              "text": "sei anni dopo il pagamento, come richiesto dalla normativa fiscale canadese."
+            },
+            "outreach": {
+              "term": "Contatti delle organizzazioni:",
+              "text": "insieme alle nostre note che indicano se abbiamo contattato l'organizzazione. Se un'organizzazione lo chiede, smettiamo di contattarla e cancelliamo i suoi contatti."
+            },
+            "messages": {
+              "term": "Messaggi:",
+              "text": "per il tempo necessario a risponderti e a conservare traccia della conversazione."
+            },
+            "logs": {
+              "term": "Log:",
+              "text": "i log del nostro sito web vengono cancellati dopo 14 giorni. I log del nostro server possono contenere indirizzi IP o indirizzi email, e li conserviamo solo per il tempo necessario a far funzionare e riparare Wat2Do."
+            }
+          }
+        },
+        "security": {
+          "title": "Come li proteggiamo",
+          "p1": "Proteggiamo i dati personali con misure adeguate alla loro sensibilità: connessioni cifrate, accesso senza password, codici di accesso, token di sessione e indirizzi IP sottoposti ad hash, regole del database che mantengono privati i dati di ogni persona, e accesso limitato alle persone che ne hanno bisogno.",
+          "p2": "Nessun sistema è perfettamente sicuro. Se una violazione delle nostre misure di sicurezza che coinvolge i tuoi dati personali crea un rischio reale di danno significativo per te, lo comunicheremo a te e all'Ufficio del Commissario per la privacy del Canada (Office of the Privacy Commissioner of Canada), come richiesto dalla legge."
+        },
+        "rights": {
+          "title": "Le tue scelte e i tuoi diritti",
+          "p1": "In autonomia, puoi:",
+          "choices": {
+            "emails": "Disattivare l'email mattutina, i promemoria e gli avvisi di modifica in Impostazioni, o con il link di annullamento dell'iscrizione presente in ognuna di queste email. I codici di accesso e i biglietti continuano ad arrivare, perché ti servono.",
+            "profile": "Modificare la tua foto, università, facoltà, interessi e lingua in Impostazioni.",
+            "activity": "Rimuovere quando vuoi gli eventi a cui partecipi o che hai salvato, e le organizzazioni che segui.",
+            "analytics": "Bloccare i cookie di Google Analytics nel tuo browser."
+          },
+          "p2": "Puoi anche chiederci di:",
+          "requests": {
+            "access": "Dirti quali dati personali abbiamo su di te, come li usiamo e con chi li abbiamo condivisi.",
+            "copy": "Darti una copia delle informazioni che ci hai fornito, in un formato comune leggibile da un computer.",
+            "correct": "Correggere le informazioni sbagliate o incomplete.",
+            "delete": "Cancellare il tuo account e i tuoi dati personali.",
+            "withdraw": "Smettere di usare i tuoi dati per uno scopo a cui avevi acconsentito, a meno che la legge non ci obblighi a conservarli.",
+            "stopPublishing": "Smettere di mostrare pubblicamente i tuoi dati, o deindicizzarli, quando la legge ti riconosce questo diritto."
+          },
+          "p3": "Scrivi a <email>{{email}}</email> dall'indirizzo del tuo account. È gratuito, e rispondiamo entro 30 giorni. Potremmo dover confermare la tua identità, e possiamo conservare alcune informazioni che la legge ci obbliga a conservare, come i registri dei pagamenti.",
+          "p4": "Se la nostra risposta non ti soddisfa, puoi presentare un reclamo all'Ufficio del Commissario per la privacy del Canada (Office of the Privacy Commissioner of Canada). In Quebec puoi rivolgerti anche alla Commission d'accès à l'information, e in Alberta o nella Columbia Britannica al Commissario per l'informazione e la privacy di quella provincia."
+        },
+        "others": {
+          "title": "Se non usi Wat2Do",
+          "p1": "Alcuni dati che conserviamo riguardano persone che non usano Wat2Do: nomi utente taggati nel post pubblico di un'organizzazione, messaggi inviati ai nostri account Instagram e indirizzi email di organizzazioni pubblicati online.",
+          "p2": "Quando scrivi a uno dei nostri account Instagram, leggiamo il tuo messaggio e qualsiasi post che condividi per poterti rispondere, e l'IA aiuta a decidere come. Conserviamo una breve traccia di ogni conversazione (il nome dell'account e l'ultimo messaggio) per sapere a quali abbiamo risposto, e le parole di un'organizzazione quando ci chiede di correggere uno dei suoi annunci. Non scriviamo mai il testo dei messaggi nei nostri log.",
+          "p3": "Hai gli stessi diritti di chiunque altro: puoi chiedere quali dati abbiamo su di te e chiederci di cancellarli. Un'organizzazione può anche chiederci di escluderla dai nostri post su Instagram, o di smettere di contattarla."
+        },
+        "children": {
+          "title": "Minori",
+          "p1": "Wat2Do è pensato per gli studenti universitari e dei college. Non è destinato ai minori di 13 anni, e non raccogliamo consapevolmente i loro dati. In Quebec, chi ha meno di 14 anni ha bisogno del consenso di un genitore o di un tutore prima di fornirci dati personali. Se pensi che un minore ci abbia fornito dati personali senza il consenso necessario, scrivici e li cancelleremo."
+        },
+        "changes": {
+          "title": "Modifiche a questa informativa",
+          "p1": "Pubblichiamo ogni modifica su questa pagina con una nuova data di entrata in vigore, e conserviamo le versioni precedenti, che ti invieremo se lo chiedi. Prima che si applichi una modifica importante, come un nuovo uso dei tuoi dati, te lo comunicheremo via email o su Wat2Do e ti chiederemo il consenso quando la legge lo richiede. Non useremo in modo nuovo i dati che abbiamo già senza il consenso richiesto dalla legge."
+        },
+        "contact": {
+          "title": "Contatti",
+          "p1": "Invia domande, richieste e reclami sulla privacy a <email>{{email}}</email>."
+        }
+      }
+    }
+  }
+}

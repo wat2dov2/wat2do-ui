@@ -123,6 +123,8 @@
       "pauseHint": "在你关闭此选项之前，不会再有新的人获得门票。",
       "fees": "Stripe 会从每笔订单中收取约 2.9% + 30¢ 的手续费，其余款项归你的组织。",
       "goingNote": "所有已表示会参加的人都会通过邮件收到门票。",
+      "payoutNoteSetup": "每次符合条件的签到可为你的组织赚取 {{rate}}。开启门票即表示你的组织接受<terms>组织付款条款</terms>。",
+      "payoutNote": "每次符合条件的签到可为你的组织赚取 {{rate}}，依据<terms>组织付款条款</terms>。",
       "payoutsNeeded": "请先设置收款，这样款项才有地方转入。",
       "setUpPayouts": "设置收款",
       "turnOnFree": "开启免费门票",
