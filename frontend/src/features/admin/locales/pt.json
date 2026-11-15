@@ -412,6 +412,14 @@
         "failed": "Nenhuma música adicionada: {{reason}}",
         "none": "Este carrossel foi publicado antes de as músicas serem adicionadas automaticamente.",
         "viewPost": "Ver no Instagram"
+      },
+      "story": {
+        "title": "Story",
+        "afterPublish": "Cada slide vai para o story da conta logo depois que este carrossel é publicado.",
+        "pending": "Publicando os slides no story.",
+        "posted": "Todos os slides foram publicados no story.",
+        "failed": "Não publicado no story: {{reason}}",
+        "none": "Este carrossel foi publicado antes de os slides irem para o story."
       }
     },
     "socialAccounts": {

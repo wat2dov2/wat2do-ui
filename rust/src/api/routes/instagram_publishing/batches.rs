@@ -91,6 +91,8 @@ pub struct BatchRow {
     pub music_status: Option<String>,
     pub music_track: Option<String>,
     pub music_error: Option<String>,
+    pub story_status: Option<String>,
+    pub story_error: Option<String>,
     pub published_cover_url: Option<String>,
     pub published_outro_url: Option<String>,
     #[serde(serialize_with = "json::datetime")]
@@ -109,7 +111,8 @@ pub struct BatchRow {
 const BATCH_COLUMNS: &str = "b.id, b.account_key, b.instagram_user_id, b.batch_kind, \
      s.slug AS school, b.local_date, b.window_start, b.window_end, b.status, b.caption, \
      b.caption_intro, b.cover_body, b.version, b.error_message, b.meta_media_id, b.permalink, \
-     b.music_status, b.music_track, b.music_error, b.published_cover_url, b.published_outro_url, \
+     b.music_status, b.music_track, b.music_error, b.story_status, b.story_error, \
+     b.published_cover_url, b.published_outro_url, \
      b.created_at, b.updated_at, b.published_at, b.school_id, b.sticker_selections";
 
 impl BatchRow {

@@ -11911,6 +11911,30 @@
             ],
             "title": "Music Error"
           },
+          "story_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story Status",
+            "description": "Whether the slides went to the account's story: pending, posted or failed"
+          },
+          "story_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story Error",
+            "description": "Why the story was not posted, with how many slides went up first"
+          },
           "published_cover_url": {
             "anyOf": [
               {
@@ -12152,6 +12176,30 @@
               }
             ],
             "title": "Music Error"
+          },
+          "story_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story Status",
+            "description": "Whether the slides went to the account's story: pending, posted or failed"
+          },
+          "story_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story Error",
+            "description": "Why the story was not posted, with how many slides went up first"
           },
           "published_cover_url": {
             "anyOf": [

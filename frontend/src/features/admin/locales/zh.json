@@ -412,6 +412,14 @@
         "failed": "未添加歌曲：{{reason}}",
         "none": "此轮播帖发布时还未自动添加歌曲。",
         "viewPost": "在 Instagram 上查看"
+      },
+      "story": {
+        "title": "快拍",
+        "afterPublish": "此轮播帖发布后，每张幻灯片都会立即发布到该账号的快拍。",
+        "pending": "正在将幻灯片发布到快拍。",
+        "posted": "所有幻灯片均已发布到快拍。",
+        "failed": "未发布到快拍：{{reason}}",
+        "none": "此轮播帖发布时，幻灯片还不会发布到快拍。"
       }
     },
     "socialAccounts": {

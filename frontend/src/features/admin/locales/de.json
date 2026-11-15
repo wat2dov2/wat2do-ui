@@ -412,6 +412,14 @@
         "failed": "Kein Song hinzugefügt: {{reason}}",
         "none": "Dieses Karussell wurde veröffentlicht, bevor Songs automatisch hinzugefügt wurden.",
         "viewPost": "Auf Instagram ansehen"
+      },
+      "story": {
+        "title": "Story",
+        "afterPublish": "Jede Folie wird direkt nach der Veröffentlichung dieses Karussells in der Story des Kontos gepostet.",
+        "pending": "Die Folien werden in der Story gepostet.",
+        "posted": "Alle Folien wurden in der Story gepostet.",
+        "failed": "Nicht in der Story gepostet: {{reason}}",
+        "none": "Dieses Karussell wurde veröffentlicht, bevor Folien in die Story gepostet wurden."
       }
     },
     "socialAccounts": {

@@ -328,6 +328,10 @@ pub struct InstagramPublishing {
     pub music_attempts: u32,
     pub gif_comments: bool,
     pub music_retry_minutes: i64,
+    /// Right after a carousel publishes, each of its slides goes to the
+    /// account's story too, in order, as a 9:16 frame.
+    pub post_slides_to_story: bool,
+    pub story_frame_jpeg_quality: u8,
     pub stats_media_limit: usize,
     pub stats_history_days: i64,
     pub asian_song_schools: Vec<String>,

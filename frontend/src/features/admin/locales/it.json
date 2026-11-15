@@ -412,6 +412,14 @@
         "failed": "Nessun brano aggiunto: {{reason}}",
         "none": "Questo carosello è stato pubblicato prima che i brani venissero aggiunti automaticamente.",
         "viewPost": "Vedi su Instagram"
+      },
+      "story": {
+        "title": "Storia",
+        "afterPublish": "Ogni slide viene pubblicata nella storia dell'account subito dopo la pubblicazione di questo carosello.",
+        "pending": "Pubblicazione delle slide nella storia.",
+        "posted": "Tutte le slide sono state pubblicate nella storia.",
+        "failed": "Non pubblicato nella storia: {{reason}}",
+        "none": "Questo carosello è stato pubblicato prima che le slide venissero pubblicate nella storia."
       }
     },
     "socialAccounts": {

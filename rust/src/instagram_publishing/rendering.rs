@@ -4,20 +4,38 @@
 //! (`src/features/admin/components/instagram/slides`), drawn by the website's
 //! render route (`INSTAGRAM_SLIDE_RENDER_URL`). At publish time this posts
 //! each slide's live event data there and stores the JPEG it returns in media
-//! storage; nothing is drawn before then.
+//! storage; nothing is drawn before then. Each slide also becomes a 9:16
+//! story frame ([`story_frame`]) for the account's story.
 
 use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
 use futures_util::StreamExt;
+use image::codecs::jpeg::JpegEncoder;
+use image::imageops::{self, FilterType};
+use image::{ImageFormat, Rgb, RgbImage};
 use serde_json::{Value, json};
 
 use crate::api::json::httpx_json;
 use crate::constants::BUCKET_EVENT_IMAGES;
+use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::settings::Settings;
 use crate::storage::Storage;
 
 const MAX_RENDERED_IMAGE_BYTES: usize = 15 * 1024 * 1024;
+/// A story is 9:16; Instagram crops or pads anything else its own way.
+const STORY_WIDTH: u32 = 1080;
+const STORY_HEIGHT: u32 = 1920;
+/// How many of a slide's outermost rows (or columns) give the colour its
+/// background carries on in past the slide.
+const EDGE_ROWS: u32 = 6;
+
+/// A drawn slide: where it is stored and its JPEG.
+#[derive(Debug)]
+pub struct Rendered {
+    pub url: String,
+    pub jpeg: Vec<u8>,
+}
 
 /// The render route and the storage its slides go to.
 pub struct Renderer<'a> {
@@ -38,7 +56,7 @@ impl<'a> Renderer<'a> {
     }
 
     /// `render_event_asset`: one event's slide.
-    pub async fn event(&self, event: &Value) -> Result<String> {
+    pub async fn event(&self, event: &Value) -> Result<Rendered> {
         self.upload(json!({"kind": "event", "event": event, "school": event.get("school")}))
             .await
     }
@@ -52,7 +70,7 @@ impl<'a> Renderer<'a> {
         local_date: &str,
         new_event_count: i64,
         batch_kind: &str,
-    ) -> Result<String> {
+    ) -> Result<Rendered> {
         if events.is_empty() {
             bail!("at least one event is required to render a cover");
         }
@@ -69,7 +87,12 @@ impl<'a> Renderer<'a> {
     }
 
     /// `render_outro_asset`: the last slide, listing the window's other events.
-    pub async fn outro(&self, events: &[Value], school: &str, batch_kind: &str) -> Result<String> {
+    pub async fn outro(
+        &self,
+        events: &[Value],
+        school: &str,
+        batch_kind: &str,
+    ) -> Result<Rendered> {
         self.upload(json!({
             "kind": "outro",
             "batch_kind": batch_kind,
@@ -79,8 +102,18 @@ impl<'a> Renderer<'a> {
         .await
     }
 
-    async fn upload(&self, slide: Value) -> Result<String> {
+    async fn upload(&self, slide: Value) -> Result<Rendered> {
         let jpeg = self.render(&slide).await?;
+        let url = self
+            .storage
+            .upload(BUCKET_EVENT_IMAGES, jpeg.clone(), "image/jpeg")
+            .await?;
+        Ok(Rendered { url, jpeg })
+    }
+
+    /// A slide's story frame, stored: its URL.
+    pub async fn story_frame(&self, slide: &Rendered) -> Result<String> {
+        let jpeg = story_frame(&slide.jpeg)?;
         self.storage
             .upload(BUCKET_EVENT_IMAGES, jpeg, "image/jpeg")
             .await
@@ -145,6 +178,92 @@ impl<'a> Renderer<'a> {
         }
         Ok(payload)
     }
+}
+
+/// A slide as a 9:16 story frame: the whole slide in the middle, as large as
+/// the frame allows, with each edge's own colour carried on to the frame's
+/// edges, so nothing of the slide is cut off and its background runs on
+/// without a seam.
+pub fn story_frame(slide_jpeg: &[u8]) -> Result<Vec<u8>> {
+    let slide = image::load_from_memory_with_format(slide_jpeg, ImageFormat::Jpeg)?.to_rgb8();
+    let (width, height) = slide.dimensions();
+    if width == 0 || height == 0 {
+        bail!("a slide has no pixels");
+    }
+    let fit = (f64::from(STORY_WIDTH) / f64::from(width))
+        .min(f64::from(STORY_HEIGHT) / f64::from(height));
+    let fitted_width = ((f64::from(width) * fit).round() as u32).clamp(1, STORY_WIDTH);
+    let fitted_height = ((f64::from(height) * fit).round() as u32).clamp(1, STORY_HEIGHT);
+    let fitted = if (fitted_width, fitted_height) == (width, height) {
+        slide
+    } else {
+        imageops::resize(&slide, fitted_width, fitted_height, FilterType::Lanczos3)
+    };
+
+    // A slide wider than 9:16 leaves bands above and below it, a narrower
+    // one bands beside it; each band is the colour of the edge it touches.
+    let edge = EDGE_ROWS.min(fitted_width).min(fitted_height);
+    let mut frame = if fitted_height < STORY_HEIGHT {
+        let top = median_colour(
+            (0..edge).flat_map(|y| (0..fitted_width).map(move |x| (x, y))),
+            &fitted,
+        );
+        let bottom = median_colour(
+            (fitted_height - edge..fitted_height)
+                .flat_map(|y| (0..fitted_width).map(move |x| (x, y))),
+            &fitted,
+        );
+        RgbImage::from_fn(STORY_WIDTH, STORY_HEIGHT, |_, y| {
+            if y < STORY_HEIGHT / 2 { top } else { bottom }
+        })
+    } else {
+        let left = median_colour(
+            (0..edge).flat_map(|x| (0..fitted_height).map(move |y| (x, y))),
+            &fitted,
+        );
+        let right = median_colour(
+            (fitted_width - edge..fitted_width)
+                .flat_map(|x| (0..fitted_height).map(move |y| (x, y))),
+            &fitted,
+        );
+        RgbImage::from_fn(STORY_WIDTH, STORY_HEIGHT, |x, _| {
+            if x < STORY_WIDTH / 2 { left } else { right }
+        })
+    };
+    imageops::overlay(
+        &mut frame,
+        &fitted,
+        i64::from((STORY_WIDTH - fitted_width) / 2),
+        i64::from((STORY_HEIGHT - fitted_height) / 2),
+    );
+
+    let mut jpeg = Vec::new();
+    JpegEncoder::new_with_quality(&mut jpeg, INSTAGRAM_PUBLISHING.story_frame_jpeg_quality)
+        .encode_image(&frame)?;
+    Ok(jpeg)
+}
+
+/// The colour most of these pixels are, each channel's median, so a doodle
+/// or a speck of JPEG noise along an edge does not tint the band.
+fn median_colour(pixels: impl Iterator<Item = (u32, u32)>, image: &RgbImage) -> Rgb<u8> {
+    let mut histograms = [[0u32; 256]; 3];
+    let mut count = 0u32;
+    for (x, y) in pixels {
+        for (histogram, value) in histograms.iter_mut().zip(image.get_pixel(x, y).0) {
+            histogram[usize::from(value)] += 1;
+        }
+        count += 1;
+    }
+    Rgb(histograms.map(|histogram| {
+        let mut seen = 0;
+        histogram
+            .iter()
+            .position(|&n| {
+                seen += n;
+                seen * 2 >= count
+            })
+            .unwrap_or_default() as u8
+    }))
 }
 
 /// httpx's `raise_for_status` message for a response that is not a success.
@@ -216,8 +335,10 @@ mod tests {
         let (storage, uploads) = recording::storage("media", "https://media.test");
         let renderer = renderer(&format!("{}/render", site.url), &storage);
 
-        let url = renderer.event(&event(1)).await.unwrap();
+        let slide = renderer.event(&event(1)).await.unwrap();
+        let url = &slide.url;
         assert!(url.starts_with("https://media.test/event-images/") && url.ends_with(".jpg"));
+        assert_eq!(slide.jpeg, bytes, "the slide keeps the JPEG it stored");
         renderer
             .cover(
                 &[event(1), event(2)],
@@ -331,5 +452,65 @@ mod tests {
                  For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503"
             )
         );
+    }
+
+    /// A JPEG of this size, its top half one colour and its bottom half another.
+    fn halves(width: u32, height: u32, top: [u8; 3], bottom: [u8; 3]) -> Vec<u8> {
+        let image = image::RgbImage::from_fn(width, height, |_, y| {
+            image::Rgb(if y < height / 2 { top } else { bottom })
+        });
+        let mut bytes = Vec::new();
+        image::DynamicImage::ImageRgb8(image)
+            .write_to(
+                &mut std::io::Cursor::new(&mut bytes),
+                image::ImageFormat::Jpeg,
+            )
+            .unwrap();
+        bytes
+    }
+
+    #[test]
+    fn a_story_frame_holds_the_whole_slide_and_carries_its_edges_on() {
+        const RED: [u8; 3] = [200, 40, 40];
+        const BLUE: [u8; 3] = [30, 60, 200];
+        let near = |frame: &image::RgbImage, (x, y): (u32, u32), colour: [u8; 3]| {
+            let pixel = frame.get_pixel(x, y);
+            assert!(
+                pixel
+                    .0
+                    .iter()
+                    .zip(colour)
+                    .all(|(&channel, want)| channel.abs_diff(want) <= 8),
+                "{x},{y} is {pixel:?}, not {colour:?}"
+            );
+        };
+        let frame = |jpeg: Vec<u8>| {
+            let frame = image::load_from_memory(&story_frame(&jpeg).unwrap())
+                .unwrap()
+                .to_rgb8();
+            assert_eq!(frame.dimensions(), (STORY_WIDTH, STORY_HEIGHT));
+            frame
+        };
+
+        // A carousel slide (4:5) keeps its size, centred, so its middle row
+        // lands on the frame's; above and below run on in its edge colours.
+        let slide = frame(halves(1080, 1350, RED, BLUE));
+        for point in [(540, 10), (0, 300), (540, 940)] {
+            near(&slide, point, RED);
+        }
+        for point in [(540, 980), (1079, 1620), (540, 1910)] {
+            near(&slide, point, BLUE);
+        }
+
+        // Any other shape is scaled to fit whole: a wide one spans the width.
+        let wide = frame(halves(400, 200, RED, BLUE));
+        for point in [(0, 700), (540, 940), (540, 100)] {
+            near(&wide, point, RED);
+        }
+        for point in [(1079, 1220), (540, 980), (540, 1800)] {
+            near(&wide, point, BLUE);
+        }
+
+        assert!(story_frame(b"not a jpeg").is_err());
     }
 }

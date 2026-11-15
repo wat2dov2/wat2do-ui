@@ -412,6 +412,14 @@
         "failed": "No song added: {{reason}}",
         "none": "This carousel was published before songs were added automatically.",
         "viewPost": "View on Instagram"
+      },
+      "story": {
+        "title": "Story",
+        "afterPublish": "Every slide goes to the account's story right after this carousel publishes.",
+        "pending": "Posting the slides to the story.",
+        "posted": "Every slide was posted to the story.",
+        "failed": "Not posted to the story: {{reason}}",
+        "none": "This carousel was published before slides went to the story."
       }
     },
     "socialAccounts": {

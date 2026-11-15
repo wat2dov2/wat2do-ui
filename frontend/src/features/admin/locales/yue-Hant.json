@@ -412,6 +412,14 @@
         "failed": "冇加到歌：{{reason}}",
         "none": "呢個輪播帖喺自動加歌之前已經發佈。",
         "viewPost": "喺 Instagram 睇"
+      },
+      "story": {
+        "title": "限時動態",
+        "afterPublish": "呢個輪播帖一發佈，每張投影片都會即刻發佈到帳戶嘅限時動態。",
+        "pending": "而家將投影片發佈到限時動態。",
+        "posted": "所有投影片已經發佈到限時動態。",
+        "failed": "冇發佈到限時動態：{{reason}}",
+        "none": "呢個輪播帖發佈嗰陣，投影片仲未會發佈到限時動態。"
       }
     },
     "socialAccounts": {
