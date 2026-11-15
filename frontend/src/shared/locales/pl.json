@@ -92,11 +92,9 @@
   },
   "navigation": {
     "events": "Wydarzenia",
-    "submit": "Prześlij",
     "clubs": "Organizacje",
     "positions": "Stanowiska",
     "myEvents": "Moje wydarzenia",
-    "settings": "Ustawienia",
     "admin": "Admin",
     "adminPanel": "Panel administracyjny",
     "clubPanel": "Panel organizacji",
@@ -107,7 +105,7 @@
     "openMenu": "Otwórz menu nawigacji",
     "switchToLightMode": "Przełącz na tryb jasny",
     "switchToDarkMode": "Przełącz na tryb ciemny",
-    "myTickets": "Moje bilety"
+    "profile": "Profil"
   },
   "siteBanner": {
     "businessSupport": {

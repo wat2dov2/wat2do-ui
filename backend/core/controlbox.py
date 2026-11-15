@@ -320,6 +320,14 @@ class EventReminderControl(_ControlModel):
     provider_attempts: int = Field(gt=0, le=10)
 
 
+class NotificationInboxControl(_ControlModel):
+    """The inbox under the top bar's bell: one row per notification email a user is sent."""
+
+    page_size: int = Field(gt=0, le=100)
+    retention_days: int = Field(gt=0, le=365)
+    refresh_seconds: int = Field(ge=30, le=3600)
+
+
 class NotificationDefaultsControl(_ControlModel):
     morning_email: bool
     event_reminder: bool
@@ -1560,6 +1568,7 @@ class ControlBox(_ControlModel):
     morning_email: MorningEmailControl
     event_reminder: EventReminderControl
     event_change_alerts: EventChangeAlertsControl
+    notification_inbox: NotificationInboxControl
     notification_defaults: NotificationDefaultsControl
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl

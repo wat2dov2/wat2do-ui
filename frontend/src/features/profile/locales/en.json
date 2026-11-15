@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "Your events, the clubs you follow and your settings",
+    "settings": "Settings",
+    "events": {
+      "saved": "Events saved",
+      "savedEmpty": "Events you save show up here.",
+      "past": "Events you've gone to",
+      "pastEmpty": "Events you went to show up here.",
+      "upcoming": "Events you're going to",
+      "upcomingEmpty": "Events you're going to show up here.",
+      "ticket": "Ticket"
+    },
+    "clubs": {
+      "title": "Clubs you follow",
+      "empty": "Clubs you follow show up here."
+    },
+    "submissions": {
+      "title": "Your submissions",
+      "description": "Add an event, a position or a club. We review each one before it goes live."
+    }
+  }
+}

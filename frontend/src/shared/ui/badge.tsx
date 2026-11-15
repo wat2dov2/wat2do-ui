@@ -53,6 +53,8 @@ const badgeVariants = cva(
         xl: "px-3 py-1.5 text-sm font-bold rounded-xl",
         // Large on display surfaces such as the landing hero, compact on phones.
         display: "px-2.5 py-1 text-xs font-bold rounded-xl sm:px-3 sm:py-1 sm:text-sm",
+        // A number on a control's corner, such as unread notifications on the bell.
+        count: "h-4 min-w-4 justify-center px-1 text-[10px] font-bold leading-none rounded-full",
       },
     },
     defaultVariants: {

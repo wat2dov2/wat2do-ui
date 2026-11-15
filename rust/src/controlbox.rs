@@ -618,6 +618,16 @@ pub struct MorningEmail {
     pub club_logo_px: u32,
 }
 
+/// The inbox's size and how long it keeps a notification, from
+/// `controlbox/notification_inbox.json` (its `refresh_seconds` is the site's).
+#[derive(Debug, Deserialize)]
+pub struct NotificationInbox {
+    /// The most notifications the bell's list shows, newest first.
+    pub page_size: i64,
+    /// Older notifications leave the inbox.
+    pub retention_days: i32,
+}
+
 /// `controlbox/event_reminder.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -807,6 +817,12 @@ pub static EMAIL_DELIVERY: LazyLock<EmailDelivery> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/email_delivery.json"),
     )
 });
+pub static NOTIFICATION_INBOX: LazyLock<NotificationInbox> = LazyLock::new(|| {
+    parse(
+        "notification_inbox",
+        include_str!("../../backend/controlbox/notification_inbox.json"),
+    )
+});
 pub static NOTIFICATION_DEFAULTS: LazyLock<NotificationDefaults> = LazyLock::new(|| {
     parse(
         "notification_defaults",
@@ -936,6 +952,8 @@ mod tests {
         assert!(!EVENT_DISCOVERY.campus_seasons.schools.is_empty());
         assert!(MORNING_EMAIL.local_send_hour <= MORNING_EMAIL.last_local_send_hour);
         assert!(EVENT_REMINDER.lead_minutes > 0);
+        assert!(NOTIFICATION_INBOX.page_size > 0);
+        assert!(NOTIFICATION_INBOX.retention_days > 0);
         assert!(!EMAIL_DELIVERY.team_sender.is_empty());
         assert!(!EMAIL_DELIVERY.notification_consent_version.is_empty());
         assert!(

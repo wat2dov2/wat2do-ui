@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "Tus eventos, las organizaciones que sigues y tu configuración",
+    "settings": "Configuración",
+    "events": {
+      "saved": "Eventos guardados",
+      "savedEmpty": "Los eventos que guardes aparecen aquí.",
+      "past": "Eventos a los que fuiste",
+      "pastEmpty": "Los eventos a los que fuiste aparecen aquí.",
+      "upcoming": "Eventos a los que vas",
+      "upcomingEmpty": "Los eventos a los que vas aparecen aquí.",
+      "ticket": "Boleto"
+    },
+    "clubs": {
+      "title": "Organizaciones que sigues",
+      "empty": "Las organizaciones que sigues aparecen aquí."
+    },
+    "submissions": {
+      "title": "Tus envíos",
+      "description": "Agrega un evento, una posición o una organización. Revisamos cada uno antes de publicarlo."
+    }
+  }
+}

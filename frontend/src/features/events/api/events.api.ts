@@ -88,6 +88,12 @@ export async function fetchClubEvents(clubId: number, school: string): Promise<E
   return fetchFeedEvents({ school, club_ids: String(clubId), include_past: "true" });
 }
 
+/** The events with these ids, past ones included, wherever they are. */
+export async function fetchEventsByIds(ids: readonly number[]): Promise<Event[]> {
+  if (ids.length === 0) return [];
+  return fetchFeedEvents({ ids: ids.map(String), include_past: "true" });
+}
+
 /** The API's search length limit (`MAX_SEARCH_QUERY_LENGTH`); a longer search is refused. */
 const API_SEARCH_MAX_LENGTH = 200;
 /** The API's price bound (`MAX_EVENT_PRICE`). */
@@ -388,6 +394,19 @@ export async function fetchEventAttendees(eventId: number): Promise<ApiEventAtte
 
 export async function fetchGoingEvents(): Promise<ApiGoingEventSelection[]> {
   return api.get<ApiGoingEventSelection[]>("/going-events/");
+}
+
+/** The ids of the events the user saved, latest save first. */
+export async function fetchSavedEventIds(): Promise<number[]> {
+  return api.get<number[]>("/v1/saved-events/");
+}
+
+export async function saveEvent(eventId: number): Promise<void> {
+  await api.put<void>(`/v1/saved-events/${eventId}`);
+}
+
+export async function unsaveEvent(eventId: number): Promise<void> {
+  await api.delete(`/v1/saved-events/${eventId}`);
 }
 
 export async function setGoingEventOccurrences(

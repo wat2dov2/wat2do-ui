@@ -98,11 +98,9 @@
   },
   "navigation": {
     "events": "الأحداث",
-    "submit": "إرسال",
     "clubs": "المنظمات",
     "positions": "المناصب",
     "myEvents": "فعالياتي",
-    "settings": "الإعدادات",
     "admin": "الإدارة",
     "adminPanel": "لوحة المسؤول",
     "clubPanel": "لوحة المنظمة",
@@ -113,7 +111,7 @@
     "openMenu": "فتح قائمة التنقل",
     "switchToLightMode": "التبديل إلى الوضع الفاتح",
     "switchToDarkMode": "التبديل إلى الوضع الداكن",
-    "myTickets": "تذاكري"
+    "profile": "الملف الشخصي"
   },
   "siteBanner": {
     "businessSupport": {

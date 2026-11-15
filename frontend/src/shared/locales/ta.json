@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "நிகழ்வுகள்",
-    "submit": "சமர்ப்பி",
     "clubs": "அமைப்புகள்",
     "positions": "பதவிகள்",
     "myEvents": "என் நிகழ்வுகள்",
-    "settings": "அமைப்புகள்",
     "admin": "நிர்வாகம்",
     "adminPanel": "நிர்வாகக் குழு",
     "clubPanel": "அமைப்பு நிர்வாகம்",
@@ -101,7 +99,7 @@
     "openMenu": "வழிசெலுத்தல் பட்டியைத் திறக்கவும்",
     "switchToLightMode": "ஒளி பயன்முறைக்கு மாறு",
     "switchToDarkMode": "இருள் பயன்முறைக்கு மாறு",
-    "myTickets": "என் டிக்கெட்டுகள்"
+    "profile": "சுயவிவரம்"
   },
   "siteBanner": {
     "businessSupport": {

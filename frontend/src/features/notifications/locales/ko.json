@@ -1,0 +1,67 @@
+{
+  "notifications": {
+    "title": "알림",
+    "open": "알림",
+    "openUnread": "알림, 새 알림 {{unread}}개",
+    "unread": "새 알림:",
+    "loading": "알림을 불러오는 중",
+    "loadFailed": "알림을 불러올 수 없습니다.",
+    "empty": "모든 알림을 확인했습니다",
+    "emptyDescription": "저희가 보내는 모든 이메일이 여기에도 표시됩니다.",
+    "kinds": {
+      "morning_email": {
+        "title": "아침 이메일",
+        "text": "오늘 학교에 새로 올라온 소식을 확인하세요."
+      },
+      "event_reminder": {
+        "title": "리마인더: {{name}}",
+        "text": "이 리마인더 이후 약 한 시간 뒤에 시작합니다."
+      },
+      "event_change": {
+        "title": "{{name}} 변경됨",
+        "text": "시간, 장소 또는 세부 정보가 업데이트되었습니다."
+      },
+      "event_cancelled": {
+        "title": "{{name}} 취소됨",
+        "text": "조직에서 이 이벤트를 취소했습니다."
+      },
+      "tickets": {
+        "title": "{{name}} 티켓",
+        "titleMany": "{{name}} 티켓",
+        "text": "입장할 때 QR 코드를 보여 주세요."
+      },
+      "ticket_refunded": {
+        "title": "{{name}} 환불",
+        "text": "환불 금액이 돌아오는 중입니다."
+      },
+      "refund_requested": {
+        "title": "{{name}} 환불 요청",
+        "text": "누군가 조직에 환불을 요청했습니다."
+      },
+      "refund_declined": {
+        "title": "{{name}} 환불 거절됨",
+        "text": "티켓은 그대로 사용할 수 있습니다."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "조직 {{name}}이(가) 게시되었습니다",
+          "claim": "이제 {{name}}을(를) 관리할 수 있습니다",
+          "event": "이벤트 {{name}}이(가) 게시되었습니다",
+          "position": "직책 {{name}}이(가) 게시되었습니다",
+          "text": "승인되었습니다."
+        },
+        "rejected": {
+          "club": "조직 {{name}}이(가) 승인되지 않았습니다",
+          "claim": "{{name}} 관리 요청이 승인되지 않았습니다",
+          "event": "이벤트 {{name}}이(가) 승인되지 않았습니다",
+          "position": "직책 {{name}}이(가) 승인되지 않았습니다",
+          "text": "이유는 저희가 보낸 이메일에 있습니다."
+        }
+      },
+      "club_invitation": {
+        "title": "{{name}} 관리에 초대되었습니다",
+        "text": "수락하면 조직 패널을 사용할 수 있습니다."
+      }
+    }
+  }
+}

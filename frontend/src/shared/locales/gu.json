@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "ઇવેન્ટ્સ",
-    "submit": "સબમિટ કરો",
     "clubs": "સંસ્થાઓ",
     "positions": "હોદ્દાઓ",
     "myEvents": "મારી ઇવેન્ટ",
-    "settings": "સેટિંગ્સ",
     "admin": "એડમિન",
     "adminPanel": "એડમિન પેનલ",
     "clubPanel": "સંસ્થા પેનલ",
@@ -101,7 +99,7 @@
     "openMenu": "નેવિગેશન મેનૂ ખોલો",
     "switchToLightMode": "લાઇટ મોડ પર સ્વિચ કરો",
     "switchToDarkMode": "ડાર્ક મોડ પર સ્વિચ કરો",
-    "myTickets": "મારી ટિકિટો"
+    "profile": "પ્રોફાઈલ"
   },
   "siteBanner": {
     "businessSupport": {

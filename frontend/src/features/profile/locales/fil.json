@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "Ang iyong mga kaganapan, mga organisasyong sinusundan mo at ang iyong mga setting",
+    "settings": "Mga setting",
+    "events": {
+      "saved": "Mga naka-save na kaganapan",
+      "savedEmpty": "Dito lalabas ang mga kaganapang ise-save mo.",
+      "past": "Mga kaganapang pinuntahan mo",
+      "pastEmpty": "Dito lalabas ang mga kaganapang pinuntahan mo.",
+      "upcoming": "Mga kaganapang pupuntahan mo",
+      "upcomingEmpty": "Dito lalabas ang mga kaganapang pupuntahan mo.",
+      "ticket": "Tiket"
+    },
+    "clubs": {
+      "title": "Mga organisasyong sinusundan mo",
+      "empty": "Dito lalabas ang mga organisasyong sinusundan mo."
+    },
+    "submissions": {
+      "title": "Ang iyong mga isinumite",
+      "description": "Magdagdag ng kaganapan, posisyon o organisasyon. Sinusuri namin ang bawat isa bago ito ilathala."
+    }
+  }
+}

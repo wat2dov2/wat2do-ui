@@ -110,10 +110,20 @@ export const queryKeys = {
         clubId,
         school,
       ] as const,
+    byIds: (ids: readonly number[]) =>
+      [...queryKeys.events.lists(), "by-ids", ...ids] as const,
   },
   goingEvents: {
     all: ["going-events"] as const,
     byUser: (userId: string) => [...queryKeys.goingEvents.all, userId] as const,
+  },
+  savedEvents: {
+    all: ["saved-events"] as const,
+    byUser: (userId: string) => [...queryKeys.savedEvents.all, userId] as const,
+  },
+  notifications: {
+    all: ["notifications"] as const,
+    inbox: (userId: string) => [...queryKeys.notifications.all, userId] as const,
   },
   tickets: {
     all: ["tickets"] as const,

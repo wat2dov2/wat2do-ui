@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "घटनाएँ",
-    "submit": "जमा करें",
     "clubs": "संगठन",
     "positions": "पद",
     "myEvents": "मेरे इवेंट",
-    "settings": "सेटिंग्स",
     "admin": "एडमिन",
     "adminPanel": "व्यवस्थापक पैनल",
     "clubPanel": "संगठन पैनल",
@@ -101,7 +99,7 @@
     "openMenu": "नेविगेशन मेनू खोलें",
     "switchToLightMode": "हल्के मोड पर जाएँ",
     "switchToDarkMode": "गहरे मोड पर जाएँ",
-    "myTickets": "मेरे टिकट"
+    "profile": "प्रोफ़ाइल"
   },
   "siteBanner": {
     "businessSupport": {

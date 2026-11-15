@@ -8,6 +8,7 @@
 pub mod delivery_log;
 pub mod email_images;
 pub mod event_reminder;
+pub mod inbox;
 pub mod morning_email;
 pub mod preferences;
 pub mod rendering;
@@ -151,7 +152,7 @@ impl Addressing {
             notification_type,
         )?;
         Ok(Self {
-            preferences_url: format!("{frontend_url}/settings?tab=notifications"),
+            preferences_url: format!("{frontend_url}/profile?tab=notifications"),
             frontend_url,
             unsubscribe_url,
         })

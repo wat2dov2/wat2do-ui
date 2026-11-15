@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "你的活动、关注的组织和设置",
+    "settings": "设置",
+    "events": {
+      "saved": "已收藏的活动",
+      "savedEmpty": "你收藏的活动会显示在这里。",
+      "past": "你参加过的活动",
+      "pastEmpty": "你参加过的活动会显示在这里。",
+      "upcoming": "你将参加的活动",
+      "upcomingEmpty": "你将参加的活动会显示在这里。",
+      "ticket": "门票"
+    },
+    "clubs": {
+      "title": "关注的组织",
+      "empty": "你关注的组织会显示在这里。"
+    },
+    "submissions": {
+      "title": "你的提交",
+      "description": "添加活动、职位或组织。每项内容都会在上线前经过审核。"
+    }
+  }
+}

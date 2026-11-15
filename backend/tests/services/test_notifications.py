@@ -16,6 +16,7 @@ from schemas.event import EventResponse
 from services.notifications import (
     delivery_log,
     event_change,
+    inbox,
     preferences,
     rendering,
 )
@@ -80,7 +81,7 @@ def _change_email(diff, image_src=None, refund_url=None, tz=None, **event_fields
         "image_src": image_src,
         "tz": tz or ZoneInfo("America/Toronto"),
         "frontend_url": "https://uwaterloo.wat2do.io",
-        "preferences_url": "https://uwaterloo.wat2do.io/settings",
+        "preferences_url": "https://uwaterloo.wat2do.io/profile?tab=notifications",
         "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
         "refund_url": refund_url,
     }
@@ -173,6 +174,73 @@ def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
             refund_url=None,
         )
     claim.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("diff", "kind"),
+    [
+        ({"location": {"old": "SLC", "new": "DC"}}, NOTIFICATION_TYPE_EVENT_CHANGE),
+        ({"cancelled": {"old": False, "new": True}}, inbox.INBOX_KIND_EVENT_CANCELLED),
+    ],
+)
+def test_a_sent_event_change_email_lands_in_the_inbox(monkeypatch, diff, kind):
+    monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
+    monkeypatch.setattr(event_change, "_event_change_message", lambda **_kwargs: MagicMock())
+    monkeypatch.setattr(event_change, "claim_delivery", lambda **_kwargs: "row-1")
+    monkeypatch.setattr(event_change, "deliver_claimed_email", lambda **_kwargs: True)
+    record = MagicMock()
+    monkeypatch.setattr(event_change.inbox, "record", record)
+
+    assert event_change._send_event_change(
+        user_id=USER_ID,
+        email="student@uwaterloo.ca",
+        event_summary=_event(school="uwaterloo"),
+        diff=diff,
+        image=None,
+        target_id="42:abc",
+        refund_url=None,
+    )
+    record.assert_called_once_with(
+        user_id=USER_ID,
+        kind=kind,
+        event_id=42,
+        details={"name": "Tea Tasting"},
+        link="https://uwaterloo.wat2do.io/events/42",
+    )
+
+
+def test_an_event_change_email_that_failed_leaves_the_inbox_alone(monkeypatch):
+    monkeypatch.setattr(event_change, "_event_change_message", lambda **_kwargs: MagicMock())
+    monkeypatch.setattr(event_change, "claim_delivery", lambda **_kwargs: "row-1")
+    monkeypatch.setattr(event_change, "deliver_claimed_email", lambda **_kwargs: False)
+    record = MagicMock()
+    monkeypatch.setattr(event_change.inbox, "record", record)
+
+    assert not event_change._send_event_change(
+        user_id=USER_ID,
+        email="student@uwaterloo.ca",
+        event_summary=_event(school="uwaterloo"),
+        diff={"location": {"old": "SLC", "new": "DC"}},
+        image=None,
+        target_id="42:abc",
+        refund_url=None,
+    )
+    record.assert_not_called()
+
+
+def test_an_inbox_failure_is_logged_not_raised(monkeypatch, caplog):
+    failing = MagicMock()
+    failing.rpc.side_effect = RuntimeError("database down")
+    monkeypatch.setattr(inbox, "get_sb", lambda: failing)
+
+    inbox.record(
+        user_id=USER_ID,
+        kind=NOTIFICATION_TYPE_EVENT_CHANGE,
+        event_id=42,
+        details={"name": "Tea Tasting"},
+        link=None,
+    )
+    assert "Could not add a event_change notification" in caplog.text
 
 
 def test_event_change_email_offers_a_paid_holder_a_refund():

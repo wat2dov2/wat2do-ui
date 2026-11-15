@@ -1,0 +1,67 @@
+{
+  "notifications": {
+    "title": "Notificaciones",
+    "open": "Notificaciones",
+    "openUnread": "Notificaciones, {{unread}} nuevas",
+    "unread": "Nuevo:",
+    "loading": "Cargando tus notificaciones",
+    "loadFailed": "No se pudieron cargar tus notificaciones.",
+    "empty": "Estás al día",
+    "emptyDescription": "Cada correo que te enviamos también aparece aquí.",
+    "kinds": {
+      "morning_email": {
+        "title": "Tu correo de la mañana",
+        "text": "Mira lo nuevo en tu escuela hoy."
+      },
+      "event_reminder": {
+        "title": "Recordatorio: {{name}}",
+        "text": "Empieza más o menos una hora después de este recordatorio."
+      },
+      "event_change": {
+        "title": "{{name}} cambió",
+        "text": "Se actualizaron su hora, lugar o detalles."
+      },
+      "event_cancelled": {
+        "title": "{{name}} se canceló",
+        "text": "La organización canceló este evento."
+      },
+      "tickets": {
+        "title": "Tu boleto para {{name}}",
+        "titleMany": "Tus boletos para {{name}}",
+        "text": "Muestra el código QR en la entrada."
+      },
+      "ticket_refunded": {
+        "title": "Reembolso de {{name}}",
+        "text": "Tu dinero ya viene de vuelta."
+      },
+      "refund_requested": {
+        "title": "Solicitud de reembolso de {{name}}",
+        "text": "Alguien le pidió un reembolso a tu organización."
+      },
+      "refund_declined": {
+        "title": "Reembolso rechazado para {{name}}",
+        "text": "Tu boleto sigue siendo válido."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Tu organización {{name}} ya está publicada",
+          "claim": "Ya puedes administrar {{name}}",
+          "event": "Tu evento {{name}} ya está publicado",
+          "position": "Tu posición {{name}} ya está publicada",
+          "text": "Está aprobado."
+        },
+        "rejected": {
+          "club": "Tu organización {{name}} no fue aprobada",
+          "claim": "Tu solicitud para {{name}} no fue aprobada",
+          "event": "Tu evento {{name}} no fue aprobado",
+          "position": "Tu posición {{name}} no fue aprobada",
+          "text": "Nuestro correo te explica por qué."
+        }
+      },
+      "club_invitation": {
+        "title": "Te invitaron a ayudar a administrar {{name}}",
+        "text": "Acepta para acceder al panel de la organización."
+      }
+    }
+  }
+}

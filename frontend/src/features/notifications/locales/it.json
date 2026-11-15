@@ -1,0 +1,67 @@
+{
+  "notifications": {
+    "title": "Notifiche",
+    "open": "Notifiche",
+    "openUnread": "Notifiche, {{unread}} nuove",
+    "unread": "Nuovo:",
+    "loading": "Caricamento delle notifiche",
+    "loadFailed": "Impossibile caricare le notifiche.",
+    "empty": "Sei aggiornato",
+    "emptyDescription": "Ogni email che ti inviamo compare anche qui.",
+    "kinds": {
+      "morning_email": {
+        "title": "La tua email del mattino",
+        "text": "Scopri le novità di oggi nella tua scuola."
+      },
+      "event_reminder": {
+        "title": "Promemoria: {{name}}",
+        "text": "Inizia circa un'ora dopo questo promemoria."
+      },
+      "event_change": {
+        "title": "{{name}} è cambiato",
+        "text": "Orario, luogo o dettagli sono stati aggiornati."
+      },
+      "event_cancelled": {
+        "title": "{{name}} è stato annullato",
+        "text": "L'organizzazione ha annullato questo evento."
+      },
+      "tickets": {
+        "title": "Il tuo biglietto per {{name}}",
+        "titleMany": "I tuoi biglietti per {{name}}",
+        "text": "Mostra il codice QR all'ingresso."
+      },
+      "ticket_refunded": {
+        "title": "Rimborso per {{name}}",
+        "text": "I tuoi soldi stanno tornando."
+      },
+      "refund_requested": {
+        "title": "Richiesta di rimborso per {{name}}",
+        "text": "Qualcuno ha chiesto un rimborso alla tua organizzazione."
+      },
+      "refund_declined": {
+        "title": "Rimborso rifiutato per {{name}}",
+        "text": "Il tuo biglietto è ancora valido."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "La tua organizzazione {{name}} è online",
+          "claim": "Ora puoi gestire {{name}}",
+          "event": "Il tuo evento {{name}} è online",
+          "position": "La tua posizione {{name}} è online",
+          "text": "È stato approvato."
+        },
+        "rejected": {
+          "club": "La tua organizzazione {{name}} non è stata approvata",
+          "claim": "La tua richiesta per {{name}} non è stata approvata",
+          "event": "Il tuo evento {{name}} non è stato approvato",
+          "position": "La tua posizione {{name}} non è stata approvata",
+          "text": "La nostra email ti spiega il motivo."
+        }
+      },
+      "club_invitation": {
+        "title": "Sei stato invitato ad aiutare a gestire {{name}}",
+        "text": "Accetta per accedere al pannello dell'organizzazione."
+      }
+    }
+  }
+}

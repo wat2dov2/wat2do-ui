@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "Vos événements, les organisations que vous suivez et vos paramètres",
+    "settings": "Paramètres",
+    "events": {
+      "saved": "Événements enregistrés",
+      "savedEmpty": "Les événements que vous enregistrez apparaissent ici.",
+      "past": "Événements auxquels vous êtes allé",
+      "pastEmpty": "Les événements auxquels vous êtes allé apparaissent ici.",
+      "upcoming": "Événements auxquels vous allez",
+      "upcomingEmpty": "Les événements auxquels vous allez apparaissent ici.",
+      "ticket": "Billet"
+    },
+    "clubs": {
+      "title": "Organisations que vous suivez",
+      "empty": "Les organisations que vous suivez apparaissent ici."
+    },
+    "submissions": {
+      "title": "Vos soumissions",
+      "description": "Ajoutez un événement, un poste ou une organisation. Nous examinons chacun avant sa mise en ligne."
+    }
+  }
+}

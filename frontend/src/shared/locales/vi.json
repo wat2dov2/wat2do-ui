@@ -83,11 +83,9 @@
   },
   "navigation": {
     "events": "Sự kiện",
-    "submit": "Gửi",
     "clubs": "Tổ chức",
     "positions": "Vị trí",
     "myEvents": "Sự kiện của tôi",
-    "settings": "Cài đặt",
     "admin": "Quản trị",
     "adminPanel": "Bảng điều khiển quản trị",
     "clubPanel": "Bảng điều khiển tổ chức",
@@ -98,7 +96,7 @@
     "openMenu": "Mở menu điều hướng",
     "switchToLightMode": "Chuyển sang chế độ sáng",
     "switchToDarkMode": "Chuyển sang chế độ tối",
-    "myTickets": "Vé của tôi"
+    "profile": "Hồ sơ"
   },
   "siteBanner": {
     "businessSupport": {

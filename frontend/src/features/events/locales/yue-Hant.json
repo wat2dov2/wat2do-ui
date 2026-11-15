@@ -159,6 +159,11 @@
       "fresh": "Wat2Do 新活動",
       "by": "主辦",
       "networking": "建立人脈機會"
+    },
+    "savedEvents": {
+      "save": "收藏活動",
+      "unsave": "取消收藏",
+      "saveFailed": "無法收藏呢個活動"
     }
   }
 }

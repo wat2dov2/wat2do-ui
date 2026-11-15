@@ -18,6 +18,7 @@ pub mod instagram_publishing;
 pub mod interactions;
 pub mod meta;
 pub mod notification_preferences;
+pub mod notifications;
 pub mod outreach;
 pub mod payouts;
 pub mod positions;

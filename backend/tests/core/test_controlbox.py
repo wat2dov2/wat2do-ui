@@ -1152,3 +1152,28 @@ def test_club_directories_are_named_once_and_list_their_schools(tmp_path: Path) 
 
     with pytest.raises(ValidationError, match="Club directory names must be unique"):
         load_controlbox(_write_control(tmp_path, "ingestion", duplicate))
+
+
+def test_notification_inbox_control_is_loaded() -> None:
+    assert controlbox.notification_inbox.page_size == 30
+    assert controlbox.notification_inbox.retention_days == 90
+    assert controlbox.notification_inbox.refresh_seconds == 300
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("page_size", 0),
+        ("page_size", 101),
+        ("retention_days", 0),
+        ("retention_days", 366),
+        ("refresh_seconds", 29),
+        ("refresh_seconds", 3601),
+    ],
+)
+def test_notification_inbox_controls_reject_invalid_configuration(tmp_path, field, value):
+    directory = _write_control(
+        tmp_path, "notification_inbox", lambda data: data.update({field: value})
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)

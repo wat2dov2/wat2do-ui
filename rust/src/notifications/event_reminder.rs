@@ -15,6 +15,7 @@ use uuid::Uuid;
 
 use super::delivery_log::Outbox;
 use super::email_images::event_hero_image;
+use super::inbox::{Notice, NotificationKind};
 use super::rendering::{self, Event};
 use super::{
     Addressing, LinkSettings, Outcome, Recipient, Stats, load_recipients, preferences,
@@ -229,6 +230,17 @@ async fn send(
             ),
         )
         .await?;
+    if sent {
+        let site = crate::schools::frontend_url(&link_settings.frontend_url, user.slug())?;
+        let event = &reminder.event;
+        let notice = Notice::about_event(
+            NotificationKind::EventReminder,
+            event.id,
+            &event.title,
+            rendering::event_url(event.id, &site),
+        );
+        outbox.add_to_inbox(user.id, &notice).await;
+    }
     Ok(if sent { Outcome::Sent } else { Outcome::Failed })
 }
 

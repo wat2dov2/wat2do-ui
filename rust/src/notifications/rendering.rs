@@ -228,7 +228,8 @@ fn footer_links<'a>(links: &Links<'a>) -> [(&'a str, &'a str); 2] {
     ]
 }
 
-fn event_url(id: i64, frontend_url: &str) -> String {
+/// An event's page on its school's site, where every email about it links.
+pub fn event_url(id: i64, frontend_url: &str) -> String {
     format!("{frontend_url}/events/{id}")
 }
 
@@ -465,7 +466,7 @@ mod tests {
     const TORONTO: Tz = Tz::AMERICA_TORONTO;
     const LINKS: Links = Links {
         frontend_url: "https://uwaterloo.wat2do.io",
-        preferences_url: "https://uwaterloo.wat2do.io/settings",
+        preferences_url: "https://uwaterloo.wat2do.io/profile?tab=notifications",
         unsubscribe_url: "https://uwaterloo.wat2do.io/unsubscribe",
     };
 
@@ -584,7 +585,7 @@ mod tests {
              New positions\n\n\
              - Untitled position | No deadline listed | https://uwaterloo.wat2do.io/positions\n\
              - VP Events | Apply by Fri, May 8 | https://uwaterloo.wat2do.io/positions\n\n\
-             Manage email preferences: https://uwaterloo.wat2do.io/settings\n\
+             Manage email preferences: https://uwaterloo.wat2do.io/profile?tab=notifications\n\
              Unsubscribe from the morning email: https://uwaterloo.wat2do.io/unsubscribe\n\n\
              wat2do helps students discover campus events."
         );

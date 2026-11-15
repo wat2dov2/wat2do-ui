@@ -121,3 +121,8 @@ export type ApiTicketCheckoutResponse = components["schemas"]["TicketCheckoutRes
 export type ApiTicketRefundsResponse = components["schemas"]["TicketRefundsResponse"];
 export type ApiClubPayoutStatus = components["schemas"]["ClubPayoutStatus"];
 export type ApiStripeRedirectResponse = components["schemas"]["StripeRedirectResponse"];
+
+// ── Notification inbox ──────────────────────────────────────────────
+export type ApiNotificationInboxResponse = components["schemas"]["NotificationInboxResponse"];
+export type ApiNotificationResponse = components["schemas"]["NotificationResponse"];
+export type ApiNotificationKind = components["schemas"]["NotificationKind"];

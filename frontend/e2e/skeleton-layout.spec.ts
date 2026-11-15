@@ -269,7 +269,8 @@ async function installMocks(
         details_submitted: false, requirements_due: [], country: "CA", currency: "cad",
       });
     }
-    if (path === "/going-events" || path === "/saved-clubs") return json([]);
+    if (path === "/going-events" || path === "/saved-clubs" || path === "/v1/saved-events") return json([]);
+    if (path === "/notifications") return json({ unread_count: 0, notifications: [] });
     if (path === "/events/stats") {
       await gates.late.opened;
       return json(Object.fromEntries(EVENTS.map(event => [String(event.id), { click_count: 10 + event.id, going_count: event.id % 3 }])));

@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "你嘅活動、你追蹤嘅組織同設定",
+    "settings": "設定",
+    "events": {
+      "saved": "已收藏嘅活動",
+      "savedEmpty": "你收藏嘅活動會喺度顯示。",
+      "past": "你去過嘅活動",
+      "pastEmpty": "你去過嘅活動會喺度顯示。",
+      "upcoming": "你會去嘅活動",
+      "upcomingEmpty": "你會去嘅活動會喺度顯示。",
+      "ticket": "門票"
+    },
+    "clubs": {
+      "title": "你追蹤嘅組織",
+      "empty": "你追蹤嘅組織會喺度顯示。"
+    },
+    "submissions": {
+      "title": "你嘅提交",
+      "description": "新增活動、職位或者組織。每一項上線之前我哋都會審核。"
+    }
+  }
+}

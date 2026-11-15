@@ -162,6 +162,11 @@
       "fresh": "New on Wat2Do",
       "by": "by",
       "networking": "Networking opportunities"
+    },
+    "savedEvents": {
+      "save": "Save event",
+      "unsave": "Remove from saved",
+      "saveFailed": "Couldn't save this event"
     }
   }
 }

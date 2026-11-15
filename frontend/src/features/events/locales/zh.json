@@ -159,6 +159,11 @@
       "fresh": "Wat2Do 新活动",
       "by": "主办",
       "networking": "社交拓展机会"
+    },
+    "savedEvents": {
+      "save": "收藏活动",
+      "unsave": "取消收藏",
+      "saveFailed": "无法收藏此活动"
     }
   }
 }

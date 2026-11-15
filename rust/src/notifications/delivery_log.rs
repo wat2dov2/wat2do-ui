@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use super::inbox::{self, Notice};
 use crate::constants::{NOTIFICATION_STATUS_FAILED, NOTIFICATION_STATUS_SENT};
 use crate::email::{self, EmailMessage, SendError};
 
@@ -137,6 +138,20 @@ impl Outbox {
                 }
                 Ok(false)
             }
+        }
+    }
+
+    /// Repeat a sent email in its user's inbox. A failure is logged, never
+    /// raised, since the email already went; a render-only run records nothing.
+    pub async fn add_to_inbox(&self, user_id: Uuid, notice: &Notice) {
+        if self.render_to.is_some() {
+            return;
+        }
+        if let Err(error) = inbox::record(&self.pool, user_id, notice).await {
+            tracing::warn!(
+                "Could not add a {} notification to user={user_id}'s inbox: {error}",
+                notice.kind.as_str()
+            );
         }
     }
 

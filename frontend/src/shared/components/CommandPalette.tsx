@@ -94,7 +94,12 @@ export function CommandPalette({
 
         <CommandGroup heading={t("commands.personal")}>
           {isAuthenticated ? (
-            <CommandItem onSelect={() => onOpenChange(false)}>
+            <CommandItem
+              onSelect={() => {
+                router.push(ROUTES.PROFILE);
+                onOpenChange(false);
+              }}
+            >
               <Heart className="mr-2 size-4" />
               <span>{t("commands.goingEvents")}</span>
             </CommandItem>

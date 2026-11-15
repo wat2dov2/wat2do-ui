@@ -5,44 +5,33 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Plus, QrCode, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { CircleUser, HelpCircle, MoreHorizontal, Shapes, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
-import { Button, buttonVariants } from "@/shared/ui/button";
+import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
-import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
-import {
   Drawer,
   DrawerContent,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { DrawerBody, Stack } from "@/shared/layout";
 import { SessionView } from "@/features/auth/components/SessionView";
-import { useAuthState, useSessionKnown, type AuthState } from "@/features/auth/hooks/useAuthState";
+import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
+import { NotificationBell } from "@/features/notifications";
 import { useRequestSchool } from "@/app/client-providers";
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
-import { logoutAPI } from "@/features/auth/api/auth.api";
-import { useOpenClubPanel } from "@/features/clubs";
 import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
-
-type NavClub = AuthState["clubs"][number];
 
 /** The empty element that closes the header, which the first paint waits for (see the expect link below). */
 const TOP_NAV_END_ID = "top-nav-end";
@@ -97,58 +86,10 @@ const PRIMARY_NAV_ITEMS = [
   { labelKey: "navigation.about", href: ROUTES.ABOUT, Icon: HelpCircle },
 ] as const;
 
-/** A signed-in visitor's own pages, which only the side menu lists. */
-const ACCOUNT_NAV_ITEMS = [
-  { labelKey: "navigation.myTickets", href: ROUTES.TICKETS, Icon: QrCode },
-  { labelKey: "navigation.settings", href: ROUTES.SETTINGS, Icon: Settings },
-] as const;
+/** A signed-in visitor's own page: their avatar opens it on a wide screen, and the side menu lists it on a phone. */
+const PROFILE_NAV_ITEM = { labelKey: "navigation.profile", href: ROUTES.PROFILE, Icon: CircleUser } as const;
 
-type NavigationItem = (typeof PRIMARY_NAV_ITEMS)[number] | (typeof ACCOUNT_NAV_ITEMS)[number];
-
-// Event and position forms open to everyone and ask for sign-in themselves, before they submit.
-const SUBMIT_ITEMS = [
-  { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket },
-  { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users },
-  { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE, Icon: Shapes },
-] as const;
-
-interface SubmitMenuProps {
-  size: "sm" | "navigation";
-  onNavigate?: () => void;
-}
-
-/** The one way into every submission form: a menu of what to submit. */
-function SubmitMenu({ size, onNavigate }: SubmitMenuProps) {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const pathname = usePathname();
-  const active = SUBMIT_ITEMS.some(({ href }) => isRouteActive(pathname, href));
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant={active ? "outline" : "ghost"} size={size}>
-          {size === "navigation" ? <Plus /> : null}
-          <span className="min-w-0 flex-1 truncate text-start">{t("navigation.submit")}</span>
-          <ChevronDown />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {SUBMIT_ITEMS.map(({ labelKey, href, Icon }) => (
-          <DropdownMenuItem
-            key={href}
-            onSelect={() => {
-              onNavigate?.();
-              router.push(href);
-            }}
-          >
-            <Icon />
-            {t(labelKey)}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+type NavigationItem = (typeof PRIMARY_NAV_ITEMS)[number] | typeof PROFILE_NAV_ITEM;
 
 interface NavigationLinkProps {
   item: NavigationItem;
@@ -213,42 +154,20 @@ function isRouteActive(pathname: string, href: string): boolean {
 export function TopNav() {
   const [navigationOpen, setNavigationOpen] = useState(false);
   const requestSchool = useRequestSchool();
-  const { isAuthenticated, profileCompleted, isAdmin, clubs, clubId, userAvatarUrl, userEmail } =
-    useAuthState();
+  const { isAuthenticated, userAvatarUrl, userEmail } = useAuthState();
   const sessionKnown = useSessionKnown();
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const scrolledPastBand = useScrolledPastBand(pathname);
-  const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
-  const canOpenClubPanel = profileCompleted && Boolean(activeClub);
-  const onClubPanel = isRouteActive(pathname, ROUTES.CLUB_PANEL);
+  const onProfile = isRouteActive(pathname, ROUTES.PROFILE);
   const userInitial = (userEmail?.[0] ?? "?").toUpperCase();
-  const userAvatar = userAvatarUrl ? (
+  // The visitor's picture or initial is known once the page wakes up.
+  const userAvatar = !sessionKnown ? null : userAvatarUrl ? (
     <LazyImage src={userAvatarUrl} alt="" width={32} height={32} fallback={userInitial} className="size-full" />
   ) : userInitial;
+  const openNavigation = useCallback(() => setNavigationOpen(true), []);
   const closeNavigation = useCallback(() => setNavigationOpen(false), []);
-
-  const handleAdminClick = useCallback(() => {
-    setNavigationOpen(false);
-    router.push(ROUTES.ADMIN);
-  }, [router]);
-
-  const openClubPanel = useOpenClubPanel();
-  const handleClubSelect = useCallback((org: NavClub) => {
-    setNavigationOpen(false);
-    openClubPanel(org);
-  }, [openClubPanel]);
-
-  const handleSignOut = useCallback(async () => {
-    setNavigationOpen(false);
-    try {
-      await logoutAPI();
-    } catch (err) {
-      console.error("Logout API call failed, clearing local state anyway:", err);
-    }
-    // logoutAPI → clearAllAuthData fires AUTH_STATE_REFRESH_EVENT; useAuthState flips UI to signed-out.
-  }, []);
 
   const handleSignIn = useCallback(() => {
     router.push(ROUTES.LOGIN);
@@ -294,12 +213,13 @@ export function TopNav() {
       </div>
 
       {/*
-        Signed in or out, a wide screen's bar holds the same pages, Submit,
-        language and theme. Only its last control differs: Sign in, or the
-        visitor's avatar, which opens the side menu. The server cannot know who
-        is visiting, so those are SessionView looks: the bar a signed-in visitor
-        first sees is already their own, never Sign in turning into an avatar
-        once the page wakes up.
+        Signed in or out, a wide screen's bar holds the same pages, language
+        and theme. Only what follows differs: Sign in, or the visitor's bell and
+        avatar, which opens their profile. A phone's bar has room only for the
+        bell and a button that opens the side menu: the avatar, or "...". The
+        server cannot know who is visiting, so those are SessionView looks: the
+        bar a signed-in visitor first sees is already their own, never Sign in
+        turning into an avatar once the page wakes up.
       */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <nav
@@ -309,7 +229,6 @@ export function TopNav() {
           {PRIMARY_NAV_ITEMS.map((item) => (
             <NavigationLink key={item.href} item={item} size="sm" />
           ))}
-          <SubmitMenu size="sm" />
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -322,46 +241,51 @@ export function TopNav() {
           <ThemeToggle />
         </div>
 
-        <SessionView signedIn={null} signedOut={
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                className="hidden md:inline-flex"
-                onPointerEnter={prefetchSignIn}
-                onFocus={prefetchSignIn}
-                onTouchStart={prefetchSignIn}
-                onMouseDown={handleSignIn}
-              >
-                {t("events.signIn")}
+        <SessionView
+          signedIn={
+            <>
+              <NotificationBell />
+              <Button asChild variant="avatar" size="icon-sm" className="hidden md:inline-flex">
+                <NextLink
+                  href={ROUTES.PROFILE}
+                  aria-label={t("navigation.profile")}
+                  aria-current={onProfile ? "page" : undefined}
+                >
+                  {userAvatar}
+                </NextLink>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("modals.signIn.signInToSavePreferences")}</p>
-            </TooltipContent>
-          </Tooltip>
-        } />
-
-        <Drawer
-          open={navigationOpen}
-          onOpenChange={setNavigationOpen}
-          direction="right"
-        >
-          <SessionView
-            signedIn={
               <Button
                 variant="avatar"
                 size="icon-sm"
+                className="md:hidden"
                 aria-label={t("navigation.openMenu")}
                 aria-haspopup="dialog"
                 aria-expanded={navigationOpen}
-                onClick={() => setNavigationOpen(true)}
+                onClick={openNavigation}
               >
-                {/* The visitor's picture or initial is known once the page wakes up. */}
-                {sessionKnown ? userAvatar : null}
+                {userAvatar}
               </Button>
-            }
-            signedOut={
+            </>
+          }
+          signedOut={
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="hidden md:inline-flex"
+                    onPointerEnter={prefetchSignIn}
+                    onFocus={prefetchSignIn}
+                    onTouchStart={prefetchSignIn}
+                    onMouseDown={handleSignIn}
+                  >
+                    {t("events.signIn")}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("modals.signIn.signInToSavePreferences")}</p>
+                </TooltipContent>
+              </Tooltip>
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -369,29 +293,31 @@ export function TopNav() {
                 aria-label={t("navigation.openMenu")}
                 aria-haspopup="dialog"
                 aria-expanded={navigationOpen}
-                onClick={() => setNavigationOpen(true)}
+                onClick={openNavigation}
               >
                 <MoreHorizontal className="size-4" />
               </Button>
-            }
-          />
+            </>
+          }
+        />
+
+        {/* A phone's side menu: the pages its bar has no room for, and the visitor's profile. */}
+        <Drawer
+          open={navigationOpen}
+          onOpenChange={setNavigationOpen}
+          direction="right"
+        >
           <DrawerContent aria-describedby={undefined}>
             <DrawerHeader className="sr-only">
               <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
             </DrawerHeader>
             <DrawerBody className="gap-3">
-              {/*
-                The menu always opens on the logo and a divider. On a wide
-                screen the bar already shows the pages, Submit, language and
-                theme, so below the divider the menu lists only what the bar
-                does not: the visitor's own pages and club and admin tools.
-              */}
               <Stack direction="horizontal" align="center" justify="between" gap={2}>
                 <Wat2DoLogoLink
                   label={t("navigation.events")}
                   onNavigate={closeNavigation}
                 />
-                <Stack direction="horizontal" align="center" gap={2} className="md:hidden">
+                <Stack direction="horizontal" align="center" gap={2}>
                   <LanguageSelector />
                   <ThemeToggle />
                 </Stack>
@@ -416,75 +342,16 @@ export function TopNav() {
               )}
               <nav
                 aria-label={t("navigation.primary")}
-                className="flex flex-col gap-1 md:hidden"
+                className="flex flex-col gap-1"
               >
                 {PRIMARY_NAV_ITEMS.map((item) => (
                   <NavigationLink key={item.href} item={item} size="navigation" onNavigate={closeNavigation} />
                 ))}
-                <SubmitMenu size="navigation" onNavigate={closeNavigation} />
+                {isAuthenticated && (
+                  <NavigationLink item={PROFILE_NAV_ITEM} size="navigation" onNavigate={closeNavigation} />
+                )}
               </nav>
-              {isAuthenticated && (
-                <>
-                  <Separator className="md:hidden" />
-                  <Stack gap={1}>
-                    {ACCOUNT_NAV_ITEMS.map((item) => (
-                      <NavigationLink key={item.href} item={item} size="navigation" onNavigate={closeNavigation} />
-                    ))}
-                    {canOpenClubPanel && (
-                      // One entry for every club the user manages: pick which one the club panel opens on.
-                      <SearchCombobox<NavClub>
-                        // Marks a club only while its panel is open.
-                        selectedKey={onClubPanel ? activeClub.id : ""}
-                        onSelect={handleClubSelect}
-                        items={clubs}
-                        getKey={(club) => club.id}
-                        getLabel={(club) => club.club_name}
-                        displayValue={t("clubPanel.title")}
-                        renderTriggerLabel={(label) => (
-                          <>
-                            <Crown />
-                            <span className="min-w-0 flex-1 truncate text-start">{label}</span>
-                            <ChevronDown />
-                          </>
-                        )}
-                        triggerClassName={buttonVariants({
-                          variant: onClubPanel ? "outline" : "ghost",
-                          size: "navigation",
-                        })}
-                        searchPlaceholder={t("forms.searchClubPlaceholder")}
-                        emptyLabel={t("forms.noClubFound")}
-                      />
-                    )}
-                    {profileCompleted && isAdmin && (
-                      <Button variant="ghost" size="navigation" onClick={handleAdminClick}>
-                        <Shield />
-                        {t("navigation.admin")}
-                      </Button>
-                    )}
-                  </Stack>
-                </>
-              )}
             </DrawerBody>
-            {isAuthenticated && <>
-            <Separator />
-            <DrawerFooter>
-              <Stack direction="horizontal" align="center" justify="between" gap={2}>
-                  <Button asChild variant="avatar" size="icon-sm">
-                    <NextLink
-                      href={ROUTES.SETTINGS}
-                      aria-label={t("navigation.settings")}
-                      onClick={closeNavigation}
-                    >
-                      {userAvatar}
-                    </NextLink>
-                  </Button>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  <LogOut />
-                  {t("modals.signOut.logOut")}
-                </Button>
-              </Stack>
-            </DrawerFooter>
-            </>}
           </DrawerContent>
         </Drawer>
       </div>

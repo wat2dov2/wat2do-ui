@@ -25,7 +25,7 @@ export const ROUTES = {
   CLUBS: "/clubs",
   POSITIONS: "/positions",
   CLUB_CREATE: "/clubs/new",
-  SETTINGS: "/settings",
+  PROFILE: "/profile",
   MARKETING: "/marketing",
   INVITE: "/invite",
   CLAIM: "/claim",
@@ -109,7 +109,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.CLUBS]: "Clubs",
   [ROUTES.POSITIONS]: "Positions",
   [ROUTES.CLUB_CREATE]: "Add a Club",
-  [ROUTES.SETTINGS]: "Settings",
+  [ROUTES.PROFILE]: "Profile",
   [ROUTES.MARKETING]: "Marketing",
   [ROUTES.EVENT_SUBMIT]: "Submit an Event",
   [ROUTES.PROMOTE]: "Promote Events",
@@ -169,7 +169,7 @@ export function getRouteDocumentTitle(pathname: string): string {
   );
 }
 
-// ── Settings sub-tabs (used as query params: /settings?tab=<tab>) ──
+// ── Settings sub-tabs, on the profile page (used as query params: /profile?tab=<tab>) ──
 export const SETTINGS_TABS = {
   PROFILE: "profile",
   NOTIFICATIONS: "notifications",
@@ -177,11 +177,11 @@ export const SETTINGS_TABS = {
   PROMOTER: "promoter",
 } as const;
 
-/** Build a settings URL with a specific tab selected. */
+/** The profile page opened on its settings, with a specific tab selected. */
 export function settingsTabPath(
   tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS],
 ): string {
-  return `${ROUTES.SETTINGS}?${QP.TAB}=${tab}`;
+  return `${ROUTES.PROFILE}?${QP.TAB}=${tab}`;
 }
 
 // ── Admin sub-route map ────────────────────────────────────────────

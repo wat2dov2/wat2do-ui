@@ -552,6 +552,8 @@ async fn instagram_publishing_and_preference_routes_need_a_signed_in_user() {
             "/notification-preferences",
             Some(json!({"preferences": []})),
         ),
+        (Method::GET, "/notifications/", None),
+        (Method::POST, "/notifications/read", None),
     ] {
         let reply = send(
             state(None),

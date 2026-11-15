@@ -120,7 +120,7 @@ export function parseLocalDateValue(value: string): Date | undefined {
  * Resolve the primary occurrence from an event's occurrences list.
  * Earliest active or future occurrence wins; only falls back after all sessions end.
  */
-export function getPrimaryOccurrence(event: { occurrences?: Occurrence[] }, currentDate = new Date()): Occurrence | null {
+export function getPrimaryOccurrence<T extends Occurrence>(event: { occurrences?: T[] }, currentDate = new Date()): T | null {
   const occurrences = event.occurrences;
   if (!occurrences || occurrences.length === 0) {
     return null;

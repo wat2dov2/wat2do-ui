@@ -24,6 +24,7 @@ from schemas.event import EventResponse
 from services import event_service
 from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
+from services.notifications import inbox
 from services.notifications.delivery_log import (
     claim_delivery,
     deliver_claimed_email,
@@ -32,6 +33,7 @@ from services.notifications.email_images import event_hero_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     event_change_subject,
+    event_url,
     render_event_change_html,
     render_event_change_text,
 )
@@ -218,12 +220,22 @@ def _send_event_change(
     )
     if row_id is None:
         return False
-    return deliver_claimed_email(
+    sent = deliver_claimed_email(
         row_id=row_id,
         message=message,
         provider_attempts=1,
         log_context=f"notification=event_change user={user_id} event={event_summary['id']}",
     )
+    if sent:
+        cancelled = diff.get("cancelled", {}).get("new") is True
+        inbox.record(
+            user_id=user_id,
+            kind=inbox.INBOX_KIND_EVENT_CANCELLED if cancelled else NOTIFICATION_TYPE_EVENT_CHANGE,
+            event_id=int(event_summary["id"]),
+            details={"name": event_summary["title"]},
+            link=event_url(event_summary, school_frontend_url(event_summary.get("school"))),
+        )
+    return sent
 
 
 def _event_change_message(
@@ -239,7 +251,7 @@ def _event_change_message(
     school = event_summary.get("school")
     frontend_url = school_frontend_url(school)
     unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_EVENT_CHANGE, school)
-    preferences_url = f"{frontend_url}/settings?tab=notifications"
+    preferences_url = f"{frontend_url}/profile?tab=notifications"
     tz = ZoneInfo(resolve_school_timezone(school))
     subject = event_change_subject(event_summary, diff)
     image_src = f"cid:{image.content_id}" if image else event_summary.get("source_image_url")

@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "رویدادها",
-    "submit": "ثبت",
     "clubs": "سازمان‌ها",
     "positions": "موقعیت‌ها",
     "myEvents": "رویدادهای من",
-    "settings": "تنظیمات",
     "admin": "مدیر",
     "adminPanel": "پنل مدیریت",
     "clubPanel": "پنل سازمان",
@@ -101,7 +99,7 @@
     "openMenu": "باز کردن منوی پیمایش",
     "switchToLightMode": "تغییر به حالت روشن",
     "switchToDarkMode": "تغییر به حالت تیره",
-    "myTickets": "بلیت‌های من"
+    "profile": "پروفایل"
   },
   "siteBanner": {
     "businessSupport": {

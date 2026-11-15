@@ -159,6 +159,11 @@
       "fresh": "Wat2Do 신규 이벤트",
       "by": "주최",
       "networking": "네트워킹 기회"
+    },
+    "savedEvents": {
+      "save": "이벤트 저장",
+      "unsave": "저장 취소",
+      "saveFailed": "이 이벤트를 저장할 수 없습니다"
     }
   }
 }

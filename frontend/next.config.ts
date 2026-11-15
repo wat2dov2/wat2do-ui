@@ -133,7 +133,11 @@ const nextConfig: NextConfig = {
   // The landing page lives at /landing; the root opens the events feed. Temporary, so
   // browsers never cache where the root goes.
   async redirects() {
-    return [{ source: "/", destination: "/events", permanent: false }];
+    return [
+      { source: "/", destination: "/events", permanent: false },
+      // Settings moved into the profile page; emails already sent still link /settings?tab=notifications.
+      { source: "/settings", destination: "/profile", permanent: true },
+    ];
   },
   async rewrites() {
     return [

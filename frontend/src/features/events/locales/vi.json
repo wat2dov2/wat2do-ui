@@ -159,6 +159,11 @@
       "fresh": "Mới trên Wat2Do",
       "by": "bởi",
       "networking": "Cơ hội kết nối"
+    },
+    "savedEvents": {
+      "save": "Lưu sự kiện",
+      "unsave": "Bỏ lưu",
+      "saveFailed": "Không thể lưu sự kiện này"
     }
   }
 }

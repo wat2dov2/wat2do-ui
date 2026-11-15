@@ -175,6 +175,11 @@
       "fresh": "Novità su Wat2Do",
       "by": "di",
       "networking": "Opportunità di networking"
+    },
+    "savedEvents": {
+      "save": "Salva evento",
+      "unsave": "Rimuovi dai salvati",
+      "saveFailed": "Impossibile salvare questo evento"
     }
   }
 }

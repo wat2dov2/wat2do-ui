@@ -1,0 +1,67 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openUnread": "Notifications, {{unread}} nouvelles",
+    "unread": "Nouveau :",
+    "loading": "Chargement de vos notifications",
+    "loadFailed": "Impossible de charger vos notifications.",
+    "empty": "Vous êtes à jour",
+    "emptyDescription": "Chaque e-mail que nous vous envoyons apparaît aussi ici.",
+    "kinds": {
+      "morning_email": {
+        "title": "Votre e-mail du matin",
+        "text": "Découvrez les nouveautés de votre école aujourd'hui."
+      },
+      "event_reminder": {
+        "title": "Rappel : {{name}}",
+        "text": "L'événement commence environ une heure après ce rappel."
+      },
+      "event_change": {
+        "title": "{{name}} a changé",
+        "text": "Son heure, son lieu ou ses détails ont été mis à jour."
+      },
+      "event_cancelled": {
+        "title": "{{name}} a été annulé",
+        "text": "L'organisation a annulé cet événement."
+      },
+      "tickets": {
+        "title": "Votre billet pour {{name}}",
+        "titleMany": "Vos billets pour {{name}}",
+        "text": "Présentez le code QR à l'entrée."
+      },
+      "ticket_refunded": {
+        "title": "Remboursement pour {{name}}",
+        "text": "Votre argent est en route."
+      },
+      "refund_requested": {
+        "title": "Demande de remboursement pour {{name}}",
+        "text": "Quelqu'un a demandé un remboursement à votre organisation."
+      },
+      "refund_declined": {
+        "title": "Remboursement refusé pour {{name}}",
+        "text": "Votre billet reste valide."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Votre organisation {{name}} est en ligne",
+          "claim": "Vous pouvez maintenant gérer {{name}}",
+          "event": "Votre événement {{name}} est en ligne",
+          "position": "Votre poste {{name}} est en ligne",
+          "text": "C'est approuvé."
+        },
+        "rejected": {
+          "club": "Votre organisation {{name}} n'a pas été approuvée",
+          "claim": "Votre demande pour {{name}} n'a pas été approuvée",
+          "event": "Votre événement {{name}} n'a pas été approuvé",
+          "position": "Votre poste {{name}} n'a pas été approuvé",
+          "text": "Notre e-mail vous explique pourquoi."
+        }
+      },
+      "club_invitation": {
+        "title": "Vous êtes invité à aider à gérer {{name}}",
+        "text": "Acceptez pour accéder au panneau de l'organisation."
+      }
+    }
+  }
+}
