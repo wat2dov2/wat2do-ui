@@ -1,9 +1,7 @@
-//! Going selections and the public who's-going list (`going_event_service.py`),
-//! and V1 saved events (`v1_saved_event_service.py`).
+//! Notify me selections (`user_going_events`: the dates someone gets
+//! reminders and change alerts for) and V1 saved events.
 
-use base64::Engine;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -12,7 +10,6 @@ use crate::api::messages::{
     EVENT_NOT_FOUND, GOING_EVENTS_CAP_REACHED, INVALID_EVENT_OCCURRENCE, OCCURRENCE_NOT_SELECTABLE,
 };
 use crate::api::pagination::{DEFAULT_MAX_ROWS, LOAD_PAGE_SIZE, fetch_all_pages};
-use crate::controlbox::PUBLIC_ATTENDANCE;
 use crate::db::read_with_retry;
 
 /// `GoingEventSelection`.
@@ -131,21 +128,8 @@ pub async fn set_occurrences(
     }
 }
 
-/// `EventAttendeeResponse`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct Attendee {
-    pub name: String,
-    pub avatar_url: String,
-}
-
-/// `EventAttendeesResponse`.
-#[derive(Debug, Serialize)]
-pub struct Attendees {
-    pub going_count: i64,
-    pub attendees: Vec<Attendee>,
-}
-
-/// `_abbreviate_full_name`: "First Middle Last" becomes "First L.".
+/// "First Middle Last" becomes "First L.", how a club's door list names a
+/// ticket holder.
 pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
     let parts: Vec<&str> = full_name?
         .split(crate::text::python_space)
@@ -159,102 +143,6 @@ pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
             last.chars().next().unwrap_or_default()
         )),
     }
-}
-
-/// `user_service.avatar_url_for_user`: the uploaded photo, else a stable identicon.
-pub fn avatar_url(user_id: &str, avatar_url: Option<&str>) -> String {
-    if let Some(url) = avatar_url.filter(|url| !url.is_empty()) {
-        return url.to_owned();
-    }
-    let digest = Sha256::digest(user_id.as_bytes());
-    let hue = u32::from(u16::from_be_bytes([digest[0], digest[1]])) % 360;
-    let mut cells = String::new();
-    for y in 0..5 {
-        for x in 0..3 {
-            if digest[2 + y * 3 + x] & 1 == 1 {
-                let mut columns = vec![x, 4 - x];
-                columns.dedup();
-                for column in columns {
-                    cells.push_str(&format!("M{} {}h16v16h-16z", 10 + column * 16, 10 + y * 16));
-                }
-            }
-        }
-    }
-    let svg = format!(
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">\
-         <rect width=\"100\" height=\"100\" fill=\"#f1f5f9\"/>\
-         <path fill=\"hsl({hue} 55% 42%)\" d=\"{cells}\"/></svg>"
-    );
-    format!(
-        "data:image/svg+xml;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(svg)
-    )
-}
-
-/// `get_going_counts_for_events([event_id])` and `get_event_attendees`.
-pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError> {
-    let going_count: Option<i64> = read_with_retry(|| {
-        sqlx::query_scalar(
-            "SELECT going_count::int8 FROM public.get_event_going_counts(ARRAY[$1::int4])",
-        )
-        .bind(event_id)
-        .fetch_optional(db)
-    })
-    .await?;
-    // Distinct users by first Going time, reading pages only until the
-    // display cap is reached (Python read every page, then kept the first few).
-    // Ticket holders count toward Going but are never named: a ticket should
-    // not put anyone's name and face on a public list.
-    let cap = PUBLIC_ATTENDANCE.maximum_display_names;
-    let mut user_ids: Vec<Uuid> = Vec::new();
-    let mut offset = 0;
-    while user_ids.len() < cap {
-        let page: Vec<Uuid> = read_with_retry(|| {
-            sqlx::query_scalar::<_, Uuid>(
-                "SELECT g.user_id FROM public.user_going_events g WHERE g.event_id = $1 \
-                 AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.event_id = g.event_id \
-                                 AND t.holder_user_id = g.user_id AND t.status = 'valid') \
-                 ORDER BY g.going_at LIMIT $2 OFFSET $3",
-            )
-            .bind(event_id)
-            .bind(LOAD_PAGE_SIZE)
-            .bind(offset)
-            .fetch_all(db)
-        })
-        .await?;
-        for id in &page {
-            if user_ids.len() < cap && !user_ids.contains(id) {
-                user_ids.push(*id);
-            }
-        }
-        if (page.len() as i64) < LOAD_PAGE_SIZE {
-            break;
-        }
-        offset += LOAD_PAGE_SIZE;
-    }
-    let mut attendees = Vec::with_capacity(user_ids.len());
-    if !user_ids.is_empty() {
-        let users: Vec<(Uuid, Option<String>, Option<String>)> = read_with_retry(|| {
-            sqlx::query_as("SELECT id, full_name, avatar_url FROM public.users WHERE id = ANY($1)")
-                .bind(&user_ids)
-                .fetch_all(db)
-        })
-        .await?;
-        for id in &user_ids {
-            let row = users.iter().find(|(user, ..)| user == id);
-            let (full_name, photo) = row.map_or((None, None), |(_, name, photo)| {
-                (name.as_deref(), photo.as_deref())
-            });
-            attendees.push(Attendee {
-                name: abbreviate(full_name).unwrap_or_default(),
-                avatar_url: avatar_url(&id.to_string(), photo),
-            });
-        }
-    }
-    Ok(Attendees {
-        going_count: going_count.unwrap_or(0),
-        attendees,
-    })
 }
 
 /// `get_saved_event_ids`: the user's V1 saved events, newest first.
@@ -359,7 +247,7 @@ mod tests {
     }
 
     #[test]
-    fn names_are_abbreviated_for_public_display() {
+    fn names_are_abbreviated_for_the_door_list() {
         assert_eq!(
             abbreviate(Some("Sean Michael Young")).as_deref(),
             Some("Sean Y.")
@@ -371,16 +259,5 @@ mod tests {
             abbreviate(Some("Émile  Ørsted")).as_deref(),
             Some("Émile Ø.")
         );
-    }
-
-    #[test]
-    fn identicons_match_python() {
-        // user_service.avatar_url_for_user("00000000-0000-0000-0000-000000000001")
-        let expected = include_str!("testdata/identicon.txt").trim();
-        assert_eq!(
-            avatar_url("00000000-0000-0000-0000-000000000001", None),
-            expected
-        );
-        assert_eq!(avatar_url("x", Some("https://a/b.png")), "https://a/b.png");
     }
 }

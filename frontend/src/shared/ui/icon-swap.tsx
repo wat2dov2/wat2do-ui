@@ -3,9 +3,10 @@ import type { ReactNode } from "react"
 import { cn } from "@/shared/lib/utils"
 
 /**
- * Swaps between two icons in one slot. Instead of a hard replacement, the
- * outgoing icon shrinks, blurs and fades while the incoming one grows in from
- * the same blur, so the change reads as one icon turning into the other.
+ * Swaps between two icons (or two short labels) in one slot as wide as the
+ * wider of them. Instead of a hard replacement, the outgoing one shrinks,
+ * blurs and fades while the incoming one grows in from the same blur, so the
+ * change reads as one turning into the other.
  */
 export function IconSwap({
   showAlternate,

@@ -125,7 +125,6 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::events::delete_event
         ))
         .routes(routes!(routes::going_events::list_going_events))
-        .routes(routes!(routes::going_events::list_event_attendees))
         .routes(routes!(
             routes::going_events::mark_going,
             routes::going_events::unmark_going

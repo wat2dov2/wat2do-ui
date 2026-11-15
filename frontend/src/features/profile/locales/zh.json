@@ -4,10 +4,10 @@
     "events": {
       "saved": "已收藏的活动",
       "savedEmpty": "你收藏的活动会显示在这里。",
-      "past": "你参加过的活动",
-      "pastEmpty": "你参加过的活动会显示在这里。",
-      "upcoming": "你将参加的活动",
-      "upcomingEmpty": "你将参加的活动会显示在这里。",
+      "past": "你过去的活动",
+      "pastEmpty": "你开启过“提醒我”或持有门票的活动，结束后会显示在这里。",
+      "upcoming": "你即将到来的活动",
+      "upcomingEmpty": "你开启“提醒我”或领取了门票的活动会显示在这里。",
       "ticket": "门票"
     },
     "clubs": {

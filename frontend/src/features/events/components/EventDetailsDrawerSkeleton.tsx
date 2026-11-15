@@ -6,7 +6,7 @@ import {
   EventRegistrationPrompt,
 } from "@/features/events/components/EventDetailsSections";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
-import { Card } from "@/shared/ui/card";
+import { Card, CardDescription } from "@/shared/ui/card";
 import { DrawerHeader } from "@/shared/ui/drawer";
 import { Separator } from "@/shared/ui/separator";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
@@ -46,9 +46,9 @@ function FactSkeleton({ lines }: { lines: 1 | 2 }) {
 
 /**
  * The event details layout before the event loads, box for box: poster, a
- * title of usual length, the date, place, food and price facts, the Going
- * card, the description and the host. Section headings and the Going card
- * are the real ones, since they do not depend on the event.
+ * title of usual length, the date, place, food and price facts, the Notify
+ * me card, the description and the host. Section headings and the Notify me
+ * card are the real ones, since they do not depend on the event.
  */
 export function EventDetailsBodySkeleton() {
   const { t } = useTranslation();
@@ -76,7 +76,9 @@ export function EventDetailsBodySkeleton() {
             <FactSkeleton lines={1} />
           </FormGrid>
           <div inert>
-            <EventRegistrationPrompt school={null} unavailable isPending={false} onRegister={ignore} />
+            <EventRegistrationPrompt school={null} unavailable isPending={false} onRegister={ignore}>
+              <CardDescription>{t("events.notifyMe.description")}</CardDescription>
+            </EventRegistrationPrompt>
           </div>
         </Stack>
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Email everyone going to an event whose changes have gone quiet, once.
+"""Email everyone with Notify me on for an event whose changes have gone quiet, once.
 
 ``wat2do-api`` runs this from the backend directory for each authenticated
 ``POST /webhooks/event-change-alerts`` (the Mac's ``io.wat2do.event-change-alerts``

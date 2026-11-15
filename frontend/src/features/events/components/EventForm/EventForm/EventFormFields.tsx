@@ -19,6 +19,7 @@ import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/share
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
 import { ClubInput } from "@/features/clubs";
+import { EventTicketsFieldSet } from "@/features/tickets";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
@@ -28,6 +29,7 @@ export function EventFormFields() {
   const { event_categories: eventCategories } = useAppConstants();
   const { t } = useTranslation();
   const {
+    editEventId,
     formData,
     updateField,
     errors,
@@ -35,8 +37,10 @@ export function EventFormFields() {
     handleBlur,
     clubs,
     updateOccurrence,
+    updateOccurrenceTickets,
     addOccurrence,
     removeOccurrence,
+    updateTickets,
     foodInput,
     setFoodInput,
     addFood,
@@ -144,6 +148,14 @@ export function EventFormFields() {
 
       <FieldSeparator />
 
+      <EventTicketsFieldSet
+        eventId={editEventId}
+        formData={formData}
+        onTicketsChange={updateTickets}
+        onDateTicketsChange={updateOccurrenceTickets}
+        showErrors={Boolean(touched.tickets)}
+      />
+
       <FieldSet>
         <FieldLegend>{t("forms.optionalDetails")}</FieldLegend>
         <FieldGroup>
@@ -175,19 +187,22 @@ export function EventFormFields() {
               options={eventCategories.map((cat) => ({ value: cat, label: translateCategory(cat, t) }))}
             />
 
-            <FormInput
-              name="price"
-              label={t("filters.price")}
-              type="number"
-              value={formData.price}
-              onChange={(value) => updateField("price", value as number)}
-              placeholder={t("forms.pricePlaceholder")}
-              step="0.01"
-              min="0"
-              prefix="$"
-              labelIcon={<DollarSign className="size-4" />}
-              inputClassName="text-secondary-foreground"
-            />
+            {/* An event with tickets costs what its tickets cost. */}
+            {formData.tickets.enabled ? null : (
+              <FormInput
+                name="price"
+                label={t("filters.price")}
+                type="number"
+                value={formData.price}
+                onChange={(value) => updateField("price", value as number)}
+                placeholder={t("forms.pricePlaceholder")}
+                step="0.01"
+                min="0"
+                prefix="$"
+                labelIcon={<DollarSign className="size-4" />}
+                inputClassName="text-secondary-foreground"
+              />
+            )}
           </FormGrid>
 
           <TagInput
@@ -201,20 +216,23 @@ export function EventFormFields() {
             placeholder={t("forms.foodPlaceholder")}
           />
 
-          <Field>
-            <FieldLabel htmlFor={registrationId}>
-              {t("forms.registration")}
-            </FieldLabel>
-            <div className="w-fit">
-              <Switch
-                id={registrationId}
-                checked={formData.registration}
-                onCheckedChange={(checked) =>
-                  updateField("registration", checked)
-                }
-              />
-            </div>
-          </Field>
+          {/* Tickets are the event's registration. */}
+          {formData.tickets.enabled ? null : (
+            <Field>
+              <FieldLabel htmlFor={registrationId}>
+                {t("forms.registration")}
+              </FieldLabel>
+              <div className="w-fit">
+                <Switch
+                  id={registrationId}
+                  checked={formData.registration}
+                  onCheckedChange={(checked) =>
+                    updateField("registration", checked)
+                  }
+                />
+              </div>
+            </Field>
+          )}
 
           <ImageUploadField
             label={t("forms.eventImage")}

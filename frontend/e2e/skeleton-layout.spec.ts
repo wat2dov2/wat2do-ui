@@ -184,7 +184,7 @@ class Gate {
 interface Gates {
   /** Held until the loading state has been measured. */
   data: Gate;
-  /** Secondary client data (stats, attendees) that real visitors receive a beat later. */
+  /** Secondary client data (stats) that real visitors receive a beat later. */
   late: Gate;
 }
 
@@ -278,10 +278,6 @@ async function installMocks(
     if (path === "/positions/stats") {
       await gates.late.opened;
       return json(Object.fromEntries(POSITIONS.map(position => [String(position.id), { click_count: 5 + position.id }])));
-    }
-    if (/^\/going-events\/\d+\/attendees$/.test(path)) {
-      await gates.late.opened;
-      return json({ going_count: 0, attendees: [] });
     }
     if (path === "/events") {
       const clubId = url.searchParams.get("club_ids");
@@ -744,11 +740,12 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
     test("club panel event page keeps its header from the server's HTML until its tickets load", async ({ page, next }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };
       gates.late.open();
-      // Signed in as the club's executive. The event, its tickets and the club's payouts wait.
+      // Signed in as the club's executive. The event and its tickets wait; it has none, so the
+      // page ends on its empty state (tickets are set up in the event's own form).
       // Its title is one line wide: a title's wrapping is the one thing no placeholder can know.
       await installMocks(
         page, next, gates,
-        path => path === "/events/1" || path === "/events/1/ticketing" || path === "/clubs/1/payouts",
+        path => path === "/events/1" || path === "/events/1/ticketing",
         { visitor: EXECUTIVE, firstEvent: { title: "Open Mic Night" } },
       );
       await cacheSignIn(page, EXECUTIVE);
@@ -759,7 +756,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       // The server's HTML already draws the page's header, before the session is restored.
       await page.locator("[data-slot=page-header-title] [data-slot=skeleton-line]").first().waitFor();
       const name = `club-panel-event-${viewportName}`;
-      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-card]", name, viewport.height);
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=empty-state]", name, viewport.height);
       await report(name, comparison, cls, shifts);
     });
 
@@ -776,7 +773,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
         const name = `event-page-${visitor.role === "admin" ? "admin" : "signed-in"}-${viewportName}`;
         const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=event-host]", name, viewport.height);
         await report(name, comparison, cls, shifts);
-        // The Going card is the visitor's own, not the signed-out email form.
+        // The Notify me card is the visitor's own, not the signed-out email form.
         await expect(page.getByTestId("event-registration-auth")).toBeHidden();
       });
     }

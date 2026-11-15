@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "會參加",
     "cancel": "取消",
     "confirm": "確認",
     "saving": "儲存中...",
@@ -172,7 +171,7 @@
     "max": "最高",
     "today": "今日",
     "forYou": "為你推薦",
-    "going": "會參加",
+    "going": "已訂閱",
     "dateRange": "日期範圍",
     "dayOfWeek": "星期幾",
     "registration": "需要登記",
@@ -201,7 +200,7 @@
     "showPersonalizedEvents": "顯示個人化活動",
     "openFilters": "打開篩選器",
     "createNewEvent": "提交活動",
-    "goingEvents": "我會參加嘅活動",
+    "goingEvents": "已訂閱嘅活動",
     "notificationPreferences": "通知偏好",
     "themeAppearance": "主題與外觀",
     "helpSupport": "幫助與支援",
@@ -396,7 +395,7 @@
       },
       "account": {
         "title": "登入解鎖更多功能",
-        "desc": "有帳戶就可以儲存活動、標記你會去嘅活動、收提醒，同使用管理學會嘅工具。"
+        "desc": "有帳戶就可以收藏活動、開啟「提醒我」收提醒同更新，同使用管理學會嘅工具。"
       }
     },
     "help": {
@@ -556,7 +555,7 @@
       "items": {
         "free": {
           "question": "Wat2Do 使唔使錢？",
-          "answer": "唔使。Wat2Do 對學生完全免費，唔使開帳戶都可以瀏覽所有活動。登入之後就可以將活動標記為「會參加」同收提醒。"
+          "answer": "唔使。Wat2Do 對學生完全免費，唔使開帳戶都可以瀏覽所有活動。登入之後就可以開啟「提醒我」同收提醒。"
         },
         "clubs": {
           "question": "我嘅組織要唔要登記？",

@@ -162,9 +162,9 @@
       "title": "Patakaran sa Data",
       "intro": "Ipinapaliwanag ng patakarang ito kung anong personal na impormasyon ang kinokolekta ng Wat2Do, kung bakit, kung kanino namin ito ibinabahagi, kung gaano katagal namin ito itinatago at ang mga pagpipilian mo. Saklaw nito ang wat2do.io at ang bawat school site dito (gaya ng uwaterloo.wat2do.io), ang mga email na ipinapadala namin at ang mga Instagram account na pinapatakbo namin para sa bawat paaralan. Kung may tanong ka, mag-email sa amin sa <email>{{email}}</email>.",
       "summary": {
-        "collect": "Kinokolekta namin ang ibinibigay mo sa amin (ang email, paaralan, kolehiyo at mga interes mo), ang ginagawa mo sa Wat2Do (mga kaganapang pinupuntahan o sine-save mo, mga tiket, mga organisasyong sinusundan mo) at ilang teknikal na detalye, gaya ng naka-scramble na anyo ng IP address mo.",
+        "collect": "Kinokolekta namin ang ibinibigay mo sa amin (ang email, paaralan, kolehiyo at mga interes mo), ang ginagawa mo sa Wat2Do (mga kaganapang sine-save mo o in-on mo ang Paalalahanan ako, mga tiket, mga organisasyong sinusundan mo) at ilang teknikal na detalye, gaya ng naka-scramble na anyo ng IP address mo.",
         "noSale": "Hindi namin ibinebenta ang personal na impormasyon mo, at hindi kami nagpapakita ng mga ad.",
-        "share": "Kapag minarkahan mong pupunta ka, makikita ng ibang bisita ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo, at makikita ng mga organisasyon ang pangalan at email address mo kapag may tiket ka sa kanilang kaganapan. Pinapatakbo para sa amin ng mga kumpanya gaya ng Amazon Web Services, Cloudflare at Google ang ilang bahagi ng Wat2Do, at ang ilan sa kanila ay nasa labas ng Canada.",
+        "share": "Makikita ng mga organisasyon ang pangalan at email address mo kapag may tiket ka sa kanilang kaganapan. Walang ibang makakakita kung aling mga kaganapan ang in-on mo ang Paalalahanan ako. Pinapatakbo para sa amin ng mga kumpanya gaya ng Amazon Web Services, Cloudflare at Google ang ilang bahagi ng Wat2Do, at ang ilan sa kanila ay nasa labas ng Canada.",
         "analytics": "Gumagamit kami ng Google Analytics para bilangin ang mga pagbisita, at tinatanggal namin ang mga code at email address sa mga address ng page na natatanggap nito.",
         "public": "Gumagamit din kami ng pampublikong impormasyon: mga kaganapan ng organisasyon mula sa mga pampublikong post sa Instagram, at ang mga contact email na inilalathala ng mga organisasyon online.",
         "choices": "Puwede mong i-off ang aming mga email anumang oras, baguhin ang profile mo sa Settings, at hilingin sa amin na ipakita sa iyo, itama o burahin ang impormasyon mo.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Ang ginagawa mo sa Wat2Do.",
-              "text": "Mga kaganapang minarkahan mong pupuntahan o sine-save mo, mga posisyong sine-save mo, mga organisasyong sinusundan mo, mga tiket na nakukuha mo, kung kailan ka chine-check in ng isang organisasyon at mga kahilingan sa refund na ipinapadala mo."
+              "text": "Mga kaganapang sine-save mo o in-on mo ang Paalalahanan ako, mga posisyong sine-save mo, mga organisasyong sinusundan mo, mga tiket na nakukuha mo, kung kailan ka chine-check in ng isang organisasyon at mga kahilingan sa refund na ipinapadala mo."
             },
             "submissions": {
               "term": "Ang ipinapadala mo sa amin.",
@@ -250,8 +250,8 @@
           "p1": "Ginagamit lang namin ang personal na impormasyon para sa mga layuning ito:",
           "purposes": {
             "account": "Para patakbuhin ang account mo, i-sign in ka at panatilihin kang naka-sign in.",
-            "show": "Para ipakita sa iyo kung ano ang nangyayari sa paaralan mo, at ang mga kaganapang na-save mo, pupuntahan mo o may hawak kang tiket.",
-            "emails": "Para ipadala ang mga email na kontrolado mo: ang pang-umagang email ng mga kaganapan, mga paalala bago ang mga kaganapang pupuntahan mo at mga alerto kapag may nagbago sa isa sa mga ito. Nagpapadala rin kami ng mga email na kailangan mo, gaya ng mga sign-in code, tiket at ang aming mga desisyon sa mga isinumite mo.",
+            "show": "Para ipakita sa iyo kung ano ang nangyayari sa paaralan mo, at ang mga kaganapang na-save mo, in-on mo ang Paalalahanan ako o may hawak kang tiket.",
+            "emails": "Para ipadala ang mga email na kontrolado mo: ang pang-umagang email ng mga kaganapan, mga paalala bago ang mga kaganapang in-on mo ang Paalalahanan ako at mga alerto kapag may nagbago sa isa sa mga ito. Nagpapadala rin kami ng mga email na kailangan mo, gaya ng mga sign-in code, tiket at ang aming mga desisyon sa mga isinumite mo.",
             "tickets": "Para mag-isyu ng mga tiket at hayaan ang mga organisasyon na i-check in ka.",
             "payouts": "Para bayaran ang mga promoter at organisasyong kasali sa aming mga payout program, at para itago ang mga rekord na iniaatas ng batas.",
             "safety": "Para panatilihing ligtas ang Wat2Do: para limitahan ang pang-aabuso, matukoy ang mga pekeng account, click at scan, at imbestigahan ang mga problema.",
@@ -273,8 +273,8 @@
           "title": "Sino ang nakakakita nito, at kanino namin ito ibinabahagi",
           "p1": "Nakikita ng iba ang ilan sa mga ginagawa mo sa Wat2Do:",
           "visible": {
-            "going": "Kapag minarkahan mong pupunta ka, makikita ng mga tumitingin sa kaganapan ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo sa listahan ng mga pupunta.",
-            "tickets": "Kapag may tiket ka, makikita ng organisasyong nagpapatakbo ng kaganapan ang pangalan mo (o ang simula ng email address mo), ang email address mo, ang code ng tiket mo, kung kailan ka na-check in at anumang kahilingan sa refund. Kung mag-on ng mga tiket ang isang organisasyon para sa kaganapang sinabi mong pupuntahan mo, bibigyan ka namin ng tiket at makikita ng organisasyon ang parehong mga detalye.",
+            "notifyMe": "Walang ibang makakakita kung aling mga kaganapan ang in-on mo ang Paalalahanan ako. Ang ipinapakita lang ng isang kaganapan ay kung ilang tao ang nag-on nito.",
+            "tickets": "Kapag may tiket ka, makikita ng organisasyong nagpapatakbo ng kaganapan ang pangalan mo (o ang simula ng email address mo), ang email address mo, ang code ng tiket mo, kung kailan ka na-check in at anumang kahilingan sa refund.",
             "teams": "Nakikita ng mga taong namamahala sa iisang organisasyon ang mga pangalan, email address at larawan ng isa't isa.",
             "submissions": "Pampubliko ang mga kaganapan, posisyon at organisasyong inilalathala namin mula sa mga isinumite mo, pero hindi ang email address mo."
           },
@@ -366,7 +366,7 @@
               "text": "nag-e-expire ang mga code pagkalipas ng {{codeMinutes}}, at nagtatapos ang isang session {{sessionDays}} pagkatapos mo itong huling gamitin."
             },
             "activity": {
-              "term": "Mga pupuntahan, na-save na kaganapan at posisyon, sinusundan at tiket:",
+              "term": "Paalalahanan ako, na-save na kaganapan at posisyon, sinusundan at tiket:",
               "text": "hanggang alisin mo ang mga ito o burahin ang account mo."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "I-off ang pang-umagang email, mga paalala at mga alerto sa pagbabago sa Settings, o gamit ang unsubscribe link sa alinman sa mga ito. Darating pa rin ang mga sign-in code at tiket, dahil kailangan mo ang mga ito.",
             "profile": "Baguhin ang larawan, paaralan, kolehiyo, mga interes at wika mo sa Settings.",
-            "activity": "Alisin ang mga kaganapang pupuntahan mo o na-save mo, at ang mga organisasyong sinusundan mo, kahit kailan mo gusto.",
+            "activity": "I-off ang Paalalahanan ako, alisin ang mga na-save na kaganapan at i-unfollow ang mga organisasyon kahit kailan mo gusto.",
             "analytics": "I-block ang mga Google Analytics cookie sa browser mo."
           },
           "p2": "Puwede mo ring hilingin sa amin na:",

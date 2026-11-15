@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "Wezmę udział",
     "cancel": "Anuluj",
     "confirm": "Potwierdź",
     "saving": "Zapisywanie...",
@@ -181,7 +180,7 @@
     "max": "Maks",
     "today": "Dziś",
     "forYou": "Dla Ciebie",
-    "going": "Wezmę udział",
+    "going": "Subskrybowane",
     "dateRange": "Zakres dat",
     "dayOfWeek": "Dzień tygodnia",
     "registration": "Wymaga rejestracji",
@@ -210,7 +209,7 @@
     "showPersonalizedEvents": "Pokaż spersonalizowane wydarzenia",
     "openFilters": "Otwórz filtry",
     "createNewEvent": "Prześlij wydarzenie",
-    "goingEvents": "Wydarzenia, w których wezmę udział",
+    "goingEvents": "Subskrybowane wydarzenia",
     "notificationPreferences": "Preferencje powiadomień",
     "themeAppearance": "Motyw i wygląd",
     "helpSupport": "Pomoc i wsparcie",
@@ -408,7 +407,7 @@
       },
       "account": {
         "title": "Zaloguj się, by zyskać więcej",
-        "desc": "Konto pozwala zapisywać wydarzenia, oznaczać te, na które idziesz, otrzymywać przypomnienia i korzystać z narzędzi do prowadzenia klubu."
+        "desc": "Konto pozwala zapisywać wydarzenia, włączać Powiadom mnie, by dostawać przypomnienia i aktualizacje, oraz korzystać z narzędzi do prowadzenia organizacji."
       }
     },
     "help": {
@@ -586,7 +585,7 @@
       "items": {
         "free": {
           "question": "Czy Wat2Do jest darmowe?",
-          "answer": "Tak. Wat2Do jest darmowe dla studentów, a wszystkie wydarzenia możesz przeglądać bez konta. Zaloguj się, aby oznaczać wydarzenia jako „Wezmę udział” i dostawać przypomnienia."
+          "answer": "Tak. Wat2Do jest darmowe dla studentów, a wszystkie wydarzenia możesz przeglądać bez konta. Zaloguj się, aby włączać Powiadom mnie i dostawać przypomnienia."
         },
         "clubs": {
           "question": "Czy moja organizacja musi się rejestrować?",

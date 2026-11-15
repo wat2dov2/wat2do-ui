@@ -23,7 +23,7 @@ interface TicketReturnControlProps {
 /** The holder of a free ticket gives it back, so someone else can take the seat. */
 export function TicketReturnControl({ ticket, onReturned }: TicketReturnControlProps) {
   const { t } = useTranslation();
-  const giveBack = useReturnTicket(ticket.event_id);
+  const giveBack = useReturnTicket();
   const [open, setOpen] = useState(false);
   if (!ticket.can_return) return null;
 

@@ -4,10 +4,10 @@
     "events": {
       "saved": "已收藏嘅活動",
       "savedEmpty": "你收藏嘅活動會喺度顯示。",
-      "past": "你去過嘅活動",
-      "pastEmpty": "你去過嘅活動會喺度顯示。",
-      "upcoming": "你會去嘅活動",
-      "upcomingEmpty": "你會去嘅活動會喺度顯示。",
+      "past": "你過去嘅活動",
+      "pastEmpty": "你開啟過「提醒我」或者有門票嘅活動，完咗之後會喺度顯示。",
+      "upcoming": "你即將嚟緊嘅活動",
+      "upcomingEmpty": "你開啟咗「提醒我」或者攞咗門票嘅活動會喺度顯示。",
       "ticket": "門票"
     },
     "clubs": {

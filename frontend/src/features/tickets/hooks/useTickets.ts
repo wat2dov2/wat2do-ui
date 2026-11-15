@@ -5,6 +5,7 @@ import { useAuthState } from "@/features/auth";
 import {
   configureEventTicketing,
   declineRefundRequest,
+  fetchClubPayouts,
   fetchEventTicketing,
   fetchMyTickets,
   fetchTicket,
@@ -19,17 +20,17 @@ import {
   stopEventTicketing,
   takeFreeTicket,
 } from "@/features/tickets/api/tickets.api";
+import { eventTicketingUpdate } from "@/features/tickets/lib/eventTicketsForm";
 import { ticketUnavailableReason } from "@/features/tickets/lib/ticketFormat";
 import type {
   ApiEventTicketingResponse,
-  ApiEventTicketingUpdate,
   ApiTicketCheckInResponse,
   ApiTicketOrderResponse,
 } from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
-import type { Event } from "@/shared/types";
+import type { Event, EventFormData } from "@/shared/types";
 
 // Stripe usually reports a payment within seconds; the order page checks this often.
 const ORDER_POLL_MS = 2000;
@@ -51,6 +52,15 @@ export function useEventTicketing(eventId: number | null | undefined) {
     queryKey: queryKeys.tickets.event(eventId ?? 0),
     queryFn: () => fetchEventTicketing(eventId as number),
     enabled: eventId != null && eventId > 0,
+  });
+}
+
+/** Whether the club can sell tickets: paid tickets switched on, and its Stripe account ready. */
+export function useClubPayouts(clubId: number | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.clubTicketing.payouts(clubId ?? 0),
+    queryFn: () => fetchClubPayouts(clubId as number),
+    enabled: clubId != null && clubId > 0,
   });
 }
 
@@ -103,20 +113,19 @@ export function useTicketDesk(eventId: number, enabled: boolean) {
 }
 
 /** Everything an event's tickets touch, refreshed together after a change. */
-function useInvalidateEventTickets(eventId: number) {
+function useInvalidateEventTickets() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.tickets.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.clubTicketing.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.goingEvents.all }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.events.attendees(eventId) }),
     ]);
 }
 
 /** Take a free ticket: one tap, and the QR code shows up right away. */
 export function useTakeFreeTicket(eventId: number) {
-  const invalidate = useInvalidateEventTickets(eventId);
+  const invalidate = useInvalidateEventTickets();
   const showError = useErrorToast();
   return useMutation({
     mutationFn: (eventDateId: string) => takeFreeTicket(eventId, eventDateId),
@@ -126,10 +135,10 @@ export function useTakeFreeTicket(eventId: number) {
 }
 
 /**
- * RSVPing to an event with free tickets: the viewer's RSVPs (valid tickets), the
- * dates still open to them, the date picked, and the RSVP itself.
+ * Getting an event's free ticket: the viewer's valid tickets to it, the dates
+ * still open to them, the date picked, and taking the ticket.
  */
-export function useFreeTicketRsvp(event: Event, ticketing: ApiEventTicketingResponse) {
+export function useFreeTicket(event: Event, ticketing: ApiEventTicketingResponse) {
   const { data: myTickets } = useMyTickets();
   const take = useTakeFreeTicket(event.id);
   const held = (myTickets ?? []).filter(
@@ -142,7 +151,7 @@ export function useFreeTicketRsvp(event: Event, ticketing: ApiEventTicketingResp
   const [dateId, setDateId] = useState("");
   const selected = openDates.find((date) => date.event_date_id === dateId) ?? openDates[0];
   const unavailable = ticketUnavailableReason(event, ticketing, openDates);
-  const rsvp = () => {
+  const takeTicket = () => {
     if (selected && !take.isPending) take.mutate(selected.event_date_id);
   };
   return {
@@ -151,14 +160,14 @@ export function useFreeTicketRsvp(event: Event, ticketing: ApiEventTicketingResp
     selectedDateId: selected?.event_date_id ?? "",
     selectDate: setDateId,
     unavailable,
-    rsvp,
+    take: takeTicket,
     isPending: take.isPending,
   };
 }
 
 /** Give a free ticket back, freeing the seat. */
-export function useReturnTicket(eventId: number) {
-  const invalidate = useInvalidateEventTickets(eventId);
+export function useReturnTicket() {
+  const invalidate = useInvalidateEventTickets();
   const showError = useErrorToast();
   return useMutation({
     mutationFn: (code: string) => returnTicket(code),
@@ -180,21 +189,22 @@ export function useTicketCheckout(eventId: number) {
   });
 }
 
-/** Turn the event's tickets on, change them, or turn them off. */
-export function useTicketingSettings(eventId: number) {
-  const invalidate = useInvalidateEventTickets(eventId);
-  const showError = useErrorToast();
-  const save = useMutation({
-    mutationFn: (settings: ApiEventTicketingUpdate) => configureEventTicketing(eventId, settings),
-    onSuccess: invalidate,
-    onError: showError,
-  });
-  const stop = useMutation({
-    mutationFn: () => stopEventTicketing(eventId),
-    onSuccess: invalidate,
-    onError: showError,
-  });
-  return { save, stop };
+/**
+ * After the event form saves its event: the event's tickets as the form left
+ * them, turned off when the form turned them off. Throws what the server refused.
+ */
+export function useSaveEventTickets() {
+  const invalidate = useInvalidateEventTickets();
+  return async (event: Event, formData: EventFormData, hadTickets: boolean) => {
+    if (formData.tickets.enabled) {
+      await configureEventTicketing(event.id, eventTicketingUpdate(event, formData));
+    } else if (hadTickets) {
+      await stopEventTicketing(event.id);
+    } else {
+      return;
+    }
+    await invalidate();
+  };
 }
 
 // What the door turns away; every other result admitted a ticket or undid an admission.
@@ -212,7 +222,7 @@ const TURNED_AWAY: ReadonlySet<ApiTicketCheckInResponse["result"]> = new Set([
  */
 export function useTicketCheckIn(eventId: number, { showsResults = false } = {}) {
   const { t } = useTranslation();
-  const invalidate = useInvalidateEventTickets(eventId);
+  const invalidate = useInvalidateEventTickets();
   const showError = useErrorToast();
   return useMutation({
     mutationFn: ({ code, checkedIn }: { code: string; checkedIn: boolean }) =>
@@ -228,7 +238,7 @@ export function useTicketCheckIn(eventId: number, { showsResults = false } = {})
 }
 
 export function useTicketRefunds(eventId: number) {
-  const invalidate = useInvalidateEventTickets(eventId);
+  const invalidate = useInvalidateEventTickets();
   const showError = useErrorToast();
   const refundOne = useMutation({
     mutationFn: (ticketId: string) => refundTicket(eventId, ticketId),

@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Hiring: {{positions}}",
-    "minimumGoing": "Minimum going",
+    "minimumGoing": "Minimum interested",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",
     "deleteFailed": "Failed to delete event. Please try again.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "has been updated.",
     "noResults": "No results found.",
     "signInToView": "Sign in to view your events",
-    "signInToViewDesc": "Mark events you're going to and view them all in one place.",
     "signIn": "Sign In",
     "upcoming": "Upcoming",
-    "emptyEventsDesc": "Mark events you're going to and they'll appear here. Tap the going button on any event.",
     "noUpcomingEvents": "No upcoming events",
     "upcomingEventCount": "upcoming event",
     "upcomingEventCount_other": "upcoming events",
@@ -82,12 +80,10 @@
       "submitFailed": "Couldn't submit report"
     },
     "goingEvents": {
-      "timeUnavailable": "This event has already started or was cancelled, so you can’t mark Going.",
-      "markFailed": "Couldn't mark this event as going",
-      "unmarkFailed": "Couldn't unmark this event as going",
+      "timeUnavailable": "This event has already started or was cancelled, so Notify me isn't available.",
       "saveFailed": "Couldn't save your selected time",
-      "chooseOccurrences": "Which time are you going?",
-      "chooseOccurrencesDescription": "Choose every occurrence you plan to attend."
+      "chooseOccurrences": "Which dates should we notify you about?",
+      "chooseOccurrencesDescription": "Pick every date you want a reminder and updates for."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -114,19 +110,15 @@
     },
     "new": "NEW",
     "updated": "UPDATED",
-    "goingCount": "{{count}} going",
-    "goingCount_one": "{{count}} going",
-    "goingCount_other": "{{count}} going",
-    "andOthersCount": "and {{count}} other",
-    "andOthersCount_other": "and {{count}} others",
+    "goingCount": "{{count}} interested",
+    "goingCount_one": "{{count}} interested",
+    "goingCount_other": "{{count}} interested",
     "hostedBy": "Hosted by",
     "aboutEvent": "About Event",
     "fetchingDetails": "Fetching details...",
-    "sourceLabel": "Source:",
-    "youreIn": "Youre going!",
+    "sourceUrl": "Source URL",
+    "youreIn": "You're in!",
     "startingIn": "Starting in",
-    "cancelGoingPrompt": "No longer able to attend? Notify the host by",
-    "cancelGoing": "marking yourself not going.",
     "viewFullImage": "View full event image",
     "fullImageDescription": "Enlarged event poster for {{title}}",
     "moreDatesCount": "+{{count}} date",
@@ -136,7 +128,16 @@
     "moreEvents": "More events",
     "submitEvent": "Add event",
     "allEvents": "All events",
-    "going": "Going",
+    "going": "Subscribed",
+    "notifyMe": {
+      "action": "Notify me",
+      "description": "Get a reminder before it starts, and an email if anything changes.",
+      "otherDates": "The other dates don't need a ticket. Get a reminder before them, and an email if anything changes.",
+      "onTitle": "You'll be notified",
+      "onDescription": "We'll email you a reminder before it starts, and let you know if anything changes.",
+      "offPrompt": "Don't need updates?",
+      "off": "Turn off Notify me."
+    },
     "views": {
       "label": "Event view",
       "grid": "Grid",
@@ -164,8 +165,8 @@
       "networking": "Networking opportunities"
     },
     "savedEvents": {
-      "save": "Save event",
-      "unsave": "Remove from saved",
+      "save": "Save",
+      "saved": "Saved",
       "saveFailed": "Couldn't save this event"
     }
   }

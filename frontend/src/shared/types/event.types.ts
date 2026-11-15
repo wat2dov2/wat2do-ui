@@ -43,6 +43,19 @@ export interface EventFormOccurrence {
   original?: { dtstart_utc: string; dtend_utc?: string | null };
   dtstart_local: string;
   dtend_local: string;
+  /** This date has tickets, while the event's tickets are on. */
+  tickets: boolean;
+}
+
+/** An event's tickets as its club sets them in the event's form. */
+export interface EventFormTickets {
+  enabled: boolean;
+  /** The price as typed; empty is free. */
+  price: string;
+  /** Tickets per date as typed; empty is no limit. */
+  capacity: string;
+  /** Nobody new gets a ticket while paused. */
+  paused: boolean;
 }
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).
@@ -68,6 +81,8 @@ export interface EventFormData {
   /** Optional link to where the event was announced. */
   source_url?: string | null;
   source_image_url?: string | null;
+  /** Only the club's own team sets these; the form saves them after the event. */
+  tickets: EventFormTickets;
 }
 
 // Form validation errors

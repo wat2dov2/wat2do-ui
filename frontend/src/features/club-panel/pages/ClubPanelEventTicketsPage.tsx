@@ -5,12 +5,10 @@ import {
   ClubPanelEventHeader,
   ClubPanelEventTicketsLoading,
 } from "@/features/club-panel/components/ClubPanelEventHeader";
-import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
 import { cachedEvent, fetchEventById } from "@/features/events/api/events.api";
 import {
   TicketDeskStats,
   TicketDoorList,
-  TicketSettingsCard,
   useEventTicketing,
   useTicketDesk,
   useTicketRefunds,
@@ -32,7 +30,7 @@ function useEventIdParam(): number {
   return Number(raw) || 0;
 }
 
-/** One event's tickets: turn them on, watch them go, run the door list, refund. */
+/** One event's tickets at the door: counts, the door list, the scanner and refunds. Its club sets tickets up in the event's own form. */
 export function ClubPanelEventTicketsPage() {
   const { t, i18n } = useTranslation();
   const eventId = useEventIdParam();
@@ -46,7 +44,6 @@ export function ClubPanelEventTicketsPage() {
   });
   const ticketing = useEventTicketing(eventId);
   const desk = useTicketDesk(eventId, Boolean(ticketing.data));
-  const payouts = useClubPayouts(event.data?.club_id);
   const { refundRemaining } = useTicketRefunds(eventId);
 
   if (eventId > 0 && event.isPending) {
@@ -69,11 +66,7 @@ export function ClubPanelEventTicketsPage() {
       scanner={Boolean(ticketing.data)}
     />
   );
-  // Payouts load once the event names its club; until then paid tickets can't be offered.
-  const ticketsLoading =
-    ticketing.isPending ||
-    (event.data.club_id != null && payouts.isPending) ||
-    (ticketing.data != null && desk.isPending);
+  const ticketsLoading = ticketing.isPending || (ticketing.data != null && desk.isPending);
   if (ticketsLoading) {
     return (
       <Stack gap={6} aria-busy="true">
@@ -84,8 +77,19 @@ export function ClubPanelEventTicketsPage() {
   }
 
   const deskData = desk.data;
-  const issuedEver = (deskData?.issued ?? 0) + (deskData?.refunded ?? 0);
-  const paidStillValid = deskData?.ticketing.currency ? deskData.issued : 0;
+  if (!deskData) {
+    return (
+      <Stack gap={6}>
+        {header}
+        <EmptyState
+          icon={<Ticket />}
+          title={t("tickets.desk.noTickets")}
+          description={t("tickets.desk.noTicketsDescription")}
+        />
+      </Stack>
+    );
+  }
+  const paidStillValid = deskData.ticketing.currency ? deskData.issued : 0;
 
   return (
     <Stack gap={6}>
@@ -117,38 +121,17 @@ export function ClubPanelEventTicketsPage() {
         </Alert>
       ) : null}
 
-      {deskData ? <TicketDeskStats desk={deskData} /> : null}
+      <TicketDeskStats desk={deskData} />
 
-      {event.data.cancelled ? null : (
-        <TicketSettingsCard
-          // A fresh form whenever the saved settings change underneath it.
-          key={
-            ticketing.data
-              ? `${ticketing.data.price_cents}:${ticketing.data.capacity}:${ticketing.data.paused}`
-              : "off"
-          }
+      <Section title={t("tickets.desk.attendees")}>
+        <TicketDoorList
           eventId={eventId}
-          ticketing={ticketing.data ?? null}
-          issuedEver={issuedEver}
-          payouts={{
-            available: Boolean(payouts.data?.paid_tickets_enabled),
-            ready: Boolean(payouts.data?.charges_enabled),
-            currency: payouts.data?.currency ?? "cad",
-          }}
+          school={event.data.school}
+          currency={deskData.ticketing.currency}
+          attendees={deskData.attendees}
+          dates={deskData.dates}
         />
-      )}
-
-      {deskData ? (
-        <Section title={t("tickets.desk.attendees")}>
-          <TicketDoorList
-            eventId={eventId}
-            school={event.data.school}
-            currency={deskData.ticketing.currency}
-            attendees={deskData.attendees}
-            dates={deskData.dates}
-          />
-        </Section>
-      ) : null}
+      </Section>
     </Stack>
   );
 }

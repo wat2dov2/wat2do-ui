@@ -79,7 +79,7 @@
     "minimumEvents": "Minimalna liczba wydarzeń",
     "claimLink": {
       "title": "Przejmij klub {{club}} w Wat2Do",
-      "description": "Strona Twojego klubu jest gotowa. Po jej przejęciu zostajesz jej właścicielem: możesz publikować wydarzenia i stanowiska, aktualizować je i widzieć, kto przyjdzie.",
+      "description": "Strona Twojej organizacji jest gotowa. Po jej przejęciu zostajesz jej właścicielem: możesz publikować wydarzenia i stanowiska, aktualizować je oraz rozdawać lub sprzedawać bilety.",
       "checking": "Sprawdzamy Twój link przejęcia...",
       "claim": "Przejmij klub",
       "claiming": "Przejmowanie...",

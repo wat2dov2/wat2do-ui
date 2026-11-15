@@ -104,5 +104,6 @@ export function markAllFieldsTouched(): Record<string, boolean> {
     club_id: true,
     occurrences: true,
     location: true,
+    tickets: true,
   };
 }

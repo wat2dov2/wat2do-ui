@@ -76,7 +76,7 @@
     "minimumEvents": "Eventi minimi",
     "claimLink": {
       "title": "Rivendica {{club}} su Wat2Do",
-      "description": "La pagina del tuo club è pronta. Rivendicandola ne diventi il proprietario: puoi pubblicare eventi e posizioni, tenerli aggiornati e vedere chi partecipa.",
+      "description": "La pagina della tua organizzazione è pronta. Rivendicandola ne diventi il proprietario: puoi pubblicare eventi e posizioni, tenerli aggiornati e regalare o vendere biglietti.",
       "checking": "Verifica del link di rivendicazione...",
       "claim": "Rivendica club",
       "claiming": "Rivendicazione...",

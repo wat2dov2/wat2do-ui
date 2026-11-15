@@ -82,7 +82,7 @@ test("editing an unchanged repeated DST hour preserves its exact instant", () =>
     ...event, school: "utsg",
     occurrences: [{ ...event.occurrences[0], dtstart_utc: "2026-11-01T06:30:25Z", dtend_utc: "2026-11-01T07:30:00Z" }],
   };
-  const form = eventToFormData(repeatedHourEvent, "America/Toronto");
+  const form = eventToFormData(repeatedHourEvent, "America/Toronto", null);
   expect(form.occurrences[0].dtstart_local).toBe("2026-11-01T01:30");
   expect(buildEventUpdatePayload(form).occurrences[0].dtstart_utc).toBe("2026-11-01T06:30:25Z");
 });

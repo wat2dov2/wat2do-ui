@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "招聘：{{positions}}",
-    "minimumGoing": "最少參加人數",
+    "minimumGoing": "最少有興趣人數",
     "eventTitle": "活動標題",
     "loadFailed": "無法加載活動。請再試一次。",
     "deleteFailed": "無法刪除活動。請再試一次。",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "已更新。",
     "noResults": "未找到結果。",
     "signInToView": "登入以查看你的活動",
-    "signInToViewDesc": "標記你要參加的活動，並在同一地方查看所有活動。",
     "signIn": "登入",
     "upcoming": "即將到來",
-    "emptyEventsDesc": "標記你會參加的活動，它們會出現在這裡。點擊任何活動上的「參加」按鈕。",
     "noUpcomingEvents": "沒有即將舉行的活動",
     "upcomingEventCount": "即將舉行的活動",
     "upcomingEventCount_other": "即將舉行的活動",
@@ -82,12 +80,10 @@
       "submitFailed": "無法提交舉報"
     },
     "goingEvents": {
-      "timeUnavailable": "呢個活動已經開始或已取消，所以無法標記參加。",
-      "markFailed": "無法將此活動標記為參加",
-      "unmarkFailed": "無法取消標記此活動為參加",
+      "timeUnavailable": "呢個活動已經開始或者取消咗，所以用唔到「提醒我」。",
       "saveFailed": "無法儲存你選擇的時間",
-      "chooseOccurrences": "你會在哪個時間參加？",
-      "chooseOccurrencesDescription": "選擇你打算參加的每一次活動"
+      "chooseOccurrences": "想我哋喺邊幾日提醒你？",
+      "chooseOccurrencesDescription": "揀晒所有你想收提醒同更新嘅日子。"
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -114,18 +110,14 @@
     },
     "new": "最新",
     "updated": "已更新",
-    "goingCount": "{{count}} 人參加",
-    "goingCount_other": "{{count}} 人參加",
-    "andOthersCount": "以及 {{count}} 位其他人",
-    "andOthersCount_other": "以及 {{count}} 位其他",
+    "goingCount": "{{count}} 人有興趣",
+    "goingCount_other": "{{count}} 人有興趣",
     "hostedBy": "主辦者",
     "aboutEvent": "活動資訊",
     "fetchingDetails": "正在獲取詳情…",
-    "sourceLabel": "來源：",
-    "youreIn": "你已參加",
+    "sourceUrl": "來源連結",
+    "youreIn": "搞掂，你已經加入咗！",
     "startingIn": "距離開始還有",
-    "cancelGoingPrompt": "不再能參加？請透過 [",
-    "cancelGoing": "將自己標記為不參加。",
     "viewFullImage": "查看完整活動圖片",
     "fullImageDescription": "放大 {{title}} 活動海報",
     "moreDatesCount": "+{{count}} 日子",
@@ -135,7 +127,16 @@
     "moreEvents": "更多活動",
     "submitEvent": "新增活動",
     "allEvents": "所有活動",
-    "going": "會參加",
+    "going": "已訂閱",
+    "notifyMe": {
+      "action": "提醒我",
+      "description": "開始之前提醒你，有任何改動就電郵通知你。",
+      "otherDates": "其他日子唔使門票。開始之前會提醒你，有任何改動就電郵通知你。",
+      "onTitle": "你會收到通知",
+      "onDescription": "我哋會喺開始之前電郵提醒你，有任何改動都會話你知。",
+      "offPrompt": "唔使更新？",
+      "off": "關閉「提醒我」。"
+    },
     "views": {
       "label": "活動檢視",
       "grid": "網格",
@@ -161,8 +162,8 @@
       "networking": "建立人脈機會"
     },
     "savedEvents": {
-      "save": "收藏活動",
-      "unsave": "取消收藏",
+      "save": "收藏",
+      "saved": "已收藏",
       "saveFailed": "無法收藏呢個活動"
     }
   }

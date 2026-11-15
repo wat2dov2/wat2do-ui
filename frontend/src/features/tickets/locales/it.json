@@ -4,8 +4,6 @@
     "description": "Mostra il codice QR di un biglietto all'ingresso.",
     "upcoming": "Prossimi",
     "past": "Passati",
-    "manage": "Biglietti",
-    "setUp": "Imposta i biglietti",
     "empty": {
       "title": "Ancora nessun biglietto",
       "description": "Quando prendi un biglietto per un evento, lo trovi qui.",
@@ -29,6 +27,8 @@
       "left_one": "Ne resta {{count}}",
       "left_many": "Ne restano {{count}}",
       "quantity": "Quanti biglietti",
+      "get": "Prendi i biglietti",
+      "anotherDate": "Prendi i biglietti per un'altra data",
       "buy": "Acquista biglietti · {{total}}",
       "continueToPayment": "Procedi al pagamento",
       "payNote": "Pagamento sicuro con Stripe. {{club}} riceve il tuo nome e la tua email per registrare il tuo ingresso.",
@@ -46,17 +46,6 @@
         "soldOut": "Non ci sono più biglietti.",
         "closed": "I biglietti non sono più disponibili.",
         "notYet": "I biglietti non sono ancora disponibili."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Partecipo",
-      "anotherDate": "Partecipa in un'altra data",
-      "unavailable": {
-        "cancelled": "Questo evento è stato annullato.",
-        "paused": "Le adesioni sono in pausa per ora.",
-        "soldOut": "Non ci sono più posti.",
-        "closed": "Le adesioni sono chiuse.",
-        "notYet": "Le adesioni non sono ancora aperte."
       }
     },
     "pass": {
@@ -86,12 +75,12 @@
       }
     },
     "return": {
-      "prompt": "Non riesci più a venire? Annulla la partecipazione",
-      "title": "Annullare la partecipazione?",
-      "description": "Qualcun altro potrà prendere il tuo posto. Se più avanti restano posti, potrai partecipare di nuovo.",
-      "keep": "Tieni il posto",
-      "confirm": "Annulla partecipazione",
-      "done": "Partecipazione annullata"
+      "prompt": "Non riesci più a venire? Restituisci il biglietto",
+      "title": "Restituire il biglietto?",
+      "description": "Qualcun altro potrà prendere il tuo posto. Se più avanti restano biglietti, potrai prenderne di nuovo uno.",
+      "keep": "Tieni il biglietto",
+      "confirm": "Restituiscilo",
+      "done": "Biglietto restituito"
     },
     "order": {
       "confirming": "Stiamo confermando il pagamento",
@@ -111,14 +100,11 @@
     "desk": {
       "title": "Biglietti",
       "notFound": "Questo evento non esiste più",
-      "setupTitle": "Biglietti per questo evento",
-      "setupDescription": "Ognuno riceve un biglietto con un codice QR, e tu lo scansioni alla porta per registrare l'ingresso.",
-      "settingsTitle": "Impostazioni biglietti",
-      "settingsDescription": "Cambia quanti biglietti ci sono, o mettili in pausa per un po'.",
-      "free": "Gratis",
-      "freeHint": "Un biglietto a persona per ogni data.",
-      "paid": "A pagamento",
-      "paidHint": "Le persone pagano tramite Stripe e i soldi vanno alla tua organizzazione.",
+      "noTickets": "Questo evento non ha biglietti",
+      "noTicketsDescription": "Attivali quando modifichi l'evento.",
+      "setupDescription": "Ognuno riceve un biglietto con un codice QR, e tu lo scansioni all'ingresso. Prendere un biglietto attiva anche Avvisami per quella data.",
+      "dates": "Date con biglietti",
+      "datesRequired": "Scegli almeno una data.",
       "price": "Prezzo del biglietto ({{currency}})",
       "priceLocked": "Il prezzo non si può più cambiare quando qualcuno ha un biglietto.",
       "priceRange": "Scrivi un prezzo tra {{minimum}} e {{maximum}}.",
@@ -127,21 +113,15 @@
       "capacityRange": "Scrivi un numero da 1 a {{maximum}}, oppure lascia vuoto per non avere limiti.",
       "pause": "Metti in pausa i biglietti",
       "pauseHint": "Nessun altro potrà prendere un biglietto finché non disattivi questa opzione.",
+      "turnOffLocked": "Qualcuno ha già un biglietto, quindi restano attivi. Mettili in pausa per bloccarne di nuovi.",
       "fees": "Stripe trattiene circa il 2,9% + 30 centesimi su ogni ordine. Il resto va alla tua organizzazione.",
-      "goingNote": "Chi ha già detto che ci sarà riceve un biglietto via email.",
       "payoutNoteSetup": "Ogni check-in idoneo fa guadagnare {{rate}} alla tua organizzazione. Attivando i biglietti, la tua organizzazione accetta i <terms>Termini di pagamento alle organizzazioni</terms>.",
       "payoutNote": "Ogni check-in idoneo fa guadagnare {{rate}} alla tua organizzazione, secondo i <terms>Termini di pagamento alle organizzazioni</terms>.",
       "payoutsNeeded": "Imposta prima gli accrediti, così i soldi avranno dove arrivare.",
       "setUpPayouts": "Imposta gli accrediti",
-      "turnOnFree": "Attiva i biglietti gratuiti",
-      "startSelling": "Inizia a vendere",
-      "freeStarted": "Biglietti gratuiti attivati",
-      "sellingStarted": "I biglietti sono in vendita",
-      "save": "Salva modifiche",
-      "saved": "Impostazioni biglietti salvate",
-      "turnOff": "Disattiva i biglietti",
-      "turnedOff": "Questo evento non ha più biglietti",
       "openScanner": "Scansiona i biglietti",
+      "openDesk": "Lista ingressi e scanner",
+      "notSaved": "L'evento è salvato, ma i suoi biglietti no",
       "attendees": "Lista partecipanti",
       "attendeesEmpty": "Nessuno ha ancora un biglietto",
       "search": "Cerca per nome, email o codice",

@@ -915,3 +915,10 @@ WHERE event.ingestion_source = 'seed'
 ORDER BY event.id
 LIMIT 3
 ON CONFLICT (event_id) DO NOTHING;
+
+-- Every date of those events has tickets.
+INSERT INTO public.event_ticketing_dates (event_id, event_date_id)
+SELECT event_date.event_id, event_date.id
+FROM public.event_dates AS event_date
+JOIN public.event_ticketing AS ticketing ON ticketing.event_id = event_date.event_id
+ON CONFLICT (event_date_id) DO NOTHING;

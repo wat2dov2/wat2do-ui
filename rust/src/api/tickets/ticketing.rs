@@ -7,28 +7,30 @@ use sqlx::PgConnection;
 use uuid::Uuid;
 
 use super::model::{EventTicketingResponse, TicketDateAvailability, TicketingRow};
-use super::{codes, emails, payouts, store};
+use super::{payouts, store};
 use crate::api::AppState;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;
 use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::event_by_id;
 use crate::api::messages::{
-    EVENT_ALREADY_PAST, EVENT_HAS_PAID_TICKETS, EVENT_NOT_FOUND, TICKET_CAPACITY_BELOW_GOING,
-    TICKET_CAPACITY_BELOW_ISSUED, TICKET_CAPACITY_TOO_HIGH, TICKET_PRICE_LOCKED,
+    EVENT_ALREADY_PAST, EVENT_HAS_PAID_TICKETS, EVENT_NOT_FOUND, TICKET_CAPACITY_BELOW_ISSUED,
+    TICKET_CAPACITY_TOO_HIGH, TICKET_DATE_HAS_TICKETS, TICKET_DATE_NOT_FOUND, TICKET_PRICE_LOCKED,
     TICKET_PRICE_OUT_OF_RANGE, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED,
-    TICKETED_EVENT_CLUB_LOCKED, TICKETS_ALREADY_TAKEN, TICKETS_CLOSED, TICKETS_PAUSED,
-    TICKETS_REQUIRE_CLUB,
+    TICKETED_EVENT_CLUB_LOCKED, TICKETS_ALREADY_TAKEN, TICKETS_CLOSED, TICKETS_NOT_FOR_DATE,
+    TICKETS_PAUSED, TICKETS_REQUIRE_CLUB,
 };
 use crate::api::routes::clubs::managed_club;
 use crate::controlbox::TICKETING;
 
 /// What a club submits for its event; a price of zero means free tickets.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TicketingInput {
     pub price_cents: i32,
     pub capacity: Option<i32>,
     pub paused: bool,
+    /// The event's dates that have tickets.
+    pub dates: Vec<Uuid>,
 }
 
 /// The event, when `user` is on the team of the club hosting it, or an admin.
@@ -93,16 +95,6 @@ pub fn closes_at(occurrence: &Occurrence) -> DateTime<Utc> {
     occurrence.dtend_utc.unwrap_or(occurrence.dtstart_utc)
 }
 
-/// The event's dates still taking tickets.
-fn open_dates(event: &Event, now: DateTime<Utc>) -> Vec<Uuid> {
-    event
-        .occurrences
-        .iter()
-        .filter(|occurrence| closes_at(occurrence) > now)
-        .map(|occurrence| occurrence.id)
-        .collect()
-}
-
 /// Why nobody can take a ticket for `occurrence` right now, as an error
 /// (`lock_for_change` already refused a cancelled event).
 pub fn refuse_unless_open(
@@ -110,6 +102,9 @@ pub fn refuse_unless_open(
     occurrence: &Occurrence,
     now: DateTime<Utc>,
 ) -> Result<(), ApiError> {
+    if !row.dates.contains(&occurrence.id) {
+        return Err(ApiError::validation(TICKETS_NOT_FOR_DATE));
+    }
     if row.paused {
         return Err(ApiError::validation(TICKETS_PAUSED));
     }
@@ -143,6 +138,7 @@ pub async fn view(
     let dates: Vec<TicketDateAvailability> = event
         .occurrences
         .iter()
+        .filter(|occurrence| row.dates.contains(&occurrence.id))
         .map(|occurrence| {
             let remaining = row.capacity.map(|capacity| {
                 (i64::from(capacity) - taken.get(&occurrence.id).copied().unwrap_or(0)).max(0)
@@ -181,8 +177,8 @@ pub async fn view(
     })
 }
 
-/// Turn tickets on for an event, or change them. Turning free tickets on
-/// hands one to everyone already going, so nobody who registered is left out.
+/// Turn tickets on for an event, or change them: the price, the limit,
+/// pausing, and which of its dates have tickets.
 pub async fn configure(
     state: &AppState,
     event_id: i64,
@@ -205,6 +201,14 @@ pub async fn configure(
     {
         return Err(ApiError::validation(TICKET_CAPACITY_TOO_HIGH));
     }
+    if input.dates.iter().any(|date| {
+        !event
+            .occurrences
+            .iter()
+            .any(|occurrence| occurrence.id == *date)
+    }) {
+        return Err(ApiError::validation(TICKET_DATE_NOT_FOUND));
+    }
     let paid_currency = if input.price_cents == 0 {
         None
     } else {
@@ -220,31 +224,32 @@ pub async fn configure(
 
     let mut transaction = state.db.begin().await?;
     let existing = lock_for_change(&mut transaction, event_id).await?;
-    if let Some(existing) = &existing
-        && existing.price_cents != input.price_cents
-        && store::has_tickets_or_holds(&mut *transaction, event_id, now).await?
-    {
-        return Err(ApiError::conflict(TICKET_PRICE_LOCKED));
-    }
-    // Free tickets going on hand one to everyone already going, so the
-    // capacity has to fit them; afterwards it has to fit the tickets taken.
-    let hands_out = existing.is_none() && input.price_cents == 0;
-    if let Some(capacity) = input.capacity {
-        let (taken, refusal) = if hands_out {
-            let open = open_dates(&event, now);
-            (
-                store::going_by_date(&mut *transaction, event_id, &open).await?,
-                TICKET_CAPACITY_BELOW_GOING,
-            )
-        } else {
-            (
-                store::valid_tickets_by_date(&mut *transaction, event_id).await?,
-                TICKET_CAPACITY_BELOW_ISSUED,
-            )
-        };
-        if taken.values().any(|count| *count > i64::from(capacity)) {
-            return Err(ApiError::conflict(refusal));
+    if let Some(existing) = &existing {
+        if existing.price_cents != input.price_cents
+            && store::has_tickets_or_holds(&mut *transaction, event_id, None, now).await?
+        {
+            return Err(ApiError::conflict(TICKET_PRICE_LOCKED));
         }
+        // A date people hold tickets to keeps them: pausing stops new ones.
+        let dropped: Vec<Uuid> = existing
+            .dates
+            .iter()
+            .filter(|date| !input.dates.contains(date))
+            .copied()
+            .collect();
+        if !dropped.is_empty()
+            && store::has_tickets_or_holds(&mut *transaction, event_id, Some(&dropped), now).await?
+        {
+            return Err(ApiError::conflict(TICKET_DATE_HAS_TICKETS));
+        }
+    }
+    if let Some(capacity) = input.capacity
+        && store::valid_tickets_by_date(&mut *transaction, event_id)
+            .await?
+            .values()
+            .any(|count| *count > i64::from(capacity))
+    {
+        return Err(ApiError::conflict(TICKET_CAPACITY_BELOW_ISSUED));
     }
     // A Stripe account settles in one currency: the first paid price fixes it.
     let currency = match (&existing, paid_currency) {
@@ -266,6 +271,22 @@ pub async fn configure(
     .bind(manager.id)
     .execute(&mut *transaction)
     .await?;
+    sqlx::query(
+        "DELETE FROM public.event_ticketing_dates \
+         WHERE event_id = $1 AND NOT (event_date_id = ANY($2))",
+    )
+    .bind(event_id as i32)
+    .bind(&input.dates)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "INSERT INTO public.event_ticketing_dates (event_id, event_date_id) \
+         SELECT $1, date FROM unnest($2::uuid[]) AS date ON CONFLICT (event_date_id) DO NOTHING",
+    )
+    .bind(event_id as i32)
+    .bind(&input.dates)
+    .execute(&mut *transaction)
+    .await?;
     // The event's own price and registration flag follow its tickets, so its
     // card, filters and search show what people pay.
     sqlx::query("UPDATE public.events SET price = $2, registration = true WHERE id = $1")
@@ -273,31 +294,8 @@ pub async fn configure(
         .bind(f64::from(input.price_cents) / 100.0)
         .execute(&mut *transaction)
         .await?;
-    let handed_out = if hands_out {
-        hand_out_to_everyone_going(&mut transaction, &event, now).await?
-    } else {
-        Vec::new()
-    };
     transaction.commit().await?;
 
-    for ticket in handed_out {
-        if let Some(occurrence) = event
-            .occurrences
-            .iter()
-            .find(|occurrence| occurrence.id == ticket.event_date_id)
-        {
-            emails::send_tickets(
-                state.db.clone(),
-                state.settings,
-                event.clone(),
-                occurrence.clone(),
-                ticket.email,
-                vec![ticket.code.clone()],
-                None,
-                format!("ticket:{}", ticket.code),
-            );
-        }
-    }
     crate::revalidation::revalidate_schools(
         &event.school.iter().cloned().collect::<Vec<_>>(),
         &["events"],
@@ -318,7 +316,7 @@ pub async fn stop(state: &AppState, event_id: i64, manager: &User) -> Result<(),
     if lock(&mut transaction, event_id).await?.1.is_none() {
         return Ok(());
     }
-    if store::has_tickets_or_holds(&mut *transaction, event_id, now).await? {
+    if store::has_tickets_or_holds(&mut *transaction, event_id, None, now).await? {
         return Err(ApiError::conflict(TICKETS_ALREADY_TAKEN));
     }
     store::release_dates(&mut transaction, event_id, None, now).await?;
@@ -339,42 +337,6 @@ pub async fn stop(state: &AppState, event_id: i64, manager: &User) -> Result<(),
     )
     .await;
     Ok(())
-}
-
-/// A free ticket handed out to someone already going.
-struct HandedOut {
-    event_date_id: Uuid,
-    email: String,
-    code: String,
-}
-
-async fn hand_out_to_everyone_going(
-    connection: &mut PgConnection,
-    event: &Event,
-    now: DateTime<Utc>,
-) -> Result<Vec<HandedOut>, ApiError> {
-    let open = open_dates(event, now);
-    let going: Vec<(Uuid, Uuid, String)> = sqlx::query_as(
-        "SELECT g.user_id, g.event_date_id, u.email FROM public.user_going_events g \
-         JOIN public.users u ON u.id = g.user_id \
-         WHERE g.event_id = $1 AND g.event_date_id = ANY($2) ORDER BY g.going_at",
-    )
-    .bind(event.id)
-    .bind(&open)
-    .fetch_all(&mut *connection)
-    .await?;
-    let mut handed_out = Vec::with_capacity(going.len());
-    for (user_id, event_date_id, email) in going {
-        let code = codes::new_code();
-        store::insert_free_ticket(&mut *connection, event.id, event_date_id, user_id, &code)
-            .await?;
-        handed_out.push(HandedOut {
-            event_date_id,
-            email,
-            code,
-        });
-    }
-    Ok(handed_out)
 }
 
 /// Inside an event edit's transaction: an event with tickets keeps its club,
@@ -440,11 +402,12 @@ mod tests {
             currency: None,
             capacity: None,
             paused,
+            dates: vec![Uuid::from_u128(1)],
         }
     }
 
     #[test]
-    fn a_date_takes_tickets_until_it_ends() {
+    fn a_ticketed_date_takes_tickets_until_it_ends() {
         let event = event_with_dates(42, &[(2026, 11, 20, 23)]);
         let occurrence = &event.occurrences[0];
         let start = Utc.with_ymd_and_hms(2026, 11, 20, 23, 0, 0).unwrap();
@@ -459,7 +422,11 @@ mod tests {
             refuse_unless_open(&row(true), occurrence, start),
             Err(ApiError::Validation { detail, .. }) if detail == TICKETS_PAUSED
         ));
-        assert_eq!(open_dates(&event, start), [occurrence.id]);
-        assert!(open_dates(&event, start + Duration::hours(3)).is_empty());
+        let mut untouched = row(false);
+        untouched.dates.clear();
+        assert!(matches!(
+            refuse_unless_open(&untouched, occurrence, start),
+            Err(ApiError::Validation { detail, .. }) if detail == TICKETS_NOT_FOR_DATE
+        ));
     }
 }

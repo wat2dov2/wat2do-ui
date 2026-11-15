@@ -413,7 +413,7 @@ async function mockSignedInApi(page: Page, next: NextFixture) {
     });
   });
 
-  // Mock Going choices
+  // Mock Notify me choices
   await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
     return ({
       status: 200,
@@ -2280,15 +2280,11 @@ test.describe("Events Page", () => {
       occurrences: [{ id: String(index + 1), event_id: index + 1,
         dtstart_utc: new Date(Date.now() + (index + 1) * 86_400_000).toISOString(), dtend_utc: null }],
     }));
-    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     await mockApi(page, next, url => apiPath(url) === "/events", async () => ({ json: {
       items: events, total: events.length, page: 1, page_size: 100, total_pages: 1,
       latest_added_event: { title, added_at: addedAt },
     } }));
     await mockApi(page, next, url => /^\/events\/\d+$/.test(apiPath(url) ?? ""), async request => ({ json: events[Number(new URL(request.url).pathname.split("/").at(-1)) - 1] }));
-    await mockApi(page, next, url => /^\/going-events\/\d+\/attendees$/.test(apiPath(url) ?? ""), async () => ({ json: {
-      going_count: 1, attendees: [{ name: "Taylor Q.", avatar_url: avatar }],
-    } }));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
     const header = page.locator('[data-slot="page-header"]:visible');
@@ -2322,10 +2318,8 @@ test.describe("Events Page", () => {
     await expect(page.locator('[data-slot="event-highlights"]')).toHaveCount(1);
     await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
     const drawer = page.getByRole("dialog");
-    await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();
-    const photo = drawer.locator(`img[src="${avatar}"]`);
-    await photo.scrollIntoViewIfNeeded();
-    await expect.poll(() => photo.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBe(32);
+    // Notify me is private: no list of people shows on an event.
+    await expect(drawer.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
     await drawer.getByRole("button", { name: "Next", exact: true }).focus();
     await page.keyboard.press("ArrowRight");
     await expect(drawer.getByRole("heading", { name: "Campus event 2", level: 2, exact: true })).toBeVisible();
@@ -2333,8 +2327,7 @@ test.describe("Events Page", () => {
     await expect(drawer.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("event-drawer-mobile.png"), fullPage: true });
     await page.goto(`${BASE}/events/1`);
-    await expect(page.getByRole("img", { name: "Taylor Q." })).toBeVisible();
-    await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Save to calendar", exact: true }).click();
+    await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Add to calendar", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
   });
@@ -2540,7 +2533,7 @@ test.describe("Events Page", () => {
 
     const eventDrawer = page.getByRole("dialog", { name: "Tech Career Fair" });
     const hostSection = eventDrawer.locator('[data-slot="event-host"]');
-    await eventDrawer.locator('[data-slot="event-actions"]').getByRole("button", { name: "Save to calendar", exact: true }).click();
+    await eventDrawer.locator('[data-slot="event-actions"]').getByRole("button", { name: "Add to calendar", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
     await page.keyboard.press("Escape");
@@ -3206,7 +3199,7 @@ test.describe("Events Page", () => {
         "you@uwaterloo.ca",
       );
       await expect(
-        authForm.getByRole("button", { name: "Going", exact: true }),
+        authForm.getByRole("button", { name: "Notify me", exact: true }),
       ).toBeDisabled();
     };
 
@@ -3221,7 +3214,7 @@ test.describe("Events Page", () => {
 
     const authForm = page.getByTestId("event-registration-auth");
     const registerButton = authForm.getByRole("button", {
-      name: "Going",
+      name: "Notify me",
       exact: true,
     });
     await authForm.getByLabel("Email address").fill(TEST_EMAIL);
@@ -3235,7 +3228,7 @@ test.describe("Events Page", () => {
     await expect.poll(() => registrationBody).toEqual({
       occurrence_ids: ["occurrence-1"],
     });
-    await expect(page.getByText("Youre going!")).toBeVisible();
+    await expect(page.getByText("You'll be notified")).toBeVisible();
   });
 
   test("newly added event details retain their New indicator", async ({ page, next }) => {
@@ -3292,7 +3285,7 @@ test.describe("Events Page", () => {
 
   for (const authenticated of [false, true]) {
     for (const recurring of [false, true]) {
-      test(`started ${recurring ? "recurring " : ""}event Going is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
+      test(`started ${recurring ? "recurring " : ""}event Notify me is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
         if (authenticated) await seedAuthenticatedSession(page, next);
         const now = new Date();
         await page.clock.setFixedTime(now);
@@ -3315,7 +3308,7 @@ test.describe("Events Page", () => {
           if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
           const host = surface === "drawer" ? page.getByRole("dialog", { name: "Workshop in progress" }) : page;
           if (!authenticated) await host.getByTestId("event-registration-auth").getByLabel("Email address").fill(TEST_EMAIL);
-          const goingButton = host.getByRole("button", { name: "Going", exact: true });
+          const goingButton = host.getByRole("button", { name: "Notify me", exact: true });
           await expect(goingButton).toBeDisabled();
           const tooltipTarget = host.locator('[data-slot="disabled-button-trigger"]');
           await tooltipTarget.hover();
@@ -3330,7 +3323,7 @@ test.describe("Events Page", () => {
     }
   }
 
-  test("free tickets are an RSVP, and the RSVP shows its QR code on the event page", async ({ page, next }) => {
+  test("free tickets are one Get tickets tap, and the ticket shows its QR code on the event page", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
     const dateId = "00000000-0000-0000-0000-000000000001";
@@ -3361,15 +3354,15 @@ test.describe("Events Page", () => {
     await mockApi(page, next, url => apiPath(url) === "/tickets/mine", async () => ({ json: mine }));
 
     await page.goto(`${BASE}/events/1`);
-    await page.getByRole("button", { name: "RSVP", exact: true }).click();
+    await page.getByRole("button", { name: "Get tickets", exact: true }).click();
     await expect.poll(() => rsvped).toEqual({ event_date_id: dateId });
     await expect(page.getByRole("img", { name: "QR code for this ticket" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Can't make it? Cancel your RSVP" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Save to calendar/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Can't make it? Give your ticket back" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Add to calendar/i })).toBeVisible();
   });
 
   for (const hasEndTime of [true, false]) {
-    test(`Going blocks future recurring registration while a session is live and reopens after ${hasEndTime ? "its end time" : "the no-end visibility window"}`, async ({ page, next }) => {
+    test(`Notify me blocks future recurring registration while a session is live and reopens after ${hasEndTime ? "its end time" : "the no-end visibility window"}`, async ({ page, next }) => {
       await seedAuthenticatedSession(page, next);
       const now = new Date();
       await page.clock.install({ time: new Date(now.getTime() - 3_600_000) });
@@ -3390,7 +3383,7 @@ test.describe("Events Page", () => {
       });
       await page.goto(`${BASE}/events/1`);
       await page.clock.pauseAt(now);
-      const goingButton = page.getByRole("button", { name: "Going", exact: true });
+      const goingButton = page.getByRole("button", { name: "Notify me", exact: true });
       await expect(goingButton).toBeEnabled();
       await page.clock.runFor(1500);
       await expect(goingButton).toBeDisabled();
@@ -3403,7 +3396,7 @@ test.describe("Events Page", () => {
       await page.clock.resume();
       await goingButton.click();
       await expect.poll(() => submittedOccurrenceIds).toEqual(["future-session"]);
-      await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
+      await expect(page.getByText("You'll be notified", { exact: true })).toBeVisible();
     });
   }
 
@@ -3448,25 +3441,25 @@ test.describe("Events Page", () => {
       await page.clock.pauseAt(now);
       const authForm = page.getByTestId("event-registration-auth");
       await authForm.getByLabel("Email address").fill(TEST_EMAIL);
-      await authForm.getByRole("button", { name: "Going", exact: true }).click();
+      await authForm.getByRole("button", { name: "Notify me", exact: true }).click();
       await authForm.getByLabel("Verification code").fill("123456");
       await expect.poll(() => verificationStarted).toBe(true);
       await page.clock.runFor(1500);
       finishVerification();
       await page.clock.resume();
       await expect(authForm).toBeHidden();
-      await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Notify me", exact: true })).toBeDisabled();
       await page.locator('[data-slot="disabled-button-trigger"]').hover();
       await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
-      await expect(page.getByText("Which time are you going?", { exact: true })).toHaveCount(0);
-      await expect(page.getByText("Youre going!", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("Which dates should we notify you about?", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("You'll be notified", { exact: true })).toHaveCount(0);
       expect(goingWrites).toBe(0);
     } finally {
       finishVerification();
     }
   });
 
-  test("an existing Going registration can still be cancelled after its session starts", async ({ page, next }) => {
+  test("an existing Notify me can still be turned off after its session starts", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     const now = Date.now();
     let cancelled = false;
@@ -3483,10 +3476,10 @@ test.describe("Events Page", () => {
       return { json: { status: "not_going", event_id: 1, occurrence_ids: [], going_count: 0 } };
     });
     await page.goto(`${BASE}/events/1`);
-    await expect(page.getByText("Youre going!", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "marking yourself not going.", exact: true }).click();
+    await expect(page.getByText("You'll be notified", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Turn off Notify me.", exact: true }).click();
     await expect.poll(() => cancelled).toBe(true);
-    await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Notify me", exact: true })).toBeDisabled();
   });
 
   test("uses recurring-event controls above the event drawer", async ({ page, next }) => {
@@ -3584,9 +3577,9 @@ test.describe("Events Page", () => {
     await expect(tooltip).toBeVisible();
     await page.keyboard.press("Escape");
 
-    await drawer.getByRole("button", { name: "Going", exact: true }).click();
+    await drawer.getByRole("button", { name: "Notify me", exact: true }).click();
 
-    await expect(drawer.getByText("Which time are you going?", { exact: true })).toBeVisible();
+    await expect(drawer.getByText("Which dates should we notify you about?", { exact: true })).toBeVisible();
     await expect(drawer.locator('input[type="checkbox"]')).toHaveCount(0);
 
     const secondLabel = new Intl.DateTimeFormat("en", {
@@ -3701,7 +3694,7 @@ test.describe("Events Page", () => {
     const laterCard = page.locator('article[data-event-id="3"]:visible');
     await expect(todayCard).toBeVisible();
     await expect(todayCard).not.toContainText(/\b0 clicks?\b/);
-    await expect(todayCard).not.toContainText(/\b0 going\b/);
+    await expect(todayCard).not.toContainText(/\b0 interested\b/);
     await expect(todayCard.locator('[data-slot="event-card-date"]')).toHaveText("Today");
     await expect(tomorrowCard.locator('[data-slot="event-card-date"]')).toHaveText("Tomorrow");
 
@@ -3829,13 +3822,13 @@ test.describe("Events Page", () => {
     expect(eventId).toBeGreaterThan(0);
 
     await card.click();
-    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Notify me", exact: true }).click();
     await expect.poll(() => goingCount).toBe(1);
     await page.keyboard.press("Escape");
-    await expect(card).toContainText("1 click · 1 going");
-    await expect(card.getByText("1 click · 1 going", { exact: true })).toHaveCSS("font-size", "11px");
+    await expect(card).toContainText("1 click · 1 interested");
+    await expect(card.getByText("1 click · 1 interested", { exact: true })).toHaveCSS("font-size", "11px");
     const poster = card.locator('[data-slot="event-card-image"]');
-    const goingBadge = poster.getByText("Going", { exact: true });
+    const goingBadge = poster.getByText("Subscribed", { exact: true });
     await expect(goingBadge).toBeVisible();
     const posterBox = await poster.boundingBox();
     const badgeBox = await goingBadge.boundingBox();
@@ -3847,7 +3840,7 @@ test.describe("Events Page", () => {
 
     await page.reload();
     const refreshedCard = page.locator(`article[data-event-id="${eventId}"]:visible`).first();
-    await expect(refreshedCard).toContainText("1 click · 1 going");
+    await expect(refreshedCard).toContainText("1 click · 1 interested");
   });
 
   test("cuts out and drag-scrolls overflowing quick filters", async ({ page }) => {
@@ -3906,7 +3899,7 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const cards = page.locator("article[data-event-id]");
-    await expect(cards.first()).toContainText("1 going");
+    await expect(cards.first()).toContainText("1 interested");
     while (await cards.count() < items.length) {
       const previousCount = await cards.count();
       await page.getByTestId("event-list-sentinel").scrollIntoViewIfNeeded();
@@ -3915,8 +3908,8 @@ test.describe("Events Page", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     const loadedFeedRequests = feedRequests;
     const loadedStatsRequests = statsRequests;
-    await page.getByRole("button", { name: ">0 going", exact: true }).click();
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
+    await page.getByRole("button", { name: ">0 interested", exact: true }).click();
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum interested" });
     await minimumGoing.fill("1");
     await expect(page.getByRole("list", { name: `${items.length / 2} events found`, exact: true })).toBeVisible();
     await expect(cards).toHaveCount(batchSize);
@@ -3989,37 +3982,37 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum interested" });
     await expect(card).toBeVisible();
     await expect(minimumGoing).toHaveCount(0);
-    await page.getByRole("button", { name: ">0 going", exact: true }).hover();
+    await page.getByRole("button", { name: ">0 interested", exact: true }).hover();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.down();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.up();
     await expect(minimumGoing).toBeVisible();
-    await expect(page.getByText("Minimum going", { exact: true })).toBeVisible();
+    await expect(page.getByText("Minimum interested", { exact: true })).toBeVisible();
     await expect(minimumGoing).toHaveValue("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 going", exact: true }).focus();
+    await page.getByRole("button", { name: ">0 interested", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(minimumGoing).toBeVisible();
     await minimumGoing.hover();
     await minimumGoing.fill("3");
-    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 interested", exact: true })).toBeVisible();
     await minimumGoing.press("Backspace");
     await expect(minimumGoing).toHaveValue("");
-    await expect(page.getByRole("button", { name: ">0 going", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">0 interested", exact: true })).toBeVisible();
     await minimumGoing.fill("03");
     await expect(minimumGoing).toHaveValue("03");
     await minimumGoing.fill("-1");
-    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 interested", exact: true })).toBeVisible();
     await expect(card).toBeVisible();
     await minimumGoing.fill("4");
     await expect(card).toHaveCount(0);
     await minimumGoing.fill("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 going", exact: true }).click();
+    await page.getByRole("button", { name: ">0 interested", exact: true }).click();
     await expect(minimumGoing).toHaveValue("0");
     await expect(card).toBeVisible();
   });
@@ -4091,7 +4084,7 @@ test.describe("Events Page", () => {
     const triggers = [
       filters.getByRole("button", { name: "Any price", exact: true }),
       filters.getByRole("combobox", { name: "Event date", exact: true }),
-      filters.getByRole("button", { name: ">0 going", exact: true }),
+      filters.getByRole("button", { name: ">0 interested", exact: true }),
     ];
     for (const trigger of triggers) {
       await expect(trigger).toBeEnabled();
@@ -4731,29 +4724,8 @@ test("admin event tabs show their school rows and review queues", async ({ page,
   await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
 });
 
-for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9, 1]]) {
-  test(`shows ${profileCount} attendee pictures and only real overflow for ${totalCount} going`, async ({ page, next }) => {
-    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
-    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
-      id: 1, title: "Attendee profiles", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
-      description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
-      cancelled: false, occurrences: [{ id: "occurrence-1", event_id: 1,
-        dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
-    } }));
-    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
-      going_count: totalCount,
-      attendees: Array.from({ length: profileCount }, () => ({ name: "", avatar_url: avatar })),
-    } }));
-    await page.goto(BASE);
-    await page.locator('article[data-event-id="1"]:visible').click();
-    const stack = page.getByRole("dialog").locator('[data-slot="avatar-stack"]');
-    await expect(stack.getByRole("img", { name: "Going", exact: true })).toHaveCount(profileCount);
-    await expect(stack.getByText("+1", { exact: true })).toHaveCount(overflow);
-  });
-}
-
 for (const surface of ["drawer", "page"]) {
-  test(`refreshes attendance and avatar stack after Going in the ${surface}`, async ({ page, next }) => {
+  test(`turns Notify me on and off in the ${surface}, showing nobody's picture`, async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     let going = false;
@@ -4767,10 +4739,6 @@ for (const surface of ["drawer", "page"]) {
       cancelled: false, occurrences: [{ id: occurrenceId, event_id: 1,
         dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
     } }));
-    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
-      going_count: going ? 1 : 0,
-      attendees: going ? [{ name: "Test U.", avatar_url: avatar }] : [],
-    } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1", async request => {
       going = request.method !== "DELETE";
       if (going) await pendingGoing;
@@ -4781,30 +4749,26 @@ for (const surface of ["drawer", "page"]) {
     if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
     const content = surface === "drawer" ? page.getByRole("dialog") : page.locator("body");
     await expect(content.locator('[data-slot="event-host-links"]')).toHaveCount(0);
-    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
     await expect(content.locator('[data-slot="club-badge"]').last().locator("img")).toHaveAttribute("src", avatar);
-    await content.getByRole("button", { name: "Going", exact: true }).click();
-    await expect(content.getByRole("heading", { name: "1 going", exact: true })).toBeVisible();
-    // The count and Going control change while the write is still blocked.
-    await expect(content.getByRole("button", { name: /marking yourself not going/i })).toBeVisible();
+    await content.getByRole("button", { name: "Notify me", exact: true }).click();
+    // The card changes while the write is still blocked.
+    await expect(content.getByRole("button", { name: "Turn off Notify me.", exact: true })).toBeVisible();
     releaseGoing();
-    await expect(content.locator('[data-slot="avatar-stack"]').getByRole("img", { name: "Test U." })).toBeVisible();
-    const cancel = content.getByRole("button", { name: /marking yourself not going/i });
+    await expect(content.getByText("You'll be notified", { exact: true })).toBeVisible();
+    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+    const cancel = content.getByRole("button", { name: "Turn off Notify me.", exact: true });
     await expect(cancel).toHaveCSS("text-decoration-line", "underline");
     await cancel.click();
-    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+    await expect(content.getByRole("button", { name: "Notify me", exact: true })).toBeVisible();
   });
 }
 
 for (const [detail, message] of [
-  ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so you can’t mark Going."],
+  ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so Notify me isn't available."],
   ["Unexpected storage failure", "Couldn't save your selected time"],
 ]) {
-  test(`Going rejection toast: ${detail}`, async ({ page, next }) => {
+  test(`Notify me rejection toast: ${detail}`, async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
-    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({
-      json: { going_count: 0, attendees: [] },
-    }));
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
       id: 1, title: "Going toast test", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
       description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
@@ -4817,9 +4781,8 @@ for (const [detail, message] of [
     }));
     await page.goto(BASE);
     await page.locator('article[data-event-id="1"]:visible').click();
-    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Notify me", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: message })).toBeVisible();
-    await expect(page.getByRole("dialog").locator('[data-slot="avatar-stack"]')).toHaveCount(0);
   });
 }
 
@@ -5635,12 +5598,12 @@ test.describe("Navigation", () => {
     await page.goto(`${BASE}/events`);
     await avatar.click();
     await expect(page).toHaveURL(/\/profile$/);
-    // Tony's order: saved, gone to, going to, clubs, submissions, settings, then signing out.
+    // Tony's order: saved, past, upcoming, clubs, submissions, settings, then signing out.
     let previousTop = -Infinity;
     for (const name of [
       "Events saved",
-      "Events you've gone to",
-      "Events you're going to",
+      "Your past events",
+      "Your upcoming events",
       "Clubs you follow",
       "Your submissions",
       "Settings",

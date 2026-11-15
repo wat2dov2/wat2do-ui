@@ -45,8 +45,8 @@ function endsAt(row: ProfileEventRow): number {
 
 /**
  * The visitor's events for their profile: the ones they saved, and every date
- * they are going to or held a ticket for, split into the ones still to come
- * (soonest first) and the ones they went to (latest first).
+ * they turned Notify me on for or held a ticket for, split into the ones still
+ * to come (soonest first) and the past ones (latest first).
  */
 export function useProfileEvents() {
   const going = useGoingEvents();
@@ -87,7 +87,7 @@ export function useProfileEvents() {
         attending.set(occurrence.id, eventRow(event, occurrence, ticketFor.get(occurrence.id) ?? null));
       }
     }
-    // A ticket a club handed out counts as going, even without a Going choice.
+    // A ticket counts as an event of theirs, even without Notify me on.
     for (const ticket of validTickets) {
       if (attending.has(ticket.event_date_id)) continue;
       attending.set(ticket.event_date_id, {

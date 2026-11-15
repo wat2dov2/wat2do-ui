@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "Asistiré",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "saving": "Guardando...",
@@ -55,7 +54,7 @@
     "of": "de",
     "share": "Compartir",
     "export": "Exportar",
-    "addToCalendar": "Agregar al Calendario",
+    "addToCalendar": "Agregar al calendario",
     "report": "Reportar",
     "download": "Descargar",
     "done": "Hecho",
@@ -178,7 +177,7 @@
     "max": "Máx",
     "today": "Hoy",
     "forYou": "Para ti",
-    "going": "Asistiré",
+    "going": "Suscrito",
     "dateRange": "Rango de fechas",
     "dayOfWeek": "Día de la semana",
     "registration": "Requiere registro",
@@ -207,7 +206,7 @@
     "showPersonalizedEvents": "Mostrar eventos personalizados",
     "openFilters": "Abrir filtros",
     "createNewEvent": "Enviar Evento",
-    "goingEvents": "Eventos a los que asistiré",
+    "goingEvents": "Eventos suscritos",
     "notificationPreferences": "Preferencias de notificación",
     "themeAppearance": "Tema y apariencia",
     "helpSupport": "Ayuda y soporte",
@@ -404,7 +403,7 @@
       },
       "account": {
         "title": "Inicia sesión para más",
-        "desc": "Una cuenta te permite guardar eventos, marcar a los que vas a ir, recibir recordatorios y usar las herramientas para dirigir un club."
+        "desc": "Una cuenta te permite guardar eventos, activar Notificarme para recibir recordatorios y novedades, y usar las herramientas para dirigir una organización."
       }
     },
     "help": {
@@ -576,7 +575,7 @@
       "items": {
         "free": {
           "question": "¿Wat2Do es gratis?",
-          "answer": "Sí. Wat2Do es gratis para estudiantes, y puedes ver todos los eventos sin cuenta. Inicia sesión para marcar eventos con Asistiré y recibir recordatorios."
+          "answer": "Sí. Wat2Do es gratis para estudiantes, y puedes ver todos los eventos sin cuenta. Inicia sesión para activar Notificarme y recibir recordatorios."
         },
         "clubs": {
           "question": "¿Mi club tiene que registrarse?",

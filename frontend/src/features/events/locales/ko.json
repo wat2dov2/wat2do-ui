@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "모집 중: {{positions}}",
-    "minimumGoing": "최소 참석자",
+    "minimumGoing": "최소 관심 인원",
     "eventTitle": "이벤트 제목",
     "loadFailed": "이벤트를 불러오지 못했습니다. 다시 시도해 주세요.",
     "deleteFailed": "이벤트 삭제에 실패했습니다. 다시 시도해 주세요.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "업데이트되었습니다.",
     "noResults": "결과가 없습니다.",
     "signInToView": "이벤트를 보려면 로그인하세요",
-    "signInToViewDesc": "참석할 이벤트를 표시하고 한 곳에서 모두 확인하세요.",
     "signIn": "로그인",
     "upcoming": "다가오는 일정",
-    "emptyEventsDesc": "참석할 이벤트를 표시하면 여기에 나타납니다. 모든 이벤트에서 참석 버튼을 누르세요.",
     "noUpcomingEvents": "다가오는 이벤트가 없습니다",
     "upcomingEventCount": "다가오는 이벤트",
     "upcomingEventCount_other": "다가오는 이벤트들",
@@ -82,12 +80,10 @@
       "submitFailed": "신고를 제출할 수 없습니다"
     },
     "goingEvents": {
-      "timeUnavailable": "이 행사는 이미 시작되었거나 취소되어 참석 표시를 할 수 없습니다.",
-      "markFailed": "이 이벤트를 '참석'으로 표시할 수 없습니다",
-      "unmarkFailed": "이 이벤트의 '참석' 표시를 취소할 수 없습니다",
+      "timeUnavailable": "이 행사는 이미 시작되었거나 취소되어 '알림 받기'를 사용할 수 없습니다.",
       "saveFailed": "선택한 시간을 저장할 수 없습니다",
-      "chooseOccurrences": "어떤 시간에 참석하시겠습니까?",
-      "chooseOccurrencesDescription": "참석할 모든 일정을 선택하세요."
+      "chooseOccurrences": "어떤 날짜의 알림을 받으시겠어요?",
+      "chooseOccurrencesDescription": "알림과 업데이트를 받을 날짜를 모두 선택하세요."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -114,18 +110,14 @@
     },
     "new": "신규",
     "updated": "업데이트됨",
-    "goingCount": "{{count}}명 참여",
-    "goingCount_other": "{{count}}명 참여",
-    "andOthersCount": "-외 {{count}}명",
-    "andOthersCount_other": "-외 {{count}}명",
+    "goingCount": "{{count}}명 관심",
+    "goingCount_other": "{{count}}명 관심",
     "hostedBy": "주최: ",
     "aboutEvent": "이벤트 정보",
     "fetchingDetails": "세부 정보 가져오는 중...",
-    "sourceLabel": "출처: ",
-    "youreIn": "참가 중",
+    "sourceUrl": "출처 URL",
+    "youreIn": "참여 완료!",
     "startingIn": "시작 중",
-    "cancelGoingPrompt": "더 이상 참석할 수 없으신가요? 주최자에게 알리려면",
-    "cancelGoing": "참가하지 않음으로 표시하세요.",
     "viewFullImage": "전체 이벤트 이미지 보기",
     "fullImageDescription": "{{title}}의 확대된 이벤트 포스터",
     "moreDatesCount": "+{{count}} 날짜",
@@ -135,7 +127,16 @@
     "moreEvents": "더 많은 이벤트",
     "submitEvent": "이벤트 추가",
     "allEvents": "모든 이벤트",
-    "going": "참여 예정",
+    "going": "구독 중",
+    "notifyMe": {
+      "action": "알림 받기",
+      "description": "시작 전에 알림을 받고, 변경 사항이 있으면 이메일을 받아요.",
+      "otherDates": "다른 날짜는 티켓이 필요 없어요. 시작 전에 알림을 받고, 변경 사항이 있으면 이메일을 받아요.",
+      "onTitle": "알림을 보내 드릴게요",
+      "onDescription": "시작 전에 이메일로 알려 드리고, 변경 사항이 있으면 바로 알려 드릴게요.",
+      "offPrompt": "업데이트가 필요 없으신가요?",
+      "off": "'알림 받기' 끄기."
+    },
     "views": {
       "label": "행사 보기",
       "grid": "그리드",
@@ -161,8 +162,8 @@
       "networking": "네트워킹 기회"
     },
     "savedEvents": {
-      "save": "이벤트 저장",
-      "unsave": "저장 취소",
+      "save": "저장",
+      "saved": "저장됨",
       "saveFailed": "이 이벤트를 저장할 수 없습니다"
     }
   }

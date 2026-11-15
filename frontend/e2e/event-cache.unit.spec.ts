@@ -52,8 +52,9 @@ function feed(items: Event[]): PaginatedEventsResponse {
 }
 const form: EventFormData = {
   timeZone: "America/Toronto", club_id: 9, title: "Updated event", description: "Details",
-  occurrences: [{ dtstart_local: "2026-10-01T12:00", dtend_local: "2026-10-01T13:00" }],
+  occurrences: [{ dtstart_local: "2026-10-01T12:00", dtend_local: "2026-10-01T13:00", tickets: true }],
   location: "Campus", map_location: "Campus", category: "Arts & Culture", price: 0, food: [], registration: false,
+  tickets: { enabled: false, price: "", capacity: "", paused: false },
 };
 
 test.beforeEach(() => {
@@ -568,14 +569,14 @@ test("viewing an event cannot make an unfinished stats collection ready", () => 
   observer.destroy();
 });
 
-test("Going mutations update immediately while collection requests are unresolved and preserve other selections", async () => {
+test("Notify me mutations update immediately while collection requests are unresolved and preserve other selections", async () => {
   const client = getQueryClient();
   const queryKey = queryKeys.goingEvents.byUser("viewer");
   const statsKey = queryKeys.events.stats("uwaterloo");
   let release!: (selections: Array<{ event_id: number; occurrence_ids: string[] }>) => void;
   const completeSelections = new Promise<Array<{ event_id: number; occurrence_ids: string[] }>>(resolve => { release = resolve; });
   const variables = { eventId: 1, occurrenceIds: ["occurrence-1"], userId: "viewer" };
-  type MutationContext = { queryKey: readonly unknown[]; attendeesKey: readonly unknown[]; previous: Array<{ event_id: number; occurrence_ids: string[] }> };
+  type MutationContext = { queryKey: readonly unknown[]; previous: Array<{ event_id: number; occurrence_ids: string[] }> };
   let mutation!: {
     onMutate: (input: typeof variables) => Promise<MutationContext>;
     onSuccess: (response: object, input: typeof variables, context: MutationContext) => void;
@@ -625,6 +626,46 @@ test("Going mutations update immediately while collection requests are unresolve
   expect(client.getQueryData(statsKey)).toEqual({ 1: { click_count: 4, going_count: 3 }, 2: { click_count: 8, going_count: 5 } });
 });
 
+
+test("Notify me beside tickets changes only the dates without tickets and keeps a ticket's date", async () => {
+  const client = getQueryClient();
+  const queryKey = queryKeys.goingEvents.byUser("viewer");
+  let sent: { eventId: number; occurrenceIds: string[] } | undefined;
+  const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  });
+  const hooks = { exports: {} as typeof import("../src/features/events/hooks/useGoingEvents") };
+  runInNewContext(outputText, {
+    exports: hooks.exports,
+    require: (id: string) => {
+      if (id === "react") return { useEffect: () => {}, useState: () => [null, () => {}], useMemo: (callback: () => unknown) => callback() };
+      if (id === "@tanstack/react-query") return {
+        useQueryClient: () => client,
+        useQuery: () => ({ data: client.getQueryData(queryKey) }),
+        useMutation: () => ({ mutateAsync: async (variables: typeof sent) => { sent = variables; } }),
+      };
+      if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
+      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
+      if (id === "@/features/auth/api/auth.api") return { getUserId: () => "viewer" };
+      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 60_000 } } };
+      return {};
+    },
+  });
+  // The viewer holds a ticket to the gala, which turned Notify me on for it.
+  client.setQueryData(queryKey, [{ event_id: 1, occurrence_ids: ["gala"] }]);
+  const series = { ...event(1), occurrences: [
+    { id: "gala", dtstart_utc: "2099-01-01T00:00:00Z" },
+    { id: "week-2", dtstart_utc: "2099-01-08T00:00:00Z" },
+  ] } as Event;
+  const notify = hooks.exports.useGoingEventSelection(series, "uwaterloo", ["week-2"]);
+  expect(notify.selectedIds).toEqual([]);
+  await notify.saveSelection(["week-2"]);
+  expect(sent?.occurrenceIds).toEqual(["gala", "week-2"]);
+  await notify.saveSelection([]);
+  expect(sent?.occurrenceIds).toEqual(["gala"]);
+});
 
 test("SSR query clients release request ownership without browser-length garbage-collection timers", () => {
   const browser = getQueryClient();

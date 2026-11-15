@@ -4,10 +4,10 @@
     "events": {
       "saved": "Sự kiện đã lưu",
       "savedEmpty": "Các sự kiện bạn lưu sẽ hiện ở đây.",
-      "past": "Sự kiện bạn đã tham gia",
-      "pastEmpty": "Các sự kiện bạn đã tham gia sẽ hiện ở đây.",
-      "upcoming": "Sự kiện bạn sắp tham gia",
-      "upcomingEmpty": "Các sự kiện bạn sắp tham gia sẽ hiện ở đây.",
+      "past": "Sự kiện đã qua của bạn",
+      "pastEmpty": "Các sự kiện bạn đã bật \"Nhắc tôi\" hoặc đã có vé sẽ hiện ở đây sau khi kết thúc.",
+      "upcoming": "Sự kiện sắp tới của bạn",
+      "upcomingEmpty": "Các sự kiện bạn bật \"Nhắc tôi\" hoặc nhận vé sẽ hiện ở đây.",
       "ticket": "Vé"
     },
     "clubs": {

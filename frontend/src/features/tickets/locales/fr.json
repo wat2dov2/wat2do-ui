@@ -4,8 +4,6 @@
     "description": "Présentez le code QR d'un billet à l'entrée.",
     "upcoming": "À venir",
     "past": "Passés",
-    "manage": "Billets",
-    "setUp": "Configurer les billets",
     "empty": {
       "title": "Aucun billet pour le moment",
       "description": "Lorsque vous obtenez un billet pour un événement, il s'affiche ici.",
@@ -29,6 +27,8 @@
       "left_one": "{{count}} billet restant",
       "left_many": "{{count}} billets restants",
       "quantity": "Nombre de billets",
+      "get": "Obtenir des billets",
+      "anotherDate": "Obtenir des billets pour une autre date",
       "buy": "Acheter des billets · {{total}}",
       "continueToPayment": "Continuer vers le paiement",
       "payNote": "Paiement sécurisé par Stripe. {{club}} reçoit votre nom et votre adresse e-mail pour valider votre entrée.",
@@ -46,17 +46,6 @@
         "soldOut": "Il ne reste plus de billets.",
         "closed": "Les billets ne sont plus disponibles.",
         "notYet": "Les billets ne sont pas encore disponibles."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Confirmer ma présence",
-      "anotherDate": "Confirmer ma présence pour une autre date",
-      "unavailable": {
-        "cancelled": "Cet événement a été annulé.",
-        "paused": "Les inscriptions sont suspendues pour le moment.",
-        "soldOut": "Il ne reste plus de places.",
-        "closed": "Les inscriptions sont closes.",
-        "notYet": "Les inscriptions ne sont pas encore ouvertes."
       }
     },
     "pass": {
@@ -86,12 +75,12 @@
       }
     },
     "return": {
-      "prompt": "Vous ne pouvez plus venir ? Annulez votre présence",
-      "title": "Annuler votre présence ?",
-      "description": "Quelqu'un d'autre pourra prendre votre place. S'il reste des places plus tard, vous pourrez confirmer à nouveau.",
-      "keep": "Garder ma place",
-      "confirm": "Annuler ma présence",
-      "done": "Présence annulée"
+      "prompt": "Vous ne pouvez plus venir ? Rendez votre billet",
+      "title": "Rendre votre billet ?",
+      "description": "Quelqu'un d'autre pourra prendre votre place. S'il reste des billets plus tard, vous pourrez en obtenir un à nouveau.",
+      "keep": "Garder mon billet",
+      "confirm": "Le rendre",
+      "done": "Billet rendu"
     },
     "order": {
       "confirming": "Confirmation de votre paiement",
@@ -111,14 +100,11 @@
     "desk": {
       "title": "Billets",
       "notFound": "Cet événement n'existe plus",
-      "setupTitle": "Billets pour cet événement",
-      "setupDescription": "Chaque personne reçoit un billet avec un code QR, que vous scannez sur place pour valider son entrée.",
-      "settingsTitle": "Paramètres des billets",
-      "settingsDescription": "Modifiez le nombre de billets, ou mettez-les en pause un moment.",
-      "free": "Gratuit",
-      "freeHint": "Un billet par personne pour chaque date.",
-      "paid": "Payant",
-      "paidHint": "Les participants paient via Stripe, et l'argent revient à votre organisation.",
+      "noTickets": "Cet événement n'a pas de billets",
+      "noTicketsDescription": "Activez-les en modifiant l'événement.",
+      "setupDescription": "Chaque personne reçoit un billet avec un code QR, que vous scannez à l'entrée. Obtenir un billet active aussi Me notifier pour cette date.",
+      "dates": "Dates avec billets",
+      "datesRequired": "Choisissez au moins une date.",
       "price": "Prix du billet ({{currency}})",
       "priceLocked": "Le prix ne peut plus changer dès qu'une personne a un billet.",
       "priceRange": "Saisissez un prix entre {{minimum}} et {{maximum}}.",
@@ -127,21 +113,15 @@
       "capacityRange": "Saisissez un nombre de 1 à {{maximum}}, ou laissez le champ vide pour ne pas fixer de limite.",
       "pause": "Mettre les billets en pause",
       "pauseHint": "Personne d'autre ne peut obtenir de billet tant que vous ne désactivez pas cette option.",
+      "turnOffLocked": "Des personnes ont des billets, donc ils restent activés. Mettez-les en pause pour bloquer les nouveaux.",
       "fees": "Stripe garde environ 2,9 % + 30 ¢ par commande. Le reste revient à votre organisation.",
-      "goingNote": "Toutes les personnes qui ont déjà indiqué qu'elles venaient reçoivent un billet par e-mail.",
       "payoutNoteSetup": "Chaque enregistrement admissible rapporte {{rate}} à votre organisation. En activant les billets, votre organisation accepte les <terms>Conditions de paiement des organisations</terms>.",
       "payoutNote": "Chaque enregistrement admissible rapporte {{rate}} à votre organisation, selon les <terms>Conditions de paiement des organisations</terms>.",
       "payoutsNeeded": "Configurez d'abord les versements pour pouvoir recevoir l'argent.",
       "setUpPayouts": "Configurer les versements",
-      "turnOnFree": "Activer les billets gratuits",
-      "startSelling": "Lancer la vente",
-      "freeStarted": "Les billets gratuits sont activés",
-      "sellingStarted": "Les billets sont en vente",
-      "save": "Enregistrer les modifications",
-      "saved": "Paramètres des billets enregistrés",
-      "turnOff": "Désactiver les billets",
-      "turnedOff": "Cet événement n'a plus de billets",
       "openScanner": "Scanner les billets",
+      "openDesk": "Liste d'entrée et scanner",
+      "notSaved": "L'événement est enregistré, mais pas ses billets",
       "attendees": "Liste des participants",
       "attendeesEmpty": "Personne n'a encore de billet",
       "search": "Rechercher par nom, e-mail ou code",

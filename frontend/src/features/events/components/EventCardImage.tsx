@@ -37,7 +37,7 @@ interface EventCardImageProps {
 }
 
 /**
- * Event poster with its corner badges: going or new, live, and club.
+ * Event poster with its corner badges: Notify me on (Subscribed) or new, live, and club.
  *
  * Every surface that shows an event's artwork shows the same badges in the same
  * corners, so the grid card, the details drawer, and the event page all render
@@ -68,8 +68,8 @@ export function EventCardImage({
     [goingSelections, event.id],
   );
   const status = getEventImageStatus(event, isGoing);
-  // Pulse the Going badge only when the reader marks it here, not for events
-  // that were already Going when the selections loaded.
+  // Pulse the Subscribed badge only when the reader turns Notify me on here, not
+  // for events it was already on for when the selections loaded.
   const selectionsLoaded = goingSelections !== undefined;
   const [previous, setPrevious] = useState({ isGoing, selectionsLoaded });
   const [justWentGoing, setJustWentGoing] = useState(false);

@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "استخدام: {{positions}}",
-    "minimumGoing": "حداقل شرکت‌کننده",
+    "minimumGoing": "حداقل علاقه‌مند",
     "eventTitle": "عنوان رویداد",
     "loadFailed": "بارگذاری رویدادها ناموفق بود. لطفاً دوباره تلاش کنید.",
     "deleteFailed": "حذف رویداد ناموفق بود. لطفاً دوباره تلاش کنید.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "به‌روزرسانی شد.",
     "noResults": "هیچ نتیجه‌ای یافت نشد.",
     "signInToView": "برای مشاهده رویدادهای خود وارد شوید",
-    "signInToViewDesc": "رویدادهایی که قصد شرکت در آنها را دارید علامت بزنید و همه آنها را در یک مکان ببینید.",
     "signIn": "ورود",
     "upcoming": "آینده",
-    "emptyEventsDesc": "رویدادهایی را که قصد شرکت در آنها دارید علامت بزنید تا اینجا ظاهر شوند. دکمه شرکت می‌کنم را در هر رویداد بزنید.",
     "noUpcomingEvents": "هیچ رویداد آینده‌ای وجود ندارد",
     "upcomingEventCount": "رویداد آینده",
     "upcomingEventCount_other": "رویدادهای آینده",
@@ -83,12 +81,10 @@
       "submitFailed": "امکان ارسال گزارش وجود نداشت"
     },
     "goingEvents": {
-      "timeUnavailable": "این رویداد شروع شده یا لغو شده است، بنابراین نمی‌توانید حضور خود را ثبت کنید.",
-      "markFailed": "نمی‌توان این رویداد را به عنوان موردی که در آن شرکت می‌کنید علامت زد",
-      "unmarkFailed": "نمی‌توان علامت شرکت در این رویداد را برداشت",
+      "timeUnavailable": "این رویداد شروع شده یا لغو شده است، بنابراین «خبرم کن» در دسترس نیست.",
       "saveFailed": "نمی‌توان زمان انتخابی شما را ذخیره کرد",
-      "chooseOccurrences": "شما چه زمانی شرکت می‌کنید؟",
-      "chooseOccurrencesDescription": "هر تکرار که قصد شرکت در آن را دارید انتخاب کنید."
+      "chooseOccurrences": "برای کدام تاریخ‌ها خبرتان کنیم؟",
+      "chooseOccurrencesDescription": "هر تاریخی را که برایش یادآوری و به‌روزرسانی می‌خواهید انتخاب کنید."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "جدید",
     "updated": "به‌روز شد",
-    "goingCount": "{{count}} شرکت‌کننده",
-    "goingCount_one": "{{count}} شرکت‌کننده",
-    "goingCount_other": "{{count}} شرکت‌کننده",
-    "andOthersCount": "و {{count}} نفر دیگر",
-    "andOthersCount_other": "و {{count}} نفر دیگر",
+    "goingCount": "{{count}} علاقه‌مند",
+    "goingCount_one": "{{count}} علاقه‌مند",
+    "goingCount_other": "{{count}} علاقه‌مند",
     "hostedBy": "برگزارکننده",
     "aboutEvent": "درباره رویداد",
     "fetchingDetails": "در حال دریافت جزئیات...",
-    "sourceLabel": "منبع:",
-    "youreIn": "شما شرکت می‌کنید",
+    "sourceUrl": "نشانی منبع",
+    "youreIn": "ثبت شد!",
     "startingIn": "زمان باقی‌مانده تا شروع",
-    "cancelGoingPrompt": "دیگر نمی‌توانید شرکت کنید؟ با این کار به میزبان اطلاع دهید:",
-    "cancelGoing": "علامت شرکت خود را بردارید.",
     "viewFullImage": "مشاهده تصویر کامل رویداد",
     "fullImageDescription": "پوستر بزرگ‌شده رویداد {{title}}",
     "moreDatesCount": "+{{count}} تاریخ",
@@ -137,10 +129,18 @@
     "moreEvents": "رویدادهای بیشتر",
     "submitEvent": "افزودن رویداد",
     "allEvents": "تمام رویدادها",
-    "going": "شرکت می‌کنم",
+    "going": "مشترک‌شده",
+    "notifyMe": {
+      "action": "خبرم کن",
+      "description": "پیش از شروع یادآوری بگیرید، و اگر چیزی تغییر کرد ایمیل دریافت کنید.",
+      "otherDates": "تاریخ‌های دیگر به بلیت نیاز ندارند. پیش از آن‌ها یادآوری بگیرید، و اگر چیزی تغییر کرد ایمیل دریافت کنید.",
+      "onTitle": "به شما خبر می‌دهیم",
+      "onDescription": "پیش از شروع، یادآوری را برایتان ایمیل می‌کنیم و اگر چیزی تغییر کرد خبرتان می‌کنیم.",
+      "offPrompt": "به‌روزرسانی نمی‌خواهید؟",
+      "off": "«خبرم کن» را خاموش کنید."
+    },
     "upcomingEventCount_one": "رویداد آینده",
     "clickCount_one": "{{count}} کلیک",
-    "andOthersCount_one": "و {{count}} نفر دیگر",
     "moreDatesCount_one": "+{{count}} تاریخ",
     "views": {
       "label": "نمای رویدادها",
@@ -169,8 +169,8 @@
       "networking": "فرصت‌های شبکه‌سازی"
     },
     "savedEvents": {
-      "save": "ذخیرهٔ رویداد",
-      "unsave": "حذف از ذخیره‌شده‌ها",
+      "save": "ذخیره",
+      "saved": "ذخیره‌شده",
       "saveFailed": "ذخیرهٔ این رویداد ممکن نشد"
     }
   }

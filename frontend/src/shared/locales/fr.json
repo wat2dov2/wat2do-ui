@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "J’y vais",
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "saving": "Enregistrement...",
@@ -178,7 +177,7 @@
     "max": "Max",
     "today": "Aujourd'hui",
     "forYou": "Pour vous",
-    "going": "J’y vais",
+    "going": "Abonné",
     "dateRange": "Plage de dates",
     "dayOfWeek": "Jour de la semaine",
     "registration": "Inscription requise",
@@ -207,7 +206,7 @@
     "showPersonalizedEvents": "Afficher les événements personnalisés",
     "openFilters": "Ouvrir les filtres",
     "createNewEvent": "Soumettre l'événement",
-    "goingEvents": "Événements auxquels je participe",
+    "goingEvents": "Événements abonnés",
     "notificationPreferences": "Préférences de notification",
     "themeAppearance": "Thème et apparence",
     "helpSupport": "Aide et soutien",
@@ -404,7 +403,7 @@
       },
       "account": {
         "title": "Connectez-vous pour en faire plus",
-        "desc": "Un compte vous permet d'enregistrer des événements, d'indiquer ceux auxquels vous allez, de recevoir des rappels et d'utiliser les outils pour gérer un regroupement étudiant."
+        "desc": "Un compte vous permet d'enregistrer des événements, d'activer Me notifier pour recevoir des rappels et des mises à jour, et d'utiliser les outils pour gérer une organisation."
       }
     },
     "help": {
@@ -576,7 +575,7 @@
       "items": {
         "free": {
           "question": "Wat2Do est-il gratuit?",
-          "answer": "Oui. Wat2Do est gratuit pour les étudiants, et vous pouvez parcourir tous les événements sans compte. Connectez-vous pour marquer des événements avec J’y vais et recevoir des rappels."
+          "answer": "Oui. Wat2Do est gratuit pour les étudiants, et vous pouvez parcourir tous les événements sans compte. Connectez-vous pour activer Me notifier et recevoir des rappels."
         },
         "clubs": {
           "question": "Mon club doit-il s'inscrire?",

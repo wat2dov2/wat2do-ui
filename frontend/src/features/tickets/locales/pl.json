@@ -4,8 +4,6 @@
     "description": "Pokaż kod QR biletu przy wejściu.",
     "upcoming": "Nadchodzące",
     "past": "Minione",
-    "manage": "Bilety",
-    "setUp": "Skonfiguruj bilety",
     "empty": {
       "title": "Nie masz jeszcze biletów",
       "description": "Gdy dostaniesz bilet na wydarzenie, pojawi się tutaj.",
@@ -30,6 +28,8 @@
       "left_few": "Zostały {{count}} bilety",
       "left_many": "Zostało {{count}} biletów",
       "quantity": "Liczba biletów",
+      "get": "Odbierz bilety",
+      "anotherDate": "Odbierz bilety na inny termin",
       "buy": "Kup bilety · {{total}}",
       "continueToPayment": "Przejdź do płatności",
       "payNote": "Bezpieczna płatność przez Stripe. Do {{club}} trafią Twoje imię i nazwisko oraz e-mail, potrzebne przy wejściu.",
@@ -48,17 +48,6 @@
         "soldOut": "Nie ma już biletów.",
         "closed": "Bilety nie są już dostępne.",
         "notYet": "Bilety nie są jeszcze dostępne."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Potwierdź udział",
-      "anotherDate": "Potwierdź udział w innym terminie",
-      "unavailable": {
-        "cancelled": "To wydarzenie zostało odwołane.",
-        "paused": "Zapisy są na razie wstrzymane.",
-        "soldOut": "Nie ma już wolnych miejsc.",
-        "closed": "Zapisy są zamknięte.",
-        "notYet": "Zapisy jeszcze się nie zaczęły."
       }
     },
     "pass": {
@@ -88,12 +77,12 @@
       }
     },
     "return": {
-      "prompt": "Nie możesz jednak przyjść? Odwołaj udział",
-      "title": "Odwołać udział?",
-      "description": "Ktoś inny będzie mógł zająć twoje miejsce. Jeśli później zostaną wolne miejsca, możesz znowu potwierdzić udział.",
-      "keep": "Zostaw moje miejsce",
-      "confirm": "Odwołaj udział",
-      "done": "Udział odwołany"
+      "prompt": "Nie możesz jednak przyjść? Oddaj swój bilet",
+      "title": "Oddać bilet?",
+      "description": "Ktoś inny będzie mógł zająć Twoje miejsce. Jeśli później zostaną bilety, możesz znowu jakiś odebrać.",
+      "keep": "Zatrzymaj mój bilet",
+      "confirm": "Oddaj go",
+      "done": "Bilet oddany"
     },
     "order": {
       "confirming": "Potwierdzamy Twoją płatność",
@@ -114,14 +103,11 @@
     "desk": {
       "title": "Bilety",
       "notFound": "To wydarzenie już nie istnieje",
-      "setupTitle": "Bilety na to wydarzenie",
-      "setupDescription": "Każdy dostaje bilet z kodem QR, a Ty skanujesz go przy wejściu, żeby wpuścić gościa.",
-      "settingsTitle": "Ustawienia biletów",
-      "settingsDescription": "Zmień liczbę biletów albo wstrzymaj je na jakiś czas.",
-      "free": "Bezpłatne",
-      "freeHint": "Jeden bilet na osobę na każdy termin.",
-      "paid": "Płatne",
-      "paidHint": "Ludzie płacą przez Stripe, a pieniądze trafiają do Twojej organizacji.",
+      "noTickets": "To wydarzenie nie ma biletów",
+      "noTicketsDescription": "Włącz je podczas edycji wydarzenia.",
+      "setupDescription": "Każdy dostaje bilet z kodem QR, a Ty skanujesz go przy wejściu. Odebranie biletu włącza też Powiadom mnie dla tego terminu.",
+      "dates": "Terminy z biletami",
+      "datesRequired": "Wybierz co najmniej jeden termin.",
       "price": "Cena biletu ({{currency}})",
       "priceLocked": "Ceny nie można już zmienić, gdy ktoś ma bilet.",
       "priceRange": "Wpisz cenę od {{minimum}} do {{maximum}}.",
@@ -130,21 +116,15 @@
       "capacityRange": "Wpisz liczbę od 1 do {{maximum}} albo zostaw pole puste, jeśli nie chcesz limitu.",
       "pause": "Wstrzymaj bilety",
       "pauseHint": "Dopóki tego nie wyłączysz, nikt nowy nie dostanie biletu.",
+      "turnOffLocked": "Niektórzy mają już bilety, więc pozostają włączone. Wstrzymaj je, aby nikt nowy ich nie dostał.",
       "fees": "Stripe pobiera około 2,9% + 30 centów od każdego zamówienia. Resztę dostaje Twoja organizacja.",
-      "goingNote": "Każdy, kto już zadeklarował udział, dostanie bilet e-mailem.",
       "payoutNoteSetup": "Każde kwalifikujące się zameldowanie daje Twojej organizacji {{rate}}. Włączając bilety, akceptujesz w imieniu organizacji <terms>Warunki wypłat dla organizacji</terms>.",
       "payoutNote": "Każde kwalifikujące się zameldowanie daje Twojej organizacji {{rate}} zgodnie z <terms>Warunkami wypłat dla organizacji</terms>.",
       "payoutsNeeded": "Najpierw skonfiguruj wypłaty, żeby pieniądze miały dokąd trafić.",
       "setUpPayouts": "Skonfiguruj wypłaty",
-      "turnOnFree": "Włącz bezpłatne bilety",
-      "startSelling": "Rozpocznij sprzedaż",
-      "freeStarted": "Bezpłatne bilety są włączone",
-      "sellingStarted": "Bilety są w sprzedaży",
-      "save": "Zapisz zmiany",
-      "saved": "Zapisano ustawienia biletów",
-      "turnOff": "Wyłącz bilety",
-      "turnedOff": "To wydarzenie nie ma już biletów",
       "openScanner": "Skanuj bilety",
+      "openDesk": "Lista gości i skaner",
+      "notSaved": "Wydarzenie zostało zapisane, ale jego bilety nie",
       "attendees": "Lista gości",
       "attendeesEmpty": "Nikt jeszcze nie ma biletu",
       "search": "Szukaj po imieniu, e-mailu lub kodzie",

@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "ਭਰਤੀ: {{positions}}",
-    "minimumGoing": "ਘੱਟੋ-ਘੱਟ ਹਾਜ਼ਰੀ",
+    "minimumGoing": "ਘੱਟੋ-ਘੱਟ ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲੇ",
     "eventTitle": "ਇਵੈਂਟ ਦਾ ਸਿਰਲੇਖ",
     "loadFailed": "ਇਵੈਂਟ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "deleteFailed": "ਇਵੈਂਟ ਨੂੰ ਮਿਟਾਉਣਾ ਅਸਫਲ ਰਿਹਾ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "ਅਪਡੇਟ ਕੀਤਾ ਗਿਆ ਹੈ।",
     "noResults": "ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ।",
     "signInToView": "ਆਪਣੇ ਸਮਾਗਮਾਂ ਨੂੰ ਦੇਖਣ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ",
-    "signInToViewDesc": "ਉਹਨਾਂ ਇਵੈਂਟਾਂ ਨੂੰ ਚਿੰਨ੍ਹਿਤ ਕਰੋ ਜਿਨ੍ਹਾਂ 'ਤੇ ਤੁਸੀਂ ਜਾ ਰਹੇ ਹੋ ਅਤੇ ਉਹਨਾਂ ਸਾਰਿਆਂ ਨੂੰ ਇੱਕ ਥਾਂ 'ਤੇ ਦੇਖੋ।",
     "signIn": "ਸਾਈਨ ਇਨ ਕਰੋ",
     "upcoming": "ਆਗਾਮੀ",
-    "emptyEventsDesc": "ਉਹਨਾਂ ਇਵੈਂਟਾਂ ਨੂੰ ਚਿੰਨ੍ਹਿਤ ਕਰੋ ਜਿਨ੍ਹਾਂ 'ਤੇ ਤੁਸੀਂ ਜਾ ਰਹੇ ਹੋ ਅਤੇ ਉਹ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ। ਕਿਸੇ ਵੀ ਇਵੈਂਟ 'ਤੇ ਚੱਲ ਰਹੇ ਬਟਨ 'ਤੇ ਟੈਪ ਕਰੋ।",
     "noUpcomingEvents": "ਕੋਈ ਆਗਾਮੀ ਇਵੈਂਟ ਨਹੀਂ ਹਨ",
     "upcomingEventCount": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "upcomingEventCount_other": "ਆਉਣ ਵਾਲੇ ਇਵੈਂਟ",
@@ -83,12 +81,10 @@
       "submitFailed": "ਰਿਪੋਰਟ ਦਰਜ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ"
     },
     "goingEvents": {
-      "timeUnavailable": "ਇਹ ਇਵੈਂਟ ਸ਼ੁਰੂ ਹੋ ਚੁੱਕਾ ਹੈ ਜਾਂ ਰੱਦ ਹੋ ਗਿਆ ਹੈ, ਇਸ ਲਈ ਤੁਸੀਂ ਹਾਜ਼ਰੀ ਦਰਜ ਨਹੀਂ ਕਰ ਸਕਦੇ।",
-      "markFailed": "ਇਸ ਇਵੈਂਟ ਦੀ ਜਾ ਰਹੀ ਵਜੋਂ ਨਿਸ਼ਾਨਦੇਹੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ",
-      "unmarkFailed": "ਇਸ ਇਵੈਂਟ ਦੀ ਜਾ ਰਹੀ ਵਜੋਂ ਨਿਸ਼ਾਨਦੇਹੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕੀ",
+      "timeUnavailable": "ਇਹ ਇਵੈਂਟ ਸ਼ੁਰੂ ਹੋ ਚੁੱਕਾ ਹੈ ਜਾਂ ਰੱਦ ਹੋ ਗਿਆ ਹੈ, ਇਸ ਲਈ \"ਮੈਨੂੰ ਸੂਚਿਤ ਕਰੋ\" ਉਪਲਬਧ ਨਹੀਂ ਹੈ।",
       "saveFailed": "ਤੁਹਾਡਾ ਚੁਣਿਆ ਸਮਾਂ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ",
-      "chooseOccurrences": "ਤੁਸੀਂ ਕਿਸ ਸਮੇਂ ਜਾ ਰਹੇ ਹੋ?",
-      "chooseOccurrencesDescription": "ਹਰ ਘਟਨਾ ਨੂੰ ਚੁਣੋ ਜਿਸ ਵਿੱਚ ਤੁਸੀਂ ਹਾਜ਼ਰ ਹੋਣ ਦੀ ਯੋਜਨਾ ਬਣਾ ਰਹੇ ਹੋ।"
+      "chooseOccurrences": "ਅਸੀਂ ਤੁਹਾਨੂੰ ਕਿਹੜੀਆਂ ਤਾਰੀਖਾਂ ਬਾਰੇ ਸੂਚਿਤ ਕਰੀਏ?",
+      "chooseOccurrencesDescription": "ਹਰ ਉਹ ਤਾਰੀਖ ਚੁਣੋ ਜਿਸ ਲਈ ਤੁਸੀਂ ਰਿਮਾਈਂਡਰ ਅਤੇ ਅੱਪਡੇਟ ਚਾਹੁੰਦੇ ਹੋ।"
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "ਨਵਾਂ",
     "updated": "ਅੱਪਡੇਟ ਹੋਇਆ",
-    "goingCount": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",
-    "goingCount_one": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",
-    "goingCount_other": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲੇ",
-    "andOthersCount": "ਅਤੇ {{count}} ਹੋਰ",
-    "andOthersCount_other": "ਅਤੇ {{count}} ਹੋਰ",
+    "goingCount": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲਾ",
+    "goingCount_one": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲਾ",
+    "goingCount_other": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲੇ",
     "hostedBy": "ਦੁਆਰਾ ਮੇਜ਼ਬਾਨੀ ਕੀਤੀ ਗਈ",
     "aboutEvent": "ਘਟਨਾ ਬਾਰੇ",
     "fetchingDetails": "ਵੇਰਵੇ ਪ੍ਰਾਪਤ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ...",
-    "sourceLabel": "ਸਰੋਤ:",
-    "youreIn": "ਤੁਸੀਂ ਅੰਦਰ ਹੋ",
+    "sourceUrl": "ਸਰੋਤ URL",
+    "youreIn": "ਤੁਸੀਂ ਸ਼ਾਮਲ ਹੋ!",
     "startingIn": "ਵਿੱਚ ਸ਼ੁਰੂ ਹੋ ਰਿਹਾ ਹੈ",
-    "cancelGoingPrompt": "ਹੁਣ ਹਾਜ਼ਰ ਹੋਣ ਦੇ ਯੋਗ ਨਹੀਂ? ਦੁਆਰਾ ਹੋਸਟ ਨੂੰ ਸੂਚਿਤ ਕਰੋ",
-    "cancelGoing": "ਆਪਣੇ ਆਪ ਨੂੰ ਨਹੀਂ ਜਾ ਰਿਹਾ ਚਿੰਨ੍ਹਿਤ ਕਰਨਾ.",
     "viewFullImage": "ਪੂਰੀ ਘਟਨਾ ਚਿੱਤਰ ਵੇਖੋ",
     "fullImageDescription": "{{title}} ਲਈ ਵੱਡਾ ਇਵੈਂਟ ਪੋਸਟਰ",
     "moreDatesCount": "+{{count}} ਮਿਤੀ",
@@ -137,10 +129,18 @@
     "moreEvents": "ਹੋਰ ਇਵੈਂਟਸ",
     "submitEvent": "ਇਵੈਂਟ ਸ਼ਾਮਲ ਕਰੋ",
     "allEvents": "ਸਾਰੀਆਂ ਘਟਨਾਵਾਂ",
-    "going": "ਜਾ ਰਹੇ ਹੋ",
+    "going": "ਸਬਸਕ੍ਰਾਈਬ ਕੀਤਾ",
+    "notifyMe": {
+      "action": "ਮੈਨੂੰ ਸੂਚਿਤ ਕਰੋ",
+      "description": "ਸ਼ੁਰੂ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਰਿਮਾਈਂਡਰ ਪਾਓ, ਅਤੇ ਕੁਝ ਬਦਲਣ 'ਤੇ ਈਮੇਲ।",
+      "otherDates": "ਬਾਕੀ ਤਾਰੀਖਾਂ ਲਈ ਟਿਕਟ ਦੀ ਲੋੜ ਨਹੀਂ। ਉਨ੍ਹਾਂ ਤੋਂ ਪਹਿਲਾਂ ਰਿਮਾਈਂਡਰ ਪਾਓ, ਅਤੇ ਕੁਝ ਬਦਲਣ 'ਤੇ ਈਮੇਲ।",
+      "onTitle": "ਤੁਹਾਨੂੰ ਸੂਚਿਤ ਕੀਤਾ ਜਾਵੇਗਾ",
+      "onDescription": "ਅਸੀਂ ਸ਼ੁਰੂ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਤੁਹਾਨੂੰ ਰਿਮਾਈਂਡਰ ਈਮੇਲ ਕਰਾਂਗੇ, ਅਤੇ ਕੁਝ ਬਦਲਣ 'ਤੇ ਦੱਸਾਂਗੇ।",
+      "offPrompt": "ਅੱਪਡੇਟ ਨਹੀਂ ਚਾਹੀਦੇ?",
+      "off": "\"ਮੈਨੂੰ ਸੂਚਿਤ ਕਰੋ\" ਬੰਦ ਕਰੋ।"
+    },
     "upcomingEventCount_one": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "clickCount_one": "{{count}} ਕਲਿੱਕ",
-    "andOthersCount_one": "ਅਤੇ {{count}} ਹੋਰ",
     "moreDatesCount_one": "+{{count}} ਮਿਤੀ",
     "views": {
       "label": "ਸਮਾਗਮ ਦ੍ਰਿਸ਼",
@@ -169,8 +169,8 @@
       "networking": "ਨੈੱਟਵਰਕਿੰਗ ਦੇ ਮੌਕੇ"
     },
     "savedEvents": {
-      "save": "ਇਵੈਂਟ ਸੰਭਾਲੋ",
-      "unsave": "ਸੰਭਾਲੇ ਹੋਏ ਵਿੱਚੋਂ ਹਟਾਓ",
+      "save": "ਸੰਭਾਲੋ",
+      "saved": "ਸੰਭਾਲਿਆ ਗਿਆ",
       "saveFailed": "ਇਹ ਇਵੈਂਟ ਸੰਭਾਲਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ"
     }
   }

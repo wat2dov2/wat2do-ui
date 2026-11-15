@@ -9,10 +9,7 @@ import {
   setGoingEventOccurrences,
   type EventStats,
 } from "@/features/events/api/events.api";
-import type {
-  ApiEventAttendeesResponse,
-  ApiGoingEventSelection,
-} from "@/shared/generated";
+import type { ApiGoingEventSelection } from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -47,30 +44,44 @@ export function useGoingEvents() {
   });
 }
 
+/**
+ * Notify me for one event (`user_going_events`). With `dates`, only those of
+ * its dates are offered, and saving keeps the viewer's other dates as they
+ * were: an event with tickets offers Notify me for its dates without them.
+ */
 export function useGoingEventSelection(
   event: Event,
   school: string | null | undefined,
+  dates?: readonly string[],
 ) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: selections = [] } = useGoingEvents();
   const now = useCurrentTime(event.occurrences);
-  const selectedIds = useMemo(
+  const allSelectedIds = useMemo(
     () =>
       selections.find((selection) => selection.event_id === event.id)
         ?.occurrence_ids ?? [],
     [event.id, selections],
   );
+  const offered = useMemo(
+    () => (event.occurrences ?? []).filter((occurrence) => !dates || dates.includes(occurrence.id)),
+    [event.occurrences, dates],
+  );
+  const selectedIds = useMemo(
+    () => allSelectedIds.filter((id) => offered.some((occurrence) => occurrence.id === id)),
+    [allSelectedIds, offered],
+  );
   const selectableOccurrences = useMemo(() => {
     if (event.cancelled || now === null || isEventHappeningNow(event, new Date(now))) return [];
-    return [...(event.occurrences ?? [])]
+    return [...offered]
       .filter((occurrence) => new Date(occurrence.dtstart_utc).getTime() > now)
       .sort(
         (left, right) =>
           new Date(left.dtstart_utc).getTime() -
           new Date(right.dtstart_utc).getTime(),
       );
-  }, [event, now]);
+  }, [event, now, offered]);
   const selectableIds = useMemo(
     () => new Set(selectableOccurrences.map((occurrence) => occurrence.id)),
     [selectableOccurrences],
@@ -80,10 +91,10 @@ export function useGoingEventSelection(
     [selectableIds, selectedIds],
   );
   const isActive = useMemo(
-    () => !event.cancelled && now !== null && (event.occurrences ?? []).some(
+    () => !event.cancelled && now !== null && offered.some(
       (occurrence) => selectedIds.includes(occurrence.id) && isActiveOrUpcomingOccurrence(occurrence, now),
     ),
-    [event.cancelled, event.occurrences, now, selectedIds],
+    [event.cancelled, offered, now, selectedIds],
   );
   // Async sign-in and optimistic mutation work can outlive a rendered clock tick.
   const canRegisterNow = () => !event.cancelled && !isEventHappeningNow(event, new Date());
@@ -97,38 +108,19 @@ export function useGoingEventSelection(
     },
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
-      const attendeesKey = queryKeys.events.attendees(eventId);
-      const cancellation = Promise.all([
-        queryClient.cancelQueries({ queryKey }),
-        queryClient.cancelQueries({ queryKey: attendeesKey }),
-      ]);
+      const cancellation = queryClient.cancelQueries({ queryKey });
       const previous =
         queryClient.getQueryData<ApiGoingEventSelection[]>(queryKey) ?? [];
-      const previousAttendees = queryClient.getQueryData<ApiEventAttendeesResponse>(attendeesKey);
-      const wasGoing = previous.some(selection => selection.event_id === eventId && selection.occurrence_ids.length > 0);
-      const delta = Number(occurrenceIds.length > 0) - Number(wasGoing);
-      const cachedStats = school
-        ? queryClient.getQueryData<EventStatsMap>(queryKeys.events.stats(school))
-        : undefined;
-      queryClient.setQueryData<ApiEventAttendeesResponse>(attendeesKey, (current) => ({
-        going_count: Math.max(0, (current?.going_count ?? cachedStats?.[String(eventId)]?.going_count ?? 0) + delta),
-        attendees: current?.attendees ?? [],
-      }));
       patchGoingSelection(queryClient, queryKey, {
         event_id: eventId,
         occurrence_ids: occurrenceIds,
       });
       await cancellation;
-      return { previous, queryKey, previousAttendees, attendeesKey, eventId };
+      return { previous, queryKey, eventId };
     },
     onError: (error, _variables, context) => {
       if (context?.previous) {
         patchGoingSelection(queryClient, context.queryKey, context.previous.find(selection => selection.event_id === context.eventId) ?? { event_id: context.eventId, occurrence_ids: [] });
-        if (context.previousAttendees) {
-          queryClient.setQueryData(context.attendeesKey, context.previousAttendees);
-        } else {
-          queryClient.resetQueries({ queryKey: context.attendeesKey, exact: true });
-        }
       }
       toast({
         description: t(isApiError(error) && error.message === UNAVAILABLE_OCCURRENCE_ERROR
@@ -139,10 +131,6 @@ export function useGoingEventSelection(
     },
     onSuccess: (response, variables, context) => {
       patchGoingSelection(queryClient, context.queryKey, response);
-      queryClient.setQueryData<ApiEventAttendeesResponse>(context.attendeesKey, current => ({
-        going_count: response.going_count,
-        attendees: current?.attendees ?? [],
-      }));
       if (school) {
         queryClient.setQueryData<EventStatsMap>(
           queryKeys.events.stats(school),
@@ -167,12 +155,10 @@ export function useGoingEventSelection(
         tracker.track(response.event_id, isGoing ? "going" : "ungoing");
       }
     },
-    onSettled: (_response, _error, variables) => Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.events.attendees(variables.eventId) }),
+    onSettled: (_response, _error, variables) =>
       queryClient.isMutating({ mutationKey: queryKeys.goingEvents.all }) === 1
         ? queryClient.invalidateQueries({ queryKey: queryKeys.goingEvents.byUser(variables.userId ?? "") })
         : Promise.resolve(),
-    ]),
   });
 
   return {
@@ -187,7 +173,11 @@ export function useGoingEventSelection(
     saveSelection: (occurrenceIds: string[]) =>
       mutation.mutateAsync({
         eventId: event.id,
-        occurrenceIds,
+        // Dates this card does not offer (a ticket's, say) stay as they were.
+        occurrenceIds: [
+          ...allSelectedIds.filter((id) => !offered.some((occurrence) => occurrence.id === id)),
+          ...occurrenceIds,
+        ],
         userId: getUserId(),
       }),
   };

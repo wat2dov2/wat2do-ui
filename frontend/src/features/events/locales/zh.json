@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "招聘：{{positions}}",
-    "minimumGoing": "最少参加人数",
+    "minimumGoing": "最少感兴趣人数",
     "eventTitle": "活动标题",
     "loadFailed": "加载活动失败。请重试。",
     "deleteFailed": "删除活动失败。请重试。",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "已更新。",
     "noResults": "未找到结果。",
     "signInToView": "登录以查看您的活动",
-    "signInToViewDesc": "标记您要参加的活动并在一处查看它们。",
     "signIn": "登录",
     "upcoming": "即将到来",
-    "emptyEventsDesc": "标记您要参加的活动，它们将显示在这里。点击任何活动上的参加按钮即可。",
     "noUpcomingEvents": "暂无即将到来的活动",
     "upcomingEventCount": "个即将到来的活动",
     "upcomingEventCount_other": "个即将到来的活动",
@@ -82,12 +80,10 @@
       "submitFailed": "无法提交举报"
     },
     "goingEvents": {
-      "timeUnavailable": "此活动已开始或已取消，因此无法标记参加。",
-      "markFailed": "无法标记此活动为参加",
-      "unmarkFailed": "无法取消参加此活动",
+      "timeUnavailable": "此活动已开始或已取消，因此无法使用“提醒我”。",
       "saveFailed": "无法保存您选择的时间",
-      "chooseOccurrences": "您要参加哪个时间？",
-      "chooseOccurrencesDescription": "选择您计划参加的所有场次。"
+      "chooseOccurrences": "要在哪些日期提醒你？",
+      "chooseOccurrencesDescription": "选择所有你想收到提醒和更新的日期。"
     },
     "calendar": {
       "googleCalendar": "谷歌日历",
@@ -114,18 +110,14 @@
     },
     "new": "新",
     "updated": "已更新",
-    "goingCount": "{{count}} 人参加",
-    "goingCount_other": "{{count}} 人参加",
-    "andOthersCount": "以及另外 {{count}} 人",
-    "andOthersCount_other": "以及另外 {{count}} 人",
+    "goingCount": "{{count}} 人感兴趣",
+    "goingCount_other": "{{count}} 人感兴趣",
     "hostedBy": "主办方",
     "aboutEvent": "关于活动",
     "fetchingDetails": "正在获取详情...",
-    "sourceLabel": "来源：",
-    "youreIn": "报名成功",
+    "sourceUrl": "来源链接",
+    "youreIn": "你已加入！",
     "startingIn": "距开始",
-    "cancelGoingPrompt": "无法参加？你可以",
-    "cancelGoing": "标记为不参加。",
     "viewFullImage": "查看完整活动图片",
     "fullImageDescription": "{{title}} 的放大活动海报",
     "moreDatesCount": "+{{count}} 个日期",
@@ -135,7 +127,16 @@
     "moreEvents": "更多活动",
     "submitEvent": "添加活动",
     "allEvents": "所有活动",
-    "going": "参加",
+    "going": "已订阅",
+    "notifyMe": {
+      "action": "提醒我",
+      "description": "开始前提醒你，有任何变动时发邮件通知你。",
+      "otherDates": "其他日期不需要门票。开始前会提醒你，有任何变动时会发邮件通知你。",
+      "onTitle": "你会收到通知",
+      "onDescription": "我们会在开始前发邮件提醒你，有任何变动也会告诉你。",
+      "offPrompt": "不需要更新？",
+      "off": "关闭“提醒我”。"
+    },
     "views": {
       "label": "活动视图",
       "grid": "网格",
@@ -161,8 +162,8 @@
       "networking": "社交拓展机会"
     },
     "savedEvents": {
-      "save": "收藏活动",
-      "unsave": "取消收藏",
+      "save": "收藏",
+      "saved": "已收藏",
       "saveFailed": "无法收藏此活动"
     }
   }

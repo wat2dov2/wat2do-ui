@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Mga bakanteng posisyon: {{positions}}",
-    "minimumGoing": "Minimum na dadalo",
+    "minimumGoing": "Minimum na interesado",
     "eventTitle": "Pamagat ng Kaganapan",
     "loadFailed": "Nabigong i-load ang mga kaganapan. Pakisubukang muli.",
     "deleteFailed": "Nabigong tanggalin ang kaganapan. Pakisubukang muli.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "ay na-update.",
     "noResults": "Walang nahanap na resulta.",
     "signInToView": "Mag-sign in upang makita ang iyong mga kaganapan",
-    "signInToViewDesc": "Tandaan ang mga kaganapan na dadaluhan mo at tingnan lahat sa isang lugar.",
     "signIn": "Mag-sign In",
     "upcoming": "Papapanabik",
-    "emptyEventsDesc": "Tandaan ang mga kaganapan na dadaluhan mo at lalabas ang mga ito dito. Pindutin ang 'going' na button sa anumang kaganapan.",
     "noUpcomingEvents": "Walang paparating na mga kaganapan",
     "upcomingEventCount": "paparating na kaganapan",
     "upcomingEventCount_other": "paparating na mga kaganapan",
@@ -83,12 +81,10 @@
       "submitFailed": "Hindi maipasa ang ulat"
     },
     "goingEvents": {
-      "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi mo na mamarkahang dadalo ka.",
-      "markFailed": "Hindi maitakda ang event na ito bilang dadalo",
-      "unmarkFailed": "Hindi maalis ang pagmamarka ng event na ito bilang dadalo",
+      "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi na available ang Paalalahanan ako.",
       "saveFailed": "Hindi maisalba ang napiling oras",
-      "chooseOccurrences": "Anong oras ka pupunta?",
-      "chooseOccurrencesDescription": "Piliin ang bawat pagkakataon na plano mong dumalo."
+      "chooseOccurrences": "Aling mga petsa ang gusto mong ipaalala namin?",
+      "chooseOccurrencesDescription": "Piliin ang bawat petsa na gusto mong makatanggap ng paalala at update."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "BAGO",
     "updated": "NA-UPDATE",
-    "goingCount": "{{count}} pupunta",
-    "goingCount_one": "{{count}} pupunta",
-    "goingCount_other": "{{count}} pupunta",
-    "andOthersCount": "at {{count}} iba pa",
-    "andOthersCount_other": "at {{count}} iba pa",
+    "goingCount": "{{count}} interesado",
+    "goingCount_one": "{{count}} interesado",
+    "goingCount_other": "{{count}} interesado",
     "hostedBy": "Hinost ng",
     "aboutEvent": "Tungkol sa Kaganapan",
     "fetchingDetails": "Kinukuha ang mga detalye...",
-    "sourceLabel": "Pinagmulan:",
-    "youreIn": "Kasama ka",
+    "sourceUrl": "Source URL",
+    "youreIn": "Kasama ka na!",
     "startingIn": "Magsisimula sa",
-    "cancelGoingPrompt": "Hindi na makakadalo? Ipaalam sa host sa pamamagitan ng",
-    "cancelGoing": "pagmamarkang hindi pupunta.",
     "viewFullImage": "Tingnan ang buong larawan ng kaganapan",
     "fullImageDescription": "Pinalaking poster ng kaganapan para sa {{title}}",
     "moreDatesCount": "+{{count}} petsa",
@@ -137,10 +129,18 @@
     "moreEvents": "Higit pang mga kaganapan",
     "submitEvent": "Magdagdag ng kaganapan",
     "allEvents": "Lahat ng mga kaganapan",
-    "going": "Pupunta",
+    "going": "Naka-subscribe",
+    "notifyMe": {
+      "action": "Paalalahanan ako",
+      "description": "Makatanggap ng paalala bago ito magsimula, at email kapag may nagbago.",
+      "otherDates": "Hindi kailangan ng tiket sa ibang petsa. Makatanggap ng paalala bago ang mga ito, at email kapag may nagbago.",
+      "onTitle": "Aabisuhan ka namin",
+      "onDescription": "Ie-email ka namin ng paalala bago ito magsimula, at sasabihan ka namin kapag may nagbago.",
+      "offPrompt": "Hindi mo kailangan ng mga update?",
+      "off": "I-off ang Paalalahanan ako."
+    },
     "upcomingEventCount_one": "paparating na kaganapan",
     "clickCount_one": "{{count}} pag-click",
-    "andOthersCount_one": "at {{count}} iba pa",
     "moreDatesCount_one": "+{{count}} petsa",
     "views": {
       "label": "Tanaw ng mga event",
@@ -169,8 +169,8 @@
       "networking": "Mga pagkakataon sa networking"
     },
     "savedEvents": {
-      "save": "I-save ang kaganapan",
-      "unsave": "Alisin sa mga naka-save",
+      "save": "I-save",
+      "saved": "Naka-save",
       "saveFailed": "Hindi ma-save ang kaganapang ito"
     }
   }

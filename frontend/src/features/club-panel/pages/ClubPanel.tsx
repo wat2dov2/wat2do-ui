@@ -3,7 +3,7 @@ import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { ROUTES } from "@/shared/constants/routes";
 import { Briefcase, Calendar, Coins, Users } from "lucide-react";
 import { useActiveClub } from "@/features/clubs";
-import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
+import { useClubPayouts } from "@/features/tickets";
 import { FormGrid, Stack } from "@/shared/layout";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import type { ClubPanelRouteKey } from "@/shared/constants/routes";

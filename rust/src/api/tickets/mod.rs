@@ -1,14 +1,15 @@
 //! Club tickets: free QR tickets and paid ones, one admission model
-//! (`event_ticketing`, `ticket_orders`, `tickets`).
+//! (`event_ticketing`, `event_ticketing_dates`, `ticket_orders`, `tickets`).
 //!
-//! A club turns tickets on for one of its events. With a price of zero,
-//! anyone signed in takes a free ticket to a date in one tap; turning free
-//! tickets on also hands one to everyone already going. With a price, the
+//! A club turns tickets on for one of its events, and for the dates of it it
+//! picks, in the event's own form. With a price of zero, anyone signed in
+//! takes a free ticket to a date in one tap. With a price, the
 //! buyer pays through Stripe Checkout on the club's own Connect Standard
 //! account, so money never passes through wat2do. Every ticket's QR code
 //! holds the link to its page: the holder shows it at the door, and the club
 //! scans it with the door scanner or any phone camera to admit them. Taking
-//! or buying a ticket marks the holder going.
+//! or buying a ticket turns on the holder's Notify me for that date, so
+//! reminders and change alerts reach them.
 
 pub mod admission;
 pub mod codes;

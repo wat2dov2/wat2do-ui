@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Rekrutacja: {{positions}}",
-    "minimumGoing": "Minimum uczestników",
+    "minimumGoing": "Minimum zainteresowanych",
     "eventTitle": "Tytuł wydarzenia",
     "loadFailed": "Nie udało się załadować wydarzeń. Spróbuj ponownie.",
     "deleteFailed": "Nie udało się usunąć wydarzenia. Spróbuj ponownie.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "zostało zaktualizowane.",
     "noResults": "Nie znaleziono wyników.",
     "signInToView": "Zaloguj się, aby zobaczyć swoje wydarzenia",
-    "signInToViewDesc": "Oznacz wydarzenia, w których uczestniczysz i zobacz je wszystkie w jednym miejscu.",
     "signIn": "Zaloguj się",
     "upcoming": "Nadchodzące",
-    "emptyEventsDesc": "Oznacz wydarzenia, w których będziesz uczestniczyć, a pojawią się tutaj. Stuknij przycisk uczestnictwa przy dowolnym wydarzeniu.",
     "noUpcomingEvents": "Brak nadchodzących wydarzeń",
     "upcomingEventCount": "nadchodzące wydarzenie",
     "upcomingEventCount_other": "nadchodzących wydarzeń",
@@ -85,12 +83,10 @@
       "submitFailed": "Nie udało się wysłać zgłoszenia"
     },
     "goingEvents": {
-      "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc nie możesz zaznaczyć udziału.",
-      "markFailed": "Nie udało się oznaczyć tego wydarzenia jako uczestniczonego",
-      "unmarkFailed": "Nie udało się odznaczyć tego wydarzenia jako uczestniczonego",
+      "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc opcja Powiadom mnie jest niedostępna.",
       "saveFailed": "Nie udało się zapisać wybranego czasu",
-      "chooseOccurrences": "Na którą godzinę idziesz?",
-      "chooseOccurrencesDescription": "Wybierz wszystkie wystąpienia, w których planujesz uczestniczyć."
+      "chooseOccurrences": "O których terminach mamy Cię powiadomić?",
+      "chooseOccurrencesDescription": "Wybierz wszystkie terminy, dla których chcesz dostać przypomnienie i aktualizacje."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -117,19 +113,15 @@
     },
     "new": "NOWE",
     "updated": "ZAKTUALIZOWANO",
-    "goingCount": "{{count}} osoba weźmie udział",
-    "goingCount_one": "{{count}} osoba weźmie udział",
-    "goingCount_other": "{{count}} osoby wezmą udział",
-    "andOthersCount": "i {{count}} inna osoba",
-    "andOthersCount_other": "i {{count}} innych osób",
+    "goingCount": "{{count}} osoba zainteresowana",
+    "goingCount_one": "{{count}} osoba zainteresowana",
+    "goingCount_other": "{{count}} osoby zainteresowanej",
     "hostedBy": "Organizowane przez",
     "aboutEvent": "Informacje o wydarzeniu",
     "fetchingDetails": "Pobieranie szczegółów...",
-    "sourceLabel": "Źródło:",
-    "youreIn": "Jesteś zapisany",
+    "sourceUrl": "Adres URL źródła",
+    "youreIn": "Gotowe!",
     "startingIn": "Rozpoczyna się za",
-    "cancelGoingPrompt": "Nie możesz już uczestniczyć? Powiadom organizatora przez",
-    "cancelGoing": "oznaczenie, że nie idziesz.",
     "viewFullImage": "Pokaż pełny obraz wydarzenia",
     "fullImageDescription": "Powiększony plakat wydarzenia dla {{title}}",
     "moreDatesCount": "+{{count}} data",
@@ -139,18 +131,24 @@
     "moreEvents": "Więcej wydarzeń",
     "submitEvent": "Dodaj wydarzenie",
     "allEvents": "Wszystkie wydarzenia",
-    "going": "Wezmę udział",
+    "going": "Subskrybowane",
+    "notifyMe": {
+      "action": "Powiadom mnie",
+      "description": "Dostaniesz przypomnienie przed rozpoczęciem i e-mail, jeśli coś się zmieni.",
+      "otherDates": "Pozostałe terminy nie wymagają biletu. Dostaniesz przypomnienie przed każdym z nich i e-mail, jeśli coś się zmieni.",
+      "onTitle": "Powiadomimy Cię",
+      "onDescription": "Wyślemy Ci e-mailem przypomnienie przed rozpoczęciem i damy znać, jeśli coś się zmieni.",
+      "offPrompt": "Nie potrzebujesz aktualizacji?",
+      "off": "Wyłącz Powiadom mnie."
+    },
     "upcomingEventCount_one": "nadchodzące wydarzenie",
     "upcomingEventCount_few": "nadchodzące wydarzenia",
     "upcomingEventCount_many": "nadchodzących wydarzeń",
     "clickCount_one": "{{count}} kliknięcie",
     "clickCount_few": "{{count}} kliknięcia",
     "clickCount_many": "{{count}} kliknięć",
-    "goingCount_few": "{{count}} osoby wezmą udział",
-    "goingCount_many": "{{count}} osób weźmie udział",
-    "andOthersCount_one": "i {{count}} inna osoba",
-    "andOthersCount_few": "i {{count}} inne osoby",
-    "andOthersCount_many": "i {{count}} innych osób",
+    "goingCount_few": "{{count}} osoby zainteresowane",
+    "goingCount_many": "{{count}} osób zainteresowanych",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_few": "+{{count}} daty",
     "moreDatesCount_many": "+{{count}} dat",
@@ -185,8 +183,8 @@
       "networking": "Okazje do networkingu"
     },
     "savedEvents": {
-      "save": "Zapisz wydarzenie",
-      "unsave": "Usuń z zapisanych",
+      "save": "Zapisz",
+      "saved": "Zapisane",
       "saveFailed": "Nie udało się zapisać tego wydarzenia"
     }
   }

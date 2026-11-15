@@ -47,8 +47,7 @@ export function SubmitEventPage() {
         profile?.role === "admin" ||
         Boolean(profile?.clubs.some((club) => club.id === eventData.club_id));
       if (managesClub) {
-        const event = await createEventAPI(eventData);
-        return { type: "event" as const, eventId: event.id };
+        return { type: "event" as const, event: await createEventAPI(eventData) };
       }
       await submitEventForReview(eventData);
       return { type: "submission" as const };

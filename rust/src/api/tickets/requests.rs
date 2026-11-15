@@ -31,10 +31,12 @@ pub fn ticketing(mut body: Body) -> Result<TicketingInput, ApiError> {
     let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
     let capacity = optional_int(&mut body, "capacity", Limits::default().gt(0).le(limit));
     let paused = body.required_bool("paused");
+    let dates = body.required_uuid_list("event_date_ids", 1, usize::MAX);
     body.finish().map(|()| TicketingInput {
         price_cents: price_cents.unwrap_or_default() as i32,
         capacity: capacity.map(|capacity| capacity as i32),
         paused: paused.unwrap_or_default(),
+        dates: dates.unwrap_or_default(),
     })
 }
 
@@ -94,29 +96,35 @@ mod tests {
 
     #[test]
     fn ticketing_settings_have_no_limit_unless_given_one() {
+        let date = Uuid::from_u128(5);
         assert_eq!(
-            ticketing(body(json!({"price_cents": 0, "paused": false}))).unwrap(),
+            ticketing(body(
+                json!({"price_cents": 0, "paused": false, "event_date_ids": [date]})
+            ))
+            .unwrap(),
             TicketingInput {
                 price_cents: 0,
                 capacity: None,
-                paused: false
+                paused: false,
+                dates: vec![date],
             }
         );
         assert_eq!(
-            ticketing(body(
-                json!({"price_cents": 1500, "capacity": 80, "paused": true})
-            ))
+            ticketing(body(json!({
+                "price_cents": 1500, "capacity": 80, "paused": true, "event_date_ids": [date]
+            })))
             .unwrap(),
             TicketingInput {
                 price_cents: 1500,
                 capacity: Some(80),
-                paused: true
+                paused: true,
+                dates: vec![date],
             }
         );
         assert_eq!(
-            ticketing(body(
-                json!({"price_cents": 0, "capacity": null, "paused": false})
-            ))
+            ticketing(body(json!({
+                "price_cents": 0, "capacity": null, "paused": false, "event_date_ids": [date]
+            })))
             .unwrap()
             .capacity,
             None
@@ -125,22 +133,27 @@ mod tests {
 
     #[test]
     fn ticketing_settings_refuse_bad_values_together() {
-        let error = ticketing(body(
-            json!({"price_cents": -1, "capacity": 0, "paused": false, "extra": 1}),
-        ))
+        let error = ticketing(body(json!({
+            "price_cents": -1, "capacity": 0, "paused": false, "event_date_ids": [], "extra": 1
+        })))
         .unwrap_err();
         assert_eq!(
             locs(error),
             [
                 r#"["body","price_cents"]"#,
                 r#"["body","capacity"]"#,
+                r#"["body","event_date_ids"]"#,
                 r#"["body","extra"]"#
             ]
         );
         let missing = ticketing(body(json!({}))).unwrap_err();
         assert_eq!(
             locs(missing),
-            [r#"["body","price_cents"]"#, r#"["body","paused"]"#]
+            [
+                r#"["body","price_cents"]"#,
+                r#"["body","paused"]"#,
+                r#"["body","event_date_ids"]"#
+            ]
         );
     }
 

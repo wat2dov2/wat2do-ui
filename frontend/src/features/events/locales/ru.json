@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Открытые позиции: {{positions}}",
-    "minimumGoing": "Минимум участников",
+    "minimumGoing": "Минимум заинтересованных",
     "eventTitle": "Название события",
     "loadFailed": "Не удалось загрузить события. Пожалуйста, попробуйте еще раз.",
     "deleteFailed": "Не удалось удалить событие. Пожалуйста, попробуйте еще раз.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "обновлено.",
     "noResults": "Результаты не найдены.",
     "signInToView": "Войдите, чтобы просмотреть свои мероприятия",
-    "signInToViewDesc": "Отметьте мероприятия, на которые вы собираетесь пойти, и просматривайте их все в одном месте.",
     "signIn": "Войти",
     "upcoming": "Предстоящие",
-    "emptyEventsDesc": "Отметьте события, на которые вы собираетесь, и они появятся здесь. Нажмите кнопку 'идти' на любом событии.",
     "noUpcomingEvents": "Нет предстоящих событий",
     "upcomingEventCount": "предстоящее событие",
     "upcomingEventCount_other": "предстоящего события",
@@ -85,12 +83,10 @@
       "submitFailed": "Не удалось отправить жалобу"
     },
     "goingEvents": {
-      "timeUnavailable": "Мероприятие уже началось или было отменено, поэтому отметить участие нельзя.",
-      "markFailed": "Не удалось отметить участие в этом событии",
-      "unmarkFailed": "Не удалось снять отметку участия в этом событии",
+      "timeUnavailable": "Мероприятие уже началось или было отменено, поэтому «Напомнить мне» недоступно.",
       "saveFailed": "Не удалось сохранить выбранное время",
-      "chooseOccurrences": "Во сколько вы собираетесь пойти?",
-      "chooseOccurrencesDescription": "Выберите все мероприятия, которые вы планируете посетить."
+      "chooseOccurrences": "О каких датах вам напомнить?",
+      "chooseOccurrencesDescription": "Выберите все даты, о которых хотите получать напоминания и новости."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -117,19 +113,15 @@
     },
     "new": "НОВОЕ",
     "updated": "ОБНОВЛЕНО",
-    "goingCount": "{{count}} участник",
-    "goingCount_one": "{{count}} участник",
-    "goingCount_other": "{{count}} участника",
-    "andOthersCount": "и ещё {{count}} человек",
-    "andOthersCount_other": "и ещё {{count}} человека",
+    "goingCount": "Интересуются: {{count}}",
+    "goingCount_one": "Интересуются: {{count}}",
+    "goingCount_other": "Интересуются: {{count}}",
     "hostedBy": "Организатор",
     "aboutEvent": "О событии",
     "fetchingDetails": "Загрузка информации...",
-    "sourceLabel": "Источник:",
-    "youreIn": "Вы участвуете",
+    "sourceUrl": "Ссылка на источник",
+    "youreIn": "Готово, вы в списке!",
     "startingIn": "Начало через",
-    "cancelGoingPrompt": "Больше не сможете присутствовать? Уведомьте организатора через",
-    "cancelGoing": "отметив себя как не участвующего.",
     "viewFullImage": "Посмотреть полное изображение мероприятия",
     "fullImageDescription": "Увеличенный плакат мероприятия для {{title}}",
     "moreDatesCount": "+{{count}} дата",
@@ -139,18 +131,24 @@
     "moreEvents": "Больше событий",
     "submitEvent": "Добавить событие",
     "allEvents": "Все события",
-    "going": "Я пойду",
+    "going": "Вы подписаны",
+    "notifyMe": {
+      "action": "Напомнить мне",
+      "description": "Получите напоминание перед началом и письмо, если что-то изменится.",
+      "otherDates": "На другие даты билет не нужен. Получите напоминание перед ними и письмо, если что-то изменится.",
+      "onTitle": "Мы вам напомним",
+      "onDescription": "Мы пришлём напоминание на почту перед началом и сообщим, если что-то изменится.",
+      "offPrompt": "Не нужны новости?",
+      "off": "Выключить «Напомнить мне»."
+    },
     "upcomingEventCount_one": "предстоящее событие",
     "upcomingEventCount_few": "предстоящих события",
     "upcomingEventCount_many": "предстоящих событий",
     "clickCount_one": "{{count}} клик",
     "clickCount_few": "{{count}} клика",
     "clickCount_many": "{{count}} кликов",
-    "goingCount_few": "{{count}} участника",
-    "goingCount_many": "{{count}} участников",
-    "andOthersCount_one": "и ещё {{count}} человек",
-    "andOthersCount_few": "и ещё {{count}} человека",
-    "andOthersCount_many": "и ещё {{count}} человек",
+    "goingCount_few": "Интересуются: {{count}}",
+    "goingCount_many": "Интересуются: {{count}}",
     "moreDatesCount_one": "+{{count}} дата",
     "moreDatesCount_few": "+{{count}} даты",
     "moreDatesCount_many": "+{{count}} дат",
@@ -185,8 +183,8 @@
       "networking": "Возможности для нетворкинга"
     },
     "savedEvents": {
-      "save": "Сохранить событие",
-      "unsave": "Убрать из сохранённых",
+      "save": "Сохранить",
+      "saved": "Сохранено",
       "saveFailed": "Не удалось сохранить событие"
     }
   }

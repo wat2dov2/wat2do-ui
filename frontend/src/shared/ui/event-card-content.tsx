@@ -155,7 +155,7 @@ interface EventCardContentProps {
    * stays inert: it shows the card an event will appear as, and nothing more.
    */
   interactive?: boolean;
-  /** Popularity line, e.g. "12 clicks · 3 going". */
+  /** Popularity line, e.g. "12 clicks · 3 interested". */
   statsLabel?: string;
   /**
    * Hold two title lines even for a one-line title, so a card is exactly as tall

@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { Club, EventFormData, EventFormOccurrence } from "@/shared/types";
+import type { Club, EventFormData, EventFormOccurrence, EventFormTickets } from "@/shared/types";
+import { eventTicketsErrors } from "@/features/tickets";
 import {
   validateEventForm,
   isEventFormValid,
@@ -87,7 +88,7 @@ export function useEventForm(options: UseEventFormOptions) {
   }, [form]);
 
   const updateOccurrence = useCallback(
-    (index: number, field: keyof EventFormOccurrence, value: string) => {
+    (index: number, field: "dtstart_local" | "dtend_local", value: string) => {
       form.setFormData((prev) => ({
         ...prev,
         occurrences: prev.occurrences.map((occurrence, currentIndex) =>
@@ -98,10 +99,28 @@ export function useEventForm(options: UseEventFormOptions) {
     [form],
   );
 
+  const updateOccurrenceTickets = useCallback(
+    (index: number, tickets: boolean) => {
+      form.setFormData((prev) => ({
+        ...prev,
+        occurrences: prev.occurrences.map((occurrence: EventFormOccurrence, currentIndex) =>
+          currentIndex === index ? { ...occurrence, tickets } : occurrence
+        ),
+      }));
+    },
+    [form],
+  );
+
+  const updateTickets = useCallback(
+    (tickets: EventFormTickets) => form.updateField("tickets", tickets),
+    [form],
+  );
+
+  // A new date has tickets once tickets are on, until the club unticks it.
   const addOccurrence = useCallback(() => {
     form.setFormData((prev) => ({
       ...prev,
-      occurrences: [...prev.occurrences, { dtstart_local: "", dtend_local: "" }],
+      occurrences: [...prev.occurrences, { dtstart_local: "", dtend_local: "", tickets: true }],
     }));
   }, [form]);
 
@@ -179,6 +198,7 @@ export function useEventForm(options: UseEventFormOptions) {
   const isValid = useMemo(
     () =>
       isEventFormValid(form.formData, errors, rules) &&
+      Object.keys(eventTicketsErrors(form.formData)).length === 0 &&
       (isEditMode || Boolean(imagePreview)),
     [form.formData, errors, imagePreview, isEditMode, rules],
   );
@@ -193,6 +213,7 @@ export function useEventForm(options: UseEventFormOptions) {
             timeZone: previous.timeZone,
             occurrences: previous.occurrences,
             source_image_url: previous.source_image_url,
+            tickets: previous.tickets,
           },
         );
         return fixedClubId == null ? next : { ...next, club_id: previous.club_id };
@@ -213,8 +234,10 @@ export function useEventForm(options: UseEventFormOptions) {
     updateField: form.updateField,
 
     updateOccurrence,
+    updateOccurrenceTickets,
     addOccurrence,
     removeOccurrence,
+    updateTickets,
 
     foodInput: foodTag.inputValue,
     setFoodInput: foodTag.setInputValue,

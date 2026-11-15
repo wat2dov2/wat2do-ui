@@ -50,10 +50,6 @@
       "appliedHealthSciences": "Khoa học sức khỏe ứng dụng"
     },
     "stepProgress": "Bước {{step}} của {{total}}",
-    "safetyTitle": "Chào mừng bạn đến với trang sự kiện của khuôn viên trường.",
-    "safetyDescription": "Chúng tôi giúp bạn khám phá những gì đang diễn ra xung quanh trường và kết nối với các cộng đồng phù hợp với sở thích của bạn.",
-    "safetyGoingEvents": "Đánh dấu các sự kiện bạn sẽ tham gia, theo dõi các hạn chót và nhanh chóng lọc theo những gì quan trọng với bạn.",
-    "safetySafeguards": "Các biện pháp bảo vệ cộng đồng và an toàn giúp giữ cho các sự kiện chất lượng cao và đáng tin cậy.",
     "doneTitle": "Bạn đã sẵn sàng!",
     "doneDescription": "Bảng tin cá nhân hóa của bạn đã sẵn sàng. Đã đến lúc khám phá những gì đang diễn ra xung quanh bạn.",
     "doneButton": "Hãy khám phá",

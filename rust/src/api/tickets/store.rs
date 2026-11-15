@@ -13,7 +13,10 @@ use crate::db::read_with_retry;
 macro_rules! ticketing_select {
     ($rest:literal) => {
         concat!(
-            "SELECT event_id, price_cents, currency, capacity, paused FROM public.event_ticketing ",
+            "SELECT event_id, price_cents, currency, capacity, paused, \
+             ARRAY(SELECT d.event_date_id FROM public.event_ticketing_dates d \
+                   WHERE d.event_id = event_ticketing.event_id) AS dates \
+             FROM public.event_ticketing ",
             $rest
         )
     };
@@ -85,23 +88,6 @@ pub async fn lock_ticketing(
         .await
 }
 
-/// How many people are going to each of these dates.
-pub async fn going_by_date(
-    executor: impl PgExecutor<'_>,
-    event_id: i64,
-    date_ids: &[Uuid],
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
-        "SELECT event_date_id, count(*) FROM public.user_going_events \
-         WHERE event_id = $1 AND event_date_id = ANY($2) GROUP BY event_date_id",
-    )
-    .bind(event_id as i32)
-    .bind(date_ids)
-    .fetch_all(executor)
-    .await?;
-    Ok(rows.into_iter().collect())
-}
-
 /// Seats one date has given out: valid tickets, plus seats a buyer still holds
 /// on Stripe Checkout.
 pub async fn seats_taken(
@@ -161,18 +147,23 @@ pub async fn valid_tickets_by_date(
     Ok(rows.into_iter().collect())
 }
 
-/// Any ticket was ever issued for the event, or a buyer is on Checkout now.
+/// Any ticket was ever issued for the event, or a buyer is on Checkout now,
+/// on the given dates or on any date (`None`).
 pub async fn has_tickets_or_holds(
     executor: impl PgExecutor<'_>,
     event_id: i64,
+    date_ids: Option<&[Uuid]>,
     now: DateTime<Utc>,
 ) -> Result<bool, sqlx::Error> {
     sqlx::query_scalar(
-        "SELECT EXISTS (SELECT 1 FROM public.tickets WHERE event_id = $1) \
+        "SELECT EXISTS (SELECT 1 FROM public.tickets WHERE event_id = $1 \
+                        AND ($2::uuid[] IS NULL OR event_date_id = ANY($2))) \
              OR EXISTS (SELECT 1 FROM public.ticket_orders \
-                        WHERE event_id = $1 AND status = 'pending' AND reserved_until > $2)",
+                        WHERE event_id = $1 AND status = 'pending' AND reserved_until > $3 \
+                        AND ($2::uuid[] IS NULL OR event_date_id = ANY($2)))",
     )
     .bind(event_id)
+    .bind(date_ids)
     .bind(now)
     .fetch_one(executor)
     .await

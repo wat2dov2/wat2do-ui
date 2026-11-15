@@ -1,8 +1,5 @@
-import NextLink from "next/link";
-import { Check, Sparkles, Ticket } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
@@ -14,8 +11,6 @@ interface EventSuccessScreenProps {
   onClose: () => void;
   isEditMode: boolean;
   isSubmissionOnly: boolean;
-  /** The published event, so its club can turn tickets on for it straight away. */
-  createdEventId: number | null;
   formData: EventFormData;
   /** The event as the form last built it; its date and time show on the card. */
   event: Event | null;
@@ -25,14 +20,10 @@ export function EventSuccessScreen({
   onClose,
   isEditMode,
   isSubmissionOnly,
-  createdEventId,
   formData,
   event,
 }: EventSuccessScreenProps) {
   const { t, i18n } = useTranslation();
-  const { clubs } = useAuthState();
-  // Tickets are set up in the club's own panel, so only its members are offered it, admins included.
-  const runsClub = formData.club_id != null && clubs.some((club) => club.id === formData.club_id);
 
   const handleDone = () => {
     onClose();
@@ -101,14 +92,6 @@ export function EventSuccessScreen({
             <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
-            {createdEventId != null && runsClub && !isEditMode ? (
-              <Button asChild className="flex-1">
-                <NextLink href={clubPanelEventTicketsPath(createdEventId)} onClick={onClose}>
-                  <Ticket className="size-4" />
-                  {t("tickets.setUp")}
-                </NextLink>
-              </Button>
-            ) : null}
           </div>
       </div>
     </Section>

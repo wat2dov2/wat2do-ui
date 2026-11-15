@@ -50,10 +50,6 @@
       "appliedHealthSciences": "Angewandte Gesundheitswissenschaften"
     },
     "stepProgress": "Schritt {{step}} von {{total}}",
-    "safetyTitle": "Willkommen auf der Startseite für Campusveranstaltungen.",
-    "safetyDescription": "Wir helfen Ihnen, herauszufinden, was an Ihrer Schule passiert, und sich mit Gemeinschaften zu verbinden, die zu Ihren Interessen passen.",
-    "safetyGoingEvents": "Markieren Sie Veranstaltungen, an denen Sie teilnehmen, verfolgen Sie Fristen und filtern Sie schnell nach dem, was Ihnen wichtig ist.",
-    "safetySafeguards": "Gemeinschafts- und Sicherheitsmaßnahmen helfen, Veranstaltungen qualitativ hochwertig und vertrauenswürdig zu halten.",
     "doneTitle": "Alles bereit!",
     "doneDescription": "Ihr personalisierter Campus-Feed ist bereit. Zeit herauszufinden, was um Sie herum passiert.",
     "doneButton": "Lass uns erkunden",

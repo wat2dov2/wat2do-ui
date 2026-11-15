@@ -5,7 +5,7 @@ A ticket is one admission to one date of an event, with a QR code that holds the
 The club scans it at the door with the scanner in its club panel, or with any phone camera.
 
 Tickets are free or paid, and both work the same way at the door.
-Free tickets need nothing set up: a club turns them on for an event, and anyone signed in takes one in a tap.
+Free tickets need nothing set up: a club turns them on in the event's own form, and anyone signed in takes one in a tap.
 Paid tickets are sold through the club's own Stripe account (a Connect Standard account the club owns and signs in to at dashboard.stripe.com): every ticket is a direct charge on that account, so the money never passes through wat2do.
 Stripe pays the club, charges its fees to the club, and takes refunds and disputes from the club's balance.
 wat2do takes no fee and pays no Connect fees.
@@ -15,11 +15,12 @@ wat2do takes no fee and pays no Connect fees.
 - `rust/src/api/tickets` is the whole feature, and `rust/src/api/tickets/stripe.rs` is the only code that calls Stripe.
   Every Stripe call that touches money names the club's connected account, and every write carries an idempotency key.
 - The routes are `/events/{event_id}/ticketing` (an event's tickets, the desk, the door and refunds), `/tickets` (tickets as their holders see them), `/clubs/{club_id}/payouts` and `/clubs/{club_id}/ticket-sales`, and `POST /webhooks/stripe`.
-- `backend/database/migrations/20261106010000_club_tickets.sql` holds the tables: `event_ticketing` (a price of zero is free), `ticket_orders` (one Stripe Checkout each), `tickets` and `club_payment_accounts`.
+- `backend/database/migrations/20261106010000_club_tickets.sql` holds the tables: `event_ticketing` (a price of zero is free), `ticket_orders` (one Stripe Checkout each), `tickets` and `club_payment_accounts`; `20261115200000_event_ticketing_dates.sql` adds `event_ticketing_dates`, the dates of an event that have tickets.
 - Every change to an event's tickets locks the event's row, then its `event_ticketing` row, the order an event's edit takes them too, so two people can never both take the last seat and a cancellation is seen by every change after it.
 - A paid checkout holds its seats in Postgres while the buyer is on Stripe Checkout, and becomes tickets exactly once however often Stripe repeats its webhook.
-- Taking or buying a ticket marks the holder going, so reminders and change alerts reach them; ticket holders count toward Going but are never named on the public list.
-- Turning free tickets on hands a ticket, by email, to everyone already going to the event's upcoming dates, so a capacity below the people already going to a date is refused.
+- A club sets tickets up in the event's form, when it submits the event or edits it: one switch, then which dates have tickets, the price (empty is free), a limit per date and pausing. Only the club's own team sees that part of the form, and the form saves the tickets (`PUT /events/{event_id}/ticketing`) right after the event.
+- A date people hold tickets to keeps its tickets: taking it off is refused, and pausing stops new ones instead. Tickets can be turned off only while nobody has one.
+- Taking or buying a ticket turns on the holder's Notify me for that date (`user_going_events`), so reminders and change alerts reach them. Notify me is never public, and turning tickets on gives nobody a ticket they did not take.
 - A free ticket's holder can give it back until the date ends; a paid ticket's holder asks the club for a refund instead, and everyone on the club's team gets an email.
 - Cancelling an event refunds every paid ticket in the background; the club's desk can finish any refund Stripe could not make at the time.
   An order paid after the cancellation is refunded when its webhook arrives, and Stripe repeats that webhook until the refund goes through.
@@ -32,8 +33,8 @@ wat2do takes no fee and pays no Connect fees.
 
 ## Running the door
 
-- A club's desk for one event is `/club-panel/events/<event_id>`: turning tickets on, counts, the door list and refunds.
-  The event's page shows the club's team a Tickets button that opens it, and so does the screen after a club publishes an event.
+- A club's desk for one event is `/club-panel/events/<event_id>`: counts, the door list and refunds.
+  The event's edit form opens it (Door list and scanner) once the event has tickets.
 - The door scanner is `/club-panel/events/<event_id>/scan`.
   It starts the camera when it opens, buzzes once for a good ticket and three times for anything to look at, and takes typed codes when a phone won't scan.
 - A ticket's QR code opens `/tickets/<code>`; someone on the club's team who opens it sees a Check in button.

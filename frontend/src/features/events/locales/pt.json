@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Vagas abertas: {{positions}}",
-    "minimumGoing": "Mínimo de participantes",
+    "minimumGoing": "Mínimo de interessados",
     "eventTitle": "Título do Evento",
     "loadFailed": "Falha ao carregar eventos. Por favor, tente novamente.",
     "deleteFailed": "Falha ao excluir evento. Por favor, tente novamente.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "foi atualizado.",
     "noResults": "Nenhum resultado encontrado.",
     "signInToView": "Faça login para ver seus eventos",
-    "signInToViewDesc": "Marque os eventos que você vai e veja todos em um só lugar.",
     "signIn": "Entrar",
     "upcoming": "Próximos",
-    "emptyEventsDesc": "Marque os eventos que você vai e eles aparecerão aqui. Toque no botão 'vou' em qualquer evento.",
     "noUpcomingEvents": "Nenhum evento próximo",
     "upcomingEventCount": "evento próximo",
     "upcomingEventCount_other": "eventos próximos",
@@ -84,12 +82,10 @@
       "submitFailed": "Não foi possível enviar a denúncia"
     },
     "goingEvents": {
-      "timeUnavailable": "Este evento já começou ou foi cancelado, por isso você não pode confirmar presença.",
-      "markFailed": "Não foi possível marcar este evento como presente",
-      "unmarkFailed": "Não foi possível desmarcar este evento como presente",
+      "timeUnavailable": "Este evento já começou ou foi cancelado, então Me avise não está disponível.",
       "saveFailed": "Não foi possível salvar o horário selecionado",
-      "chooseOccurrences": "Qual horário você vai participar?",
-      "chooseOccurrencesDescription": "Escolha todas as datas que você pretende participar."
+      "chooseOccurrences": "Sobre quais datas devemos te avisar?",
+      "chooseOccurrencesDescription": "Escolha todas as datas para as quais você quer um lembrete e atualizações."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -116,19 +112,15 @@
     },
     "new": "NOVO",
     "updated": "ATUALIZADO",
-    "goingCount": "{{count}} participante",
-    "goingCount_one": "{{count}} participante",
-    "goingCount_other": "{{count}} participantes",
-    "andOthersCount": "e {{count}} outro",
-    "andOthersCount_other": "e {{count}} outros",
+    "goingCount": "{{count}} interessado",
+    "goingCount_one": "{{count}} interessado",
+    "goingCount_other": "{{count}} interessados",
     "hostedBy": "Organizado por",
     "aboutEvent": "Sobre o Evento",
     "fetchingDetails": "Buscando detalhes...",
-    "sourceLabel": "Fonte:",
-    "youreIn": "Você está dentro",
+    "sourceUrl": "URL de origem",
+    "youreIn": "Tudo certo!",
     "startingIn": "Começando em",
-    "cancelGoingPrompt": "Não pode mais participar? Notifique o anfitrião",
-    "cancelGoing": "marcando que você não vai.",
     "viewFullImage": "Ver imagem completa do evento",
     "fullImageDescription": "Cartaz ampliado do evento {{title}}",
     "moreDatesCount": "+{{count}} data",
@@ -138,14 +130,21 @@
     "moreEvents": "Mais eventos",
     "submitEvent": "Adicionar evento",
     "allEvents": "Todos os eventos",
-    "going": "Vou participar",
+    "going": "Inscrito",
+    "notifyMe": {
+      "action": "Me avise",
+      "description": "Receba um lembrete antes de começar e um e-mail se algo mudar.",
+      "otherDates": "As outras datas não precisam de ingresso. Receba um lembrete antes de cada uma e um e-mail se algo mudar.",
+      "onTitle": "Você será avisado",
+      "onDescription": "Vamos te mandar um lembrete por e-mail antes de começar e avisar se algo mudar.",
+      "offPrompt": "Não precisa de atualizações?",
+      "off": "Desativar Me avise."
+    },
     "upcomingEventCount_one": "evento próximo",
     "upcomingEventCount_many": "eventos próximos",
     "clickCount_one": "{{count}} clique",
     "clickCount_many": "{{count}} cliques",
-    "goingCount_many": "{{count}} participantes",
-    "andOthersCount_one": "e {{count}} outro",
-    "andOthersCount_many": "e {{count}} outros",
+    "goingCount_many": "{{count}} interessados",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} datas",
     "views": {
@@ -177,8 +176,8 @@
       "networking": "Oportunidades de networking"
     },
     "savedEvents": {
-      "save": "Salvar evento",
-      "unsave": "Remover dos salvos",
+      "save": "Salvar",
+      "saved": "Salvo",
       "saveFailed": "Não foi possível salvar este evento"
     }
   }

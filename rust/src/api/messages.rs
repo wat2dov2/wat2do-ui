@@ -92,6 +92,9 @@ pub const TICKETS_PAUSED: &str = "Tickets are paused for this event";
 pub const TICKETS_CLOSED: &str = "Tickets for this date are no longer available";
 pub const TICKETS_SOLD_OUT: &str = "There aren't enough tickets left for this date";
 pub const TICKET_DATE_NOT_FOUND: &str = "That date isn't part of this event";
+pub const TICKETS_NOT_FOR_DATE: &str = "This date doesn't have tickets";
+pub const TICKET_DATE_HAS_TICKETS: &str =
+    "People have tickets to a date you took tickets off. Pause tickets instead.";
 pub const TICKETED_EVENT_CANCELLED: &str = "This event was cancelled";
 pub const TICKET_QUANTITY_TOO_HIGH: &str = "That's more tickets than one order allows";
 pub const TICKET_PRICE_OUT_OF_RANGE: &str = "Enter a ticket price within the allowed range";
@@ -99,8 +102,6 @@ pub const TICKET_CAPACITY_TOO_HIGH: &str = "That capacity is too high";
 pub const TICKET_PRICE_LOCKED: &str = "The price can't change once people have tickets";
 pub const TICKET_CAPACITY_BELOW_ISSUED: &str =
     "Capacity can't be lower than the tickets already taken for a date";
-pub const TICKET_CAPACITY_BELOW_GOING: &str =
-    "Capacity can't be lower than the people already going to a date";
 pub const TICKETS_ALREADY_TAKEN: &str =
     "People already have tickets for this event. Pause tickets instead.";
 pub const TICKET_REFUNDS_NEED_CANCELLATION: &str = "Cancel the event first to refund every ticket";

@@ -50,10 +50,6 @@
       "appliedHealthSciences": "應用健康科學"
     },
     "stepProgress": "第 {{step}} 步，共 {{total}} 步",
-    "safetyTitle": "歡迎來到你的校園活動主頁。",
-    "safetyDescription": "我們幫助你發現學校周圍的活動，並與符合你興趣的社群連接。",
-    "safetyGoingEvents": "標記你會參加的活動，追蹤截止日期，並快速篩選對你重要的資料。",
-    "safetySafeguards": "社群及安全保障有助於保持活動的高質素和可信度。",
     "doneTitle": "一切就緒！",
     "doneDescription": "你的個人化校園資訊已準備好。是時候探索你周圍發生的事情。",
     "doneButton": "開始探索",

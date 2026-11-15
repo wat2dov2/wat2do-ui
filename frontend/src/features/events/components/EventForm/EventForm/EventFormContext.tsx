@@ -3,11 +3,13 @@ import type {
   Event,
   Club,
   EventFormData,
-  EventFormOccurrence,
+  EventFormTickets,
   ValidationErrors,
 } from "@/shared/types";
 
 export interface EventFormContextValue {
+  /** The saved event being edited; null while it is new. */
+  editEventId: number | null;
   formData: EventFormData;
   /** The event the form currently describes, rebuilt on every edit. */
   previewEvent: Event;
@@ -24,7 +26,10 @@ export interface EventFormContextValue {
   clubs: Club[];
   /** Display name of the currently selected club (empty when none selected). */
   selectedClubName: string;
-  updateOccurrence: (index: number, field: keyof EventFormOccurrence, value: string) => void;
+  updateOccurrence: (index: number, field: "dtstart_local" | "dtend_local", value: string) => void;
+  /** Whether one date has tickets. */
+  updateOccurrenceTickets: (index: number, tickets: boolean) => void;
+  updateTickets: (tickets: EventFormTickets) => void;
   addOccurrence: () => void;
   removeOccurrence: (index: number) => void;
   foodInput: string;
