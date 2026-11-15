@@ -224,8 +224,9 @@ export function SubmitEventFlow({
   }
 
   return (
+    // Inside the edit drawer the drawer itself is the surface; a second bordered one drew a stray line under its handle.
     <Section
-      variant="surface"
+      variant={embedded ? "plain" : "surface"}
       className={embedded ? "flex min-h-0 overflow-hidden p-0" : "flex min-h-[64dvh] overflow-hidden p-0"}
     >
       <EventFormStep
