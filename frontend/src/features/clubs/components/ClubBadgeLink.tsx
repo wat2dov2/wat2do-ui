@@ -67,7 +67,7 @@ export function ClubBadgeLink({
     <AvatarStack size="sm" avatars={avatars} loading={logoLoading} />
     <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
     {verified ? (
-      <BadgeCheck data-slot="club-verified" role="img" aria-label={t("events.verified")} className="size-4 shrink-0 fill-[#1d9bf0] text-white [&>path:first-child]:stroke-[#1d9bf0]" />
+      <BadgeCheck data-slot="club-verified" role="img" aria-label={t("events.verified")} className="size-4 shrink-0 fill-badge-verified text-badge-verified-foreground [&>path:first-child]:stroke-badge-verified" />
     ) : null}
     {cohosts.length > 0 ? <span data-slot="club-cohost-count" className="shrink-0 font-bold">+{cohosts.length}</span> : null}
     <ClubTypeIcon school={school} clubType={clubType} />

@@ -10,6 +10,9 @@
   /* Attendance badge: opaque green with white text in both themes. */
   --badge-going: #16a34a;
   --badge-going-foreground: #fff;
+  /* Verified club check: a blue seal with a white tick in both themes. */
+  --badge-verified: #1d9bf0;
+  --badge-verified-foreground: #fff;
 
   /* Brand accent palette */
   --blue-400: hsl(214 95% 65%);

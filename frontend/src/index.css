@@ -88,6 +88,8 @@
   --color-badge-updated: var(--badge-updated);
   --color-badge-going: var(--badge-going);
   --color-badge-going-foreground: var(--badge-going-foreground);
+  --color-badge-verified: var(--badge-verified);
+  --color-badge-verified-foreground: var(--badge-verified-foreground);
   --color-tint-free: var(--tint-free);
   --color-tint-free-foreground: var(--tint-free-foreground);
   --color-tint-new: var(--tint-new);
