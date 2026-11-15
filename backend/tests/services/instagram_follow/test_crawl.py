@@ -91,6 +91,7 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "_rested_until", {})
     monkeypatch.setattr(module, "_known", {})
     monkeypatch.setattr(module, "_next_check", {})
+    monkeypatch.setattr(module, "_last_turn", {})
     monkeypatch.setattr(module, "_readers_checked", {"at": float("-inf"), "count": 1})
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
     monkeypatch.setattr(
@@ -552,6 +553,30 @@ def test_crawling_goes_round_every_school_in_turn(world, monkeypatch):
     assert module.next_schools(2) == ["ubc", "utm"]
     module._rested_until["ubc"] = module.time.monotonic() + 600
     assert module.next_schools(1) == ["utm"]
+
+
+def test_running_crawls_take_turns_a_read_at_a_time(world, monkeypatch):
+    monkeypatch.setattr(
+        module,
+        "EMULATOR",
+        module.EMULATOR.model_copy(
+            update={"android_user_by_school": {"ubc": 0, "sfu": 0, "utm": 0}}
+        ),
+    )
+    world({})
+    for school in ("ubc", "sfu", "utm"):
+        module._save(school, {"job": None})
+    # With one reader, the first running crawl goes first...
+    assert module.next_schools(1) == ["ubc"]
+    # ...keeps its place while its read waits...
+    module._save("ubc", {"job": "read-1"})
+    module._last_turn["ubc"] = module.time.monotonic()
+    assert module.next_schools(1) == ["ubc"]
+    # ...and once it is collected the crawls that waited longest go before it again.
+    module._save("ubc", {"job": None})
+    assert module.next_schools(1) == ["sfu"]
+    module._last_turn["sfu"] = module.time.monotonic()
+    assert module.next_schools(2) == ["utm", "ubc"]
 
 
 def test_schools_crawl_at_once_as_many_as_the_worker_has_readers(world, monkeypatch):
