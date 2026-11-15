@@ -355,7 +355,11 @@ async fn send_claim_decision(
         status,
         Some(&email),
         club.school.as_deref(),
-        "/club-panel",
+        // An approved claimant manages the club; a rejected one can claim it again from its page.
+        &emails::DecisionPages {
+            approved: emails::club_panel_path("/club-panel", i64::from(club.id)),
+            rejected: Some(format!("/clubs/{}", club.id)),
+        },
         reason,
     )
     .await;

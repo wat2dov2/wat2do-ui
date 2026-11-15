@@ -343,6 +343,11 @@ pub async fn review(
         )?;
     let Some(row) = row else { return Ok(None) };
     if notify_submitter && status != existing.metadata.status {
+        // An approved position is listed on its club's page, under Positions.
+        let approved = match position.club_id {
+            PyInt::Small(club_id) => format!("/clubs/{club_id}?tab=positions"),
+            PyInt::Huge => "/positions".to_owned(),
+        };
         emails::send_review_decision(
             db,
             Reviewed::Position,
@@ -350,7 +355,10 @@ pub async fn review(
             status,
             existing.metadata.submitted_by_email.as_deref(),
             existing.metadata.school.as_deref(),
-            "/positions",
+            &emails::DecisionPages {
+                approved,
+                rejected: None,
+            },
             reason,
         )
         .await;

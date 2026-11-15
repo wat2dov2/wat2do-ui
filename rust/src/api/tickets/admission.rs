@@ -300,7 +300,7 @@ fn checkout_params(
             "metadata": metadata,
         },
         "expires_at": expires_at.timestamp(),
-        "success_url": format!("{site}/tickets/orders/{}", order.id),
+        "success_url": codes::order_url(&site, order.id),
         "cancel_url": format!("{site}/events/{}", event.id),
         "submit_type": "pay",
         "custom_text": {"submit": {"message": "Your tickets arrive by email right after you pay."}},
@@ -460,7 +460,11 @@ async fn after_fulfilment(state: &AppState, order_id: Uuid) -> Result<(), ApiErr
         occurrence,
         order.buyer_email.clone(),
         codes,
-        Some((order.unit_amount_cents, order.currency.clone())),
+        Some(emails::PaidOrder {
+            id: order_id,
+            unit_amount_cents: order.unit_amount_cents,
+            currency: order.currency.clone(),
+        }),
         format!("ticket-confirmation:{order_id}"),
     );
     Ok(())

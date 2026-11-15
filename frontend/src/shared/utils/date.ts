@@ -168,6 +168,11 @@ export function isEventHappeningNow(
   return now <= end.getTime();
 }
 
+/** When the "new" window starts: the newly added filter keeps what was added since then. */
+export function newlyAddedSince(currentDate: Date = new Date()): string {
+  return new Date(currentDate.getTime() - controlBox.eventDiscovery.newEventWindowMs).toISOString();
+}
+
 export function wasAddedWithinLast24Hours(
   event: { added_at?: string | null },
   currentDate: Date = new Date()

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { controlBox } from "@/shared/config/controlBox";
 import { Button } from "@/shared/ui/button";
+import { newlyAddedSince } from "@/shared/utils/date";
 
 interface NewlyAddedFilterButtonProps {
   value: string | null;
@@ -17,9 +17,7 @@ export function NewlyAddedFilterButton({ value, onValueChange, onClear }: NewlyA
       size="sm"
       variant={value ? "primary" : "outline"}
       aria-pressed={Boolean(value)}
-      onClick={() => value
-        ? onClear()
-        : onValueChange(new Date(Date.now() - controlBox.eventDiscovery.newEventWindowMs).toISOString())}
+      onClick={() => value ? onClear() : onValueChange(newlyAddedSince())}
     >
       {t("common.newlyAddedFilter.last24Hours")}
     </Button>

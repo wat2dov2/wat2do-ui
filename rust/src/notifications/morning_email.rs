@@ -509,20 +509,30 @@ async fn send(
         .await?;
     if sent {
         outbox
-            .add_to_inbox(user.id, &inbox_notice(user, link_settings)?)
+            .add_to_inbox(user.id, &inbox_notice(user, digest, link_settings)?)
             .await;
     }
     Ok(if sent { Outcome::Sent } else { Outcome::Failed })
 }
 
-/// The inbox's copy of the email, leading to the school's events.
-fn inbox_notice(user: &Recipient, link_settings: &LinkSettings) -> Result<Notice> {
+/// The inbox's copy of the email, leading to what it was about: the school's
+/// newly added events, or its positions when it held no events.
+fn inbox_notice(
+    user: &Recipient,
+    digest: &SchoolDigest,
+    link_settings: &LinkSettings,
+) -> Result<Notice> {
     let site = crate::schools::frontend_url(&link_settings.frontend_url, user.slug())?;
+    let link = if digest.events.is_empty() {
+        format!("{site}/positions")
+    } else {
+        rendering::new_events_url(&site)
+    };
     Ok(Notice {
         kind: NotificationKind::MorningEmail,
         event_id: None,
         details: NotificationDetails::default(),
-        link: Some(format!("{site}/events")),
+        link: Some(link),
     })
 }
 
@@ -705,6 +715,24 @@ mod tests {
             .map(|image| image.content_id.as_str())
             .collect();
         assert_eq!(ids, ["wat2do-logo", "event-42"]);
+    }
+
+    #[test]
+    fn its_notification_opens_the_new_events_or_else_the_positions() {
+        let user = user(1, Some("America/Toronto"));
+        let link = |digest: &SchoolDigest| inbox_notice(&user, digest, &links("s")).unwrap().link;
+        assert_eq!(
+            link(&digest()).as_deref(),
+            Some("https://uwaterloo.wat2do.io/events?new=1")
+        );
+        let positions_only = SchoolDigest {
+            events: Vec::new(),
+            ..digest()
+        };
+        assert_eq!(
+            link(&positions_only).as_deref(),
+            Some("https://uwaterloo.wat2do.io/positions")
+        );
     }
 
     #[test]

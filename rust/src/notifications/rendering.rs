@@ -233,6 +233,12 @@ pub fn event_url(id: i64, frontend_url: &str) -> String {
     format!("{frontend_url}/events/{id}")
 }
 
+/// The school's events page with its newly added filter on, opened at the
+/// list (the frontend's `QP.NEW_EVENTS`).
+pub fn new_events_url(frontend_url: &str) -> String {
+    format!("{frontend_url}/events?new=1")
+}
+
 /// Two cards per row that wrap to one column on screens too narrow for two.
 ///
 /// Each card is an inline block capped at half the shell's width, so phones stack
