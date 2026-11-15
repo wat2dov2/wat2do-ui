@@ -153,6 +153,8 @@ export function NotificationBell() {
       }
       return;
     }
+    // Only a signed-in visitor's inbox is read; refetch would ignore the query's own gate.
+    if (!userId) return;
     const { data } = await inbox.refetch();
     const shownUnread = (data?.notifications ?? [])
       .filter((notification) => !notification.read)
