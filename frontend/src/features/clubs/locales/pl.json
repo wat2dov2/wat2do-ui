@@ -86,6 +86,19 @@
       "invalidTitle": "Ten link przejęcia nie działa",
       "invalidDescription": "Może zawierać literówkę albo ktoś z Twojego zespołu już przejął klub. Poproś tę osobę, aby dodała Cię w panelu klubu.",
       "browseEvents": "Przeglądaj wydarzenia"
+    },
+    "memberRequest": {
+      "open": "Jestem członkiem",
+      "title": "Dołącz do zespołu organizacji",
+      "description": "Organizacja {{club}} jest już na Wat2Do. Podaj swoją rolę, a administrator doda Cię do jej zespołu.",
+      "role": "Twoja rola w organizacji",
+      "rolePlaceholder": "np. Wiceprezes ds. wydarzeń, Marketing, Członek",
+      "roleRequired": "Rola jest wymagana.",
+      "proofDescription": "Prześlij zrzut lub nagranie ekranu, które pokazuje, że należysz do organizacji (np. listę członków lub czat grupowy, w którym jesteś).",
+      "submit": "Wyślij prośbę",
+      "submitted": "Prośba wysłana",
+      "submittedDesc": "Administrator sprawdzi Twoją prośbę o dołączenie do „{{name}}” i doda Cię do zespołu.",
+      "failed": "Nie udało się wysłać prośby. Być może wysłano już jedną dla tej organizacji."
     }
   },
   "inviteLanding": {

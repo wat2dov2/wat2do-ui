@@ -17,4 +17,6 @@ export interface Club {
   school: string;
   event_count?: number;
   position_count?: number;
+  /** Someone runs the club on Wat2Do (it has an owner or a team), so it shows the verified check. */
+  verified?: boolean;
 }

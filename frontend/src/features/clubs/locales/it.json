@@ -83,6 +83,19 @@
       "invalidTitle": "Questo link di rivendicazione non funziona",
       "invalidDescription": "Potrebbe essere scritto male, oppure qualcuno del tuo team ha già rivendicato il club. Chiedigli di aggiungerti dal pannello del club.",
       "browseEvents": "Sfoglia gli eventi"
+    },
+    "memberRequest": {
+      "open": "Sono un membro",
+      "title": "Entra nel team dell'organizzazione",
+      "description": "{{club}} è già su Wat2Do. Dicci il tuo ruolo e un amministratore ti aggiungerà al team.",
+      "role": "Il tuo ruolo nell'organizzazione",
+      "rolePlaceholder": "ad es. VP Eventi, Responsabile marketing, Membro",
+      "roleRequired": "Il ruolo è obbligatorio.",
+      "proofDescription": "Carica uno screenshot o una registrazione dello schermo che mostri che fai parte dell'organizzazione (ad es. l'elenco dei membri o una chat di gruppo in cui ci sei anche tu).",
+      "submit": "Invia richiesta",
+      "submitted": "Richiesta inviata",
+      "submittedDesc": "Un amministratore esaminerà la tua richiesta di entrare in \"{{name}}\" e ti aggiungerà al team.",
+      "failed": "Impossibile inviare la richiesta. Forse ne hai già inviata una per questa organizzazione."
     }
   },
   "inviteLanding": {

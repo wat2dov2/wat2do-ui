@@ -77,6 +77,19 @@
       "invalidTitle": "此认领链接无效",
       "invalidDescription": "链接可能输入有误，或者您团队中的其他人已经认领了该社团。请让他们在社团面板中添加您。",
       "browseEvents": "浏览活动"
+    },
+    "memberRequest": {
+      "open": "我是成员",
+      "title": "加入社团团队",
+      "description": "{{club}} 已经在 Wat2Do 上了。告诉我们你的职务，管理员会把你加入它的团队。",
+      "role": "你在社团中的职务",
+      "rolePlaceholder": "例如：活动副主席、市场负责人、成员",
+      "roleRequired": "请填写你的职务。",
+      "proofDescription": "上传能证明你是社团一员的截图或录屏（例如：成员名单或有你在内的群聊）。",
+      "submit": "发送请求",
+      "submitted": "请求已发送",
+      "submittedDesc": "管理员会审核你加入“{{name}}”的请求，并把你加入团队。",
+      "failed": "请求发送失败。你可能已经为这个社团发送过请求。"
     }
   },
   "inviteLanding": {

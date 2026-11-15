@@ -330,7 +330,7 @@ fn club_rows_serialize_in_the_model_order() {
     // A stored owner (here from an embedded `clubs` row) never reaches a public club.
     assert_eq!(
         serde_json::to_string(&club).unwrap(),
-        r#"{"id":7,"club_name":"Chess","status":"approved","categories":["Business"],"club_page":null,"ig":null,"discord":null,"club_type":"independent","logo_url":null,"created_at":"2026-09-14T12:00:00.500000Z","school":null,"event_count":0,"position_count":0}"#
+        r#"{"id":7,"club_name":"Chess","status":"approved","categories":["Business"],"club_page":null,"ig":null,"discord":null,"club_type":"independent","logo_url":null,"created_at":"2026-09-14T12:00:00.500000Z","school":null,"event_count":0,"position_count":0,"verified":false}"#
     );
     let submission = ClubSubmissionResponse {
         club: AdminClubResponse {
@@ -341,7 +341,7 @@ fn club_rows_serialize_in_the_model_order() {
         submitted_by_email: Some("visitor@example.com".into()),
     };
     assert!(serde_json::to_string(&submission).unwrap().ends_with(
-        r#""position_count":0,"created_by":"7f0c2d3e-0000-4000-8000-000000000001","owner_email":"owner@example.com","submitted_by_email":"visitor@example.com"}"#
+        r#""position_count":0,"verified":false,"created_by":"7f0c2d3e-0000-4000-8000-000000000001","owner_email":"owner@example.com","submitted_by_email":"visitor@example.com"}"#
     ));
 }
 

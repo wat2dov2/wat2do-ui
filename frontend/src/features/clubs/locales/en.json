@@ -77,6 +77,19 @@
       "invalidTitle": "This claim link doesn't work",
       "invalidDescription": "It may be mistyped, or someone on your team has already claimed the club. Ask them to add you from the club panel.",
       "browseEvents": "Browse events"
+    },
+    "memberRequest": {
+      "open": "I'm a member",
+      "title": "Join the club's team",
+      "description": "{{club}} is already on Wat2Do. Tell us your role and an admin will add you to its team.",
+      "role": "Your role in the club",
+      "rolePlaceholder": "e.g. VP Events, Marketing lead, Member",
+      "roleRequired": "Your role is required.",
+      "proofDescription": "Upload a screenshot or screen recording that shows you're part of the club (e.g. the club's member list or group chat with you in it).",
+      "submit": "Send request",
+      "submitted": "Request sent",
+      "submittedDesc": "An admin will check your request to join \"{{name}}\" and add you to its team.",
+      "failed": "Couldn't send your request. You may have already sent one for this club."
     }
   },
   "inviteLanding": {

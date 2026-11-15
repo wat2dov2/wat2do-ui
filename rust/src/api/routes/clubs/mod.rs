@@ -92,6 +92,10 @@ pub struct ClubResponse {
     #[schema(default = 0)]
     #[serde(default)]
     pub position_count: i64,
+    /// Someone runs the club on Wat2Do (an owner or a team), so it shows the verified check.
+    #[schema(default = false)]
+    #[serde(default)]
+    pub verified: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]
@@ -160,9 +164,13 @@ impl Computed {
     };
 }
 
-/// The stored columns of every club read, for clubs `c`.
-const CLUB_FIELDS: &str = "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, \
-     c.discord, c.club_type, c.logo_url, c.created_at, c.submitted_by_email";
+/// The stored columns of every club read, and whether it is claimed, for clubs `c`.
+const CLUB_FIELDS: &str = concat!(
+    "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, ",
+    "c.discord, c.club_type, c.logo_url, c.created_at, c.submitted_by_email, ",
+    crate::api::events::store::claimed_club!("c"),
+    " AS verified"
+);
 
 /// The columns `ClubResponse::from_row` reads (and, with `owner`,
 /// `AdminClubResponse::from_row`), for clubs `c` joined to schools `s`
@@ -209,6 +217,7 @@ impl ClubResponse {
                 Err(sqlx::Error::ColumnNotFound(_)) => 0,
                 Err(error) => return Err(error),
             },
+            verified: row.try_get("verified")?,
         })
     }
 }

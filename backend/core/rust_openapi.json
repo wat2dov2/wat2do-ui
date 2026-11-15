@@ -9234,6 +9234,11 @@
             "type": "integer",
             "format": "int64",
             "default": 0
+          },
+          "verified": {
+            "type": "boolean",
+            "description": "Someone runs the club on Wat2Do (an owner or a team), so it shows the verified check.",
+            "default": false
           }
         }
       },

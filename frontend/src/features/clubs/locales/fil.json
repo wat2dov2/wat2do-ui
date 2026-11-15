@@ -80,6 +80,19 @@
       "invalidTitle": "Hindi gumagana ang claim link na ito",
       "invalidDescription": "Maaaring mali ang pagkaka-type nito, o may kasama ka sa team na naka-claim na ng club. Hilingin sa kanila na idagdag ka mula sa club panel.",
       "browseEvents": "Mag-browse ng mga event"
+    },
+    "memberRequest": {
+      "open": "Miyembro ako",
+      "title": "Sumali sa team ng club",
+      "description": "Nasa Wat2Do na ang {{club}}. Sabihin sa amin ang iyong role at idadagdag ka ng isang admin sa team nito.",
+      "role": "Ang role mo sa club",
+      "rolePlaceholder": "hal. VP Events, Marketing lead, Miyembro",
+      "roleRequired": "Kailangan ang iyong role.",
+      "proofDescription": "Mag-upload ng screenshot o screen recording na nagpapakitang bahagi ka ng club (hal. ang listahan ng mga miyembro o isang group chat na kasama ka).",
+      "submit": "Ipadala ang request",
+      "submitted": "Naipadala ang request",
+      "submittedDesc": "Titingnan ng isang admin ang request mong sumali sa \"{{name}}\" at idadagdag ka sa team nito.",
+      "failed": "Hindi maipadala ang request mo. Baka nakapagpadala ka na ng isa para sa club na ito."
     }
   },
   "inviteLanding": {

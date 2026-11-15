@@ -77,6 +77,19 @@
       "invalidTitle": "呢條認領連結用唔到",
       "invalidDescription": "可能打錯咗，或者你團隊入面已經有人認領咗社團。請佢喺社團面板加你入去。",
       "browseEvents": "瀏覽活動"
+    },
+    "memberRequest": {
+      "open": "我係成員",
+      "title": "加入學會團隊",
+      "description": "{{club}} 已經喺 Wat2Do 度。話俾我哋知你嘅職位，管理員會將你加入佢嘅團隊。",
+      "role": "你喺學會嘅職位",
+      "rolePlaceholder": "例如：活動副主席、宣傳負責人、成員",
+      "roleRequired": "請填寫你嘅職位。",
+      "proofDescription": "上傳可以證明你係學會一份子嘅截圖或者螢幕錄影（例如：成員名單或者有你喺入面嘅群組）。",
+      "submit": "發送申請",
+      "submitted": "申請已發送",
+      "submittedDesc": "管理員會審核你加入「{{name}}」嘅申請，再將你加入團隊。",
+      "failed": "申請發送唔到。你可能已經為呢個學會發送過申請。"
     }
   },
   "inviteLanding": {

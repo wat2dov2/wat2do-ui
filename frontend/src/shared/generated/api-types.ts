@@ -2587,6 +2587,11 @@ export interface components {
              * @default 0
              */
             position_count: number;
+            /**
+             * @description Someone runs the club on Wat2Do (an owner or a team), so it shows the verified check.
+             * @default false
+             */
+            verified: boolean;
         };
         /** @description A club in the admin review queue, with its owner and who submitted it. */
         ClubSubmissionResponse: components["schemas"]["AdminClubResponse"] & {
