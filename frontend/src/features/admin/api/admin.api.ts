@@ -11,6 +11,7 @@ import type {
   SubmissionStatus,
 } from "@/shared/types";
 import type {
+  ApiAdminClubResponse,
   ApiAdminPayoutDetail,
   ApiEventCreate,
   ApiReportResponse,
@@ -25,6 +26,7 @@ import type {
   ApiInstagramSongResponse,
   ApiFollowCandidateDecision,
   ApiFollowCandidateDecisionsResponse,
+  ApiPaginatedAdminClubsResponse,
   ApiPaginatedFollowCandidateResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
@@ -36,6 +38,7 @@ import {
   createClubAPI,
   updateClubAPI,
   deleteClubAPI,
+  normalizeClub,
 } from "@/features/clubs";
 import { api, type PaginatedApiResponse } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
@@ -279,13 +282,37 @@ export async function submitFollowDecisions(
 
 // ── Admin Clubs API ─────────────────────────────────────────
 
+/** A club with the account that owns it: the one that created or claimed it. Only admins read owners. */
+export type AdminClub = Club & Pick<ApiAdminClubResponse, "created_by" | "owner_email">;
+
+/** One page of the club directory with each club's owner, for the admin clubs list. */
+export async function getAdminClubs(options: {
+  page: number;
+  limit: number;
+  search?: string;
+  clubType?: string;
+}) {
+  const params = new URLSearchParams({ page: String(options.page), page_size: String(options.limit) });
+  if (options.search) params.set("search", options.search);
+  if (options.clubType) params.set("club_type", options.clubType);
+  const response = await api.get<ApiPaginatedAdminClubsResponse>(`/clubs/admin?${params}`);
+  return {
+    ...response,
+    items: response.items.map((club): AdminClub => ({
+      ...normalizeClub(club),
+      created_by: club.created_by,
+      owner_email: club.owner_email,
+    })),
+  };
+}
+
 export type ClubClaim = components["schemas"]["ClubClaimResponse"];
 
 export function getClubClaims(filters: AdminListFilters) {
   return getAdminPage<ClubClaim>("/clubs/claims", filters);
 }
 
-export type ClubSubmission = Club & Pick<components["schemas"]["ClubSubmissionResponse"], "submitted_by_email">;
+export type ClubSubmission = AdminClub & Pick<components["schemas"]["ClubSubmissionResponse"], "submitted_by_email">;
 
 /** Clubs awaiting (or already through) admin review. */
 export function getClubSubmissions(filters: AdminListFilters) {

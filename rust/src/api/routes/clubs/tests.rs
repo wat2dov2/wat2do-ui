@@ -74,6 +74,7 @@ async fn signed_in_routes_need_a_token() {
     // test_*_requires_auth across the ported routers.
     for (method, path) in [
         (Method::GET, "/clubs/mine"),
+        (Method::GET, "/clubs/admin"),
         (Method::GET, "/clubs/review"),
         (Method::GET, "/clubs/claims"),
         (Method::PATCH, "/clubs/1"),
@@ -319,30 +320,32 @@ fn club_rows_serialize_in_the_model_order() {
     let club: ClubResponse = serde_json::from_value(json!({
         "id": 7, "club_name": "Chess", "status": "approved", "categories": ["Business"],
         "club_page": null, "ig": null, "discord": null, "club_type": "independent",
-        "logo_url": null, "created_by": null, "created_at": "2026-09-14T12:00:00.5+00:00",
-        "school_id": 1, "submitted": false
+        "logo_url": null, "created_by": "7f0c2d3e-0000-4000-8000-000000000001",
+        "created_at": "2026-09-14T12:00:00.5+00:00", "school_id": 1, "submitted": false
     }))
     .unwrap();
+    // A stored owner (here from an embedded `clubs` row) never reaches a public club.
     assert_eq!(
         serde_json::to_string(&club).unwrap(),
-        r#"{"id":7,"club_name":"Chess","status":"approved","categories":["Business"],"club_page":null,"ig":null,"discord":null,"club_type":"independent","logo_url":null,"created_by":null,"created_at":"2026-09-14T12:00:00.500000Z","school":null,"owner_email":null,"event_count":0,"position_count":0}"#
+        r#"{"id":7,"club_name":"Chess","status":"approved","categories":["Business"],"club_page":null,"ig":null,"discord":null,"club_type":"independent","logo_url":null,"created_at":"2026-09-14T12:00:00.500000Z","school":null,"event_count":0,"position_count":0}"#
     );
     let submission = ClubSubmissionResponse {
-        club,
+        club: AdminClubResponse {
+            club,
+            created_by: Some("7f0c2d3e-0000-4000-8000-000000000001".into()),
+            owner_email: Some("owner@example.com".into()),
+        },
         submitted_by_email: Some("visitor@example.com".into()),
     };
-    assert!(
-        serde_json::to_string(&submission)
-            .unwrap()
-            .ends_with(r#""position_count":0,"submitted_by_email":"visitor@example.com"}"#)
-    );
+    assert!(serde_json::to_string(&submission).unwrap().ends_with(
+        r#""position_count":0,"created_by":"7f0c2d3e-0000-4000-8000-000000000001","owner_email":"owner@example.com","submitted_by_email":"visitor@example.com"}"#
+    ));
 }
 
 fn sample_club() -> ClubResponse {
     serde_json::from_value(json!({
         "id": 1, "club_name": "Chess", "status": "approved", "club_type": "independent",
-        "club_page": null, "ig": null, "discord": null, "logo_url": null,
-        "created_by": null, "created_at": null
+        "club_page": null, "ig": null, "discord": null, "logo_url": null, "created_at": null
     }))
     .unwrap()
 }

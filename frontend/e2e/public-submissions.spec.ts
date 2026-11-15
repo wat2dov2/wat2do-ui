@@ -141,7 +141,7 @@ test("a signed-out visitor fills in a club, then signs in over the form to send 
     expect(request.headers.get("authorization")).toBe(`Bearer ${VISITOR_TOKEN}`);
     const payload = await request.json();
     created.push(payload);
-    return { status: 201, json: { id: 9, status: "pending", created_by: "visitor-user", created_at: new Date().toISOString(), position_count: 0, ...payload } };
+    return { status: 201, json: { id: 9, status: "pending", created_at: new Date().toISOString(), position_count: 0, ...payload } };
   });
 
   await page.goto("/clubs/new");

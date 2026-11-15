@@ -19,8 +19,6 @@ export const queryKeys = {
     all: ["clubs"] as const,
     detail: (clubId: number) =>
       [...queryKeys.clubs.all, "detail", clubId] as const,
-    list: (filters: Record<string, unknown>) =>
-      [...queryKeys.clubs.all, "list", filters] as const,
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.clubs.all, "all", school ?? ""] as const,
     claimLink: (token: string) => [...queryKeys.clubs.all, "claim-link", token] as const,

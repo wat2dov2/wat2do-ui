@@ -54,7 +54,7 @@ function ClubDetailsContent({
   positions,
 }: ClubDetailsContentProps) {
   const { t } = useTranslation();
-  const { userId, clubs } = useAuthState();
+  const { clubs } = useAuthState();
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedClubsStore(
     (state) => state.toggleSaveClub,
@@ -63,7 +63,8 @@ function ClubDetailsContent({
     (state) => state.savedClubIds,
   );
   const isSaved = savedClubIds.includes(club.id);
-  const managesClub = (userId !== null && club.created_by === userId) || clubs.some((managedClub) => managedClub.id === club.id);
+  // Whoever created or claimed a club joins its team, and the API lets its team manage it.
+  const managesClub = clubs.some((managedClub) => managedClub.id === club.id);
   const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");

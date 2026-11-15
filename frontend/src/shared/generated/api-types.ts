@@ -933,6 +933,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Admin Clubs
+         * @description The public directory with who owns each club, for admins.
+         */
+        get: operations["list_admin_clubs_clubs_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/review": {
         parameters: {
             query?: never;
@@ -2200,6 +2220,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description A club with the account that owns it, the one that created or claimed it
+         *     (`AdminClubResponse`). Only admins read it.
+         */
+        AdminClubResponse: components["schemas"]["ClubResponse"] & {
+            /** @description The owner's user id. */
+            created_by?: string | null;
+            /** @description The owner's account email. */
+            owner_email?: string | null;
+        };
         /** @description `AdminPayoutDetail`. */
         AdminPayoutDetail: {
             payout: components["schemas"]["PosterPayoutResponse"];
@@ -2461,7 +2491,10 @@ export interface components {
             country: string;
             currency: string;
         };
-        /** @description A club as the API returns it (`ClubResponse`). */
+        /**
+         * @description A club as anyone may read it (`ClubResponse`). It never says who owns the
+         *     club; only admins read that, in `AdminClubResponse`.
+         */
         ClubResponse: {
             /** Format: int32 */
             id: number;
@@ -2474,11 +2507,9 @@ export interface components {
             discord?: string | null;
             club_type: string;
             logo_url?: string | null;
-            created_by?: string | null;
             /** Format: date-time */
             created_at?: string | null;
             school?: string | null;
-            owner_email?: string | null;
             /**
              * Format: int64
              * @default 0
@@ -2490,8 +2521,8 @@ export interface components {
              */
             position_count: number;
         };
-        /** @description A club in the admin review queue, with who submitted it. */
-        ClubSubmissionResponse: components["schemas"]["ClubResponse"] & {
+        /** @description A club in the admin review queue, with its owner and who submitted it. */
+        ClubSubmissionResponse: components["schemas"]["AdminClubResponse"] & {
             submitted_by_email?: string | null;
         };
         ClubUpdate: {
@@ -3915,6 +3946,17 @@ export interface components {
         OutreachLeadUpdate: {
             status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
             notes?: string | null;
+        };
+        PaginatedResponse_AdminClubResponse_: {
+            items: components["schemas"]["AdminClubResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
         };
         PaginatedResponse_ClubClaimResponse_: {
             items: components["schemas"]["ClubClaimResponse"][];
@@ -6941,6 +6983,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_clubs_clubs_admin_get: {
+        parameters: {
+            query?: {
+                club_type?: string | null;
+                school?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                ids?: number[] | null;
+                min_events?: number;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_AdminClubResponse_"];
                 };
             };
             /** @description Validation Error */

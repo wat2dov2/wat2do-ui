@@ -3246,6 +3246,141 @@
         }
       }
     },
+    "/clubs/admin": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "List Admin Clubs",
+        "description": "The public directory with who owns each club, for admins.",
+        "operationId": "list_admin_clubs_clubs_admin_get",
+        "parameters": [
+          {
+            "name": "club_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "categories",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "name": "min_events",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_AdminClubResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clubs/review": {
       "get": {
         "tags": [
@@ -7989,6 +8124,33 @@
   },
   "components": {
     "schemas": {
+      "AdminClubResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ClubResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "created_by": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The owner's user id."
+              },
+              "owner_email": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The owner's account email."
+              }
+            }
+          }
+        ],
+        "description": "A club with the account that owns it, the one that created or claimed it\n(`AdminClubResponse`). Only admins read it."
+      },
       "AdminPayoutDetail": {
         "type": "object",
         "description": "`AdminPayoutDetail`.",
@@ -8867,7 +9029,7 @@
       },
       "ClubResponse": {
         "type": "object",
-        "description": "A club as the API returns it (`ClubResponse`).",
+        "description": "A club as anyone may read it (`ClubResponse`). It never says who owns the\nclub; only admins read that, in `AdminClubResponse`.",
         "required": [
           "id",
           "club_name",
@@ -8926,12 +9088,6 @@
               "null"
             ]
           },
-          "created_by": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "created_at": {
             "type": [
               "string",
@@ -8940,12 +9096,6 @@
             "format": "date-time"
           },
           "school": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "owner_email": {
             "type": [
               "string",
               "null"
@@ -8966,7 +9116,7 @@
       "ClubSubmissionResponse": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/ClubResponse"
+            "$ref": "#/components/schemas/AdminClubResponse"
           },
           {
             "type": "object",
@@ -8980,7 +9130,7 @@
             }
           }
         ],
-        "description": "A club in the admin review queue, with who submitted it."
+        "description": "A club in the admin review queue, with its owner and who submitted it."
       },
       "ClubUpdate": {
         "type": "object",
@@ -13082,6 +13232,40 @@
               "null"
             ],
             "maxLength": 4000
+          }
+        }
+      },
+      "PaginatedResponse_AdminClubResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminClubResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

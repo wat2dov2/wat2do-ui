@@ -155,7 +155,6 @@ export function ClubForm({
       ig: form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
       club_type: form.formData.club_type,
-      created_by: initialData?.created_by || null,
       school: form.formData.school,
     };
 

@@ -17,6 +17,7 @@ export {
   updateClubAPI,
   deleteClubAPI,
 } from "./api/clubs.api";
+export { normalizeClub } from "./api/clubService";
 
 // Hooks
 export { useOpenClubPanel } from "./hooks/useOpenClubPanel";

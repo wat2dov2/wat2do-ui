@@ -27,34 +27,6 @@ export type PaginatedClubsResponse = Omit<ApiPaginatedClubsResponse, "items"> & 
   items: Club[];
 };
 
-export async function getClubsPaginated(options: {
-  page: number;
-  limit: number;
-  school?: string;
-  search?: string;
-  clubType?: string;
-}): Promise<PaginatedClubsResponse> {
-  const params = new URLSearchParams();
-  params.set("page", String(options.page));
-  params.set("page_size", String(options.limit));
-  if (options.school) params.set("school", options.school);
-  if (options.search) {
-    params.set("search", options.search);
-  }
-  if (options.clubType) {
-    params.set("club_type", options.clubType);
-  }
-
-  const response = await api.get<ApiPaginatedClubsResponse>(`/clubs/?${params.toString()}`);
-  return {
-    items: response.items.map(normalizeClub),
-    total: response.total,
-    page: response.page,
-    page_size: response.page_size,
-    total_pages: response.total_pages,
-  };
-}
-
 export async function getMyClubs(): Promise<Club[]> {
   const rawOrgs = await api.get<ApiClubResponse[]>("/clubs/mine");
   return rawOrgs.map(normalizeClub);
@@ -96,9 +68,7 @@ export async function updateClubAPI(
   club: Club,
   updates: Partial<Omit<Club, "id">>,
 ): Promise<Club> {
-  const payload = { ...updates };
-  delete payload.created_by;
-  const updated = await api.patch<ApiClubResponse>(`/clubs/${club.id}`, payload);
+  const updated = await api.patch<ApiClubResponse>(`/clubs/${club.id}`, updates);
   return normalizeClub(updated);
 }
 

@@ -205,7 +205,8 @@ test.beforeEach(async ({ page, next }) => {
     });
   });
 
-  await mockApi(page, next, url => apiPath(url) === "/clubs", async (request) => {
+  // The public directory, and the admin clubs list that reads it with each club's owner.
+  await mockApi(page, next, url => apiPath(url) === "/clubs" || apiPath(url) === "/clubs/admin", async (request) => {
     const requestUrl = new URL(request.url);
     const search = requestUrl.searchParams.get("search")?.toLowerCase() ?? "";
     const ids = requestUrl.searchParams.getAll("ids").map(Number);
