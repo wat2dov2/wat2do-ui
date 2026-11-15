@@ -10,6 +10,7 @@
     "clubRequired": "ઇવેન્ટ સબમિટ કરતા પહેલા એક સંસ્થા પસંદ કરો.",
     "club": "સંસ્થા",
     "verified": "ચકાસાયેલ",
+    "verifiedTooltip": "{{club}} સત્તાવાર રીતે Wat2Do સાથે જોડાયેલી છે",
     "status": "સ્થિતિ",
     "dayOfWeek": "અઠવાડ્યનો દિવસ",
     "createEvent": "ઇવેન્ટ ઉમેરો",

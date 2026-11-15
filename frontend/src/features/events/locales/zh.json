@@ -10,6 +10,7 @@
     "clubRequired": "提交活动前请选择一个组织。",
     "club": "组织",
     "verified": "已认证",
+    "verifiedTooltip": "{{club}} 已正式入驻 Wat2Do",
     "status": "状态",
     "dayOfWeek": "星期",
     "createEvent": "添加活动",

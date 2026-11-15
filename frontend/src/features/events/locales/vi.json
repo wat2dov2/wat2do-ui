@@ -10,6 +10,7 @@
     "clubRequired": "Chọn một tổ chức trước khi gửi sự kiện.",
     "club": "Tổ chức",
     "verified": "Đã xác minh",
+    "verifiedTooltip": "{{club}} đã chính thức tham gia Wat2Do",
     "status": "Trạng thái",
     "dayOfWeek": "Ngày trong tuần",
     "createEvent": "Thêm sự kiện",

@@ -10,6 +10,7 @@
     "clubRequired": "Wybierz organizację przed przesłaniem wydarzenia.",
     "club": "Organizacja",
     "verified": "Zweryfikowane",
+    "verifiedTooltip": "{{club}} oficjalnie dołączyła do Wat2Do",
     "status": "Status",
     "dayOfWeek": "Dzień tygodnia",
     "createEvent": "Dodaj wydarzenie",

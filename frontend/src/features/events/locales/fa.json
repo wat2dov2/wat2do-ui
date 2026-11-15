@@ -10,6 +10,7 @@
     "clubRequired": "قبل از ارسال رویداد، یک سازمان انتخاب کنید.",
     "club": "سازمان",
     "verified": "تأییدشده",
+    "verifiedTooltip": "{{club}} به‌طور رسمی به Wat2Do پیوسته است",
     "status": "وضعیت",
     "dayOfWeek": "روز هفته",
     "createEvent": "افزودن رویداد",
