@@ -83,11 +83,9 @@
   },
   "navigation": {
     "events": "Events",
-    "submit": "Submit",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",
-    "settings": "Settings",
     "admin": "Admin",
     "adminPanel": "Admin Panel",
     "clubPanel": "Club Panel",
@@ -98,7 +96,7 @@
     "openMenu": "Open navigation menu",
     "switchToLightMode": "Switch to light mode",
     "switchToDarkMode": "Switch to dark mode",
-    "myTickets": "My tickets"
+    "profile": "Profile"
   },
   "siteBanner": {
     "businessSupport": {

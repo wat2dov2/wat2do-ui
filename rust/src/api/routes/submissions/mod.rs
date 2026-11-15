@@ -547,6 +547,7 @@ async fn review(
         |event_id| format!("/events/{event_id}"),
     );
     emails::send_review_decision(
+        db,
         Reviewed::Event,
         &title,
         status,

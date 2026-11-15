@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "Gérez les préférences et paramètres de votre compte",
     "unsavedChanges": "Modifications non enregistrées",
     "unsavedChangesDescription": "Enregistrez ou annulez vos modifications de paramètres.",
     "saveSuccess": "Vos paramètres ont été enregistrés.",

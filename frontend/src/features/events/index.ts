@@ -10,6 +10,8 @@ export { EventDetailsModal } from "./components/EventDetailsModal";
 export { EventsBrowseViews } from "./components/EventsBrowseViews";
 export { useEventsStore } from "./store/events.store";
 export { useEventStats } from "./hooks/useEventStats";
-export { useCurrentTime } from "./hooks/useGoingEvents";
+export { useCurrentTime, useGoingEvents } from "./hooks/useGoingEvents";
+export { useSavedEventIds } from "./hooks/useSavedEvents";
+export { eventPagePath } from "./lib/eventUrls";
 
-export { deleteEventAPI, eventFeedQueryOptions } from "./api/events.api";
+export { deleteEventAPI, eventFeedQueryOptions, fetchEventsByIds } from "./api/events.api";

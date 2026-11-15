@@ -596,8 +596,8 @@ test.describe("Promoter poster campaign", () => {
       },
     );
 
-    await page.goto(`${BASE_URL}/settings?tab=notifications`);
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await page.goto(`${BASE_URL}/profile?tab=notifications`);
+    await expect(page.getByRole("heading", { name: "Settings", exact: true, level: 2 })).toBeVisible();
     const panel = page.getByRole("tabpanel");
     await expect(panel.getByText("Morning email", { exact: true })).toBeVisible();
     await expect(panel.getByText("Event reminders", { exact: true })).toBeVisible();
@@ -620,7 +620,7 @@ test.describe("Promoter poster campaign", () => {
     await installSessionMock(page, { hasPromoterProfile: true });
     await installPromoterApiMocks(page);
 
-    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+    await page.goto(`${BASE_URL}/profile?tab=promoter`);
 
     const tabs = page.locator('[data-slot="tabs"]');
     const tabsList = page.locator('[data-slot="tabs-list"]');
@@ -652,14 +652,14 @@ test.describe("Promoter poster campaign", () => {
     await closeTerms.click();
 
     await page.evaluate(() => {
-      window.history.pushState(null, "", "/settings?tab=profile");
+      window.history.pushState(null, "", "/profile?tab=profile");
     });
     await expect(
       tabsList.getByRole("tab", { name: "Profile" }),
     ).toHaveAttribute("aria-selected", "true");
 
     await page.goBack();
-    await expect(page).toHaveURL(`${BASE_URL}/settings?tab=promoter`);
+    await expect(page).toHaveURL(`${BASE_URL}/profile?tab=promoter`);
     await expect(promoterTab).toHaveAttribute("aria-selected", "true");
 
     const desktopMetrics = await tabsList.evaluate((list) => {
@@ -720,7 +720,7 @@ test.describe("Promoter poster campaign", () => {
     await installCommonApiMocks(page);
     await installSessionMock(page, { hasPromoterProfile: false });
 
-    await page.goto(`${BASE_URL}/settings`);
+    await page.goto(`${BASE_URL}/profile`);
 
     const notificationsTab = page.getByRole("tab", { name: "Notifications" });
     const appearanceTab = page.getByRole("tab", { name: "Appearance" });
@@ -728,12 +728,12 @@ test.describe("Promoter poster campaign", () => {
     await expect(appearanceTab).toBeEnabled();
 
     await notificationsTab.click();
-    await expect(page).toHaveURL(/\/settings\?tab=notifications$/);
+    await expect(page).toHaveURL(/\/profile\?tab=notifications$/);
     await expect(page.getByRole("tabpanel", { name: "Notifications" })
       .getByRole("switch", { name: "Morning email", exact: true })).toBeVisible();
 
     await appearanceTab.click();
-    await expect(page).toHaveURL(/\/settings\?tab=appearance$/);
+    await expect(page).toHaveURL(/\/profile\?tab=appearance$/);
     const appearance = page.getByRole("tabpanel", { name: "Appearance" });
     await expect(appearance.getByText("Language", { exact: true })).toBeVisible();
     await expect(appearance.getByRole("combobox")).toHaveText("English");
@@ -760,7 +760,7 @@ test.describe("Promoter poster campaign", () => {
         ([notification_type, enabled]) => ({ notification_type, enabled }),
       ) });
     });
-    await page.goto(`${BASE_URL}/settings?tab=notifications`);
+    await page.goto(`${BASE_URL}/profile?tab=notifications`);
     const morning = page.getByRole("switch", { name: "Morning email", exact: true });
     await expect(morning).not.toBeChecked();
     await page.getByRole("switch", { name: "Event reminders", exact: true }).click();
@@ -784,9 +784,9 @@ test.describe("Promoter poster campaign", () => {
     await installCommonApiMocks(page);
     await installSessionMock(page);
 
-    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+    await page.goto(`${BASE_URL}/profile?tab=promoter`);
 
-    await expect(page).toHaveURL(`${BASE_URL}/settings?tab=profile`);
+    await expect(page).toHaveURL(`${BASE_URL}/profile?tab=profile`);
     const tabsList = page.locator('[data-slot="tabs-list"]');
     await expect(tabsList.getByRole("tab")).toHaveCount(3);
     await expect(page.getByTestId("settings-promoter-tab")).toHaveCount(0);
@@ -1024,7 +1024,7 @@ test.describe("Promoter poster campaign", () => {
       "2026-06-01",
     );
 
-    await page.goto(`${BASE_URL}/settings?tab=promoter`);
+    await page.goto(`${BASE_URL}/profile?tab=promoter`);
     await expect(page.getByTestId("promoter-terms-open")).toBeVisible();
     await page.getByTestId("promoter-terms-open").click();
     await expect(page.getByTestId("promoter-terms-dialog")).toBeVisible();
@@ -1045,8 +1045,8 @@ test.describe("Promoter poster campaign", () => {
     await expect(page.getByTestId("promoter-enrollment-form")).toHaveCount(0);
     await expect(page.getByTestId("poster-create-open")).toBeVisible();
 
-    await page.goto(`${BASE_URL}/settings?tab=promoter`);
-    await expect(page).toHaveURL(/\/settings\?tab=promoter$/);
+    await page.goto(`${BASE_URL}/profile?tab=promoter`);
+    await expect(page).toHaveURL(/\/profile\?tab=promoter$/);
     await expect(page.getByTestId("settings-promoter-tab")).toBeVisible();
     await expect(page.getByText("Enrolled", { exact: true })).toBeVisible();
   });

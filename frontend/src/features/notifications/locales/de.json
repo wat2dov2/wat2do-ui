@@ -1,0 +1,69 @@
+{
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "open": "Benachrichtigungen",
+    "openUnread": "Benachrichtigungen, {{count}} neu",
+    "openUnread_one": "Benachrichtigungen, {{count}} neu",
+    "openUnread_other": "Benachrichtigungen, {{count}} neu",
+    "unread": "Neu:",
+    "loading": "Deine Benachrichtigungen werden geladen",
+    "loadFailed": "Deine Benachrichtigungen konnten nicht geladen werden.",
+    "empty": "Du bist auf dem neuesten Stand",
+    "emptyDescription": "Jede E-Mail, die wir dir schicken, erscheint auch hier.",
+    "kinds": {
+      "morning_email": {
+        "title": "Deine Morgen-E-Mail",
+        "text": "Sieh dir an, was heute an deiner Hochschule neu ist."
+      },
+      "event_reminder": {
+        "title": "Erinnerung: {{name}}",
+        "text": "Sie beginnt etwa {{duration}} nach dieser Erinnerung."
+      },
+      "event_change": {
+        "title": "{{name}} wurde geändert",
+        "text": "Zeit, Ort oder Details wurden aktualisiert."
+      },
+      "event_cancelled": {
+        "title": "{{name}} wurde abgesagt",
+        "text": "Die Organisation hat diese Veranstaltung abgesagt."
+      },
+      "tickets": {
+        "title": "Dein Ticket für {{name}}",
+        "titleMany": "Deine Tickets für {{name}}",
+        "text": "Zeig den QR-Code am Eingang."
+      },
+      "ticket_refunded": {
+        "title": "Erstattung für {{name}}",
+        "text": "Dein Geld ist auf dem Rückweg."
+      },
+      "refund_requested": {
+        "title": "Erstattungsanfrage für {{name}}",
+        "text": "Jemand hat deine Organisation um eine Erstattung gebeten."
+      },
+      "refund_declined": {
+        "title": "Erstattung für {{name}} abgelehnt",
+        "text": "Dein Ticket ist weiterhin gültig."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Deine Organisation {{name}} ist online",
+          "claim": "Du kannst {{name}} jetzt verwalten",
+          "event": "Deine Veranstaltung {{name}} ist online",
+          "position": "Deine Position {{name}} ist online",
+          "text": "Genehmigt."
+        },
+        "rejected": {
+          "club": "Deine Organisation {{name}} wurde nicht genehmigt",
+          "claim": "Dein Antrag für {{name}} wurde nicht genehmigt",
+          "event": "Deine Veranstaltung {{name}} wurde nicht genehmigt",
+          "position": "Deine Position {{name}} wurde nicht genehmigt",
+          "text": "Antworte auf unsere E-Mail, wenn du Fragen hast."
+        }
+      },
+      "club_invitation": {
+        "title": "Du wurdest eingeladen, {{name}} mitzuverwalten",
+        "text": "Nimm an, um Zugriff auf das Organisationspanel zu bekommen."
+      }
+    }
+  }
+}

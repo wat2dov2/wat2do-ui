@@ -13,6 +13,7 @@ export { TicketSettingsCard, type TicketPayouts } from "./components/TicketSetti
 export {
   useEventTicketing,
   useFreeTicketRsvp,
+  useMyTickets,
   useTicketDesk,
   useTicketRefunds,
 } from "./hooks/useTickets";

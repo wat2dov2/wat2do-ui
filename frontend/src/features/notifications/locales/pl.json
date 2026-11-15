@@ -1,0 +1,71 @@
+{
+  "notifications": {
+    "title": "Powiadomienia",
+    "open": "Powiadomienia",
+    "openUnread": "Powiadomienia, nowe: {{count}}",
+    "openUnread_one": "Powiadomienia, nowe: {{count}}",
+    "openUnread_few": "Powiadomienia, nowe: {{count}}",
+    "openUnread_many": "Powiadomienia, nowe: {{count}}",
+    "openUnread_other": "Powiadomienia, nowe: {{count}}",
+    "unread": "Nowe:",
+    "loading": "Wczytywanie powiadomień",
+    "loadFailed": "Nie udało się wczytać powiadomień.",
+    "empty": "Jesteś na bieżąco",
+    "emptyDescription": "Każdy e-mail, który do Ciebie wysyłamy, pojawia się też tutaj.",
+    "kinds": {
+      "morning_email": {
+        "title": "Twój poranny e-mail",
+        "text": "Zobacz, co nowego dziś na Twojej uczelni."
+      },
+      "event_reminder": {
+        "title": "Przypomnienie: {{name}}",
+        "text": "Czas od tego przypomnienia do początku: {{duration}}."
+      },
+      "event_change": {
+        "title": "Zmiana: {{name}}",
+        "text": "Zaktualizowano godzinę, miejsce lub szczegóły."
+      },
+      "event_cancelled": {
+        "title": "Odwołano: {{name}}",
+        "text": "Organizacja odwołała to wydarzenie."
+      },
+      "tickets": {
+        "title": "Twój bilet na {{name}}",
+        "titleMany": "Twoje bilety na {{name}}",
+        "text": "Pokaż kod QR przy wejściu."
+      },
+      "ticket_refunded": {
+        "title": "Zwrot za {{name}}",
+        "text": "Twoje pieniądze są w drodze."
+      },
+      "refund_requested": {
+        "title": "Prośba o zwrot za {{name}}",
+        "text": "Ktoś poprosił Twoją organizację o zwrot."
+      },
+      "refund_declined": {
+        "title": "Odrzucono zwrot za {{name}}",
+        "text": "Twój bilet nadal jest ważny."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Twoja organizacja {{name}} jest już widoczna",
+          "claim": "Możesz teraz zarządzać {{name}}",
+          "event": "Twoje wydarzenie {{name}} jest już widoczne",
+          "position": "Twoje stanowisko {{name}} jest już widoczne",
+          "text": "Zatwierdzono."
+        },
+        "rejected": {
+          "club": "Nie zatwierdzono Twojej organizacji {{name}}",
+          "claim": "Nie zatwierdzono Twojej prośby dotyczącej {{name}}",
+          "event": "Nie zatwierdzono Twojego wydarzenia {{name}}",
+          "position": "Nie zatwierdzono Twojego stanowiska {{name}}",
+          "text": "Odpowiedz na nasz e-mail, jeśli masz pytania."
+        }
+      },
+      "club_invitation": {
+        "title": "Zaproszono Cię do współzarządzania {{name}}",
+        "text": "Zaakceptuj, aby uzyskać dostęp do panelu organizacji."
+      }
+    }
+  }
+}

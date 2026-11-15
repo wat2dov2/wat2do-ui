@@ -88,6 +88,8 @@ pub const NOTIFICATION_TYPES: [&str; 3] = [
     NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_EVENT_CHANGE,
 ];
+/// The inbox kind of an event change alert that cancelled its event (`INBOX_KIND_EVENT_CANCELLED`).
+pub const INBOX_KIND_EVENT_CANCELLED: &str = "event_cancelled";
 pub const NOTIFICATION_STATUS_SENT: &str = "sent";
 pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
 

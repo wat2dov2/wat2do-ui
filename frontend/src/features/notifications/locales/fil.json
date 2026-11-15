@@ -1,0 +1,69 @@
+{
+  "notifications": {
+    "title": "Mga Abiso",
+    "open": "Mga Abiso",
+    "openUnread": "Mga Abiso, {{count}} bago",
+    "openUnread_one": "Mga Abiso, {{count}} bago",
+    "openUnread_other": "Mga Abiso, {{count}} bago",
+    "unread": "Bago:",
+    "loading": "Nilo-load ang iyong mga abiso",
+    "loadFailed": "Hindi ma-load ang iyong mga abiso.",
+    "empty": "Wala ka nang bagong abiso",
+    "emptyDescription": "Dito rin lumalabas ang bawat email na ipinapadala namin sa iyo.",
+    "kinds": {
+      "morning_email": {
+        "title": "Ang iyong email sa umaga",
+        "text": "Tingnan kung ano ang bago sa iyong paaralan ngayon."
+      },
+      "event_reminder": {
+        "title": "Paalala: {{name}}",
+        "text": "Magsisimula ito mga {{duration}} pagkatapos ng paalalang ito."
+      },
+      "event_change": {
+        "title": "Nagbago ang {{name}}",
+        "text": "Na-update ang oras, lugar o mga detalye nito."
+      },
+      "event_cancelled": {
+        "title": "Kinansela ang {{name}}",
+        "text": "Kinansela ng organisasyon ang kaganapang ito."
+      },
+      "tickets": {
+        "title": "Ang iyong tiket para sa {{name}}",
+        "titleMany": "Ang iyong mga tiket para sa {{name}}",
+        "text": "Ipakita ang QR code sa pasukan."
+      },
+      "ticket_refunded": {
+        "title": "Refund para sa {{name}}",
+        "text": "Pabalik na sa iyo ang pera mo."
+      },
+      "refund_requested": {
+        "title": "Hiling na refund para sa {{name}}",
+        "text": "May humiling ng refund sa iyong organisasyon."
+      },
+      "refund_declined": {
+        "title": "Tinanggihan ang refund para sa {{name}}",
+        "text": "Magagamit pa rin ang iyong tiket."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Live na ang iyong organisasyong {{name}}",
+          "claim": "Maaari mo nang pamahalaan ang {{name}}",
+          "event": "Live na ang iyong kaganapang {{name}}",
+          "position": "Live na ang iyong posisyong {{name}}",
+          "text": "Naaprubahan na ito."
+        },
+        "rejected": {
+          "club": "Hindi naaprubahan ang iyong organisasyong {{name}}",
+          "claim": "Hindi naaprubahan ang iyong claim para sa {{name}}",
+          "event": "Hindi naaprubahan ang iyong kaganapang {{name}}",
+          "position": "Hindi naaprubahan ang iyong posisyong {{name}}",
+          "text": "Sumagot sa aming email kung may mga tanong ka."
+        }
+      },
+      "club_invitation": {
+        "title": "Inimbitahan kang tumulong sa pamamahala ng {{name}}",
+        "text": "Tanggapin para magkaroon ng access sa panel ng organisasyon."
+      }
+    }
+  }
+}

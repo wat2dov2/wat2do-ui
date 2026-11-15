@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "Zarządzaj preferencjami i ustawieniami konta",
     "unsavedChanges": "Niezapisane zmiany",
     "unsavedChangesDescription": "Zapisz lub anuluj zmiany ustawień.",
     "saveSuccess": "Twoje ustawienia zostały zapisane.",

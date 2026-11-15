@@ -175,6 +175,11 @@
       "fresh": "Nouveautés sur Wat2Do",
       "by": "par",
       "networking": "Occasions de réseautage"
+    },
+    "savedEvents": {
+      "save": "Enregistrer l'événement",
+      "unsave": "Retirer des enregistrés",
+      "saveFailed": "Impossible d'enregistrer cet événement"
     }
   }
 }

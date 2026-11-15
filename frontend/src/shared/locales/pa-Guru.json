@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "ਸਮਾਗਮ",
-    "submit": "ਜਮ੍ਹਾਂ ਕਰੋ",
     "clubs": "ਸੰਸਥਾਵਾਂ",
     "positions": "ਅਹੁਦੇ",
     "myEvents": "ਮੇਰੇ ਇਵੈਂਟ",
-    "settings": "ਸੈਟਿੰਗਾਂ",
     "admin": "ਐਡਮਿਨ",
     "adminPanel": "ਐਡਮਿਨ ਪੈਨਲ",
     "clubPanel": "ਸੰਸਥਾ ਪੈਨਲ",
@@ -101,7 +99,7 @@
     "openMenu": "ਨੈਵੀਗੇਸ਼ਨ ਮੀਨੂ ਖੋਲ੍ਹੋ",
     "switchToLightMode": "ਲਾਈਟ ਮੋਡ 'ਤੇ ਜਾਓ",
     "switchToDarkMode": "ਡਾਰਕ ਮੋਡ 'ਤੇ ਜਾਓ",
-    "myTickets": "ਮੇਰੀਆਂ ਟਿਕਟਾਂ"
+    "profile": "ਪ੍ਰੋਫਾਈਲ"
   },
   "siteBanner": {
     "businessSupport": {

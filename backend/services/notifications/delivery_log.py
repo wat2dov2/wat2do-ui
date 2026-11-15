@@ -1,6 +1,7 @@
 """Retryable notification delivery claims and terminal status updates."""
 
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -20,6 +21,9 @@ from core.tables import NOTIFICATIONS_LOG
 from services.email_service import EmailMessage, email_service
 
 log = logging.getLogger(__name__)
+# Attempts to record a delivery as sent, and the pause before each retry.
+_RECORD_ATTEMPTS = 3
+_RECORD_PAUSE_SECONDS = 2
 # SES errors worth another attempt; every other rejection is final.
 _RETRYABLE_SES_ERRORS = frozenset(
     {"TooManyRequestsException", "InternalServiceErrorException", "ServiceUnavailable"}
@@ -90,13 +94,15 @@ def deliver_claimed_email(
     provider_attempts: int,
     log_context: str,
 ) -> bool:
-    """Send one claimed notification and commit its terminal delivery status."""
+    """Send one claimed notification and commit its terminal delivery status.
+
+    Once SES has the message it counts as sent, even when recording that fails:
+    the row then stays pending rather than failed, which would send it again.
+    """
     failure_category = "provider_error"
     for _attempt in range(provider_attempts):
         try:
             email_service.send(message)
-            _mark_log_sent(row_id)
-            return True
         except ClientError as exc:
             code = exc.response.get("Error", {}).get("Code", "unknown")
             failure_category = f"ses_{code.lower()}"
@@ -112,6 +118,26 @@ def deliver_claimed_email(
                 exc_info=True,
             )
             break
+        else:
+            _record_sent(row_id, log_context)
+            return True
 
     _mark_log_failed(row_id, failure_category)
     return False
+
+
+def _record_sent(row_id: str, log_context: str) -> None:
+    """Mark a sent notification's row sent, retrying a few times, never raising."""
+    for attempt in range(1, _RECORD_ATTEMPTS + 1):
+        try:
+            _mark_log_sent(row_id)
+            return
+        except Exception:
+            if attempt == _RECORD_ATTEMPTS:
+                log.error(
+                    "Notification %s was sent but not recorded as sent; its row stays pending",
+                    log_context,
+                    exc_info=True,
+                )
+                return
+            time.sleep(_RECORD_PAUSE_SECONDS)

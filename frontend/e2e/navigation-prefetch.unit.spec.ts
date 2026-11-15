@@ -226,11 +226,11 @@ test("only exact public page URLs are warmed on intent", () => {
   for (const href of [
     "/login?token=sign-in-token",
     "/login?email=visitor%40example.com",
-    "/login?returnTo=%2Fsettings",
+    "/login?returnTo=%2Fprofile",
     "/login?redirect=%2Fclub-panel",
     "/auth/callback?code=sign-in-code",
     "/onboarding",
-    "/settings",
+    "/profile",
     "/admin",
     "/club-panel",
     "/invite/club-invitation",

@@ -5252,6 +5252,63 @@
         }
       }
     },
+    "/notifications/": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List My Notifications",
+        "description": "The user's newest notifications, newest first, with how many are unread.",
+        "operationId": "list_my_notifications_notifications__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInboxResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark My Notifications Read",
+        "description": "Mark read the user's notifications among those their list showed; any that arrived since stay unread.",
+        "operationId": "mark_my_notifications_read_notifications_read_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationReadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/payouts/": {
       "get": {
         "tags": [
@@ -12777,6 +12834,77 @@
           }
         }
       },
+      "NotificationDetails": {
+        "type": "object",
+        "description": "What a notification's words need; each kind fills only its own.",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The event's title, or the club's name."
+          },
+          "tickets": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "How many tickets the email held."
+          },
+          "reviewed": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What a review decided on: `club`, `claim`, `event` or `position`."
+          },
+          "approved": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether that review approved it."
+          }
+        }
+      },
+      "NotificationInboxResponse": {
+        "type": "object",
+        "description": "The user's newest notifications, and how many of them are still unread.",
+        "required": [
+          "unread_count",
+          "notifications"
+        ],
+        "properties": {
+          "unread_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          }
+        }
+      },
+      "NotificationKind": {
+        "type": "string",
+        "description": "The email a notification repeats.",
+        "enum": [
+          "morning_email",
+          "event_reminder",
+          "event_change",
+          "event_cancelled",
+          "tickets",
+          "ticket_refunded",
+          "refund_requested",
+          "refund_declined",
+          "review_decision",
+          "club_invitation"
+        ]
+      },
       "NotificationPreferenceResponse": {
         "properties": {
           "notification_type": {
@@ -12873,6 +13001,62 @@
         ],
         "title": "NotificationPreferencesListResponse",
         "description": "Every notification type's resolved enabled state for the user.\n\nIncludes types for which the user has no row; the\n``enabled`` value is the resolved default in that case. Clients\nrender one toggle per entry."
+      },
+      "NotificationReadRequest": {
+        "type": "object",
+        "description": "The notifications a visitor's open list showed, to mark read.",
+        "required": [
+          "notification_ids"
+        ],
+        "properties": {
+          "notification_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 1
+          }
+        }
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "description": "One notification as the bell's list shows it.",
+        "required": [
+          "id",
+          "kind",
+          "details",
+          "link",
+          "created_at",
+          "read"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          },
+          "details": {
+            "$ref": "#/components/schemas/NotificationDetails"
+          },
+          "link": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Where it leads: the page its email linked to, on the right school's site."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "read": {
+            "type": "boolean"
+          }
+        }
       },
       "OccurrenceCreate": {
         "properties": {

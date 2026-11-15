@@ -413,12 +413,37 @@ async function mockSignedInApi(page: Page, next: NextFixture) {
     });
   });
 
-  // Mock saved events
+  // Mock Going choices
   await mockApi(page, next, url => apiPath(url) === "/going-events", async () => {
     return ({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify([]),
+    });
+  });
+
+  // Mock saved events and tickets
+  await mockApi(page, next, url => apiPath(url) === "/v1/saved-events" || apiPath(url) === "/tickets/mine", async () => {
+    return ({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+  });
+
+  // Mock the notification inbox: one unread notification
+  await mockApi(page, next, url => apiPath(url)?.startsWith("/notifications") ?? false, async (request) => {
+    if (request.method === "POST") return { status: 204 };
+    return ({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        unread_count: 1,
+        notifications: [{
+          id: "00000000-0000-0000-0000-000000000001",
+          kind: "event_reminder",
+          details: { name: "Tech Career Fair" },
+          link: "/events/1",
+          created_at: new Date().toISOString(),
+          read: false,
+        }],
+      }),
     });
   });
 }
@@ -4884,19 +4909,16 @@ test.describe("Standalone submission pages", () => {
     await expect(moreFilters).toBeInViewport();
   });
 
-  test("the navigation menu's Submit dropdown opens every submission form", async ({ page }) => {
+  test("the profile page opens every submission form", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(BASE);
-    await expect(page.getByRole("button", { name: "Add event", exact: true })).toHaveCount(0);
-    await page.getByRole("button", { name: "Open navigation menu" }).click();
-    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
-    await navigation.getByRole("button", { name: "Submit", exact: true }).click();
+    await page.goto(`${BASE}/profile`);
+    await expect(page.getByRole("heading", { name: "Your submissions", exact: true })).toBeVisible();
     for (const name of ["Add event", "Add position", "Add club"]) {
-      await expect(page.getByRole("menuitem", { name, exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
     }
-    await page.getByRole("menuitem", { name: "Add position", exact: true }).click();
+    await page.getByRole("link", { name: "Add position", exact: true }).click();
     await expect(page).toHaveURL(/\/positions\/submit$/);
-    await expect(navigation).toHaveCount(0);
   });
 
   test("stale session can still access event submission as anonymous", async ({
@@ -5218,7 +5240,7 @@ test.describe("Navigation", () => {
   }
 
   test("main pages load without errors", async ({ page }) => {
-    const routes = ["/events", "/login", "/onboarding", "/clubs", "/about", "/settings"];
+    const routes = ["/events", "/login", "/onboarding", "/clubs", "/about", "/profile"];
     for (const route of routes) {
       const res = await page.goto(`${BASE}${route}`);
       expect(res?.status()).toBe(200);
@@ -5493,54 +5515,89 @@ test.describe("Navigation", () => {
     ).toBeVisible();
   });
 
-  test("a signed-in bar keeps every page and the side menu holds the visitor's own", async ({ page, next }) => {
+  test("a signed-in bar keeps every page, the bell and the avatar, and a phone's menu adds the profile", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
     const topNavigation = page.getByRole("banner");
-    await expect(topNavigation.getByRole("button", { name: "Admin", exact: true })).toBeHidden();
-    await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toBeHidden();
-    await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
+    // A phone's bar keeps the bell beside the avatar that opens the menu.
+    const bell = topNavigation.getByRole("button", { name: "Notifications, 1 new" });
+    await expect(bell).toBeVisible();
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
     const menu = drawer.locator('[data-slot="drawer-body"]');
-    // A phone's bar has no room for the pages, so its menu lists them above the visitor's own.
-    for (const name of ["Events", "Positions", "Clubs", "About"]) {
-      await expect(menu.getByRole("navigation").getByRole("link", { name, exact: true })).toBeVisible();
+    // The menu opens on the logo, language and theme, then lists the pages and the visitor's profile, and nothing else.
+    await expect(drawer.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+    const pages = menu.getByRole("navigation");
+    await expect(pages.getByRole("link")).toHaveText(["Events", "Positions", "Clubs", "About", "Profile"]);
+    for (const name of ["Submit", "Log out", "Admin", "Club Panel"]) {
+      await expect(drawer.getByRole("button", { name, exact: true })).toHaveCount(0);
     }
-    await expect(menu.getByRole("link", { name: "My tickets", exact: true })).toBeVisible();
-    await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-    // The Club Panel dropdown lists each club the user manages.
-    await drawer.getByRole("button", { name: "Club Panel", exact: true }).click();
-    await expect(page.getByRole("menuitem", { name: "UW Tech Club" })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
-    await drawer.getByRole("button", { name: "Admin", exact: true }).click();
-    await expect(page).toHaveURL(/\/admin$/);
+    for (const name of ["My tickets", "Settings"]) {
+      await expect(drawer.getByRole("link", { name, exact: true })).toHaveCount(0);
+    }
+    await pages.getByRole("link", { name: "Profile", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile$/);
     await expect(drawer).toHaveCount(0);
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    // A wide screen's bar shows a signed-in visitor the same pages, Submit, language and theme as everyone.
-    const pages = topNavigation.getByRole("navigation", { name: "Primary navigation" });
-    for (const name of ["Events", "Positions", "Clubs", "About"]) {
-      await expect(pages.getByRole("link", { name, exact: true })).toBeVisible();
-    }
-    await expect(pages.getByRole("button", { name: "Submit", exact: true })).toBeVisible();
+    // A wide screen's bar shows a signed-in visitor the same pages, language and theme as everyone, then the bell and the avatar.
+    const barPages = topNavigation.getByRole("navigation", { name: "Primary navigation" });
+    await expect(barPages.getByRole("link")).toHaveText(["Events", "Positions", "Clubs", "About"]);
+    await expect(barPages.getByRole("button", { name: "Submit", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
     await expect(topNavigation.getByRole("button", { name: "Sign In", exact: true })).toHaveCount(0);
-    await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
-    await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toHaveCount(0);
-    await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
-    // The side menu still opens on the logo (its link to Events) and one divider, then lists only what the bar does not.
-    await expect(menu.getByRole("link", { name: "Events", exact: true }).locator("img")).toBeVisible();
-    await expect(menu.locator('[data-slot="separator"]:visible')).toHaveCount(1);
-    await expect(menu.getByRole("navigation")).toHaveCount(0);
-    await expect(menu.getByRole("link", { name: "My tickets", exact: true })).toBeVisible();
-    await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-    await expect(menu.getByRole("button", { name: "Submit", exact: true })).toHaveCount(0);
-    await expect(drawer.getByRole("button", { name: "Switch to dark mode" })).toHaveCount(0);
-    await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
-    await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+    await expect(topNavigation.getByRole("button", { name: "Open navigation menu" })).toBeHidden();
+    const toggle = await topNavigation.getByRole("button", { name: "Switch to dark mode" }).boundingBox();
+    const bellBox = await bell.boundingBox();
+    const avatar = topNavigation.getByRole("link", { name: "Profile", exact: true });
+    const avatarBox = await avatar.boundingBox();
+    expect(toggle!.x).toBeLessThan(bellBox!.x);
+    expect(bellBox!.x).toBeLessThan(avatarBox!.x);
+
+    // The bell reads the inbox afresh, marks read only the notifications it shows, and clears its count.
+    const markedRead = page.waitForRequest((request) =>
+      request.method() === "POST" && new URL(request.url()).pathname.endsWith("/notifications/read"));
+    await bell.click();
+    const inbox = page.getByRole("dialog", { name: "Notifications" });
+    await expect(inbox.getByText("Reminder: Tech Career Fair", { exact: false })).toBeVisible();
+    expect((await markedRead).postDataJSON()).toEqual({ notification_ids: ["00000000-0000-0000-0000-000000000001"] });
+    await expect(topNavigation.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
+    // Following a notification closes the list.
+    await inbox.getByRole("link").first().click();
+    await expect(inbox).toHaveCount(0);
+    await expect(page).toHaveURL(/\/events\/1$/);
+
+    // The avatar opens the profile, which holds the club panel and Admin for those who run them.
+    await page.goto(`${BASE}/events`);
+    await avatar.click();
+    await expect(page).toHaveURL(/\/profile$/);
+    // Tony's order: saved, gone to, going to, clubs, submissions, settings, then signing out.
+    let previousTop = -Infinity;
+    for (const name of [
+      "Events saved",
+      "Events you've gone to",
+      "Events you're going to",
+      "Clubs you follow",
+      "Your submissions",
+      "Settings",
+    ]) {
+      const box = await page.getByRole("heading", { name, exact: true, level: 2 }).boundingBox();
+      expect(box!.y).toBeGreaterThan(previousTop);
+      previousTop = box!.y;
+    }
+    const logOut = await page.getByRole("button", { name: "Log out", exact: true }).boundingBox();
+    expect(logOut!.y).toBeGreaterThan(previousTop);
+    await expect(page.getByRole("button", { name: "Admin", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Club Panel", exact: true }).click();
+    await expect(page.getByRole("option", { name: "UW Tech Club" })).toBeVisible();
+  });
+
+  test("an email's settings link opens the profile on that tab", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await page.goto(`${BASE}/settings?tab=notifications`);
+    await expect(page).toHaveURL(/\/profile\?tab=notifications$/);
+    await expect(page.getByRole("tab", { name: "Notifications", selected: true })).toBeVisible();
   });
 
   test("theme toggle animates and persists through the shared theme cookie", async ({

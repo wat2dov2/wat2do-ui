@@ -1,0 +1,68 @@
+{
+  "notifications": {
+    "title": "Thông báo",
+    "open": "Thông báo",
+    "openUnread": "Thông báo, {{count}} mới",
+    "openUnread_other": "Thông báo, {{count}} mới",
+    "unread": "Mới:",
+    "loading": "Đang tải thông báo",
+    "loadFailed": "Không thể tải thông báo của bạn.",
+    "empty": "Bạn đã xem hết thông báo",
+    "emptyDescription": "Mọi email chúng tôi gửi cho bạn cũng hiện ở đây.",
+    "kinds": {
+      "morning_email": {
+        "title": "Email buổi sáng của bạn",
+        "text": "Xem hôm nay trường bạn có gì mới."
+      },
+      "event_reminder": {
+        "title": "Nhắc nhở: {{name}}",
+        "text": "Sự kiện bắt đầu khoảng {{duration}} sau lời nhắc này."
+      },
+      "event_change": {
+        "title": "{{name}} đã thay đổi",
+        "text": "Thời gian, địa điểm hoặc chi tiết đã được cập nhật."
+      },
+      "event_cancelled": {
+        "title": "{{name}} đã bị hủy",
+        "text": "Tổ chức đã hủy sự kiện này."
+      },
+      "tickets": {
+        "title": "Vé của bạn cho {{name}}",
+        "titleMany": "Các vé của bạn cho {{name}}",
+        "text": "Hãy đưa mã QR ở cửa vào."
+      },
+      "ticket_refunded": {
+        "title": "Hoàn tiền cho {{name}}",
+        "text": "Tiền của bạn đang được hoàn lại."
+      },
+      "refund_requested": {
+        "title": "Yêu cầu hoàn tiền cho {{name}}",
+        "text": "Có người yêu cầu tổ chức của bạn hoàn tiền."
+      },
+      "refund_declined": {
+        "title": "Yêu cầu hoàn tiền cho {{name}} bị từ chối",
+        "text": "Vé của bạn vẫn còn hiệu lực."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Tổ chức {{name}} của bạn đã được đăng",
+          "claim": "Giờ bạn có thể quản lý {{name}}",
+          "event": "Sự kiện {{name}} của bạn đã được đăng",
+          "position": "Vị trí {{name}} của bạn đã được đăng",
+          "text": "Đã được duyệt."
+        },
+        "rejected": {
+          "club": "Tổ chức {{name}} của bạn chưa được duyệt",
+          "claim": "Yêu cầu nhận quản lý {{name}} của bạn chưa được duyệt",
+          "event": "Sự kiện {{name}} của bạn chưa được duyệt",
+          "position": "Vị trí {{name}} của bạn chưa được duyệt",
+          "text": "Nếu có thắc mắc, hãy trả lời email của chúng tôi."
+        }
+      },
+      "club_invitation": {
+        "title": "Bạn được mời cùng quản lý {{name}}",
+        "text": "Chấp nhận để truy cập bảng điều khiển tổ chức."
+      }
+    }
+  }
+}

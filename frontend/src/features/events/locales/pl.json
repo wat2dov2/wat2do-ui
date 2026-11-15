@@ -183,6 +183,11 @@
       "fresh": "Nowe na Wat2Do",
       "by": "od",
       "networking": "Okazje do networkingu"
+    },
+    "savedEvents": {
+      "save": "Zapisz wydarzenie",
+      "unsave": "Usuń z zapisanych",
+      "saveFailed": "Nie udało się zapisać tego wydarzenia"
     }
   }
 }

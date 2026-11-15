@@ -167,6 +167,11 @@
       "fresh": "Bago sa Wat2Do",
       "by": "ni",
       "networking": "Mga pagkakataon sa networking"
+    },
+    "savedEvents": {
+      "save": "I-save ang kaganapan",
+      "unsave": "Alisin sa mga naka-save",
+      "saveFailed": "Hindi ma-save ang kaganapang ito"
     }
   }
 }

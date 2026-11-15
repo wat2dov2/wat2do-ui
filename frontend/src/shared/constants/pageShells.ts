@@ -60,7 +60,7 @@ export const PAGE_SHELLS: Readonly<Record<string, PageShell>> = {
   [ROUTES.CLUB_PANEL_POSITIONS]: { icon: Briefcase, titleKey: "navigation.positions", descriptionKey: "clubPanel.positionsDesc", back: "clubPanel", container: "lg", body: "list" },
   [ROUTES.CLUB_PANEL_MEMBERS]: { icon: Users, titleKey: "clubPanel.members", descriptionKey: "clubPanel.membersDesc", back: "clubPanel", container: "lg", body: "list" },
   [ROUTES.CLUB_PANEL_PAYOUTS]: { icon: Coins, titleKey: "clubPanel.payouts.title", descriptionKey: "clubPanel.payoutsDesc", back: "clubPanel", container: "md", body: "sections" },
-  [ROUTES.SETTINGS]: { titleKey: "navigation.settings", descriptionKey: "settings.description", container: "md", tabs: 3, body: "sections" },
+  [ROUTES.PROFILE]: { titleKey: "navigation.profile", descriptionKey: "profile.description", container: "md", body: "sections" },
   [ROUTES.TICKETS]: { icon: Ticket, titleKey: "tickets.title", descriptionKey: "tickets.description", container: "md", body: "rows" },
   [ROUTES.POSTERS]: { titleKey: "posters.dashboard.title", container: "sm", body: "sections" },
   [ROUTES.EVENT_SUBMIT]: { titleKey: "events.createEvent", back: "events", container: "sm", body: "upload" },

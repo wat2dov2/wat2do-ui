@@ -92,11 +92,9 @@
   },
   "navigation": {
     "events": "События",
-    "submit": "Отправить",
     "clubs": "Организации",
     "positions": "Должности",
     "myEvents": "Мои события",
-    "settings": "Настройки",
     "admin": "Админ",
     "adminPanel": "Панель администратора",
     "clubPanel": "Панель организации",
@@ -107,7 +105,7 @@
     "openMenu": "Открыть меню навигации",
     "switchToLightMode": "Переключиться на светлую тему",
     "switchToDarkMode": "Переключиться на тёмную тему",
-    "myTickets": "Мои билеты"
+    "profile": "Профиль"
   },
   "siteBanner": {
     "businessSupport": {

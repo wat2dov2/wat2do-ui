@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "I tuoi eventi, le organizzazioni che segui e le tue impostazioni",
+    "settings": "Impostazioni",
+    "events": {
+      "saved": "Eventi salvati",
+      "savedEmpty": "Gli eventi che salvi compaiono qui.",
+      "past": "Eventi a cui sei andato",
+      "pastEmpty": "Gli eventi a cui sei andato compaiono qui.",
+      "upcoming": "Eventi a cui andrai",
+      "upcomingEmpty": "Gli eventi a cui andrai compaiono qui.",
+      "ticket": "Biglietto"
+    },
+    "clubs": {
+      "title": "Organizzazioni che segui",
+      "empty": "Le organizzazioni che segui compaiono qui."
+    },
+    "submissions": {
+      "title": "Le tue proposte",
+      "description": "Aggiungi un evento, una posizione o un'organizzazione. Esaminiamo ciascuna proposta prima della pubblicazione."
+    }
+  }
+}

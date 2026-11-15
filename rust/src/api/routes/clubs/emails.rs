@@ -4,9 +4,12 @@
 
 use std::sync::Arc;
 
+use sqlx::PgPool;
+
 use crate::controlbox::{CLUB_MANAGEMENT, EMAIL_DELIVERY};
 use crate::email::layout::{self, escape};
 use crate::email::{self, EmailMessage};
+use crate::notifications::inbox::{self, Notice, NotificationDetails, NotificationKind};
 use crate::text::python_splitlines;
 
 const CLOSING: &str = "Questions? Reply to this email and our team will get back to you.";
@@ -20,6 +23,18 @@ pub enum Reviewed {
     Position,
 }
 
+impl Reviewed {
+    /// The word for it, in the email and in the inbox notification's details.
+    pub fn noun(self) -> &'static str {
+        match self {
+            Self::Club => "club",
+            Self::Claim => "claim",
+            Self::Event => "event",
+            Self::Position => "position",
+        }
+    }
+}
+
 /// `build_review_decision_email`.
 pub fn review_decision(
     kind: Reviewed,
@@ -29,12 +44,7 @@ pub fn review_decision(
     url: &str,
     rejection_reason: Option<&str>,
 ) -> EmailMessage {
-    let noun = match kind {
-        Reviewed::Club => "club",
-        Reviewed::Claim => "claim",
-        Reviewed::Event => "event",
-        Reviewed::Position => "position",
-    };
+    let noun = kind.noun();
     let (subject, heading, intro, details_html, details_text) = if approved {
         let (subject, heading, intro, action) = match kind {
             Reviewed::Claim => (
@@ -107,9 +117,11 @@ pub fn review_decision(
 }
 
 /// `send_review_decision`: email an approval or rejection when there is a
-/// recipient. Delivery failures are logged, never raised, so they cannot
-/// undo the review.
+/// recipient, and repeat it in their inbox. Delivery failures are logged,
+/// never raised, so they cannot undo the review.
+#[allow(clippy::too_many_arguments)]
 pub async fn send_review_decision(
+    db: &PgPool,
     kind: Reviewed,
     title: &str,
     status: &str,
@@ -127,25 +139,44 @@ pub async fn send_review_decision(
     let reason = rejection_reason
         .map(crate::text::python_strip)
         .filter(|reason| !reason.is_empty());
-    let message = school_url(school).map(|base| {
-        review_decision(
-            kind,
-            title,
-            status == "approved",
-            recipient,
-            &format!("{base}{path}"),
-            reason,
-        )
-    });
-    let sent = match message {
-        Ok(message) => email::send(&message)
-            .await
-            .map_err(|error| error.to_string()),
+    let approved = status == "approved";
+    let sent = match school_url(school) {
+        Ok(base) => {
+            let url = format!("{base}{path}");
+            let message = review_decision(kind, title, approved, recipient, &url, reason);
+            let notice = Notice {
+                kind: NotificationKind::ReviewDecision,
+                event_id: None,
+                details: NotificationDetails {
+                    name: Some(title.to_owned()),
+                    reviewed: Some(kind.noun().to_owned()),
+                    approved: Some(approved),
+                    ..NotificationDetails::default()
+                },
+                // A rejection's email has no button, so its notification leads nowhere.
+                link: approved.then_some(url),
+            };
+            send_then_record(db, &message, recipient, &notice).await
+        }
         Err(error) => Err(format!("{error:#}")),
     };
     if let Err(error) = sent {
         tracing::error!("Background email dispatch failed for a {kind:?} review decision: {error}");
     }
+}
+
+/// Send `message`, and only once SES has it, repeat it in the recipient's inbox.
+async fn send_then_record(
+    db: &PgPool,
+    message: &EmailMessage,
+    recipient: &str,
+    notice: &Notice,
+) -> Result<(), String> {
+    email::send(message)
+        .await
+        .map_err(|error| error.to_string())?;
+    inbox::record_for_emails(db, &[recipient.to_owned()], notice).await;
+    Ok(())
 }
 
 fn school_url(school: Option<&str>) -> anyhow::Result<String> {
@@ -179,14 +210,29 @@ pub fn invitation(club_name: &str, recipient: &str, invite_url: &str) -> EmailMe
     }
 }
 
-/// Send an invitation; a failure is logged and the invitation still stands.
-pub async fn send_invitation(club_name: &str, school: Option<&str>, recipient: &str, token: &str) {
+/// Send an invitation, and repeat it in the invitee's inbox when they have
+/// signed up; a failure is logged and the invitation still stands.
+pub async fn send_invitation(
+    db: &PgPool,
+    club_name: &str,
+    school: Option<&str>,
+    recipient: &str,
+    token: &str,
+) {
     let sent = match school_url(school) {
         Ok(base) => {
-            let message = invitation(club_name, recipient, &format!("{base}/invite/{token}"));
-            email::send(&message)
-                .await
-                .map_err(|error| error.to_string())
+            let url = format!("{base}/invite/{token}");
+            let message = invitation(club_name, recipient, &url);
+            let notice = Notice {
+                kind: NotificationKind::ClubInvitation,
+                event_id: None,
+                details: NotificationDetails {
+                    name: Some(club_name.to_owned()),
+                    ..NotificationDetails::default()
+                },
+                link: Some(url),
+            };
+            send_then_record(db, &message, recipient, &notice).await
         }
         Err(error) => Err(format!("{error:#}")),
     };

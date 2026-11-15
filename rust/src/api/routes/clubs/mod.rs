@@ -1095,6 +1095,7 @@ pub async fn review_club(
         revalidate(std::slice::from_ref(&club.school), ALL_RESOURCES).await;
         let recipient: Option<String> = row.try_get("submitted_by_email")?;
         emails::send_review_decision(
+            &state.db,
             emails::Reviewed::Club,
             &club.club_name,
             &club.status,

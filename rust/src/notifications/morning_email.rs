@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use super::delivery_log::Outbox;
 use super::email_images::email_image;
+use super::inbox::{Notice, NotificationDetails, NotificationKind};
 use super::rendering::{self, CardMedia, Event, EventCard, PositionCard};
 use super::{Addressing, LinkSettings, Outcome, Recipient, Stats, load_recipients, preferences};
 use crate::constants::{NOTIFICATION_STATUS_SENT, NOTIFICATION_TYPE_MORNING_EMAIL};
@@ -506,7 +507,23 @@ async fn send(
             &format!("notification=morning_email user={}", user.id),
         )
         .await?;
+    if sent {
+        outbox
+            .add_to_inbox(user.id, &inbox_notice(user, link_settings)?)
+            .await;
+    }
     Ok(if sent { Outcome::Sent } else { Outcome::Failed })
+}
+
+/// The inbox's copy of the email, leading to the school's events.
+fn inbox_notice(user: &Recipient, link_settings: &LinkSettings) -> Result<Notice> {
+    let site = crate::schools::frontend_url(&link_settings.frontend_url, user.slug())?;
+    Ok(Notice {
+        kind: NotificationKind::MorningEmail,
+        event_id: None,
+        details: NotificationDetails::default(),
+        link: Some(format!("{site}/events")),
+    })
 }
 
 #[cfg(test)]
@@ -680,7 +697,7 @@ mod tests {
         assert!(
             message
                 .body_text
-                .contains("https://uwaterloo.wat2do.io/settings?tab=notifications")
+                .contains("https://uwaterloo.wat2do.io/profile?tab=notifications")
         );
         let ids: Vec<&str> = message
             .inline_images

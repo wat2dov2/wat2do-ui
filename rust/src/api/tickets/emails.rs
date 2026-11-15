@@ -10,8 +10,9 @@ use super::codes;
 use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::school_timezone;
 use crate::email::layout::{self, BORDER, FONT, FOREGROUND, MUTED_FOREGROUND, escape};
-use crate::email::{EmailMessage, InlineImage, send_in_background};
+use crate::email::{EmailMessage, InlineImage, send_in_background_then};
 use crate::notifications::email_images::event_hero_image;
+use crate::notifications::inbox::{self, Notice, NotificationKind};
 use crate::notifications::rendering::{detail_row, occurrence_times};
 use crate::settings::Settings;
 use crate::time_zones::Tz;
@@ -87,11 +88,26 @@ pub fn send_tickets(
         ) {
             Ok(mut message) => {
                 message.idempotency_key = Some(idempotency_key);
-                send_in_background(message);
+                let notice = tickets_notice(settings, &event, &codes);
+                send_in_background_then(message, move || async move {
+                    inbox::record_for_emails(&db, &[recipient], &notice).await;
+                });
             }
             Err(error) => tracing::error!("Could not build the tickets email: {error:#}"),
         }
     });
+}
+
+/// The inbox's copy of a tickets email, leading to the one ticket or to all of them.
+fn tickets_notice(settings: &Settings, event: &Event, codes: &[String]) -> Notice {
+    let site = site(settings, event);
+    let link = match codes {
+        [code] => codes::ticket_url(&site, code),
+        _ => format!("{site}/tickets"),
+    };
+    let mut notice = Notice::about_event(NotificationKind::Tickets, event.id, &event.title, link);
+    notice.details.tickets = i64::try_from(codes.len()).ok();
+    notice
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -253,7 +269,9 @@ fn ticket_card(index: usize, count: usize, content_id: &str, link: &str) -> Stri
 }
 
 /// Money on its way back: one refunded ticket, or every ticket of a cancelled event.
+#[allow(clippy::too_many_arguments)]
 pub fn send_refund_notice(
+    db: &PgPool,
     settings: &Settings,
     event: &Event,
     recipient: &str,
@@ -292,8 +310,15 @@ pub fn send_refund_notice(
         ),
         layout::button(&event_url, "View event"),
     );
-    send_in_background(EmailMessage {
-        to: vec![recipient.to_owned()],
+    let notice = Notice::about_event(
+        NotificationKind::TicketRefunded,
+        event.id,
+        &event.title,
+        event_url,
+    );
+    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
+    let message = EmailMessage {
+        to: emails.clone(),
         subject: if cancelled {
             format!("{} was cancelled: you've been refunded", event.title)
         } else {
@@ -313,12 +338,16 @@ pub fn send_refund_notice(
         ),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
+    };
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &emails, &notice).await;
     });
 }
 
 /// Tells everyone on the club's team that a holder wants their money back.
 #[allow(clippy::too_many_arguments)]
 pub fn send_refund_request(
+    db: &PgPool,
     settings: &Settings,
     event: &Event,
     recipients: Vec<String>,
@@ -356,26 +385,42 @@ pub fn send_refund_request(
     }
     text.push(String::new());
     text.push(format!("Refund or decline it from the ticket desk: {desk}"));
-    send_in_background(EmailMessage {
-        to: recipients,
+    let message = EmailMessage {
+        to: recipients.clone(),
         subject: format!("Refund request: {}", event.title),
         body_html: layout::shell("Refund request", &content, &[]),
         body_text: text.join("\n"),
         idempotency_key: Some(format!("ticket-refund-request:{ticket_id}")),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
+    };
+    let notice = Notice::about_event(
+        NotificationKind::RefundRequested,
+        event.id,
+        &event.title,
+        desk,
+    );
+    let db = db.clone();
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &recipients, &notice).await;
     });
 }
 
 /// Tells the holder the club said no, so nobody waits on an answer that never comes.
-pub fn send_refund_declined(settings: &Settings, event: &Event, recipient: &str, code: &str) {
+pub fn send_refund_declined(
+    db: &PgPool,
+    settings: &Settings,
+    event: &Event,
+    recipient: &str,
+    code: &str,
+) {
     let host = event.club.clone().unwrap_or_else(|| "The club".to_owned());
     let link = codes::ticket_url(&site(settings, event), code);
     let lead = format!(
         "{host} declined your refund request for {}. Your ticket still works.",
         event.title
     );
-    send_in_background(EmailMessage {
+    let message = EmailMessage {
         to: vec![recipient.to_owned()],
         subject: format!("Your refund request for {}", event.title),
         body_html: layout::shell(
@@ -391,6 +436,16 @@ pub fn send_refund_declined(settings: &Settings, event: &Event, recipient: &str,
         idempotency_key: Some(format!("ticket-refund-declined:{code}")),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
+    };
+    let notice = Notice::about_event(
+        NotificationKind::RefundDeclined,
+        event.id,
+        &event.title,
+        link,
+    );
+    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &emails, &notice).await;
     });
 }
 

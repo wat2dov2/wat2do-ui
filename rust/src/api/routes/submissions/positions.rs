@@ -344,6 +344,7 @@ pub async fn review(
     let Some(row) = row else { return Ok(None) };
     if notify_submitter && status != existing.metadata.status {
         emails::send_review_decision(
+            db,
             Reviewed::Position,
             &position.title,
             status,

@@ -128,6 +128,7 @@ pub async fn create(
     .await
     .inspect_err(|error| tracing::error!("Failed to create/upsert invitation: {error}"))?;
     emails::send_invitation(
+        db,
         &club.club_name,
         club.school.as_deref(),
         email,

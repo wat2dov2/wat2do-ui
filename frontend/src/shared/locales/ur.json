@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "تقاریب",
-    "submit": "جمع کرائیں",
     "clubs": "تنظیمیں",
     "positions": "عہدے",
     "myEvents": "میرے ایونٹس",
-    "settings": "ترتیبات",
     "admin": "ایڈمن",
     "adminPanel": "ایڈمن پینل",
     "clubPanel": "تنظیم کا پینل",
@@ -101,7 +99,7 @@
     "openMenu": "نیویگیشن مینو کھولیں",
     "switchToLightMode": "روشن موڈ پر جائیں",
     "switchToDarkMode": "تاریک موڈ پر جائیں",
-    "myTickets": "میرے ٹکٹ"
+    "profile": "پروفائل"
   },
   "siteBanner": {
     "businessSupport": {

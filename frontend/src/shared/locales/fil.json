@@ -86,11 +86,9 @@
   },
   "navigation": {
     "events": "Mga Kaganapan",
-    "submit": "Magsumite",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",
-    "settings": "Mga setting",
     "admin": "Admin",
     "adminPanel": "Panel ng Admin",
     "clubPanel": "Panel ng organisasyon",
@@ -101,7 +99,7 @@
     "openMenu": "Buksan ang menu ng nabigasyon",
     "switchToLightMode": "Lumipat sa light mode",
     "switchToDarkMode": "Lumipat sa dark mode",
-    "myTickets": "Aking mga tiket"
+    "profile": "Profile"
   },
   "siteBanner": {
     "businessSupport": {

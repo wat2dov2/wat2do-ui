@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "계정 환경 설정 및 설정 관리",
     "unsavedChanges": "저장되지 않은 변경 사항",
     "unsavedChangesDescription": "설정 변경 사항을 저장하거나 취소하세요.",
     "saveSuccess": "설정이 저장되었습니다.",

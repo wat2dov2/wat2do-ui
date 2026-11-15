@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "Deine Veranstaltungen, die Organisationen, denen du folgst, und deine Einstellungen",
+    "settings": "Einstellungen",
+    "events": {
+      "saved": "Gespeicherte Veranstaltungen",
+      "savedEmpty": "Veranstaltungen, die du speicherst, erscheinen hier.",
+      "past": "Veranstaltungen, die du besucht hast",
+      "pastEmpty": "Veranstaltungen, die du besucht hast, erscheinen hier.",
+      "upcoming": "Veranstaltungen, zu denen du gehst",
+      "upcomingEmpty": "Veranstaltungen, zu denen du gehst, erscheinen hier.",
+      "ticket": "Ticket"
+    },
+    "clubs": {
+      "title": "Organisationen, denen du folgst",
+      "empty": "Organisationen, denen du folgst, erscheinen hier."
+    },
+    "submissions": {
+      "title": "Deine Einreichungen",
+      "description": "Füge eine Veranstaltung, eine Position oder eine Organisation hinzu. Wir prüfen jede Einreichung, bevor sie online geht."
+    }
+  }
+}

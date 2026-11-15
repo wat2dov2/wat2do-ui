@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "管理您的账户偏好和设置",
     "unsavedChanges": "有未保存的更改",
     "unsavedChangesDescription": "保存或取消你的设置更改。",
     "saveSuccess": "你的设置已保存。",

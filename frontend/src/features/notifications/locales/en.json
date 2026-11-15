@@ -1,0 +1,68 @@
+{
+  "notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openUnread": "Notifications, {{count}} new",
+    "openUnread_other": "Notifications, {{count}} new",
+    "unread": "New:",
+    "loading": "Loading your notifications",
+    "loadFailed": "Couldn't load your notifications.",
+    "empty": "You're all caught up",
+    "emptyDescription": "Every email we send you shows up here too.",
+    "kinds": {
+      "morning_email": {
+        "title": "Your morning email",
+        "text": "See what's new at your school today."
+      },
+      "event_reminder": {
+        "title": "Reminder: {{name}}",
+        "text": "It starts about {{duration}} after this reminder."
+      },
+      "event_change": {
+        "title": "{{name}} changed",
+        "text": "Its time, place or details were updated."
+      },
+      "event_cancelled": {
+        "title": "{{name}} was cancelled",
+        "text": "The club cancelled this event."
+      },
+      "tickets": {
+        "title": "Your ticket for {{name}}",
+        "titleMany": "Your tickets for {{name}}",
+        "text": "Show the QR code at the door."
+      },
+      "ticket_refunded": {
+        "title": "Refund for {{name}}",
+        "text": "Your money is on its way back."
+      },
+      "refund_requested": {
+        "title": "Refund request for {{name}}",
+        "text": "Someone asked your club for a refund."
+      },
+      "refund_declined": {
+        "title": "Refund declined for {{name}}",
+        "text": "Your ticket still works."
+      },
+      "review_decision": {
+        "approved": {
+          "club": "Your club {{name}} is live",
+          "claim": "You can now manage {{name}}",
+          "event": "Your event {{name}} is live",
+          "position": "Your position {{name}} is live",
+          "text": "It's approved."
+        },
+        "rejected": {
+          "club": "Your club {{name}} wasn't approved",
+          "claim": "Your claim for {{name}} wasn't approved",
+          "event": "Your event {{name}} wasn't approved",
+          "position": "Your position {{name}} wasn't approved",
+          "text": "Reply to our email if you have any questions."
+        }
+      },
+      "club_invitation": {
+        "title": "You're invited to help run {{name}}",
+        "text": "Accept to get access to the club panel."
+      }
+    }
+  }
+}

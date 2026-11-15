@@ -89,11 +89,9 @@
   },
   "navigation": {
     "events": "Eventos",
-    "submit": "Enviar",
     "clubs": "Organizaciones",
     "positions": "Posiciones",
     "myEvents": "Mis Eventos",
-    "settings": "Configuración",
     "admin": "Administración",
     "adminPanel": "Panel de Administración",
     "clubPanel": "Panel de la organización",
@@ -104,7 +102,7 @@
     "openMenu": "Abrir menú de navegación",
     "switchToLightMode": "Cambiar al modo claro",
     "switchToDarkMode": "Cambiar al modo oscuro",
-    "myTickets": "Mis boletos"
+    "profile": "Perfil"
   },
   "siteBanner": {
     "businessSupport": {

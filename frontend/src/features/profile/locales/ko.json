@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "description": "내 이벤트, 팔로우하는 조직, 설정",
+    "settings": "설정",
+    "events": {
+      "saved": "저장한 이벤트",
+      "savedEmpty": "저장한 이벤트가 여기에 표시됩니다.",
+      "past": "다녀온 이벤트",
+      "pastEmpty": "다녀온 이벤트가 여기에 표시됩니다.",
+      "upcoming": "참석할 이벤트",
+      "upcomingEmpty": "참석할 이벤트가 여기에 표시됩니다.",
+      "ticket": "티켓"
+    },
+    "clubs": {
+      "title": "팔로우하는 조직",
+      "empty": "팔로우하는 조직이 여기에 표시됩니다."
+    },
+    "submissions": {
+      "title": "내 제출",
+      "description": "이벤트, 직책 또는 조직을 추가하세요. 게시 전에 모두 검토합니다."
+    }
+  }
+}

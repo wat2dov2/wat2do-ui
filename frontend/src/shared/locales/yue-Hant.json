@@ -83,11 +83,9 @@
   },
   "navigation": {
     "events": "活動",
-    "submit": "提交",
     "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",
-    "settings": "設定",
     "admin": "管理員",
     "adminPanel": "管理員面板",
     "clubPanel": "組織面板",
@@ -98,7 +96,7 @@
     "openMenu": "開啟導覽選單",
     "switchToLightMode": "切換至淺色模式",
     "switchToDarkMode": "切換至深色模式",
-    "myTickets": "我嘅門票"
+    "profile": "個人檔案"
   },
   "siteBanner": {
     "businessSupport": {

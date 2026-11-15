@@ -1,0 +1,68 @@
+{
+  "notifications": {
+    "title": "通知",
+    "open": "通知",
+    "openUnread": "通知，{{count}} 条新通知",
+    "openUnread_other": "通知，{{count}} 条新通知",
+    "unread": "新：",
+    "loading": "正在加载通知",
+    "loadFailed": "无法加载你的通知。",
+    "empty": "你已看完所有通知",
+    "emptyDescription": "我们发给你的每封邮件也会显示在这里。",
+    "kinds": {
+      "morning_email": {
+        "title": "你的早间邮件",
+        "text": "看看你的学校今天有什么新内容。"
+      },
+      "event_reminder": {
+        "title": "提醒：{{name}}",
+        "text": "活动将在本提醒发出约 {{duration}} 后开始。"
+      },
+      "event_change": {
+        "title": "{{name}} 有变动",
+        "text": "时间、地点或详情已更新。"
+      },
+      "event_cancelled": {
+        "title": "{{name}} 已取消",
+        "text": "组织已取消此活动。"
+      },
+      "tickets": {
+        "title": "你的 {{name}} 门票",
+        "titleMany": "你的 {{name}} 门票",
+        "text": "入场时请出示二维码。"
+      },
+      "ticket_refunded": {
+        "title": "{{name}} 的退款",
+        "text": "你的退款正在退回途中。"
+      },
+      "refund_requested": {
+        "title": "{{name}} 的退款申请",
+        "text": "有人向你的组织申请退款。"
+      },
+      "refund_declined": {
+        "title": "{{name}} 的退款申请被拒绝",
+        "text": "你的门票仍然有效。"
+      },
+      "review_decision": {
+        "approved": {
+          "club": "你的组织 {{name}} 已上线",
+          "claim": "你现在可以管理 {{name}}",
+          "event": "你的活动 {{name}} 已上线",
+          "position": "你的职位 {{name}} 已上线",
+          "text": "已通过审核。"
+        },
+        "rejected": {
+          "club": "你的组织 {{name}} 未通过审核",
+          "claim": "你对 {{name}} 的认领未通过审核",
+          "event": "你的活动 {{name}} 未通过审核",
+          "position": "你的职位 {{name}} 未通过审核",
+          "text": "如有疑问，请回复我们的邮件。"
+        }
+      },
+      "club_invitation": {
+        "title": "你受邀协助管理 {{name}}",
+        "text": "接受邀请即可进入组织面板。"
+      }
+    }
+  }
+}

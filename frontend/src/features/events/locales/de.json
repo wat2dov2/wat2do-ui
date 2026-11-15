@@ -167,6 +167,11 @@
       "fresh": "Neu auf Wat2Do",
       "by": "von",
       "networking": "Networking-Gelegenheiten"
+    },
+    "savedEvents": {
+      "save": "Veranstaltung speichern",
+      "unsave": "Aus Gespeicherten entfernen",
+      "saveFailed": "Diese Veranstaltung konnte nicht gespeichert werden"
     }
   }
 }

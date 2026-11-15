@@ -349,6 +349,7 @@ async fn send_claim_decision(
         return Ok(());
     };
     emails::send_review_decision(
+        db,
         emails::Reviewed::Claim,
         &club.club_name,
         status,

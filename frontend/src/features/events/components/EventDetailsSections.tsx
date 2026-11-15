@@ -46,6 +46,7 @@ import { ClubBadgeLink } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
+import { SaveEventButton, SaveEventButtonPlaceholder } from "@/features/events/components/SaveEventButton";
 import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
@@ -703,6 +704,7 @@ export function EventActionsPlaceholder({ clubId }: {
           {t("common.delete")}
         </Button>
       </ClubManagerView>
+      <SaveEventButtonPlaceholder />
       <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -715,7 +717,7 @@ export function EventActionsPlaceholder({ clubId }: {
   );
 }
 
-/** Share and report actions, owning their own dialogs. */
+/** Save, share and report actions, owning their own dialogs. */
 export function EventActions({
   event,
   onBeforeEdit,
@@ -800,6 +802,7 @@ export function EventActions({
           {t("common.delete")}
         </Button>
       </ClubManagerView>
+      <SaveEventButton eventId={event.id} />
       <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}

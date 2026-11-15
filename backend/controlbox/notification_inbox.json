@@ -1,0 +1,5 @@
+{
+  "page_size": 30,
+  "retention_days": 90,
+  "refresh_seconds": 300
+}

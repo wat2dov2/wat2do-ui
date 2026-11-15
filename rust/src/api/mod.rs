@@ -255,6 +255,9 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::notification_preferences::confirm_unsubscribe,
             routes::notification_preferences::apply_unsubscribe
         ))
+        // The notification inbox under the top bar's bell.
+        .routes(routes!(routes::notifications::list_my_notifications))
+        .routes(routes!(routes::notifications::mark_my_notifications_read))
         // routers/payouts.py
         .routes(routes!(routes::payouts::list_own_payouts))
         .routes(routes!(routes::payouts::list_admin_payouts))

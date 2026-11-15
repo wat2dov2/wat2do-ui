@@ -18,7 +18,8 @@ from services.email_layout import (
 )
 
 
-def _event_url(event: dict, frontend_url: str) -> str:
+def event_url(event: dict, frontend_url: str) -> str:
+    """An event's page on its school's site, where every email about it links."""
     return f"{frontend_url}/events/{int(event['id'])}"
 
 
@@ -37,10 +38,14 @@ def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
     return date_label, f"{hour}{minute} {am_pm}"
 
 
+def is_cancellation(diff: dict) -> bool:
+    """Whether an event change cancelled its event."""
+    return diff.get("cancelled", {}).get("new") is True
+
+
 def event_change_subject(event: dict, diff: dict) -> str:
     title = event.get("title") or "an event you're going to"
-    cancelled = diff.get("cancelled", {}).get("new") is True
-    return f"{'Cancelled' if cancelled else 'Changed'}: {title}"
+    return f"{'Cancelled' if is_cancellation(diff) else 'Changed'}: {title}"
 
 
 def render_event_change_text(
@@ -65,7 +70,7 @@ def render_event_change_text(
     lines.extend(
         [
             "",
-            f"View the event: {_event_url(event, frontend_url)}",
+            f"View the event: {event_url(event, frontend_url)}",
             "",
             f"Manage email preferences: {preferences_url}",
             f"Unsubscribe from event change emails: {unsubscribe_url}",
@@ -125,10 +130,10 @@ def _event_spotlight(
     rows: list[tuple[str, str | None, str | None]],
 ) -> str:
     """One event's poster, title, detail rows, and link: the body of single-event emails."""
-    event_url = escape(_event_url(event, frontend_url), quote=True)
+    href = escape(event_url(event, frontend_url), quote=True)
     title = escape(str(event.get("title") or "Untitled event"))
     image = (
-        f'<a href="{event_url}"><img src="{escape(image_src, quote=True)}" '
+        f'<a href="{href}"><img src="{escape(image_src, quote=True)}" '
         f'alt="{title}" width="590" style="display:block;width:100%;max-width:590px;'
         'height:auto;margin:0 0 20px;border-radius:12px;"></a>'
         if image_src
@@ -137,12 +142,12 @@ def _event_spotlight(
     return (
         f"{email_paragraph(escape(intro), muted=True)}"
         f"{image}"
-        f'<a href="{event_url}" style="color:{EMAIL_THEME["foreground"]};'
+        f'<a href="{href}" style="color:{EMAIL_THEME["foreground"]};'
         f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px {EMAIL_FONT};">'
         f"{title}</h2></a>"
         + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
         + '<div style="height:16px;"></div>'
-        + email_button(_event_url(event, frontend_url), "View event on wat2do")
+        + email_button(event_url(event, frontend_url), "View event on wat2do")
     )
 
 

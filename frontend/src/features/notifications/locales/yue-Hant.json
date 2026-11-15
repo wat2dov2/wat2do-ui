@@ -1,0 +1,68 @@
+{
+  "notifications": {
+    "title": "通知",
+    "open": "通知",
+    "openUnread": "通知，{{count}} 個新通知",
+    "openUnread_other": "通知，{{count}} 個新通知",
+    "unread": "新：",
+    "loading": "載入緊你嘅通知",
+    "loadFailed": "無法載入你嘅通知。",
+    "empty": "你已經睇晒所有通知",
+    "emptyDescription": "我哋寄俾你嘅每封電郵都會喺度出現。",
+    "kinds": {
+      "morning_email": {
+        "title": "你嘅朝早電郵",
+        "text": "睇下你間學校今日有咩新嘢。"
+      },
+      "event_reminder": {
+        "title": "提醒：{{name}}",
+        "text": "活動喺呢個提醒發出之後大約 {{duration}} 開始。"
+      },
+      "event_change": {
+        "title": "{{name}} 有改動",
+        "text": "時間、地點或者詳情已經更新。"
+      },
+      "event_cancelled": {
+        "title": "{{name}} 已經取消",
+        "text": "組織取消咗呢個活動。"
+      },
+      "tickets": {
+        "title": "你嘅 {{name}} 門票",
+        "titleMany": "你嘅 {{name}} 門票",
+        "text": "入場時出示二維碼。"
+      },
+      "ticket_refunded": {
+        "title": "{{name}} 嘅退款",
+        "text": "你嘅錢喺退返嚟嘅路上。"
+      },
+      "refund_requested": {
+        "title": "{{name}} 嘅退款申請",
+        "text": "有人向你嘅組織申請退款。"
+      },
+      "refund_declined": {
+        "title": "{{name}} 嘅退款申請被拒絕",
+        "text": "你嘅門票仍然有效。"
+      },
+      "review_decision": {
+        "approved": {
+          "club": "你嘅組織 {{name}} 已經上線",
+          "claim": "你而家可以管理 {{name}}",
+          "event": "你嘅活動 {{name}} 已經上線",
+          "position": "你嘅職位 {{name}} 已經上線",
+          "text": "已經批核。"
+        },
+        "rejected": {
+          "club": "你嘅組織 {{name}} 未獲批核",
+          "claim": "你對 {{name}} 嘅認領未獲批核",
+          "event": "你嘅活動 {{name}} 未獲批核",
+          "position": "你嘅職位 {{name}} 未獲批核",
+          "text": "有問題可以回覆我哋嘅電郵。"
+        }
+      },
+      "club_invitation": {
+        "title": "你獲邀幫手管理 {{name}}",
+        "text": "接受邀請就可以使用組織面板。"
+      }
+    }
+  }
+}

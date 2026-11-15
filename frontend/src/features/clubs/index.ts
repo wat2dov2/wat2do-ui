@@ -21,6 +21,7 @@ export { normalizeClub } from "./api/clubService";
 
 // Hooks
 export { useOpenClubPanel } from "./hooks/useOpenClubPanel";
+export { useSavedClubsStore } from "./store/savedClubs.store";
 export { useActiveClub, useOwnClub } from "./hooks/useActiveClub";
 
 // The club panel's school site

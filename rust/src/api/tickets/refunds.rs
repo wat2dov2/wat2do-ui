@@ -62,6 +62,7 @@ pub async fn refund_ticket(
     .await?;
     if refunded > 0 {
         emails::send_refund_notice(
+            &state.db,
             state.settings,
             &event,
             &order.buyer_email,
@@ -122,6 +123,7 @@ pub async fn request_refund(
             None => Vec::new(),
         };
         emails::send_refund_request(
+            &state.db,
             state.settings,
             &event,
             recipients,
@@ -165,7 +167,13 @@ pub async fn decline_request(
     .await?
     .rows_affected();
     if declined > 0 {
-        emails::send_refund_declined(state.settings, &event, &order.buyer_email, &ticket.code);
+        emails::send_refund_declined(
+            &state.db,
+            state.settings,
+            &event,
+            &order.buyer_email,
+            &ticket.code,
+        );
     }
     let updated = store::ticket_by_id(&state.db, ticket_id)
         .await?
@@ -248,6 +256,7 @@ pub async fn refund_cancelled_order(
     let refunded = refund(state, order, &valid, refunded_by, &key).await?;
     if refunded > 0 {
         emails::send_refund_notice(
+            &state.db,
             state.settings,
             event,
             &order.buyer_email,
