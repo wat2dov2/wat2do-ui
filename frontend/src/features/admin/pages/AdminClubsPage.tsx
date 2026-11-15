@@ -76,7 +76,6 @@ export function AdminClubsPage() {
     openEditModal,
     closeModal,
     setCurrentPage,
-    refreshClubs,
   } = useAdminClubsPage();
 
   const [searchParams] = useMutableSearchParams();
@@ -108,10 +107,7 @@ export function AdminClubsPage() {
   const [rejectClaimId, setRejectClaimId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [submittingResolution, setSubmittingResolution] = useState(false);
-  const refreshClubQueries = () => Promise.all([
-    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all }),
-    refreshClubs(),
-  ]);
+  const refreshClubQueries = () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
 
   const [rejectClub, setRejectClub] = useState<{ id: number; reason: string } | null>(null);
   const [rejectingClub, setRejectingClub] = useState(false);

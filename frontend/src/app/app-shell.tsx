@@ -53,7 +53,7 @@ function routeUsesChrome(pathname: string): boolean {
   return !(
     CHROMELESS_ROUTES.has(pathname) ||
     routeMatches(pathname, ROUTES.INVITE) ||
-    routeMatches(pathname, "/qr")
+    routeMatches(pathname, ROUTES.QR)
   );
 }
 
@@ -101,7 +101,7 @@ export function AppShell({
     isError: isSchoolDirectoryError,
   } = useSchoolDirectory();
   const isAuthFlow = AUTH_FLOW_ROUTES.has(pathname);
-  const skipSchoolCheck = routeMatches(pathname, "/qr");
+  const skipSchoolCheck = routeMatches(pathname, ROUTES.QR);
   const toasterRequested = useToasterRequested();
 
   // Taken from the request on the server rather than window.location in the browser,

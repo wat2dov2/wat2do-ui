@@ -13,9 +13,7 @@ export interface Club {
   discord: string | null;
   club_type: string;
   logo_url?: string | null;
-  created_by?: string | null;
   created_at?: string | null;
-  owner_email?: string | null;
   school: string;
   event_count?: number;
   position_count?: number;

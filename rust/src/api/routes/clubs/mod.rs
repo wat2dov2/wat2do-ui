@@ -65,7 +65,8 @@ const ALL_RESOURCES: &[&str] = &["events", "positions", "clubs"];
 static SUBMISSIONS: LazyLock<RateLimiter> =
     LazyLock::new(|| RateLimiter::new(RATE_LIMITS.submissions));
 
-/// A club as the API returns it (`ClubResponse`).
+/// A club as anyone may read it (`ClubResponse`). It never says who owns the
+/// club; only admins read that, in `AdminClubResponse`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct ClubResponse {
     pub id: i32,
@@ -80,14 +81,11 @@ pub struct ClubResponse {
     pub discord: Option<String>,
     pub club_type: String,
     pub logo_url: Option<String>,
-    pub created_by: Option<String>,
     #[schema(value_type = Option<String>, format = DateTime)]
     #[serde(serialize_with = "json::option_datetime")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(default)]
     pub school: Option<String>,
-    #[serde(default)]
-    pub owner_email: Option<String>,
     #[schema(default = 0)]
     #[serde(default)]
     pub event_count: i64,
@@ -104,11 +102,23 @@ pub enum ClubStatus {
     Rejected,
 }
 
-/// A club in the admin review queue, with who submitted it.
+/// A club with the account that owns it, the one that created or claimed it
+/// (`AdminClubResponse`). Only admins read it.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct AdminClubResponse {
+    #[serde(flatten)]
+    pub club: ClubResponse,
+    /// The owner's user id.
+    pub created_by: Option<String>,
+    /// The owner's account email.
+    pub owner_email: Option<String>,
+}
+
+/// A club in the admin review queue, with its owner and who submitted it.
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct ClubSubmissionResponse {
     #[serde(flatten)]
-    pub club: ClubResponse,
+    pub club: AdminClubResponse,
     pub submitted_by_email: Option<String>,
 }
 
@@ -118,48 +128,58 @@ crate::paginated_schema!(
     ClubResponse
 );
 crate::paginated_schema!(
+    PaginatedAdminClubs,
+    PaginatedResponse_AdminClubResponse_,
+    AdminClubResponse
+);
+crate::paginated_schema!(
     PaginatedClubSubmissions,
     PaginatedResponse_ClubSubmissionResponse_,
     ClubSubmissionResponse
 );
 
-/// Which computed parts of a club a read fills in; the others read as Python
-/// left them (no owner email, no event count).
+/// Which computed parts of a club a read fills in.
 #[derive(Debug, Clone, Copy)]
 pub struct Computed {
-    pub owner_email: bool,
+    /// Who owns the club (`AdminClubResponse`), which only admins' reads select.
+    pub owner: bool,
+    /// `public.event_count`; without it the count reads 0, as `/clubs/mine` always did.
     pub event_count: bool,
 }
 
 impl Computed {
-    /// `get_club` and the directory: the owner's email and the event count.
-    pub const FULL: Self = Self {
-        owner_email: true,
+    /// A club as anyone reads it (`get_club`, the directory).
+    pub const PUBLIC: Self = Self {
+        owner: false,
         event_count: true,
     };
-    /// A club row returned by a write (`_club_response(row)`).
-    pub const ROW: Self = Self {
-        owner_email: false,
-        event_count: false,
+    /// A club as admins read it, with its owner.
+    pub const ADMIN: Self = Self {
+        owner: true,
+        event_count: true,
     };
 }
 
-/// The columns `ClubResponse::from_row` reads, for clubs `c` joined to
-/// schools `s` (`CLUB_JOINS`); `position_count` is added by the caller.
+/// The stored columns of every club read, for clubs `c`.
+const CLUB_FIELDS: &str = "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, \
+     c.discord, c.club_type, c.logo_url, c.created_at, c.submitted_by_email";
+
+/// The columns `ClubResponse::from_row` reads (and, with `owner`,
+/// `AdminClubResponse::from_row`), for clubs `c` joined to schools `s`
+/// (`CLUB_JOINS`); `position_count` is added by the caller.
 pub fn club_columns(computed: Computed) -> String {
     format!(
-        "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, c.discord, c.club_type, \
-         c.logo_url, c.created_by::text AS created_by, c.created_at, c.submitted_by_email, \
-         NULLIF(s.slug, '') AS school, {} AS owner_email, {} AS event_count",
-        if computed.owner_email {
-            "(SELECT u.email FROM public.users u WHERE u.id = c.created_by)"
-        } else {
-            "NULL::text"
-        },
+        "{CLUB_FIELDS}, NULLIF(s.slug, '') AS school, {} AS event_count{}",
         if computed.event_count {
             "public.event_count(c)"
         } else {
             "0::bigint"
+        },
+        if computed.owner {
+            ", c.created_by::text AS created_by, \
+             (SELECT u.email FROM public.users u WHERE u.id = c.created_by) AS owner_email"
+        } else {
+            ""
         }
     )
 }
@@ -181,16 +201,25 @@ impl ClubResponse {
             discord: row.try_get("discord")?,
             club_type: row.try_get("club_type")?,
             logo_url: row.try_get("logo_url")?,
-            created_by: row.try_get("created_by")?,
             created_at: row.try_get("created_at")?,
             school: row.try_get("school")?,
-            owner_email: row.try_get("owner_email")?,
             event_count: row.try_get("event_count")?,
             position_count: match row.try_get::<Option<i64>, _>("position_count") {
                 Ok(count) => count.unwrap_or_default(),
                 Err(sqlx::Error::ColumnNotFound(_)) => 0,
                 Err(error) => return Err(error),
             },
+        })
+    }
+}
+
+impl AdminClubResponse {
+    /// A row of `club_columns` read with `owner`.
+    pub fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            club: ClubResponse::from_row(row)?,
+            created_by: row.try_get("created_by")?,
+            owner_email: row.try_get("owner_email")?,
         })
     }
 }
@@ -211,10 +240,22 @@ fn club_id_into(check: &mut Validator, path: &PathParams) -> i64 {
 pub async fn get_club(db: &sqlx::PgPool, id: i64) -> Result<Option<ClubResponse>, ApiError> {
     let sql = format!(
         "SELECT {} FROM public.clubs c {CLUB_JOINS} WHERE c.id = $1",
-        club_columns(Computed::FULL)
+        club_columns(Computed::PUBLIC)
     );
     let row = read_with_retry(|| sqlx::query(&sql).bind(id).fetch_optional(db)).await?;
     Ok(row.as_ref().map(ClubResponse::from_row).transpose()?)
+}
+
+/// The account that owns a club (`clubs.created_by`, which created or claimed
+/// it); no club read anyone can make returns it.
+pub async fn club_owner(db: &sqlx::PgPool, id: i64) -> Result<Option<Uuid>, ApiError> {
+    let owner = read_with_retry(|| {
+        sqlx::query_scalar::<_, Option<Uuid>>("SELECT created_by FROM public.clubs WHERE id = $1")
+            .bind(id)
+            .fetch_optional(db)
+    })
+    .await?;
+    Ok(owner.flatten())
 }
 
 /// `is_club_member`: a failed lookup reads as not a member, as in Python.
@@ -244,7 +285,7 @@ pub async fn managed_club(
         "SELECT {}, EXISTS (SELECT 1 FROM public.club_members m \
                  WHERE m.club_id = c.id AND m.user_id = $2) AS is_member \
          FROM public.clubs c {CLUB_JOINS} WHERE c.id = $1",
-        club_columns(Computed::FULL)
+        club_columns(Computed::PUBLIC)
     );
     let row =
         read_with_retry(|| sqlx::query(&sql).bind(id).bind(user.id).fetch_optional(db)).await?;
@@ -322,23 +363,76 @@ pub async fn list_clubs(
     State(state): State<AppState>,
     query: QueryParams,
 ) -> Result<Json<Paginated<ClubResponse>>, ApiError> {
+    let (filters, pagination) = directory_query(&query)?;
+    let (items, total) = directory(
+        &state.db,
+        &filters,
+        pagination,
+        Computed::PUBLIC,
+        ClubResponse::from_row,
+    )
+    .await?;
+    Ok(Json(Paginated::new(items, total, pagination)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/clubs/admin",
+    tag = "clubs",
+    operation_id = "list_admin_clubs_clubs_admin_get",
+    summary = "List Admin Clubs",
+    description = "The public directory with who owns each club, for admins.",
+    params(
+        ("club_type" = Option<String>, Query, nullable, min_length = 1, max_length = 100, pattern = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"),
+        ("school" = Option<String>, Query, nullable, max_length = 255),
+        ("search" = Option<String>, Query, nullable, max_length = 200),
+        ("categories" = Option<Vec<String>>, Query, nullable),
+        ("ids" = Option<Vec<i64>>, Query, nullable),
+        ("min_events" = Option<i64>, Query, minimum = 0),
+        ("page" = Option<i64>, Query, minimum = 1, maximum = 1000, description = "Page number (1-indexed)"),
+        ("page_size" = Option<i64>, Query, minimum = 1, maximum = 100, description = "Items per page (max 100)"),
+    ),
+    responses(
+        (status = 200, description = "Successful Response", body = PaginatedAdminClubs),
+        (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
+    )
+)]
+pub async fn list_admin_clubs(
+    State(state): State<AppState>,
+    AdminUser(_): AdminUser,
+    query: QueryParams,
+) -> Result<Json<Paginated<AdminClubResponse>>, ApiError> {
+    let (filters, pagination) = directory_query(&query)?;
+    let (items, total) = directory(
+        &state.db,
+        &filters,
+        pagination,
+        Computed::ADMIN,
+        AdminClubResponse::from_row,
+    )
+    .await?;
+    Ok(Json(Paginated::new(items, total, pagination)))
+}
+
+/// The directory's filters and page, as `GET /clubs/` and `GET /clubs/admin` take them.
+fn directory_query(query: &QueryParams) -> Result<(DirectoryFilters, Pagination), ApiError> {
     let mut check = Validator::default();
-    let pagination = Pagination::read(&mut check, &query);
-    let club_type = check.query(&query, "club_type").optional_pattern(
+    let pagination = Pagination::read(&mut check, query);
+    let club_type = check.query(query, "club_type").optional_pattern(
         Length::default().min(1).max(MAX_CLUB_TYPE_LENGTH),
         CLUB_TYPE_PATTERN,
         &CLUB_TYPE,
     );
     let school = check
-        .query(&query, "school")
+        .query(query, "school")
         .optional_string(Length::default().max(MAX_SCHOOL_LENGTH));
     let search = check
-        .query(&query, "search")
+        .query(query, "search")
         .optional_string(Length::default().max(MAX_SEARCH_QUERY_LENGTH));
     let categories = query.all("categories");
-    let ids = check.query_ints(&query, "ids");
+    let ids = check.query_ints(query, "ids");
     let min_events = check
-        .query(&query, "min_events")
+        .query(query, "min_events")
         .int_or(0, Limits::default().ge(0));
     check.finish()?;
     let filters = DirectoryFilters {
@@ -354,16 +448,18 @@ pub async fn list_clubs(
         ids,
         min_events,
     };
-    let (items, total) = directory(&state.db, &filters, pagination).await?;
-    Ok(Json(Paginated::new(items, total, pagination)))
+    Ok((filters, pagination))
 }
 
-/// `list_clubs`: one page of approved clubs by name, with their open positions.
-async fn directory(
+/// `list_clubs`: one page of approved clubs by name, with their open
+/// positions, read as `computed` says and made into items by `item`.
+async fn directory<T>(
     db: &sqlx::PgPool,
     filters: &DirectoryFilters,
     pagination: Pagination,
-) -> Result<(Vec<ClubResponse>, i64), ApiError> {
+    computed: Computed,
+    item: fn(&PgRow) -> Result<T, sqlx::Error>,
+) -> Result<(Vec<T>, i64), ApiError> {
     let school_filter = if filters.school.is_some() {
         // `get_school` by slug only; an unknown school matches nothing.
         "AND c.school_id = (SELECT id FROM public.schools WHERE slug = $5 LIMIT 1)"
@@ -389,7 +485,7 @@ async fn directory(
                            AND {}) AS position_count \
              FROM page JOIN public.clubs c ON c.id = page.id {CLUB_JOINS}) AS listed ON true \
          ORDER BY listed.club_name ASC, listed.id ASC",
-        club_columns(Computed::FULL),
+        club_columns(computed),
         OpenWindow::sql("p", "$9", "$10"),
     );
     let slug = filters.school.as_deref().map(normalize_slug);
@@ -413,7 +509,7 @@ async fn directory(
     for row in &rows {
         total = row.try_get("total")?;
         if row.try_get::<Option<i32>, _>("id")?.is_some() {
-            items.push(ClubResponse::from_row(row)?);
+            items.push(item(row)?);
         }
     }
     Ok((items, total))
@@ -513,7 +609,7 @@ pub async fn list_clubs_for_review(
         &format!(
             "SELECT entries.position, {} FROM entries \
          JOIN public.clubs c ON c.id = entries.id::integer {CLUB_JOINS}",
-            club_columns(Computed::FULL)
+            club_columns(Computed::ADMIN)
         ),
     );
     let rows = read_with_retry(|| {
@@ -532,7 +628,7 @@ pub async fn list_clubs_for_review(
         total = row.try_get("total")?;
         if row.try_get::<Option<i32>, _>("id")?.is_some() {
             items.push(ClubSubmissionResponse {
-                club: ClubResponse::from_row(row)?,
+                club: AdminClubResponse::from_row(row)?,
                 submitted_by_email: row.try_get("submitted_by_email")?,
             });
         }
@@ -555,8 +651,8 @@ pub async fn list_my_clubs(
     Ok(Json(clubs_managed_by(&state.db, user.id).await))
 }
 
-/// `list_clubs_by_owner`: the clubs whose team the user is on, with their
-/// owners' emails (their event counts are not read). A failed read is no clubs.
+/// `list_clubs_by_owner`: the clubs whose team the user is on (their event
+/// counts are not read). A failed read is no clubs.
 pub async fn clubs_managed_by(db: &sqlx::PgPool, user_id: Uuid) -> Vec<ClubResponse> {
     // Driven from club_members like PostgREST's embedding, so the order matches.
     let sql = format!(
@@ -565,7 +661,7 @@ pub async fn clubs_managed_by(db: &sqlx::PgPool, user_id: Uuid) -> Vec<ClubRespo
                              WHERE c.id = m.club_id) AS club \
          WHERE m.user_id = $1",
         club_columns(Computed {
-            owner_email: true,
+            owner: false,
             event_count: false,
         })
     );
@@ -852,11 +948,7 @@ pub struct SubmissionUpdate {
 
 /// `ClubResponse` columns of the row a write returned (`RETURNING`), for clubs `c`.
 fn returned_club_sql(school: &str) -> String {
-    format!(
-        "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, c.discord, c.club_type, \
-         c.logo_url, c.created_by::text AS created_by, c.created_at, c.submitted_by_email, \
-         {school} AS school, NULL::text AS owner_email, 0::bigint AS event_count"
-    )
+    format!("{CLUB_FIELDS}, {school} AS school, 0::bigint AS event_count")
 }
 
 #[utoipa::path(
@@ -900,12 +992,8 @@ pub async fn create_club(
                  discord, club_type, logo_url, school_id, created_by, submitted, status) \
              SELECT $2, $3, $4, $5, $6, $7, $8, $9, school.id, $10, true, $11 FROM school \
              RETURNING *) \
-         SELECT {}, (SELECT u.email FROM public.users u WHERE u.id = c.created_by) AS owner_email, \
-                0::bigint AS event_count \
-         FROM inserted c LEFT JOIN public.schools s ON s.id = c.school_id",
-        "c.id, c.club_name, c.status, c.categories, c.club_page, c.ig, c.discord, c.club_type, \
-         c.logo_url, c.created_by::text AS created_by, c.created_at, c.submitted_by_email, \
-         NULLIF(s.slug, '') AS school"
+         SELECT {} FROM inserted c LEFT JOIN public.schools s ON s.id = c.school_id",
+        returned_club_sql("NULLIF(s.slug, '')")
     );
     let categories = fields
         .categories
@@ -1212,5 +1300,7 @@ pub async fn delete_club(
     Ok(no_content())
 }
 
+#[cfg(test)]
+mod database_tests;
 #[cfg(test)]
 mod tests;

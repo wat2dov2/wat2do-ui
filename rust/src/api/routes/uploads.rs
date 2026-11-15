@@ -270,11 +270,7 @@ pub async fn upload_club_logo(
     let club = clubs::get_club(&state.db, club_id)
         .await?
         .ok_or_else(|| ApiError::not_found(CLUB_NOT_FOUND))?;
-    let owner = club
-        .created_by
-        .as_deref()
-        .and_then(|owner| Uuid::parse_str(owner).ok());
-    require_owner_or_admin(&user, owner)?;
+    require_owner_or_admin(&user, clubs::club_owner(&state.db, club_id).await?)?;
     let url = replace(
         &state,
         BUCKET_CLUB_LOGOS,

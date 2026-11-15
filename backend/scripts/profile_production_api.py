@@ -122,6 +122,7 @@ AUTHENTICATED_ENDPOINTS = (
         True,
     ),
     Endpoint("/notification-preferences", "/notification-preferences", True),
+    Endpoint("/clubs/admin", "/clubs/admin?page=1&page_size=20", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint("/clubs/mine", "/clubs/mine", True),
     Endpoint(

@@ -187,6 +187,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::clubs::list_clubs,
             routes::clubs::create_club
         ))
+        .routes(routes!(routes::clubs::list_admin_clubs))
         .routes(routes!(routes::clubs::list_clubs_for_review))
         .routes(routes!(routes::clubs::list_my_clubs))
         .routes(routes!(routes::clubs::claims::list_claims))
