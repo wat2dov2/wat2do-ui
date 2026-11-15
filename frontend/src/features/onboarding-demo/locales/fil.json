@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 napili - kailangan ng hindi bababa sa 2 upang magpatuloy",
       "reactionGroup": "Reaksyon para sa {{title}}",
       "reactions": {
-        "interested": "Interesado",
+        "interested": "Paalalahanan ako",
         "maybe": "Baka",
         "notForMe": "Hindi para sa akin"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} na event",
       "reward": "Gantimpala: +7 araw ng Pro",
       "progressAria": "Progreso ng hamon",
-      "markedInterested": "{{count}} event ang minarkahang interesado habang nag-o-onboard",
-      "markedInterested_one": "{{count}} event ang minarkahang interesado habang nag-o-onboard",
-      "markedInterested_other": "{{count}} event ang minarkahang interesado habang nag-o-onboard"
+      "markedInterested": "{{count}} event ang minarkahang paalalahanan habang nag-o-onboard",
+      "markedInterested_one": "{{count}} event ang minarkahang paalalahanan habang nag-o-onboard",
+      "markedInterested_other": "{{count}} event ang minarkahang paalalahanan habang nag-o-onboard"
     },
     "home": {
       "badge": "Demo tapos na",

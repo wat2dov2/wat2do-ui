@@ -8,10 +8,10 @@ import { ticketPath } from "@/shared/constants/routes";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Button } from "@/shared/ui/button";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/shared/ui/item";
-import { DateTile } from "@/shared/ui/tile";
+import { DateLeaf, ImageTile } from "@/shared/ui/tile";
 import { formatOccurrence } from "@/shared/utils/date";
 
-/** One event on one of its dates: its calendar tile, its name linked to its page, when and where, and the visitor's ticket. */
+/** One event on one of its dates: its poster (a calendar leaf without one), its name linked to its page, when and where, and the visitor's ticket. */
 function ProfileEventItem({ row }: { row: ProfileEventRow }) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -20,7 +20,11 @@ function ProfileEventItem({ row }: { row: ProfileEventRow }) {
   return (
     <Item size="sm">
       <ItemMedia>
-        <DateTile dtstartUtc={row.dtstartUtc} locale={i18n.language} timeZone={timeZone} />
+        <ImageTile
+          src={row.image?.src ?? null}
+          kind={row.image?.kind ?? "poster"}
+          fallback={<DateLeaf dtstartUtc={row.dtstartUtc} locale={i18n.language} timeZone={timeZone} />}
+        />
       </ItemMedia>
       <ItemContent>
         <ItemTitle>

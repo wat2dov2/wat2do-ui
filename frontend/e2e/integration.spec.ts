@@ -3694,7 +3694,7 @@ test.describe("Events Page", () => {
     const laterCard = page.locator('article[data-event-id="3"]:visible');
     await expect(todayCard).toBeVisible();
     await expect(todayCard).not.toContainText(/\b0 clicks?\b/);
-    await expect(todayCard).not.toContainText(/\b0 interested\b/);
+    await expect(todayCard).not.toContainText(/\b0 notified\b/);
     await expect(todayCard.locator('[data-slot="event-card-date"]')).toHaveText("Today");
     await expect(tomorrowCard.locator('[data-slot="event-card-date"]')).toHaveText("Tomorrow");
 
@@ -3825,8 +3825,8 @@ test.describe("Events Page", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Notify me", exact: true }).click();
     await expect.poll(() => goingCount).toBe(1);
     await page.keyboard.press("Escape");
-    await expect(card).toContainText("1 click · 1 interested");
-    await expect(card.getByText("1 click · 1 interested", { exact: true })).toHaveCSS("font-size", "11px");
+    await expect(card).toContainText("1 click · 1 notified");
+    await expect(card.getByText("1 click · 1 notified", { exact: true })).toHaveCSS("font-size", "11px");
     const poster = card.locator('[data-slot="event-card-image"]');
     const goingBadge = poster.getByText("Subscribed", { exact: true });
     await expect(goingBadge).toBeVisible();
@@ -3840,7 +3840,7 @@ test.describe("Events Page", () => {
 
     await page.reload();
     const refreshedCard = page.locator(`article[data-event-id="${eventId}"]:visible`).first();
-    await expect(refreshedCard).toContainText("1 click · 1 interested");
+    await expect(refreshedCard).toContainText("1 click · 1 notified");
   });
 
   test("cuts out and drag-scrolls overflowing quick filters", async ({ page }) => {
@@ -3899,7 +3899,7 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const cards = page.locator("article[data-event-id]");
-    await expect(cards.first()).toContainText("1 interested");
+    await expect(cards.first()).toContainText("1 notified");
     while (await cards.count() < items.length) {
       const previousCount = await cards.count();
       await page.getByTestId("event-list-sentinel").scrollIntoViewIfNeeded();
@@ -3908,8 +3908,8 @@ test.describe("Events Page", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     const loadedFeedRequests = feedRequests;
     const loadedStatsRequests = statsRequests;
-    await page.getByRole("button", { name: ">0 interested", exact: true }).click();
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum interested" });
+    await page.getByRole("button", { name: ">0 notified", exact: true }).click();
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum notified" });
     await minimumGoing.fill("1");
     await expect(page.getByRole("list", { name: `${items.length / 2} events found`, exact: true })).toBeVisible();
     await expect(cards).toHaveCount(batchSize);
@@ -3982,37 +3982,37 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum interested" });
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum notified" });
     await expect(card).toBeVisible();
     await expect(minimumGoing).toHaveCount(0);
-    await page.getByRole("button", { name: ">0 interested", exact: true }).hover();
+    await page.getByRole("button", { name: ">0 notified", exact: true }).hover();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.down();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.up();
     await expect(minimumGoing).toBeVisible();
-    await expect(page.getByText("Minimum interested", { exact: true })).toBeVisible();
+    await expect(page.getByText("Minimum notified", { exact: true })).toBeVisible();
     await expect(minimumGoing).toHaveValue("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 interested", exact: true }).focus();
+    await page.getByRole("button", { name: ">0 notified", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(minimumGoing).toBeVisible();
     await minimumGoing.hover();
     await minimumGoing.fill("3");
-    await expect(page.getByRole("button", { name: ">3 interested", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 notified", exact: true })).toBeVisible();
     await minimumGoing.press("Backspace");
     await expect(minimumGoing).toHaveValue("");
-    await expect(page.getByRole("button", { name: ">0 interested", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">0 notified", exact: true })).toBeVisible();
     await minimumGoing.fill("03");
     await expect(minimumGoing).toHaveValue("03");
     await minimumGoing.fill("-1");
-    await expect(page.getByRole("button", { name: ">3 interested", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 notified", exact: true })).toBeVisible();
     await expect(card).toBeVisible();
     await minimumGoing.fill("4");
     await expect(card).toHaveCount(0);
     await minimumGoing.fill("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 interested", exact: true }).click();
+    await page.getByRole("button", { name: ">0 notified", exact: true }).click();
     await expect(minimumGoing).toHaveValue("0");
     await expect(card).toBeVisible();
   });
@@ -4084,7 +4084,7 @@ test.describe("Events Page", () => {
     const triggers = [
       filters.getByRole("button", { name: "Any price", exact: true }),
       filters.getByRole("combobox", { name: "Event date", exact: true }),
-      filters.getByRole("button", { name: ">0 interested", exact: true }),
+      filters.getByRole("button", { name: ">0 notified", exact: true }),
     ];
     for (const trigger of triggers) {
       await expect(trigger).toBeEnabled();

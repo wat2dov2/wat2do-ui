@@ -51,7 +51,7 @@
       "pickedStatus": "已选择 {{count}}/3 个 - 至少选择 2 个才能继续",
       "reactionGroup": "{{title}} 的反馈",
       "reactions": {
-        "interested": "感兴趣",
+        "interested": "提醒我",
         "maybe": "也许",
         "notForMe": "不适合我"
       }
@@ -101,8 +101,8 @@
       "progress": "{{count}} / {{total}} 个活动",
       "reward": "奖励：+7 天 Pro",
       "progressAria": "挑战进度",
-      "markedInterested": "你在引导中标记了 {{count}} 个感兴趣活动",
-      "markedInterested_other": "你在引导中标记了 {{count}} 个感兴趣活动"
+      "markedInterested": "你在引导中为 {{count}} 个活动开启了提醒",
+      "markedInterested_other": "你在引导中为 {{count}} 个活动开启了提醒"
     },
     "home": {
       "badge": "演示完成",

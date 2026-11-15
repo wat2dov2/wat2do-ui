@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "भर्ती: {{positions}}",
-    "minimumGoing": "न्यूनतम इच्छुक",
+    "minimumGoing": "न्यूनतम सूचना पाने वाले",
     "eventTitle": "घटना का शीर्षक",
     "loadFailed": "ईवेंट लोड करने में विफल. कृपया पुन: प्रयास करें।",
     "deleteFailed": "ईवेंट हटाने में विफल. कृपया पुन: प्रयास करें।",
@@ -112,9 +112,9 @@
     },
     "new": "नया",
     "updated": "अपडेटेड",
-    "goingCount": "{{count}} इच्छुक",
-    "goingCount_one": "{{count}} इच्छुक",
-    "goingCount_other": "{{count}} इच्छुक",
+    "goingCount": "{{count}} सूचना पाने वाले",
+    "goingCount_one": "{{count}} सूचना पाने वाला",
+    "goingCount_other": "{{count}} सूचना पाने वाले",
     "hostedBy": "के द्वारा मेजबानी",
     "aboutEvent": "घटना के बारे में",
     "fetchingDetails": "विवरण लाया जा रहा है...",

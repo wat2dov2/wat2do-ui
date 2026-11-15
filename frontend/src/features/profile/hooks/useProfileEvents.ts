@@ -23,6 +23,19 @@ export interface ProfileEventRow {
   school: string | null;
   /** The visitor's ticket for this date, when they hold one. */
   ticketCode: string | null;
+  /** The event's poster, or its club's logo when it has none. */
+  image: ProfileEventImage | null;
+}
+
+export interface ProfileEventImage {
+  src: string;
+  kind: "poster" | "logo";
+}
+
+function eventImage(event: Event | undefined): ProfileEventImage | null {
+  if (event?.source_image_url) return { src: event.source_image_url, kind: "poster" };
+  if (event?.club_logo_url) return { src: event.club_logo_url, kind: "logo" };
+  return null;
 }
 
 function eventRow(event: Event, occurrence: NonNullable<Event["occurrences"]>[number], ticketCode: string | null): ProfileEventRow {
@@ -35,6 +48,7 @@ function eventRow(event: Event, occurrence: NonNullable<Event["occurrences"]>[nu
     location: event.location ?? null,
     school: event.school ?? null,
     ticketCode,
+    image: eventImage(event),
   };
 }
 
@@ -54,12 +68,17 @@ export function useProfileEvents() {
   const tickets = useMyTickets();
   const now = useCurrentTime();
 
+  // Ticketed events are read too, for their posters.
   const ids = useMemo(
     () =>
-      [...new Set([...(saved.data ?? []), ...(going.data ?? []).map((selection) => selection.event_id)])].sort(
-        (left, right) => left - right,
-      ),
-    [going.data, saved.data],
+      [
+        ...new Set([
+          ...(saved.data ?? []),
+          ...(going.data ?? []).map((selection) => selection.event_id),
+          ...(tickets.data ?? []).filter((ticket) => ticket.status === "valid").map((ticket) => ticket.event_id),
+        ]),
+      ].sort((left, right) => left - right),
+    [going.data, saved.data, tickets.data],
   );
   const events = useQuery({
     queryKey: queryKeys.events.byIds(ids),
@@ -99,6 +118,7 @@ export function useProfileEvents() {
         location: ticket.location ?? null,
         school: ticket.school ?? null,
         ticketCode: ticket.code,
+        image: eventImage(byId.get(ticket.event_id)),
       });
     }
     const rows = [...attending.values()];

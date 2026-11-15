@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Mga bakanteng posisyon: {{positions}}",
-    "minimumGoing": "Minimum na interesado",
+    "minimumGoing": "Minimum na aabisuhan",
     "eventTitle": "Pamagat ng Kaganapan",
     "loadFailed": "Nabigong i-load ang mga kaganapan. Pakisubukang muli.",
     "deleteFailed": "Nabigong tanggalin ang kaganapan. Pakisubukang muli.",
@@ -112,9 +112,9 @@
     },
     "new": "BAGO",
     "updated": "NA-UPDATE",
-    "goingCount": "{{count}} interesado",
-    "goingCount_one": "{{count}} interesado",
-    "goingCount_other": "{{count}} interesado",
+    "goingCount": "{{count}} aabisuhan",
+    "goingCount_one": "{{count}} aabisuhan",
+    "goingCount_other": "{{count}} aabisuhan",
     "hostedBy": "Hinost ng",
     "aboutEvent": "Tungkol sa Kaganapan",
     "fetchingDetails": "Kinukuha ang mga detalye...",

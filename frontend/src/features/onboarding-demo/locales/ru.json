@@ -51,7 +51,7 @@
       "pickedStatus": "Выбрано {{count}}/3 - нужно как минимум 2, чтобы продолжить",
       "reactionGroup": "Реакция на {{title}}",
       "reactions": {
-        "interested": "Интересно",
+        "interested": "Напомнить мне",
         "maybe": "Может быть",
         "notForMe": "Не для меня"
       }
@@ -101,11 +101,11 @@
       "progress": "{{count}} / {{total}} событий",
       "reward": "Награда: +7 дней Pro",
       "progressAria": "Прогресс выполнения задания",
-      "markedInterested": "{{count}} событие отмечено как интересное во время знакомства",
-      "markedInterested_one": "{{count}} событие отмечено как интересное во время знакомства",
-      "markedInterested_other": "{{count}} события отмечены как интересные во время знакомства",
-      "markedInterested_few": "{{count}} события отмечены как интересные во время знакомства",
-      "markedInterested_many": "{{count}} событий отмечены как интересные во время знакомства"
+      "markedInterested": "{{count}} события отмечены для напоминания во время знакомства",
+      "markedInterested_one": "{{count}} событие отмечено для напоминания во время знакомства",
+      "markedInterested_other": "{{count}} события отмечены для напоминания во время знакомства",
+      "markedInterested_few": "{{count}} события отмечены для напоминания во время знакомства",
+      "markedInterested_many": "{{count}} событий отмечены для напоминания во время знакомства"
     },
     "home": {
       "badge": "Демонстрация завершена",

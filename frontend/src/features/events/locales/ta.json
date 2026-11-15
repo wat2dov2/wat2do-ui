@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "ஆட்சேர்ப்பு: {{positions}}",
-    "minimumGoing": "குறைந்தபட்ச ஆர்வமுள்ளோர்",
+    "minimumGoing": "குறைந்தபட்ச அறிவிப்பு பெறுவோர்",
     "eventTitle": "நிகழ்வு தலைப்பு",
     "loadFailed": "நிகழ்வுகளை ஏற்ற முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
     "deleteFailed": "நிகழ்வை நீக்க முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
@@ -112,9 +112,9 @@
     },
     "new": "புதியது",
     "updated": "புதுப்பிக்கப்பட்டது",
-    "goingCount": "{{count}} ஆர்வமுள்ளவர்",
-    "goingCount_one": "{{count}} ஆர்வமுள்ளவர்",
-    "goingCount_other": "{{count}} ஆர்வமுள்ளவர்கள்",
+    "goingCount": "{{count}} அறிவிப்பு பெறுபவர்கள்",
+    "goingCount_one": "{{count}} அறிவிப்பு பெறுபவர்",
+    "goingCount_other": "{{count}} அறிவிப்பு பெறுபவர்கள்",
     "hostedBy": "ஆட்கள் நடத்தும்",
     "aboutEvent": "நிகழ்வு பற்றி",
     "fetchingDetails": "விவரங்களைப் பெறுகிறேன்...",

@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Tuyển dụng: {{positions}}",
-    "minimumGoing": "Số người quan tâm tối thiểu",
+    "minimumGoing": "Số người nhận thông báo tối thiểu",
     "eventTitle": "Tiêu đề sự kiện",
     "loadFailed": "Không tải được sự kiện. Vui lòng thử lại.",
     "deleteFailed": "Xóa sự kiện thất bại. Vui lòng thử lại.",
@@ -111,8 +111,8 @@
     },
     "new": "MỚI",
     "updated": "ĐÃ CẬP NHẬT",
-    "goingCount": "{{count}} người quan tâm",
-    "goingCount_other": "{{count}} người quan tâm",
+    "goingCount": "{{count}} người nhận thông báo",
+    "goingCount_other": "{{count}} người nhận thông báo",
     "hostedBy": "Được tổ chức bởi",
     "aboutEvent": "Về sự kiện",
     "fetchingDetails": "Đang lấy chi tiết...",

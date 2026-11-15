@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 선택됨 - 계속하려면 최소 2개 필요",
       "reactionGroup": "{{title}}에 대한 반응",
       "reactions": {
-        "interested": "관심 있음",
+        "interested": "알림 받기",
         "maybe": "그럴 수도 있음",
         "notForMe": "나에게는 해당 없음"
       }
@@ -101,8 +101,8 @@
       "progress": "{{count}} / {{total}}개 이벤트",
       "reward": "보상: Pro +7일",
       "progressAria": "챌린지 진행 상황",
-      "markedInterested": "온보딩 중 {{count}}개의 관심 이벤트 표시",
-      "markedInterested_other": "온보딩 중 {{count}}개의 관심 이벤트 표시"
+      "markedInterested": "온보딩 중 {{count}}개 이벤트에 알림 설정",
+      "markedInterested_other": "온보딩 중 {{count}}개 이벤트에 알림 설정"
     },
     "home": {
       "badge": "데모 완료",

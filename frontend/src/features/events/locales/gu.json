@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "ભરતી: {{positions}}",
-    "minimumGoing": "ઓછામાં ઓછા રસ ધરાવનાર",
+    "minimumGoing": "ઓછામાં ઓછા જાણ મેળવનાર",
     "eventTitle": "ઇવેન્ટ શીર્ષક",
     "loadFailed": "ઇવેન્ટ્સ લોડ કરવાની નિષ્ફળતા. કૃપા કરીને ફરી પ્રયાસ કરો.",
     "deleteFailed": "ઇવેન્ટ મૌલિક રીતે કાઢી ન શકી. કૃપા કરીને ફરી પ્રયાસ કરો.",
@@ -112,9 +112,9 @@
     },
     "new": "નવું",
     "updated": "અપડેટ થયું",
-    "goingCount": "{{count}} રસ ધરાવનાર",
-    "goingCount_one": "{{count}} રસ ધરાવનાર",
-    "goingCount_other": "{{count}} રસ ધરાવનાર",
+    "goingCount": "{{count}} જાણ મેળવનાર",
+    "goingCount_one": "{{count}} જાણ મેળવનાર",
+    "goingCount_other": "{{count}} જાણ મેળવનાર",
     "hostedBy": "આયોજક",
     "aboutEvent": "ઇવેન્ટ વિશે",
     "fetchingDetails": "વિગતો મેળવી રહ્યા છીએ...",

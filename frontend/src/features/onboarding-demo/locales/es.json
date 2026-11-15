@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 elegidos - necesitas al menos 2 para continuar",
       "reactionGroup": "Reacción para {{title}}",
       "reactions": {
-        "interested": "Me interesa",
+        "interested": "Notificarme",
         "maybe": "Quizás",
         "notForMe": "No es para mí"
       }
@@ -101,10 +101,10 @@
       "progress": "{{count}} / {{total}} eventos",
       "reward": "Recompensa: +7 días de Pro",
       "progressAria": "Progreso del desafío",
-      "markedInterested": "{{count}} eventos marcados como interesados durante la incorporación",
-      "markedInterested_one": "{{count}} evento marcado como interesado durante la incorporación",
-      "markedInterested_other": "{{count}} eventos marcados como interesados durante la incorporación",
-      "markedInterested_many": "{{count}} eventos marcados como interesados durante la incorporación"
+      "markedInterested": "{{count}} eventos marcados para recibir avisos durante la incorporación",
+      "markedInterested_one": "{{count}} evento marcado para recibir avisos durante la incorporación",
+      "markedInterested_other": "{{count}} eventos marcados para recibir avisos durante la incorporación",
+      "markedInterested_many": "{{count}} eventos marcados para recibir avisos durante la incorporación"
     },
     "home": {
       "badge": "Demostración completa",

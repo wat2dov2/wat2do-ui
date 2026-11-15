@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 منتخب کیے - جاری رکھنے کے لیے کم از کم 2 کی ضرورت ہے",
       "reactionGroup": "جواب برائے {{title}}",
       "reactions": {
-        "interested": "دلچسپی ہے",
+        "interested": "مجھے مطلع کریں",
         "maybe": "شاید",
         "notForMe": "میرے لیے نہیں"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} ایونٹس",
       "reward": "انعام: Pro کے +7 دن",
       "progressAria": "چیلنج کی ترقی",
-      "markedInterested": "آن بورڈنگ کے دوران {{count}} تقریبات میں دلچسپی ظاہر کی گئی",
-      "markedInterested_one": "آن بورڈنگ کے دوران {{count}} تقریب میں دلچسپی ظاہر کی گئی",
-      "markedInterested_other": "آن بورڈنگ کے دوران {{count}} تقریبات میں دلچسپی ظاہر کی گئی"
+      "markedInterested": "آن بورڈنگ کے دوران {{count}} تقریبات کے لیے اطلاع چنی گئی",
+      "markedInterested_one": "آن بورڈنگ کے دوران {{count}} تقریب کے لیے اطلاع چنی گئی",
+      "markedInterested_other": "آن بورڈنگ کے دوران {{count}} تقریبات کے لیے اطلاع چنی گئی"
     },
     "home": {
       "badge": "ڈیمو مکمل",

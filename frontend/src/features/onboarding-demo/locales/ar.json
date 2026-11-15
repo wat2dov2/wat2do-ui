@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 تم اختيارها - يلزم اختيار ما لا يقل عن 2 للمتابعة",
       "reactionGroup": "رد الفعل على {{title}}",
       "reactions": {
-        "interested": "مهتم",
+        "interested": "نبّهني",
         "maybe": "ربما",
         "notForMe": "ليس لي"
       }
@@ -101,13 +101,13 @@
       "progress": "{{count}} / {{total}} فعاليات",
       "reward": "المكافأة: +7 أيام من Pro",
       "progressAria": "تقدم التحدي",
-      "markedInterested": "{{count}} فعالية تم تحديدها كمهتم بها أثناء الإعداد",
-      "markedInterested_one": "{{count}} فعالية تم تحديدها كمهتم بها أثناء الإعداد",
-      "markedInterested_other": "{{count}} فعاليات تم تحديدها كمهتم بها أثناء الإعداد",
-      "markedInterested_zero": "{{count}} فعاليات تم تحديدها كمهتم بها أثناء الإعداد",
-      "markedInterested_two": "{{count}} فعاليتان تم تحديدهما كمهتم بهما أثناء الإعداد",
-      "markedInterested_few": "{{count}} فعاليات تم تحديدها كمهتم بها أثناء الإعداد",
-      "markedInterested_many": "{{count}} فعالية تم تحديدها كمهتم بها أثناء الإعداد"
+      "markedInterested": "{{count}} فعاليات طُلب التنبيه لها أثناء الإعداد",
+      "markedInterested_one": "{{count}} فعالية طُلب التنبيه لها أثناء الإعداد",
+      "markedInterested_other": "{{count}} فعاليات طُلب التنبيه لها أثناء الإعداد",
+      "markedInterested_zero": "{{count}} فعاليات طُلب التنبيه لها أثناء الإعداد",
+      "markedInterested_two": "{{count}} فعاليتان طُلب التنبيه لهما أثناء الإعداد",
+      "markedInterested_few": "{{count}} فعاليات طُلب التنبيه لها أثناء الإعداد",
+      "markedInterested_many": "{{count}} فعالية طُلب التنبيه لها أثناء الإعداد"
     },
     "home": {
       "badge": "اكتمل العرض التجريبي",
