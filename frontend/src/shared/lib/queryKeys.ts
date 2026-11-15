@@ -121,6 +121,10 @@ export const queryKeys = {
     all: ["saved-events"] as const,
     byUser: (userId: string) => [...queryKeys.savedEvents.all, userId] as const,
   },
+  savedPositions: {
+    all: ["saved-positions"] as const,
+    byUser: (userId: string) => [...queryKeys.savedPositions.all, userId] as const,
+  },
   notifications: {
     all: ["notifications"] as const,
     inbox: (userId: string) => [...queryKeys.notifications.all, userId] as const,

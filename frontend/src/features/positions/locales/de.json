@@ -50,6 +50,13 @@
     "processingImage": "Stellenbild wird verarbeitet",
     "imageParseFailed": "Bild konnte nicht gelesen werden",
     "imageParseFailedDescription": "Wir konnten keine Stellendetails aus dem Bild lesen.",
-    "imageExtracted": "Stellendetails erfolgreich übernommen."
+    "imageExtracted": "Stellendetails erfolgreich übernommen.",
+    "saved": {
+      "save": "Speichern",
+      "saved": "Gespeichert",
+      "saveFailed": "Diese Position konnte nicht gespeichert werden",
+      "emptyTitle": "Keine gespeicherten Positionen",
+      "emptyDescription": "Positionen, die du speicherst, erscheinen hier."
+    }
   }
 }

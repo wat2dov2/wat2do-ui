@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "Twoje wydarzenia, obserwowane organizacje i Twoje ustawienia",
     "settings": "Ustawienia",
     "events": {
       "saved": "Zapisane wydarzenia",
@@ -12,12 +11,15 @@
       "ticket": "Bilet"
     },
     "clubs": {
-      "title": "Obserwowane organizacje",
       "empty": "Tutaj pojawią się organizacje, które obserwujesz."
     },
     "submissions": {
-      "title": "Twoje zgłoszenia",
       "description": "Dodaj wydarzenie, stanowisko lub organizację. Sprawdzamy każde zgłoszenie przed publikacją."
+    },
+    "showAll": "Pokaż wszystkie ({{count}})",
+    "showFewer": "Pokaż mniej",
+    "tabs": {
+      "submissions": "Zgłoszenia"
     }
   }
 }

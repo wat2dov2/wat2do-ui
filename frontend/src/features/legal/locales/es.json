@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Lo que haces en Wat2Do.",
-              "text": "Los eventos que marcas con \"Asistiré\" o que guardas, las organizaciones que sigues, los boletos que obtienes, cuándo una organización registra tu entrada y las solicitudes de reembolso que envías."
+              "text": "Los eventos que marcas con \"Asistiré\" o que guardas, las posiciones que guardas, las organizaciones que sigues, los boletos que obtienes, cuándo una organización registra tu entrada y las solicitudes de reembolso que envías."
             },
             "submissions": {
               "term": "Lo que nos envías.",
@@ -366,7 +366,7 @@
               "text": "los códigos vencen después de {{codeMinutes}}, y una sesión termina {{sessionDays}} después de la última vez que la usas."
             },
             "activity": {
-              "term": "Eventos marcados con \"Asistiré\", eventos guardados, organizaciones que sigues y boletos:",
+              "term": "Eventos marcados con \"Asistiré\", eventos y posiciones guardados, organizaciones que sigues y boletos:",
               "text": "hasta que los quites o elimines tu cuenta."
             },
             "usage": {

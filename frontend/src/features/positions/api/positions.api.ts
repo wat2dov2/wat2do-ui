@@ -82,7 +82,19 @@ export function positionDirectoryQueryOptions(school: string) {
   });
 }
 
-
 export function fetchPositionStats(school: string): Promise<Record<string, ApiPositionStatsResponse>> {
   return api.get(`/positions/stats?${new URLSearchParams({ school })}`);
+}
+
+/** The ids of the positions the user saved, latest save first. */
+export function fetchSavedPositionIds(): Promise<number[]> {
+  return api.get<number[]>("/saved-positions/");
+}
+
+export async function savePosition(positionId: number): Promise<void> {
+  await api.put(`/saved-positions/${positionId}`);
+}
+
+export async function unsavePosition(positionId: number): Promise<void> {
+  await api.delete(`/saved-positions/${positionId}`);
 }

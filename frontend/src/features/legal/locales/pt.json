@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "O que você faz no Wat2Do.",
-              "text": "Eventos que você marca com \"Vou participar\" ou salva, organizações que você segue, ingressos que você garante, quando uma organização faz o seu check-in e pedidos de reembolso que você envia."
+              "text": "Eventos que você marca com \"Vou participar\" ou salva, posições que você salva, organizações que você segue, ingressos que você garante, quando uma organização faz o seu check-in e pedidos de reembolso que você envia."
             },
             "submissions": {
               "term": "O que você nos envia.",
@@ -366,7 +366,7 @@
               "text": "os códigos expiram após {{codeMinutes}}, e uma sessão termina {{sessionDays}} depois da última vez que você a usou."
             },
             "activity": {
-              "term": "Eventos marcados com \"Vou participar\", eventos salvos, organizações seguidas e ingressos:",
+              "term": "Eventos marcados com \"Vou participar\", eventos e posições salvos, organizações seguidas e ingressos:",
               "text": "até você removê-los ou excluir sua conta."
             },
             "usage": {

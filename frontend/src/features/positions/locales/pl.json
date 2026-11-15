@@ -52,6 +52,13 @@
     "processingImage": "Przetwarzanie obrazu stanowiska",
     "imageParseFailed": "Nie udało się odczytać obrazu",
     "imageParseFailedDescription": "Nie udało się odczytać szczegółów stanowiska z obrazu.",
-    "imageExtracted": "Szczegóły stanowiska zostały odczytane."
+    "imageExtracted": "Szczegóły stanowiska zostały odczytane.",
+    "saved": {
+      "save": "Zapisz",
+      "saved": "Zapisano",
+      "saveFailed": "Nie udało się zapisać tego stanowiska",
+      "emptyTitle": "Brak zapisanych stanowisk",
+      "emptyDescription": "Tutaj pojawią się stanowiska, które zapiszesz."
+    }
   }
 }

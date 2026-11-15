@@ -50,6 +50,13 @@
     "processingImage": "Pinoproseso ang larawan ng posisyon",
     "imageParseFailed": "Hindi nabasa ang larawan",
     "imageParseFailedDescription": "Hindi namin nabasa ang mga detalye ng posisyon mula sa larawan.",
-    "imageExtracted": "Matagumpay na nakuha ang mga detalye ng posisyon."
+    "imageExtracted": "Matagumpay na nakuha ang mga detalye ng posisyon.",
+    "saved": {
+      "save": "I-save",
+      "saved": "Naka-save",
+      "saveFailed": "Hindi ma-save ang posisyong ito",
+      "emptyTitle": "Walang naka-save na posisyon",
+      "emptyDescription": "Dito lalabas ang mga posisyong ise-save mo."
+    }
   }
 }

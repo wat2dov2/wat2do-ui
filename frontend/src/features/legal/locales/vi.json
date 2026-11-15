@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Hoạt động của bạn trên Wat2Do.",
-              "text": "Sự kiện bạn đánh dấu sẽ tham gia hoặc đã lưu, tổ chức bạn theo dõi, vé bạn nhận, thời điểm một tổ chức check-in cho bạn và các yêu cầu hoàn tiền bạn gửi."
+              "text": "Sự kiện bạn đánh dấu sẽ tham gia hoặc đã lưu, vị trí bạn đã lưu, tổ chức bạn theo dõi, vé bạn nhận, thời điểm một tổ chức check-in cho bạn và các yêu cầu hoàn tiền bạn gửi."
             },
             "submissions": {
               "term": "Nội dung bạn gửi cho chúng tôi.",
@@ -366,7 +366,7 @@
               "text": "mã hết hạn sau {{codeMinutes}}, và một phiên kết thúc {{sessionDays}} sau lần cuối bạn sử dụng phiên đó."
             },
             "activity": {
-              "term": "Sự kiện sẽ tham gia, mục đã lưu, lượt theo dõi và vé:",
+              "term": "Sự kiện sẽ tham gia, sự kiện và vị trí đã lưu, lượt theo dõi và vé:",
               "text": "cho đến khi bạn gỡ bỏ chúng hoặc xóa tài khoản."
             },
             "usage": {

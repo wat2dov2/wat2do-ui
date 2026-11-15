@@ -90,6 +90,7 @@ GOING_EVENTS_CAP_REACHED = "Maximum going events limit reached"
 INVALID_EVENT_OCCURRENCE = "One or more occurrences do not belong to this event"
 OCCURRENCE_NOT_SELECTABLE = "One or more occurrences can no longer be selected"
 SAVED_CLUBS_CAP_REACHED = "Maximum saved clubs limit reached"
+SAVED_POSITIONS_CAP_REACHED = "Maximum saved positions limit reached"
 MEMBERS_ALWAYS_FOLLOW_CLUB = "Club members always follow their own club"
 CANNOT_REMOVE_YOURSELF = "You cannot remove yourself from the club"
 

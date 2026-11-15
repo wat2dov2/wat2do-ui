@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "Tus eventos, las organizaciones que sigues y tu configuración",
     "settings": "Configuración",
     "events": {
       "saved": "Eventos guardados",
@@ -12,12 +11,15 @@
       "ticket": "Boleto"
     },
     "clubs": {
-      "title": "Organizaciones que sigues",
       "empty": "Las organizaciones que sigues aparecen aquí."
     },
     "submissions": {
-      "title": "Tus envíos",
       "description": "Agrega un evento, una posición o una organización. Revisamos cada uno antes de publicarlo."
+    },
+    "showAll": "Ver todo ({{count}})",
+    "showFewer": "Ver menos",
+    "tabs": {
+      "submissions": "Envíos"
     }
   }
 }

@@ -50,6 +50,13 @@
     "processingImage": "पद की इमेज प्रोसेस हो रही है",
     "imageParseFailed": "इमेज पढ़ी नहीं जा सकी",
     "imageParseFailedDescription": "हम इमेज से पद की जानकारी नहीं पढ़ सके।",
-    "imageExtracted": "पद की जानकारी सफलतापूर्वक निकाली गई।"
+    "imageExtracted": "पद की जानकारी सफलतापूर्वक निकाली गई।",
+    "saved": {
+      "save": "सहेजें",
+      "saved": "सहेजा गया",
+      "saveFailed": "यह पद सहेजा नहीं जा सका",
+      "emptyTitle": "कोई सहेजा गया पद नहीं",
+      "emptyDescription": "आपके सहेजे गए पद यहाँ दिखेंगे।"
+    }
   }
 }

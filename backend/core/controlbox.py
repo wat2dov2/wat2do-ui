@@ -415,6 +415,7 @@ class RateLimitsControl(_ControlModel):
     calendar_feed: RateLimitControl
     maximum_going_events_per_user: int = Field(gt=0)
     maximum_saved_clubs_per_user: int = Field(gt=0)
+    maximum_saved_positions_per_user: int = Field(gt=0)
 
 
 class ReelTranscriptionControl(_ControlModel):

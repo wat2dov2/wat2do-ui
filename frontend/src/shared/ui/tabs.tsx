@@ -8,10 +8,16 @@ import { cn } from "@/shared/lib/utils"
 import { Skeleton } from "@/shared/ui/skeleton"
 
 /**
- * The active tab's pill renders inside the active trigger, so the server's
- * HTML already shows it. When the selection moves, the new pill starts where
- * the old trigger sat and slides into place: each tab set remembers its last
- * active trigger to know where that was.
+ * Tabs are a segmented control: a flat recessed track (`--control-track`)
+ * holding the labels, with a raised thumb (`--control-thumb`) behind the
+ * active one. The track's corners run concentric with the thumb's (12px
+ * around 8px, 4px apart), the row never wraps (a row too wide for its space
+ * scrolls sideways instead), and only the active label is full strength.
+ *
+ * The thumb renders inside the active trigger, so the server's HTML already
+ * shows it. When the selection moves, the new thumb starts where the old
+ * trigger sat and slides into place: each tab set remembers its last active
+ * trigger to know where that was.
  */
 interface ActiveTab {
   value: string | undefined
@@ -41,6 +47,16 @@ function slideIndicator(indicator: HTMLElement, from: HTMLElement, to: HTMLEleme
   )
 }
 
+/** Scrolls a row too wide for its space sideways, never the page, so the active tab shows whole. */
+function revealTrigger(trigger: HTMLElement) {
+  const list = trigger.parentElement
+  if (!list || list.scrollWidth <= list.clientWidth) return
+  const start = trigger.offsetLeft
+  const end = start + trigger.offsetWidth
+  if (start < list.scrollLeft) list.scrollLeft = start
+  else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth
+}
+
 function Tabs({
   className,
   value,
@@ -54,6 +70,7 @@ function Tabs({
   const moveIndicator = React.useCallback((indicator: HTMLElement, trigger: HTMLElement) => {
     const previous = lastTrigger.current
     lastTrigger.current = trigger
+    revealTrigger(trigger)
     if (previous && previous !== trigger && previous.isConnected) {
       slideIndicator(indicator, previous, trigger)
     }
@@ -79,6 +96,9 @@ function Tabs({
   )
 }
 
+/** The track: shared by the list and its skeleton, so both take the same box. */
+const TABS_LIST_CLASS = "relative inline-flex h-9 w-fit max-w-full shrink-0 items-center gap-0.5 rounded-xl bg-control-track p-1"
+
 function TabsList({
   className,
   ...props
@@ -86,11 +106,7 @@ function TabsList({
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      data-elevation="control"
-      className={cn(
-        "inline-flex min-h-9 w-fit max-w-full flex-wrap items-center justify-center rounded-xl bg-surface p-1 text-muted-foreground",
-        className
-      )}
+      className={cn(TABS_LIST_CLASS, "overflow-x-auto text-muted-foreground no-visible-scrollbar", className)}
       {...props}
     />
   )
@@ -129,8 +145,8 @@ const TabsTrigger = React.forwardRef<
       }
     }}
     className={cn(
-      "relative isolate inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium text-foreground/75 ring-offset-background transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "data-[state=active]:text-foreground data-[state=inactive]:hover:bg-surface-hover hover:text-foreground",
+      "relative isolate inline-flex h-full shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+      "hover:text-foreground data-[state=active]:text-foreground",
       className
     )}
     {...props}
@@ -138,13 +154,13 @@ const TabsTrigger = React.forwardRef<
     {isActive ? (
       <span
         ref={indicatorRef}
-        data-elevation="control"
-        className="absolute inset-0 -z-10 origin-top-left rounded-xl bg-surface-elevated"
+        data-elevation="raised"
+        className="absolute inset-0 -z-10 origin-top-left rounded-md bg-control-thumb"
       />
     ) : null}
     {children}
     {count !== undefined && count > 0 ? (
-      <span data-slot="tabs-count" className="ms-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[10px] font-bold text-primary">
+      <span data-slot="tabs-count" className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 px-1.5 text-[11px] font-semibold tabular-nums text-foreground">
         {count}
       </span>
     ) : null}
@@ -169,12 +185,12 @@ function TabsContent({
   )
 }
 
-/** A TabsList's frame with placeholder triggers, for tabs whose labels are not known yet. */
+/** A TabsList's track with placeholder triggers, for tabs whose labels are not known yet. */
 function TabsListSkeleton({ count }: { count: number }) {
   return (
-    <div data-slot="tabs-list-skeleton" data-elevation="control" aria-hidden="true" className="inline-flex min-h-9 w-fit gap-1 rounded-xl bg-surface p-1">
+    <div data-slot="tabs-list-skeleton" aria-hidden="true" className={TABS_LIST_CLASS}>
       {Array.from({ length: count }, (_, index) => (
-        <Skeleton key={index} className={cn("h-7 rounded-xl", index === 0 ? "w-20" : "w-24")} />
+        <Skeleton key={index} className={cn("h-full rounded-md bg-control-thumb/60", index === 0 ? "w-20" : "w-24")} />
       ))}
     </div>
   )

@@ -183,6 +183,8 @@ allowed controlled elevation through tokens:
 | `--app-shadow-floating` | Popovers, dropdowns, dialogs, tooltips |
 | `--app-shadow-control` | Buttons and interactive controls |
 
+Shadows reach an element only through `data-elevation`: `control` for buttons and other raised controls, `raised` (`--app-shadow-xs`) for a thumb sitting inside a track, such as the active tab.
+
 Guidance:
 
 - Prefer borders and spacing over heavy shadows.
@@ -245,6 +247,14 @@ Variants:
 - `destructive`: error fill.
 - `link`: textual action.
 
+Tabs (`shared/ui/tabs.tsx`) are the one tabbed navigation, a segmented control:
+
+- A flat track (`--control-track`) with no shadow, `rounded-xl`, 36px high, 4px padding.
+- The active label sits on a raised thumb (`--control-thumb`, `data-elevation="raised"`) whose 8px corners run concentric with the track's 12px.
+- Inactive labels are muted and turn full strength on hover; only the active label is full strength at rest.
+- The row never wraps: a row too wide for its space scrolls sideways inside the track, and the active tab scrolls into view.
+- Counts sit in a small neutral pill after the label.
+
 Onboarding and preference screens should use tactile pills:
 
 - Rounded pill or `rounded-xl`.
@@ -262,6 +272,12 @@ General cards:
 - `rounded-xl`
 - soft or controlled shadow
 - clear internal padding
+
+Lists of rows (`ItemGroup` in `shared/ui/item.tsx`):
+
+- One list sits on one bordered `rounded-xl` surface with hairlines between its rows, rather than a box around every row.
+- A row may lead with a 40px tile (`shared/ui/tile.tsx`): `DateTile` for a date (month over day), `IconTile` for an icon.
+- An empty list keeps its surface and says, in one row, what will appear there and where to find it.
 
 Event cards:
 

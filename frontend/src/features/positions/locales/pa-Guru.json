@@ -50,6 +50,13 @@
     "processingImage": "ਅਹੁਦੇ ਦੀ ਤਸਵੀਰ ਪ੍ਰੋਸੈਸ ਹੋ ਰਹੀ ਹੈ",
     "imageParseFailed": "ਤਸਵੀਰ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕੀ",
     "imageParseFailedDescription": "ਅਸੀਂ ਤਸਵੀਰ ਤੋਂ ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ ਨਹੀਂ ਪੜ੍ਹ ਸਕੇ।",
-    "imageExtracted": "ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ ਸਫਲਤਾ ਨਾਲ ਕੱਢੇ ਗਏ।"
+    "imageExtracted": "ਅਹੁਦੇ ਦੇ ਵੇਰਵੇ ਸਫਲਤਾ ਨਾਲ ਕੱਢੇ ਗਏ।",
+    "saved": {
+      "save": "ਸੰਭਾਲੋ",
+      "saved": "ਸੰਭਾਲਿਆ ਗਿਆ",
+      "saveFailed": "ਇਹ ਅਹੁਦਾ ਸੰਭਾਲਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ",
+      "emptyTitle": "ਕੋਈ ਸੰਭਾਲਿਆ ਅਹੁਦਾ ਨਹੀਂ",
+      "emptyDescription": "ਤੁਹਾਡੇ ਸੰਭਾਲੇ ਅਹੁਦੇ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।"
+    }
   }
 }

@@ -49,6 +49,13 @@
     "processingImage": "모집 이미지 처리 중",
     "imageParseFailed": "이미지를 읽지 못했어요",
     "imageParseFailedDescription": "이미지에서 모집 세부 정보를 읽지 못했어요.",
-    "imageExtracted": "모집 세부 정보를 가져왔어요."
+    "imageExtracted": "모집 세부 정보를 가져왔어요.",
+    "saved": {
+      "save": "저장",
+      "saved": "저장됨",
+      "saveFailed": "이 직책을 저장할 수 없습니다",
+      "emptyTitle": "저장한 직책이 없습니다",
+      "emptyDescription": "저장한 직책이 여기에 표시됩니다."
+    }
   }
 }

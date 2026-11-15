@@ -78,6 +78,10 @@
   --muted-active: oklch(from var(--muted) calc(l - 0.065) c h);
   --muted-foreground: oklch(0.475 0 0);
 
+  /* Segmented controls (tabs): a flat recessed track and the raised thumb that marks the choice */
+  --control-track: oklch(0.945 0 0);
+  --control-thumb: oklch(1 0 0);
+
   /* Destructive */
   --destructive: oklch(0.579 0.214 27.2);
   --destructive-hover: oklch(from var(--destructive) calc(l - 0.05) c h);
@@ -150,6 +154,9 @@
   --muted-hover: oklch(from var(--muted) calc(l + 0.04) c h);
   --muted-active: oklch(from var(--muted) calc(l + 0.06) c h);
   --muted-foreground: oklch(0.666 0 0);
+
+  --control-track: oklch(0.235 0 0);
+  --control-thumb: oklch(0.335 0 0);
 
   --border: oklch(0.280 0 0);
   --border-hover: oklch(from var(--border) calc(l + 0.06) c h);

@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Ang ginagawa mo sa Wat2Do.",
-              "text": "Mga kaganapang minarkahan mong pupuntahan o sine-save mo, mga organisasyong sinusundan mo, mga tiket na nakukuha mo, kung kailan ka chine-check in ng isang organisasyon at mga kahilingan sa refund na ipinapadala mo."
+              "text": "Mga kaganapang minarkahan mong pupuntahan o sine-save mo, mga posisyong sine-save mo, mga organisasyong sinusundan mo, mga tiket na nakukuha mo, kung kailan ka chine-check in ng isang organisasyon at mga kahilingan sa refund na ipinapadala mo."
             },
             "submissions": {
               "term": "Ang ipinapadala mo sa amin.",
@@ -366,7 +366,7 @@
               "text": "nag-e-expire ang mga code pagkalipas ng {{codeMinutes}}, at nagtatapos ang isang session {{sessionDays}} pagkatapos mo itong huling gamitin."
             },
             "activity": {
-              "term": "Mga pupuntahan, na-save, sinusundan at tiket:",
+              "term": "Mga pupuntahan, na-save na kaganapan at posisyon, sinusundan at tiket:",
               "text": "hanggang alisin mo ang mga ito o burahin ang account mo."
             },
             "usage": {

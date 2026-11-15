@@ -50,6 +50,13 @@
     "processingImage": "પદની છબી પ્રક્રિયામાં છે",
     "imageParseFailed": "છબી વાંચી શકાઈ નહીં",
     "imageParseFailedDescription": "અમે છબીમાંથી પદની વિગતો વાંચી શક્યા નહીં.",
-    "imageExtracted": "પદની વિગતો સફળતાપૂર્વક મેળવી."
+    "imageExtracted": "પદની વિગતો સફળતાપૂર્વક મેળવી.",
+    "saved": {
+      "save": "સાચવો",
+      "saved": "સાચવેલું",
+      "saveFailed": "આ હોદ્દો સાચવી શકાયો નહીં",
+      "emptyTitle": "કોઈ સાચવેલા હોદ્દા નથી",
+      "emptyDescription": "તમે સાચવેલા હોદ્દા અહીં દેખાશે."
+    }
   }
 }

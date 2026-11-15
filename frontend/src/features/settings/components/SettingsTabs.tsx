@@ -6,22 +6,26 @@ import { NotificationsTab } from "@/features/settings/components/NotificationsTa
 import { AppearanceTab } from "@/features/settings/components/AppearanceTab";
 import { PromoterProgramTab } from "@/features/settings/components/PromoterProgramTab";
 import { SettingsSaveBar } from "@/features/settings/components/SettingsSaveBar";
-import { useSettingsForm } from "@/features/settings/hooks/useSettingsForm";
-import { useUserEmail } from "@/features/auth";
+import type { SettingsForm } from "@/features/settings/hooks/useSettingsForm";
 import { usePromoterState } from "@/features/posters";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { SETTINGS_TABS } from "@/shared/constants/routes";
+
+const SETTINGS_TAB_VALUES = Object.values(SETTINGS_TABS);
 import { Stack } from "@/shared/layout";
 
-/** The visitor's settings, one tab each, as the profile page shows them. */
-export function SettingsTabs() {
-  const userEmail = useUserEmail();
+/**
+ * The visitor's settings, one tab each, as the profile page shows them. The
+ * page owns the settings form, since its header edits the photo in it.
+ */
+export function SettingsTabs({ settings }: { settings: SettingsForm }) {
   const promoter = usePromoterState();
-  const settings = useSettingsForm();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useMutableSearchParams();
-  const requestedTab = searchParams.get(QP.TAB) || SETTINGS_TABS.PROFILE;
+  // The profile's tab parameter names a settings tab here, or Settings as a whole, which opens on Profile.
+  const tabValue = searchParams.get(QP.TAB);
+  const requestedTab = SETTINGS_TAB_VALUES.find((tab) => tab === tabValue) ?? SETTINGS_TABS.PROFILE;
   const tabParam =
     requestedTab === SETTINGS_TABS.PROMOTER && !promoter.isEnrolled
       ? SETTINGS_TABS.PROFILE
@@ -46,8 +50,8 @@ export function SettingsTabs() {
   return (
     <>
       <Tabs value={tabParam} onValueChange={handleTabChange}>
-        <Stack gap={8}>
-          <TabsList>
+        <Stack gap={6}>
+          <TabsList aria-label={t("profile.settings")}>
             <TabsTrigger value={SETTINGS_TABS.PROFILE}>
               {t("settings.tabs.profile")}
             </TabsTrigger>
@@ -68,13 +72,10 @@ export function SettingsTabs() {
           </TabsList>
           <TabsContent value={SETTINGS_TABS.PROFILE}>
             <ProfileTab
-              userEmail={userEmail}
               profile={settings.values.profile}
-              avatarPreviewUrl={settings.avatarPreviewUrl}
               isLoading={settings.isProfileLoading}
               disabled={settings.isSaving}
               onProfileChange={settings.updateProfile}
-              onAvatarChange={settings.selectAvatar}
             />
           </TabsContent>
           <TabsContent value={SETTINGS_TABS.NOTIFICATIONS}>

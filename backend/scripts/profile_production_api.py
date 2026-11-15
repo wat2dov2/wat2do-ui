@@ -142,6 +142,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/qr/scans", "/qr/scans?page=1&page_size=10", True),
     Endpoint("/reports/", "/reports/?page=1&page_size=10", True),
     Endpoint("/saved-clubs/", "/saved-clubs/", True),
+    Endpoint("/saved-positions/", "/saved-positions/", True),
     Endpoint("/v1/saved-events/", "/v1/saved-events/", True),
     Endpoint("/position-submissions/", "/position-submissions/?page=1&page_size=10", True),
     Endpoint("/sponsor-submissions/", "/sponsor-submissions/?page=1&page_size=10", True),

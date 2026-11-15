@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Was du auf Wat2Do tust.",
-              "text": "Veranstaltungen, die du mit „Ich nehme teil“ markierst oder speicherst, Organisationen, denen du folgst, Tickets, die du bekommst, wann dich eine Organisation eincheckt, und Erstattungsanfragen, die du sendest."
+              "text": "Veranstaltungen, die du mit „Ich nehme teil“ markierst oder speicherst, Positionen, die du speicherst, Organisationen, denen du folgst, Tickets, die du bekommst, wann dich eine Organisation eincheckt, und Erstattungsanfragen, die du sendest."
             },
             "submissions": {
               "term": "Was du uns schickst.",
@@ -366,7 +366,7 @@
               "text": "Codes laufen nach {{codeMinutes}} ab, und eine Sitzung endet {{sessionDays}} nach ihrer letzten Nutzung."
             },
             "activity": {
-              "term": "Teilnahmeangaben, gespeicherte Veranstaltungen, gefolgte Organisationen und Tickets:",
+              "term": "Teilnahmeangaben, gespeicherte Veranstaltungen und Positionen, gefolgte Organisationen und Tickets:",
               "text": "bis du sie entfernst oder dein Konto löschst."
             },
             "usage": {

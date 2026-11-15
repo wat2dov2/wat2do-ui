@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "What you do on Wat2Do.",
-              "text": "Events you mark as going or save, clubs you follow, tickets you get, when a club checks you in and refund requests you send."
+              "text": "Events you mark as going or save, positions you save, clubs you follow, tickets you get, when a club checks you in and refund requests you send."
             },
             "submissions": {
               "term": "What you send us.",
@@ -366,7 +366,7 @@
               "text": "codes expire after {{codeMinutes}}, and a session ends {{sessionDays}} after you last use it."
             },
             "activity": {
-              "term": "Going, saves, follows and tickets:",
+              "term": "Going, saved events and positions, follows and tickets:",
               "text": "until you remove them or delete your account."
             },
             "usage": {

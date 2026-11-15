@@ -29,6 +29,7 @@ pub const CANNOT_DELETE_SELF: &str = "Admins cannot delete their own account";
 pub const LAST_ADMIN_REQUIRED: &str = "Cannot remove the last remaining admin";
 pub const USER_PROFILE_NOT_FOUND: &str = "User profile not found \u{2014} complete signup first";
 pub const POSITION_NOT_FOUND: &str = "Position not found";
+pub const SAVED_POSITIONS_CAP_REACHED: &str = "Maximum saved positions limit reached";
 pub const DISCOVERY_QUERY_SCHOOL_NOT_FOUND: &str = "Query school is not registered";
 pub const PROMOTER_PROGRAM_PAUSED: &str = "The promoter program is paused";
 pub const PROMOTER_SCHOOL_REQUIRED: &str = "Choose a school before creating a promoter poster";

@@ -1,9 +1,10 @@
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import { Shapes, Ticket, Users } from "lucide-react";
+import { ChevronRight, Shapes, Ticket, Users } from "lucide-react";
 import { ROUTES } from "@/shared/constants/routes";
-import { Section, Stack } from "@/shared/layout";
-import { Button } from "@/shared/ui/button";
+import { Section } from "@/shared/layout";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/shared/ui/item";
+import { IconTile } from "@/shared/ui/tile";
 
 // Every form is open to everyone: events and positions can be sent without an account, and the club form asks the visitor to sign in only when they send it. The footer links them too, for visitors who are not signed in.
 const SUBMIT_ITEMS = [
@@ -16,17 +17,24 @@ const SUBMIT_ITEMS = [
 export function SubmissionsSection() {
   const { t } = useTranslation();
   return (
-    <Section title={t("profile.submissions.title")} description={t("profile.submissions.description")}>
-      <Stack direction="horizontal" gap={2} wrap>
+    <Section description={t("profile.submissions.description")}>
+      <ItemGroup>
         {SUBMIT_ITEMS.map(({ labelKey, href, Icon }) => (
-          <Button key={href} asChild variant="outline" size="sm">
+          <Item key={href} size="sm" asChild>
             <NextLink href={href}>
-              <Icon />
-              {t(labelKey)}
+              <ItemMedia>
+                <IconTile icon={Icon} />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{t(labelKey)}</ItemTitle>
+              </ItemContent>
+              <ItemActions>
+                <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+              </ItemActions>
             </NextLink>
-          </Button>
+          </Item>
         ))}
-      </Stack>
+      </ItemGroup>
     </Section>
   );
 }

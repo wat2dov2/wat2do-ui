@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Ce que vous faites sur Wat2Do.",
-              "text": "Les événements que vous marquez avec \"J'y vais\" ou que vous enregistrez, les organisations que vous suivez, les billets que vous obtenez, le moment où une organisation enregistre votre entrée et les demandes de remboursement que vous envoyez."
+              "text": "Les événements que vous marquez avec \"J'y vais\" ou que vous enregistrez, les postes que vous enregistrez, les organisations que vous suivez, les billets que vous obtenez, le moment où une organisation enregistre votre entrée et les demandes de remboursement que vous envoyez."
             },
             "submissions": {
               "term": "Ce que vous nous envoyez.",
@@ -366,7 +366,7 @@
               "text": "les codes expirent après {{codeMinutes}}, et une session prend fin {{sessionDays}} après votre dernière utilisation."
             },
             "activity": {
-              "term": "Mentions \"J'y vais\", événements enregistrés, organisations suivies et billets :",
+              "term": "Mentions \"J'y vais\", événements et postes enregistrés, organisations suivies et billets :",
               "text": "jusqu'à ce que vous les retiriez ou que vous supprimiez votre compte."
             },
             "usage": {

@@ -49,6 +49,13 @@
     "processingImage": "Processing position image",
     "imageParseFailed": "Image parsing failed",
     "imageParseFailedDescription": "We could not read position details from the image.",
-    "imageExtracted": "Position details extracted successfully."
+    "imageExtracted": "Position details extracted successfully.",
+    "saved": {
+      "save": "Save",
+      "saved": "Saved",
+      "saveFailed": "Couldn't save this position",
+      "emptyTitle": "No saved positions",
+      "emptyDescription": "Positions you save show up here."
+    }
   }
 }
