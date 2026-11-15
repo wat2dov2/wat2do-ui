@@ -9,6 +9,7 @@ import { clearNarrowingFilterState, EMPTY_FILTER_STATE, feedFilterAvailability, 
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
+import { controlBox } from "../src/shared/config/controlBox";
 import { hasActiveEventOccurrence } from "../src/shared/utils/date";
 import { getEventFilterCategories, getEventQuickFilters, START_FROM_NOW } from "../src/shared/constants/eventFilters";
 
@@ -335,15 +336,17 @@ test("feed availability holds until the last qualifying event ends, at any time,
   const availability = feedFilterAvailability(feed, "uwaterloo");
   // Plain data, so the server can hand it to the page with the first screen.
   expect(JSON.parse(JSON.stringify(availability))).toEqual(availability);
-  for (const time of ["2026-09-28T12:00:00Z", "2026-10-01T19:00:00Z", "2026-10-01T19:00:01Z", "2026-10-02T21:00:00Z", "2026-10-02T21:00:01Z", "2026-12-01T20:30:00Z"]) {
-    const nowMs = at(time);
+  // The last moment event 51's session without an end is still on.
+  const noEndOnUntil = at("2026-10-02T20:00:00Z") + controlBox.eventDiscovery.eventWithoutEndVisibilityMs;
+  for (const nowMs of [at("2026-09-28T12:00:00Z"), at("2026-10-01T19:00:00Z"), at("2026-10-01T19:00:01Z"), noEndOnUntil, noEndOnUntil + 1000, at("2026-12-01T20:30:00Z")]) {
+    const time = new Date(nowMs).toISOString();
     const varsityOn = feed.some(event => event.school === "uwaterloo" && event.sports_game === true && hasActiveEventOccurrence(event, nowMs));
     expect(resolveVarsityGamesFilter(availability, nowMs, true), time).toEqual({ ready: true, available: varsityOn, selected: varsityOn });
     const examOn = feed.some(event => !event.cancelled && event.campus_season_ids?.includes("exam_destress") && hasActiveEventOccurrence(event, nowMs));
     expect(resolveCampusSeasonFilters(school, nowMs, "en", ["exam_destress"], availability).selectedIds, time).toEqual(examOn ? ["exam_destress"] : []);
   }
-  expect(resolveVarsityGamesFilter(availability, at("2026-10-02T21:00:00Z"), false).available).toBe(true);
-  expect(resolveVarsityGamesFilter(availability, at("2026-10-02T21:00:01Z"), false).available).toBe(false);
+  expect(resolveVarsityGamesFilter(availability, noEndOnUntil, false).available).toBe(true);
+  expect(resolveVarsityGamesFilter(availability, noEndOnUntil + 1000, false).available).toBe(false);
 });
 
 test("campus season visibility follows inclusive school-local dates and supports separate windows", () => {

@@ -269,8 +269,9 @@ export interface paths {
          *
          *     ``start_utc`` keeps occurrences still on at it: ending at or after it, or with
          *     no end, starting no more than the no-end visibility window before it.
-         *     ``include_past`` drops the default start-of-today lower bound, so a caller
-         *     can ask for a host's full history. Omits ``created_by``.
+         *     Without it, the start of today in the school's time is the lower bound, by
+         *     the same rule. ``include_past`` drops that lower bound, so a caller can ask
+         *     for a host's full history. Omits ``created_by``.
          */
         get: operations["list_events_events__get"];
         put?: never;
