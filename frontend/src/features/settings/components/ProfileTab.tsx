@@ -1,8 +1,5 @@
-import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { UserProfile } from "@/features/auth";
-import { Mail, Camera } from "lucide-react";
-import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
@@ -19,97 +16,30 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { toFacultyTranslationKey } from "@/shared/utils/string";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { LazyImage } from "@/shared/ui/lazy-image";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 interface ProfileTabProps {
-  userEmail: string | null;
   profile: UserProfile;
-  avatarPreviewUrl: string | null;
   isLoading: boolean;
   disabled: boolean;
   onProfileChange: (updates: Partial<UserProfile>) => void;
-  onAvatarChange: (file: File) => void;
 }
 
+/** The visitor's school, faculty, year and interests; their photo sits in the profile header. */
 export function ProfileTab({
-  userEmail,
   profile,
-  avatarPreviewUrl,
   isLoading,
   disabled,
   onProfileChange,
-  onAvatarChange,
 }: ProfileTabProps) {
   const { interests } = useAppConstants();
   const { t } = useTranslation();
   const { schoolBySlug } = useSchoolDirectory();
   const faculties = schoolBySlug.get(profile.school ?? "")?.faculties ?? [];
-  const fileRef = useRef<HTMLInputElement>(null);
-  const avatarUrl = avatarPreviewUrl ?? profile.avatarUrl;
   const controlsDisabled = isLoading || disabled;
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
-      {userEmail && (
-        <Card>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="size-16 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-2 border-border">
-                  {isLoading ? (
-                    <Skeleton className="size-full rounded-full" />
-                  ) : avatarUrl ? (
-                    <LazyImage
-                      src={avatarUrl}
-                      alt={t("settings.profile.avatarAlt")}
-                      width={64}
-                      height={64}
-                      className="size-full"
-                      fallback={(userEmail[0] ?? "?").toUpperCase()}
-                    />
-                  ) : (
-                    <span className="text-xl font-semibold text-muted-foreground">
-                      {(userEmail?.[0] ?? "?").toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="absolute -bottom-1 -right-1 rounded-full size-7 p-0"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={controlsDisabled}
-                  aria-label={t("settings.profile.changeAvatar")}
-                >
-                  <Camera className="size-3.5" />
-                </Button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      onAvatarChange(file);
-                    }
-                    event.target.value = "";
-                  }}
-                  className="hidden"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <Mail className="size-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{userEmail}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardContent className="space-y-6">
           <div className="space-y-2">

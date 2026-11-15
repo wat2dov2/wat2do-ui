@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "Vos événements, les organisations que vous suivez et vos paramètres",
     "settings": "Paramètres",
     "events": {
       "saved": "Événements enregistrés",
@@ -12,12 +11,15 @@
       "ticket": "Billet"
     },
     "clubs": {
-      "title": "Organisations que vous suivez",
       "empty": "Les organisations que vous suivez apparaissent ici."
     },
     "submissions": {
-      "title": "Vos soumissions",
       "description": "Ajoutez un événement, un poste ou une organisation. Nous examinons chacun avant sa mise en ligne."
+    },
+    "showAll": "Tout afficher ({{count}})",
+    "showFewer": "Afficher moins",
+    "tabs": {
+      "submissions": "Soumissions"
     }
   }
 }

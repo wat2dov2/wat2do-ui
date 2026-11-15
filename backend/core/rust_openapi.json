@@ -6862,6 +6862,116 @@
         }
       }
     },
+    "/saved-positions/": {
+      "get": {
+        "tags": [
+          "saved-positions"
+        ],
+        "summary": "List Saved Positions",
+        "description": "The ids of the positions the user saved, newest first.",
+        "operationId": "list_saved_positions_saved_positions__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/saved-positions/{position_id}": {
+      "put": {
+        "tags": [
+          "saved-positions"
+        ],
+        "summary": "Save Position",
+        "description": "Save (bookmark) a position; saving it again changes nothing.\n\n- 404 if the position does not exist.\n- 400 if the user has already saved `maximum_saved_positions_per_user` positions.",
+        "operationId": "save_position_saved_positions__position_id__put",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavePositionStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "saved-positions"
+        ],
+        "summary": "Unsave Position",
+        "description": "Remove a saved position; removing one that is not saved changes nothing.",
+        "operationId": "unsave_position_saved_positions__position_id__delete",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavePositionStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/schools": {
       "get": {
         "tags": [
@@ -16048,6 +16158,22 @@
         "title": "ReportUpdate"
       },
       "SaveClubStatusResponse": {
+        "type": "object",
+        "description": "Locks the save/unsave status contract at the OpenAPI boundary.",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "unsaved"
+            ]
+          }
+        }
+      },
+      "SavePositionStatusResponse": {
         "type": "object",
         "description": "Locks the save/unsave status contract at the OpenAPI boundary.",
         "required": [

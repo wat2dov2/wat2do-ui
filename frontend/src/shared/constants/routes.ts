@@ -173,7 +173,18 @@ export function getRouteDocumentTitle(pathname: string): string {
   );
 }
 
-// ── Settings sub-tabs, on the profile page (used as query params: /profile?tab=<tab>) ──
+// ── The profile page's tabs (used as query params: /profile?tab=<tab>) ──
+export const PROFILE_TABS = {
+  EVENTS: "events",
+  CLUBS: "clubs",
+  POSITIONS: "positions",
+  SUBMISSIONS: "submissions",
+  SETTINGS: "settings",
+} as const;
+
+export type ProfileTab = (typeof PROFILE_TABS)[keyof typeof PROFILE_TABS];
+
+// ── Settings sub-tabs, inside the profile's Settings tab. A link to one opens the profile on Settings with it selected. ──
 export const SETTINGS_TABS = {
   PROFILE: "profile",
   NOTIFICATIONS: "notifications",
@@ -181,13 +192,10 @@ export const SETTINGS_TABS = {
   PROMOTER: "promoter",
 } as const;
 
-/** The profile page's settings section, which a settings link scrolls into view. */
-export const PROFILE_SETTINGS_SECTION_ID = "settings";
+export type SettingsTab = (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS];
 
-/** The profile page opened on its settings, with a specific tab selected. */
-export function settingsTabPath(
-  tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS],
-): string {
+/** The profile page opened on one of its tabs, or on Settings with one settings tab selected. */
+export function profileTabPath(tab: ProfileTab | SettingsTab): string {
   return `${ROUTES.PROFILE}?${QP.TAB}=${tab}`;
 }
 

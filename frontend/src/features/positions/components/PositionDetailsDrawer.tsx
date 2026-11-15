@@ -6,6 +6,7 @@ import { CalendarDays, Clock, DollarSign, Instagram, MapPin, Mail } from "lucide
 import type { LucideIcon } from "lucide-react";
 import { PositionList } from "@/features/positions/components/PositionList";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
+import { SavePositionButton } from "@/features/positions/components/SavePositionButton";
 import { formatPositionDeadline } from "@/features/positions/lib/positionDates";
 import { Button } from "@/shared/ui/button";
 import {
@@ -94,6 +95,7 @@ export function PositionDetailsDrawer({
           <>
             <DrawerHeader className="text-left" navigation={{ previous: previous ? () => onSelect(previous) : undefined, next: next ? () => onSelect(next) : undefined }}>
               <Stack direction="horizontal" justify="end" gap={2} wrap>
+                <SavePositionButton positionId={position.id} />
                 {sourceHref ? (
                   <Button asChild>
                     <a

@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "Your events, the clubs you follow and your settings",
     "settings": "Settings",
     "events": {
       "saved": "Events saved",
@@ -12,12 +11,15 @@
       "ticket": "Ticket"
     },
     "clubs": {
-      "title": "Clubs you follow",
       "empty": "Clubs you follow show up here."
     },
     "submissions": {
-      "title": "Your submissions",
       "description": "Add an event, a position or a club. We review each one before it goes live."
+    },
+    "showAll": "Show all ({{count}})",
+    "showFewer": "Show fewer",
+    "tabs": {
+      "submissions": "Submissions"
     }
   }
 }

@@ -297,3 +297,6 @@ export function useSettingsForm() {
     save,
   };
 }
+
+/** The settings form one profile page shares between its header (the photo) and its settings tabs. */
+export type SettingsForm = ReturnType<typeof useSettingsForm>;

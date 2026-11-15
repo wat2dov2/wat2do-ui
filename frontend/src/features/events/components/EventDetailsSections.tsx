@@ -18,6 +18,7 @@ import {
 import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, Utensils } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
+import { DateTile, IconTile } from "@/shared/ui/tile";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import {
@@ -102,40 +103,6 @@ export const EVENT_DETAILS_LAYOUT = {
   sidebar: "order-2 md:col-start-1",
 };
 
-function EventDateTile({
-  dtstartUtc,
-  locale,
-  timeZone,
-}: {
-  dtstartUtc: string;
-  locale: string;
-  timeZone: string;
-}) {
-  const start = new Date(dtstartUtc);
-  if (Number.isNaN(start.getTime())) return null;
-  return (
-    <Card className="size-10 shrink-0 items-center justify-center gap-0.5 py-0">
-      <span className="text-[9px] font-semibold">
-        {start.toLocaleDateString(locale, { month: "short", timeZone })}
-      </span>
-      <span className="text-base font-bold leading-none">{start.toLocaleDateString(locale, { day: "numeric", timeZone })}</span>
-    </Card>
-  );
-}
-
-/** Compact bordered squircle tile holding an icon, matching EventDateTile's footprint. */
-function EventInfoTile({
-  icon: Icon,
-}: {
-  icon: LucideIcon;
-}) {
-  return (
-    <Card className="size-10 shrink-0 items-center justify-center py-0">
-      <Icon className="size-4" />
-    </Card>
-  );
-}
-
 /** Date cell: primary occurrence plus a "+N dates" chip listing the rest. */
 function EventDateCell({ event }: { event: Event }) {
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -149,11 +116,7 @@ function EventDateCell({ event }: { event: Event }) {
 
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventDateTile
-        dtstartUtc={primaryOccurrence.dtstart_utc}
-        locale={locale}
-        timeZone={timeZone}
-      />
+      <DateTile dtstartUtc={primaryOccurrence.dtstart_utc} locale={locale} timeZone={timeZone} />
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">{formatCardDate(event, timeZone, locale)}</p>
         <p className="text-sm text-muted-foreground">{formatCardTime(event, timeZone, locale)}</p>
@@ -191,7 +154,7 @@ function EventDateCell({ event }: { event: Event }) {
 function EventFact({ icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={icon} />
+      <IconTile icon={icon} />
       <p className="min-w-0 text-sm font-semibold text-foreground">{children}</p>
     </Stack>
   );

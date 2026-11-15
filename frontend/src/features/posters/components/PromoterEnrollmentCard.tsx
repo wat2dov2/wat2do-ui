@@ -9,7 +9,7 @@ import { usePromoterState } from "@/features/posters/hooks/usePromoterState";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import {
   SETTINGS_TABS,
-  settingsTabPath,
+  profileTabPath,
 } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -163,7 +163,7 @@ export function PromoterEnrollmentCard({
         </CardHeader>
         <CardFooter>
           <Button asChild variant="outline">
-            <Link href={settingsTabPath(SETTINGS_TABS.PROFILE)}>
+            <Link href={profileTabPath(SETTINGS_TABS.PROFILE)}>
               {t("posters.enrollment.completeProfile")}
             </Link>
           </Button>

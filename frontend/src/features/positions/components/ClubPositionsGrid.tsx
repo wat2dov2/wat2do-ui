@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getClubPositions } from "@/features/positions/api/positions.api";
-import { PositionDetailsDrawer } from "@/features/positions/components/PositionDetailsDrawer";
-import { PositionList, PositionListSkeleton } from "@/features/positions/components/PositionList";
+import { PositionListSkeleton } from "@/features/positions/components/PositionList";
+import { PositionsGrid } from "@/features/positions/components/PositionsGrid";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Position } from "@/shared/types";
 
@@ -21,6 +20,7 @@ export function ClubPositionsGridSkeleton() {
   return <PositionListSkeleton />;
 }
 
+/** A club's open positions. */
 export function ClubPositionsGrid({
   clubId,
   school,
@@ -33,39 +33,12 @@ export function ClubPositionsGrid({
     enabled: clubId > 0 && Boolean(school),
     initialData: initialPositions,
   });
-  const positions = useMemo(() => data ?? [], [data]);
-  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
-    null,
-  );
-  const selectedPosition = useMemo(
-    () =>
-      positions.find((position) => position.id === selectedPositionId) ?? null,
-    [positions, selectedPositionId],
-  );
-
-  const handlePositionClick = useCallback((position: Position) => {
-    setSelectedPositionId(position.id);
-  }, []);
-
-  const handleClosePositionDetails = useCallback(() => {
-    setSelectedPositionId(null);
-  }, []);
-
   return (
-    <>
-      <PositionList
-        positions={positions}
-        isLoading={isPending}
-        onPositionClick={handlePositionClick}
-        emptyTitle={t("positions.clubEmptyTitle")}
-        emptyDescription={t("positions.clubEmptyDescription")}
-      />
-      <PositionDetailsDrawer
-        positions={positions}
-        onSelect={handlePositionClick}
-        position={selectedPosition}
-        onClose={handleClosePositionDetails}
-      />
-    </>
+    <PositionsGrid
+      positions={data ?? []}
+      isPending={isPending}
+      emptyTitle={t("positions.clubEmptyTitle")}
+      emptyDescription={t("positions.clubEmptyDescription")}
+    />
   );
 }

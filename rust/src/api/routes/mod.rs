@@ -25,6 +25,7 @@ pub mod positions;
 pub mod qr;
 pub mod reports;
 pub mod saved_clubs;
+pub mod saved_positions;
 pub mod schools;
 pub mod site_banner;
 pub mod sponsor_submissions;

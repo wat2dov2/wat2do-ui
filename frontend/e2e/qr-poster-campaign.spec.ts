@@ -597,8 +597,9 @@ test.describe("Promoter poster campaign", () => {
     );
 
     await page.goto(`${BASE_URL}/profile?tab=notifications`);
-    await expect(page.getByRole("heading", { name: "Settings", exact: true, level: 2 })).toBeVisible();
-    const panel = page.getByRole("tabpanel");
+    // A settings tab's link opens the profile's Settings tab with that tab selected.
+    await expect(page.getByRole("tab", { name: "Settings", exact: true })).toHaveAttribute("aria-selected", "true");
+    const panel = page.getByRole("tabpanel", { name: "Notifications" });
     await expect(panel.getByText("Morning email", { exact: true })).toBeVisible();
     await expect(panel.getByText("Event reminders", { exact: true })).toBeVisible();
     await expect(panel.locator('[data-slot="skeleton"]')).toHaveCount(3);
@@ -613,7 +614,7 @@ test.describe("Promoter poster campaign", () => {
     await expect(panel.locator('[data-slot="skeleton"]')).toHaveCount(0);
   });
 
-  test("keeps settings tabs content-hugging without narrow-screen overflow", async ({
+  test("keeps settings tabs content-hugging, scrolling sideways on narrow screens", async ({
     page,
   }) => {
     await installCommonApiMocks(page);
@@ -622,8 +623,8 @@ test.describe("Promoter poster campaign", () => {
 
     await page.goto(`${BASE_URL}/profile?tab=promoter`);
 
-    const tabs = page.locator('[data-slot="tabs"]');
-    const tabsList = page.locator('[data-slot="tabs-list"]');
+    const tabsList = page.getByRole("tablist", { name: "Settings" });
+    const tabs = tabsList.locator('xpath=ancestor::*[@data-slot="tabs"][1]');
     const tabTriggers = tabsList.getByRole("tab");
     const promoterTab = page.getByTestId("settings-promoter-tab");
     await expect(tabTriggers).toHaveCount(4);
@@ -695,10 +696,10 @@ test.describe("Promoter poster campaign", () => {
     await expect
       .poll(async () =>
         tabsList.evaluate((list) => {
+          // A row too wide for a phone scrolls inside its own track instead of widening the page.
           const parent = list.parentElement;
           return (
             parent !== null &&
-            list.scrollWidth <= list.clientWidth &&
             list.getBoundingClientRect().width <=
               parent.getBoundingClientRect().width
           );
@@ -721,6 +722,8 @@ test.describe("Promoter poster campaign", () => {
     await installSessionMock(page, { hasPromoterProfile: false });
 
     await page.goto(`${BASE_URL}/profile`);
+    await page.getByRole("tab", { name: "Settings", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile\?tab=settings$/);
 
     const notificationsTab = page.getByRole("tab", { name: "Notifications" });
     const appearanceTab = page.getByRole("tab", { name: "Appearance" });
@@ -787,7 +790,7 @@ test.describe("Promoter poster campaign", () => {
     await page.goto(`${BASE_URL}/profile?tab=promoter`);
 
     await expect(page).toHaveURL(`${BASE_URL}/profile?tab=profile`);
-    const tabsList = page.locator('[data-slot="tabs-list"]');
+    const tabsList = page.getByRole("tablist", { name: "Settings" });
     await expect(tabsList.getByRole("tab")).toHaveCount(3);
     await expect(page.getByTestId("settings-promoter-tab")).toHaveCount(0);
     await expect(

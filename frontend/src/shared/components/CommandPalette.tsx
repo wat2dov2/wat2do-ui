@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Plus, X, User, Bell, Heart, LogIn, Palette, HelpCircle } from "lucide-react";
 import {
   CommandDialog,
@@ -12,9 +12,9 @@ import {
   CommandShortcut,
 } from "@/shared/ui/command";
 import {
-  PROFILE_SETTINGS_SECTION_ID,
-  settingsTabPath,
+  profileTabPath,
   SETTINGS_TABS,
+  type SettingsTab,
   ROUTES,
 } from "@/shared/constants/routes";
 import { focusSearchInput } from "@/shared/utils/searchInput";
@@ -36,14 +36,10 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const pathname = usePathname();
 
-  // Settings live on the profile page; already there, its settings scroll into view.
-  const openSettingsTab = (tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS]) => {
-    router.push(settingsTabPath(tab));
-    if (pathname === ROUTES.PROFILE) {
-      document.getElementById(PROFILE_SETTINGS_SECTION_ID)?.scrollIntoView({ block: "start" });
-    }
+  // Settings live in the profile's Settings tab.
+  const openSettingsTab = (tab: SettingsTab) => {
+    router.push(profileTabPath(tab));
     onOpenChange(false);
   };
 

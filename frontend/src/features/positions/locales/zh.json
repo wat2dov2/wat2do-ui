@@ -49,6 +49,13 @@
     "processingImage": "正在处理职位图片",
     "imageParseFailed": "图片读取失败",
     "imageParseFailedDescription": "我们无法从图片中读取职位信息。",
-    "imageExtracted": "已成功提取职位信息。"
+    "imageExtracted": "已成功提取职位信息。",
+    "saved": {
+      "save": "收藏",
+      "saved": "已收藏",
+      "saveFailed": "无法收藏此职位",
+      "emptyTitle": "暂无收藏的职位",
+      "emptyDescription": "你收藏的职位会显示在这里。"
+    }
   }
 }

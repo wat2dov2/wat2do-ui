@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "你嘅活動、你追蹤嘅組織同設定",
     "settings": "設定",
     "events": {
       "saved": "已收藏嘅活動",
@@ -12,12 +11,15 @@
       "ticket": "門票"
     },
     "clubs": {
-      "title": "你追蹤嘅組織",
       "empty": "你追蹤嘅組織會喺度顯示。"
     },
     "submissions": {
-      "title": "你嘅提交",
       "description": "新增活動、職位或者組織。每一項上線之前我哋都會審核。"
+    },
+    "showAll": "顯示全部（{{count}}）",
+    "showFewer": "顯示較少",
+    "tabs": {
+      "submissions": "提交"
     }
   }
 }

@@ -295,6 +295,11 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::saved_clubs::save_club,
             routes::saved_clubs::unsave_club
         ))
+        .routes(routes!(routes::saved_positions::list_saved_positions))
+        .routes(routes!(
+            routes::saved_positions::save_position,
+            routes::saved_positions::unsave_position
+        ))
         // routers/schools.py
         .routes(routes!(routes::schools::search_schools))
         .routes(routes!(routes::schools::get_school))

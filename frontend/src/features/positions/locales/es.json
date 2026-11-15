@@ -51,6 +51,13 @@
     "processingImage": "Procesando la imagen del puesto",
     "imageParseFailed": "No se pudo leer la imagen",
     "imageParseFailedDescription": "No pudimos leer los detalles del puesto en la imagen.",
-    "imageExtracted": "Detalles del puesto extraídos correctamente."
+    "imageExtracted": "Detalles del puesto extraídos correctamente.",
+    "saved": {
+      "save": "Guardar",
+      "saved": "Guardado",
+      "saveFailed": "No se pudo guardar esta posición",
+      "emptyTitle": "No hay posiciones guardadas",
+      "emptyDescription": "Las posiciones que guardes aparecen aquí."
+    }
   }
 }

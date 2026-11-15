@@ -9,6 +9,7 @@ import {
   useEventImageCutouts,
 } from "@/shared/ui/event-image-cutout";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
+import { SavePositionBadge } from "@/features/positions/components/SavePositionButton";
 import { formatPositionDeadlineBadge } from "@/features/positions/lib/positionDates";
 import { getRecencyBadge } from "@/shared/utils/date";
 import type { Position } from "@/shared/types";
@@ -90,6 +91,12 @@ export function PositionCardImage({
           <Badge variant="soon" size="md">
             {t("positions.due", { date: deadlineDate })}
           </Badge>
+        </BadgeMask>
+      ) : null}
+
+      {variant === "card" ? (
+        <BadgeMask variant="bottom-right" cutout containerRef={registerCorner("bottom-right")}>
+          <SavePositionBadge positionId={position.id} />
         </BadgeMask>
       ) : null}
 

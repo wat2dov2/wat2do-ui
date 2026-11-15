@@ -49,6 +49,13 @@
     "processingImage": "處理緊職位圖片",
     "imageParseFailed": "讀唔到圖片",
     "imageParseFailedDescription": "我哋喺圖片入面讀唔到職位資料。",
-    "imageExtracted": "成功擷取職位資料。"
+    "imageExtracted": "成功擷取職位資料。",
+    "saved": {
+      "save": "收藏",
+      "saved": "已收藏",
+      "saveFailed": "無法收藏呢個職位",
+      "emptyTitle": "未有收藏嘅職位",
+      "emptyDescription": "你收藏嘅職位會喺度顯示。"
+    }
   }
 }

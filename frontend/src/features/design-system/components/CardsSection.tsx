@@ -7,7 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/shared/ui/item";
 import { StatCard } from "@/shared/ui/stat-card";
+import { DateTile, IconTile } from "@/shared/ui/tile";
 import { Ticket } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
@@ -39,6 +41,27 @@ export function CardsSection() {
         <div className="max-w-xs">
           <StatCard icon={Ticket} label="Tickets" value="128" note="Updated just now" />
         </div>
+      </ShowcaseBlock>
+      <ShowcaseBlock label="Item group: one list on one surface, hairlines between rows, led by a date or icon tile">
+        <ItemGroup className="max-w-md">
+          <Item size="sm">
+            <ItemMedia>
+              <DateTile dtstartUtc="2026-11-20T23:00:00Z" locale="en" timeZone="America/Toronto" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Board Game Social</ItemTitle>
+              <ItemDescription>Fri, Nov 20, 6:00 PM · SLC Great Hall</ItemDescription>
+            </ItemContent>
+          </Item>
+          <Item size="sm">
+            <ItemMedia>
+              <IconTile icon={Ticket} />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Add event</ItemTitle>
+            </ItemContent>
+          </Item>
+        </ItemGroup>
       </ShowcaseBlock>
     </Section>
   );

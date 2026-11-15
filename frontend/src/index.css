@@ -31,6 +31,8 @@
   --color-muted-hover: var(--muted-hover);
   --color-muted-active: var(--muted-active);
   --color-muted-foreground: var(--muted-foreground);
+  --color-control-track: var(--control-track);
+  --color-control-thumb: var(--control-thumb);
   --color-destructive: var(--destructive);
   --color-destructive-hover: var(--destructive-hover);
   --color-destructive-active: var(--destructive-active);
@@ -199,6 +201,10 @@
   }
   [data-elevation="control"] {
     box-shadow: var(--app-shadow-control) !important;
+  }
+  /* A hairline lift for a thumb inside a track (the active tab), small enough to fit the track's padding. */
+  [data-elevation="raised"] {
+    box-shadow: var(--app-shadow-xs) !important;
   }
   body {
     @apply bg-background text-foreground font-sans font-normal antialiased;

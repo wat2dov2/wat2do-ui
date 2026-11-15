@@ -51,6 +51,13 @@
     "processingImage": "Traitement de l'image du poste",
     "imageParseFailed": "Échec de la lecture de l'image",
     "imageParseFailedDescription": "Nous n'avons pas pu lire les détails du poste dans l'image.",
-    "imageExtracted": "Détails du poste extraits avec succès."
+    "imageExtracted": "Détails du poste extraits avec succès.",
+    "saved": {
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "saveFailed": "Impossible d'enregistrer ce poste",
+      "emptyTitle": "Aucun poste enregistré",
+      "emptyDescription": "Les postes que vous enregistrez apparaissent ici."
+    }
   }
 }

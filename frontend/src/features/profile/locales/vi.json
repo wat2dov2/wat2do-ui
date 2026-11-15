@@ -1,6 +1,5 @@
 {
   "profile": {
-    "description": "Sự kiện của bạn, các tổ chức bạn theo dõi và cài đặt",
     "settings": "Cài đặt",
     "events": {
       "saved": "Sự kiện đã lưu",
@@ -12,12 +11,15 @@
       "ticket": "Vé"
     },
     "clubs": {
-      "title": "Tổ chức bạn theo dõi",
       "empty": "Các tổ chức bạn theo dõi sẽ hiện ở đây."
     },
     "submissions": {
-      "title": "Nội dung bạn gửi",
       "description": "Thêm một sự kiện, vị trí hoặc tổ chức. Chúng tôi xem xét từng nội dung trước khi đăng."
+    },
+    "showAll": "Xem tất cả ({{count}})",
+    "showFewer": "Thu gọn",
+    "tabs": {
+      "submissions": "Nội dung đã gửi"
     }
   }
 }

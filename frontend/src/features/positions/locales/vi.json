@@ -49,6 +49,13 @@
     "processingImage": "Đang xử lý ảnh vị trí",
     "imageParseFailed": "Không đọc được ảnh",
     "imageParseFailedDescription": "Chúng tôi không đọc được thông tin vị trí từ ảnh.",
-    "imageExtracted": "Đã trích xuất thông tin vị trí thành công."
+    "imageExtracted": "Đã trích xuất thông tin vị trí thành công.",
+    "saved": {
+      "save": "Lưu",
+      "saved": "Đã lưu",
+      "saveFailed": "Không thể lưu vị trí này",
+      "emptyTitle": "Chưa có vị trí đã lưu",
+      "emptyDescription": "Các vị trí bạn lưu sẽ hiện ở đây."
+    }
   }
 }

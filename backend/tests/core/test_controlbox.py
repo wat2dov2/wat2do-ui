@@ -306,6 +306,21 @@ def test_invalid_instagram_web_app_id_is_rejected(tmp_path: Path) -> None:
         load_controlbox(path)
 
 
+@pytest.mark.parametrize(
+    "field",
+    [
+        "maximum_going_events_per_user",
+        "maximum_saved_clubs_per_user",
+        "maximum_saved_positions_per_user",
+    ],
+)
+def test_per_user_save_caps_must_be_positive(tmp_path: Path, field: str) -> None:
+    path = _write_control(tmp_path, "rate_limits", lambda payload: payload.update({field: 0}))
+
+    with pytest.raises(ValidationError, match=field):
+        load_controlbox(path)
+
+
 @pytest.mark.parametrize("field,value", [("apify_memory_megabytes", 1000)])
 def test_scrape_resource_controls_are_validated(tmp_path, field, value):
     path = _write_control(tmp_path, "scraping", lambda payload: payload.update({field: value}))

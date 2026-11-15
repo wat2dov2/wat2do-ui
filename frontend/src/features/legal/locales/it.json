@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Cosa fai su Wat2Do.",
-              "text": "Gli eventi che segni con \"Partecipo\" o che salvi, le organizzazioni che segui, i biglietti che ottieni, quando un'organizzazione registra il tuo ingresso e le richieste di rimborso che invii."
+              "text": "Gli eventi che segni con \"Partecipo\" o che salvi, le posizioni che salvi, le organizzazioni che segui, i biglietti che ottieni, quando un'organizzazione registra il tuo ingresso e le richieste di rimborso che invii."
             },
             "submissions": {
               "term": "Cosa ci invii.",
@@ -366,7 +366,7 @@
               "text": "i codici scadono dopo {{codeMinutes}}, e una sessione termina {{sessionDays}} dopo l'ultima volta che la usi."
             },
             "activity": {
-              "term": "Eventi segnati con \"Partecipo\", eventi salvati, organizzazioni seguite e biglietti:",
+              "term": "Eventi segnati con \"Partecipo\", eventi e posizioni salvati, organizzazioni seguite e biglietti:",
               "text": "finché non li rimuovi o non cancelli il tuo account."
             },
             "usage": {

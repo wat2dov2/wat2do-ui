@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Co robisz w Wat2Do.",
-              "text": "Wydarzenia, przy których zaznaczasz „Wezmę udział” lub które zapisujesz, obserwowane organizacje, otrzymane bilety, moment, w którym organizacja Cię melduje, oraz wysyłane przez Ciebie prośby o zwrot pieniędzy."
+              "text": "Wydarzenia, przy których zaznaczasz „Wezmę udział” lub które zapisujesz, stanowiska, które zapisujesz, obserwowane organizacje, otrzymane bilety, moment, w którym organizacja Cię melduje, oraz wysyłane przez Ciebie prośby o zwrot pieniędzy."
             },
             "submissions": {
               "term": "Co nam przesyłasz.",
@@ -366,7 +366,7 @@
               "text": "kody wygasają po upływie {{codeMinutes}}, a sesja kończy się {{sessionDays}} po jej ostatnim użyciu."
             },
             "activity": {
-              "term": "Deklaracje udziału, zapisane wydarzenia, obserwowane organizacje i bilety:",
+              "term": "Deklaracje udziału, zapisane wydarzenia i stanowiska, obserwowane organizacje i bilety:",
               "text": "do czasu, aż je usuniesz lub usuniesz swoje konto."
             },
             "usage": {

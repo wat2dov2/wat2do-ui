@@ -54,6 +54,13 @@
     "processingImage": "جارٍ معالجة صورة المنصب",
     "imageParseFailed": "تعذّرت قراءة الصورة",
     "imageParseFailedDescription": "لم نتمكن من قراءة تفاصيل المنصب من الصورة.",
-    "imageExtracted": "تم استخراج تفاصيل المنصب بنجاح."
+    "imageExtracted": "تم استخراج تفاصيل المنصب بنجاح.",
+    "saved": {
+      "save": "حفظ",
+      "saved": "محفوظ",
+      "saveFailed": "تعذر حفظ هذا المنصب",
+      "emptyTitle": "لا توجد مناصب محفوظة",
+      "emptyDescription": "ستظهر هنا المناصب التي تحفظها."
+    }
   }
 }

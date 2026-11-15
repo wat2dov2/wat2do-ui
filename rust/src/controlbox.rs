@@ -127,6 +127,7 @@ pub struct RateLimits {
     pub submissions: RateLimit,
     pub calendar_feed: RateLimit,
     pub maximum_saved_clubs_per_user: i64,
+    pub maximum_saved_positions_per_user: i64,
 }
 
 /// `controlbox/ingestion.json`, every field.
@@ -947,6 +948,7 @@ mod tests {
         assert!(CONTACT.business_support.business_name > 0);
         assert!(DATABASE.read_attempts > 0);
         assert!(RATE_LIMITS.default.maximum_requests > 0);
+        assert!(RATE_LIMITS.maximum_saved_positions_per_user > 0);
         assert!(INGESTION.parallel_agents > 0);
         assert!(UPLOADS.event_image_max_size_bytes > 0);
         assert!(UPLOADS.claim_proof_max_size_bytes > 0);

@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/shared/lib/utils"
 
 const itemVariants = cva(
-  "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent/50",
+  "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-surface-hover",
   {
     variants: {
       variant: {
@@ -40,6 +40,23 @@ function Item({
       data-variant={variant}
       data-size={size}
       className={cn(itemVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+/**
+ * Rows that belong together (one list on a page) on a single bordered
+ * surface, hairlines between them, instead of a box around every row.
+ */
+function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-group"
+      className={cn(
+        "flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface [&>[data-slot=item]]:rounded-none",
+        className
+      )}
       {...props}
     />
   )
@@ -82,7 +99,7 @@ function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-content"
       className={cn(
-        "flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
+        "flex min-w-0 flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
         className
       )}
       {...props}
@@ -146,6 +163,7 @@ function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
 
 export {
   Item,
+  ItemGroup,
   ItemMedia,
   ItemContent,
   ItemActions,

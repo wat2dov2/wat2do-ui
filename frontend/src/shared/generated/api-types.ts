@@ -1875,6 +1875,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/saved-positions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved Positions
+         * @description The ids of the positions the user saved, newest first.
+         */
+        get: operations["list_saved_positions_saved_positions__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/saved-positions/{position_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Position
+         * @description Save (bookmark) a position; saving it again changes nothing.
+         *
+         *     - 404 if the position does not exist.
+         *     - 400 if the user has already saved `maximum_saved_positions_per_user` positions.
+         */
+        put: operations["save_position_saved_positions__position_id__put"];
+        post?: never;
+        /**
+         * Unsave Position
+         * @description Remove a saved position; removing one that is not saved changes nothing.
+         */
+        delete: operations["unsave_position_saved_positions__position_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schools": {
         parameters: {
             query?: never;
@@ -4772,6 +4819,11 @@ export interface components {
         };
         /** @description Locks the save/unsave status contract at the OpenAPI boundary. */
         SaveClubStatusResponse: {
+            /** @enum {string} */
+            status: "saved" | "unsaved";
+        };
+        /** @description Locks the save/unsave status contract at the OpenAPI boundary. */
+        SavePositionStatusResponse: {
             /** @enum {string} */
             status: "saved" | "unsaved";
         };
@@ -9130,6 +9182,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveClubStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_positions_saved_positions__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_position_saved_positions__position_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                position_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavePositionStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_position_saved_positions__position_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                position_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavePositionStatusResponse"];
                 };
             };
             /** @description Validation Error */
