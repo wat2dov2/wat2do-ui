@@ -26,7 +26,7 @@
     "callbackDescription": "{{email}}의 로그인 확인",
     "callbackContinue": "계속해서 로그인",
     "heroTitle": "이번 주 일정",
-    "heroSubtitle": "캠퍼스 내 클럽에서 열리는 실제 이벤트, 실시간으로 업데이트됩니다.",
+    "heroSubtitle": "캠퍼스 내 클럽에서 열리는 실제 이벤트.",
     "heroEmpty": "새로운 이벤트가 매일 추가됩니다. 먼저 확인하려면 로그인하세요.",
     "consentHeading": "데이터, 안전, 그리고 당신의 캠퍼스 피드",
     "consentDescription": "학생들을 위해 이벤트 발견을 안전하고 유용하게 유지하는 방법.",
