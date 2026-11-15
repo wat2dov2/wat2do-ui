@@ -10,6 +10,7 @@
     "clubRequired": "Pumili ng organisasyon bago isumite ang kaganapan.",
     "club": "Organisasyon",
     "verified": "Beripikado",
+    "verifiedTooltip": "Opisyal nang nasa Wat2Do ang {{club}}",
     "status": "Katayuan",
     "dayOfWeek": "Araw ng Linggo",
     "createEvent": "Magdagdag ng event",

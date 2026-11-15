@@ -4,6 +4,7 @@ import { clubPagePath } from "@/shared/constants/routes";
 import { ClubTypeIcon } from "@/shared/components/ClubTypeIcon";
 import { Badge } from "@/shared/ui/badge";
 import { Link } from "@/shared/ui/link";
+import { TapTooltip } from "@/shared/ui/tooltip";
 import { TruncatedText } from "@/shared/ui/truncated-text";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
@@ -67,7 +68,9 @@ export function ClubBadgeLink({
     <AvatarStack size="sm" avatars={avatars} loading={logoLoading} />
     <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
     {verified ? (
-      <BadgeCheck data-slot="club-verified" role="img" aria-label={t("events.verified")} className="size-3.5 shrink-0 fill-badge-verified text-badge-verified-foreground [&>path:first-child]:stroke-badge-verified" />
+      <TapTooltip content={t("events.verifiedTooltip", { club: clubName })}>
+        <BadgeCheck data-slot="club-verified" role="img" aria-label={t("events.verified")} className="size-3.5 shrink-0 fill-badge-verified text-badge-verified-foreground [&>path:first-child]:stroke-badge-verified" />
+      </TapTooltip>
     ) : null}
     {cohosts.length > 0 ? <span data-slot="club-cohost-count" className="shrink-0 font-bold">+{cohosts.length}</span> : null}
     <ClubTypeIcon school={school} clubType={clubType} />

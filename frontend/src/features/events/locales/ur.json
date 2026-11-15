@@ -10,6 +10,7 @@
     "clubRequired": "ایونٹ جمع کرانے سے پہلے ایک تنظیم منتخب کریں۔",
     "club": "تنظیم",
     "verified": "تصدیق شدہ",
+    "verifiedTooltip": "{{club}} باضابطہ طور پر Wat2Do میں شامل ہے",
     "status": "حیثیت",
     "dayOfWeek": "ہفتے کا دن",
     "createEvent": "ایونٹ شامل کریں",

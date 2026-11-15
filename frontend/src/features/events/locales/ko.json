@@ -10,6 +10,7 @@
     "clubRequired": "이벤트를 제출하기 전에 조직을 선택하세요.",
     "club": "조직",
     "verified": "인증됨",
+    "verifiedTooltip": "{{club}}은(는) Wat2Do에 공식적으로 합류했어요",
     "status": "상태",
     "dayOfWeek": "요일",
     "createEvent": "이벤트 추가",

@@ -10,6 +10,7 @@
     "clubRequired": "Select a club before submitting the event.",
     "club": "Club",
     "verified": "Verified",
+    "verifiedTooltip": "{{club}} is officially onboarded to Wat2Do",
     "status": "Status",
     "dayOfWeek": "Day of Week",
     "createEvent": "Add event",
