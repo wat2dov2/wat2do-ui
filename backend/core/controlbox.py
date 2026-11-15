@@ -593,6 +593,10 @@ class InstagramPublishingControl(_ControlModel):
     # On a carousel's first song try, also comment a fitting movie or show GIF.
     gif_comments: bool
     music_retry_minutes: int = Field(ge=1, le=720)
+    # Right after a carousel publishes, each of its slides goes to the account's story
+    # too, in order, as a 9:16 frame encoded at this JPEG quality.
+    post_slides_to_story: bool
+    story_frame_jpeg_quality: int = Field(ge=50, le=100)
     # Campuses with large Asian student communities, the only ones that get a song an
     # admin marked as Asian or K-pop.
     asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(

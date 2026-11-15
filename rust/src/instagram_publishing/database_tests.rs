@@ -539,6 +539,103 @@ async fn a_claimed_batch_is_drawn_from_live_events_and_posted() {
             .iter()
             .all(|item| item.row.published_asset_url.is_some() && item.row.published_at.is_some())
     );
+
+    // Then each of the five slides went to the story, after the carousel, as
+    // its own stored frame, and each frame was published.
+    let carousel_posted = requests
+        .iter()
+        .position(|request| request.text().starts_with("creation_id="))
+        .unwrap();
+    let story_containers: Vec<usize> = requests
+        .iter()
+        .enumerate()
+        .filter(|(_, request)| request.text().ends_with("&media_type=STORIES"))
+        .map(|(at, _)| at)
+        .collect();
+    assert_eq!(story_containers.len(), 5);
+    assert!(story_containers.iter().all(|&at| at > carousel_posted));
+    let frames: Vec<String> = story_containers
+        .iter()
+        .map(|&at| requests[at].text())
+        .collect();
+    assert!(frames.iter().all(|frame| frame.starts_with(&format!(
+        "image_url={}",
+        &super::meta::urlencode(&[("u", "https://media.test/event-images/")])[2..]
+    ))));
+    assert!(
+        !frames.iter().any(|frame| frame.contains(
+            &super::meta::urlencode(&[(
+                "u",
+                published.row.published_cover_url.as_deref().unwrap()
+            )])[2..]
+        )),
+        "a frame is not the slide itself"
+    );
+    assert_eq!(
+        requests
+            .iter()
+            .filter(|request| request.target.ends_with("/media_publish"))
+            .count(),
+        6,
+        "the carousel and five frames"
+    );
+    assert_eq!(published.row.story_status.as_deref(), Some("posted"));
+    assert_eq!(published.row.story_error, None);
+}
+
+#[tokio::test]
+async fn a_refused_story_leaves_the_carousel_published() {
+    let Some(db) = database() else { return };
+    let (school, slug) = school(&db).await;
+    connect(&db, school, &slug, Duration::days(30)).await;
+    let user_id = account_user_id(&db, &slug).await;
+    let mut ids = Vec::new();
+    for (title, days) in [("Board Games", 2), ("Bake Sale", 3), ("Film Night", 4)] {
+        ids.push(
+            event(
+                &db,
+                school,
+                title,
+                -Duration::hours(1),
+                Duration::days(days),
+                Some("Arts & Culture"),
+            )
+            .await,
+        );
+    }
+    let id = batch(&db, school, &slug, unique_day(), "ready_for_review", &ids).await;
+    let image = jpeg();
+    let site = serve(move |_| (200, "image/jpeg", image.clone())).await;
+    let graph_user = user_id.clone();
+    let graph = serve(move |request| {
+        if request.text().ends_with("&media_type=STORIES") {
+            return (
+                400,
+                "application/json",
+                br#"{"error": {"message": "Stories are unavailable"}}"#.to_vec(),
+            );
+        }
+        graph_reply(request, &graph_user)
+    })
+    .await;
+    let settings = settings(&format!("{}/api/render-instagram-slide", site.url));
+    let (storage, _) = recording::storage("media", "https://media.test");
+    batches::claim_batch(&db, KEY, id, 1).await.unwrap();
+    let status = Publisher::new(&db, &settings, &storage)
+        .with_graph(&graph.url)
+        .publish_batch(id)
+        .await
+        .unwrap();
+
+    assert_eq!(status, "published");
+    let published = batches::get_batch(&db, id).await.unwrap();
+    assert_eq!(published.row.meta_media_id.as_deref(), Some("media-1"));
+    assert_eq!(published.row.error_message, None);
+    assert_eq!(published.row.story_status.as_deref(), Some("failed"));
+    assert_eq!(
+        published.row.story_error.as_deref(),
+        Some("0 of 5 slides posted: Stories are unavailable")
+    );
 }
 
 #[tokio::test]

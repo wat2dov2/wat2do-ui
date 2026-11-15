@@ -4,8 +4,10 @@
 //!
 //! The slides are drawn from the events' live data at this moment, uploaded,
 //! and handed to Meta as one carousel. Once posted, the batch keeps the
-//! images it posted; the emulator worker then adds its song. Any failure is
-//! recorded on the batch, which an admin can publish again.
+//! images it posted; each slide then goes to the account's story as a 9:16
+//! frame, and the emulator worker adds the carousel's song. A failed carousel
+//! is recorded on the batch, which an admin can publish again; a failed story
+//! is recorded beside it and leaves the carousel published.
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -17,7 +19,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::meta::{GRAPH_HOST, MetaClient};
-use super::rendering::Renderer;
+use super::rendering::{Rendered, Renderer};
 use super::{Refused, error_message, isoformat, job_error};
 use crate::api::events::model::Event;
 use crate::api::events::store;
@@ -33,6 +35,10 @@ use crate::storage::Storage;
 /// The emulator worker adds a song to a carousel whose link it knows.
 const MUSIC_PENDING: &str = "pending";
 const MUSIC_FAILED: &str = "failed";
+/// Where a published carousel's story stands.
+const STORY_PENDING: &str = "pending";
+const STORY_POSTED: &str = "posted";
+const STORY_FAILED: &str = "failed";
 
 /// Where carousels go: the Graph API (a stand-in in tests) and the renderer.
 pub struct Publisher<'a> {
@@ -83,7 +89,9 @@ impl<'a> Publisher<'a> {
             );
             return Ok(batch.row.status);
         }
-        self.publish_claimed(batch).await?;
+        if let Some(story) = self.publish_claimed(batch).await? {
+            self.post_story(story).await?;
+        }
         Ok(batches::get_batch(self.db, batch_id)
             .await
             .map_err(job_error)?
@@ -92,7 +100,8 @@ impl<'a> Publisher<'a> {
     }
 
     /// `publish_ready_drafts`: post every school's ready events draft for
-    /// today, one school at a time. A draft with too few slides stays in
+    /// today, one school at a time, then each one's story, so no carousel
+    /// waits on another school's story. A draft with too few slides stays in
     /// review; one an admin changed meanwhile is skipped.
     pub async fn publish_ready_drafts(&self, now: DateTime<Utc>) -> Result<BTreeMap<String, i64>> {
         let rows: Vec<(Uuid, String, i32, i64)> = sqlx::query_as(
@@ -108,6 +117,7 @@ impl<'a> Publisher<'a> {
         .fetch_all(self.db)
         .await?;
         let mut outcomes: BTreeMap<String, i64> = BTreeMap::new();
+        let mut stories = Vec::new();
         for (batch_id, account_key, version, slides) in rows {
             if slides < INSTAGRAM_PUBLISHING.minimum_event_slides as i64 {
                 *outcomes.entry("too_few_events".into()).or_default() += 1;
@@ -127,7 +137,7 @@ impl<'a> Publisher<'a> {
                     continue;
                 }
             };
-            self.publish_claimed(batch).await?;
+            stories.extend(self.publish_claimed(batch).await?);
             let status = batches::get_batch(self.db, batch_id)
                 .await
                 .map_err(job_error)?
@@ -135,30 +145,35 @@ impl<'a> Publisher<'a> {
                 .status;
             *outcomes.entry(status).or_default() += 1;
         }
+        for story in stories {
+            self.post_story(story).await?;
+        }
         Ok(outcomes)
     }
 
     /// `publish_claimed_batch`: post a claimed batch; any failure marks it
-    /// failed with the reason.
-    async fn publish_claimed(&self, batch: Batch) -> Result<()> {
+    /// failed with the reason. A posted carousel's story is left to post.
+    async fn publish_claimed(&self, batch: Batch) -> Result<Option<PendingStory>> {
         let batch_id = batch.row.id;
-        if let Err(error) = self.try_publish(&batch).await {
-            tracing::error!("Instagram batch {batch_id} failed to publish: {error:#}");
-            sqlx::query(
-                "UPDATE public.instagram_publish_batches \
-                 SET status = $2, error_message = $3, updated_at = $4 WHERE id = $1",
-            )
-            .bind(batch_id)
-            .bind(STATUS_FAILED)
-            .bind(error_message(&error))
-            .bind(Utc::now())
-            .execute(self.db)
-            .await?;
-        }
-        Ok(())
+        let error = match self.try_publish(&batch).await {
+            Ok(story) => return Ok(story),
+            Err(error) => error,
+        };
+        tracing::error!("Instagram batch {batch_id} failed to publish: {error:#}");
+        sqlx::query(
+            "UPDATE public.instagram_publish_batches \
+             SET status = $2, error_message = $3, updated_at = $4 WHERE id = $1",
+        )
+        .bind(batch_id)
+        .bind(STATUS_FAILED)
+        .bind(error_message(&error))
+        .bind(Utc::now())
+        .execute(self.db)
+        .await?;
+        Ok(None)
     }
 
-    async fn try_publish(&self, batch: &Batch) -> Result<()> {
+    async fn try_publish(&self, batch: &Batch) -> Result<Option<PendingStory>> {
         let credentials = load_account_credentials(
             self.db,
             &self.encryption_key,
@@ -202,8 +217,13 @@ impl<'a> Publisher<'a> {
     }
 
     /// `_publish_claimed_batch`: draw the slides, post the carousel and keep
-    /// what was posted. The error says whether Instagram already has the post.
-    async fn post(&self, access_token: &str, batch: &Batch) -> Result<(), (bool, anyhow::Error)> {
+    /// what was posted, then make its story frames. The error says whether
+    /// Instagram already has the post.
+    async fn post(
+        &self,
+        access_token: &str,
+        batch: &Batch,
+    ) -> Result<Option<PendingStory>, (bool, anyhow::Error)> {
         let before = |error: anyhow::Error| (false, error);
         let client = self.graph(access_token).map_err(before)?;
         let row = &batch.row;
@@ -227,7 +247,10 @@ impl<'a> Publisher<'a> {
             events.push(Value::Object(payload));
         }
         let events_rendered = async {
-            let cover_url = self
+            let mut slides: Vec<Rendered> = Vec::new();
+            let mut child_ids = Vec::new();
+            let mut asset_urls: Vec<(i64, String)> = Vec::new();
+            let cover = self
                 .renderer
                 .cover(
                     &events,
@@ -238,36 +261,40 @@ impl<'a> Publisher<'a> {
                     &row.batch_kind,
                 )
                 .await?;
-            let cover = client.create_image_container(user_id, &cover_url).await?;
-            client.wait_until_ready(&cover).await?;
-            let mut child_ids = vec![cover];
-            let mut asset_urls: Vec<(i64, String)> = Vec::new();
+            child_ids.push(client.create_image_container(user_id, &cover.url).await?);
+            slides.push(cover);
+            client.wait_until_ready(&child_ids[0]).await?;
             for event in &events {
-                let asset_url = self.renderer.event(event).await?;
-                let child = client.create_image_container(user_id, &asset_url).await?;
+                let slide = self.renderer.event(event).await?;
+                let child = client.create_image_container(user_id, &slide.url).await?;
                 client.wait_until_ready(&child).await?;
                 child_ids.push(child);
-                asset_urls.push((event["id"].as_i64().unwrap_or_default(), asset_url));
+                asset_urls.push((event["id"].as_i64().unwrap_or_default(), slide.url.clone()));
+                slides.push(slide);
             }
             let mut others = Vec::new();
             for event in &batch.other_events {
                 others.push(Value::Object(slide_payload(self.db, event).await?));
             }
-            let outro_url = self
+            let outro = self
                 .renderer
                 .outro(&others, &row.school, &row.batch_kind)
                 .await?;
-            let outro = client.create_image_container(user_id, &outro_url).await?;
-            client.wait_until_ready(&outro).await?;
-            child_ids.push(outro);
+            let outro_id = client.create_image_container(user_id, &outro.url).await?;
+            client.wait_until_ready(&outro_id).await?;
+            child_ids.push(outro_id);
+            slides.push(outro);
             let carousel = client
                 .create_carousel_container(user_id, &child_ids, &row.caption)
                 .await?;
             client.wait_until_ready(&carousel).await?;
             let media_id = client.publish(user_id, &carousel).await?;
-            anyhow::Ok((cover_url, outro_url, asset_urls, media_id))
+            anyhow::Ok((slides, asset_urls, media_id))
         };
-        let (cover_url, outro_url, asset_urls, media_id) = events_rendered.await.map_err(before)?;
+        let (slides, asset_urls, media_id) = events_rendered.await.map_err(before)?;
+        let (Some(cover), Some(outro)) = (slides.first(), slides.last()) else {
+            unreachable!("a carousel has a cover and an outro");
+        };
         let published_at = Utc::now();
         let permalink = match client.get_permalink(&media_id).await {
             Ok(permalink) => Some(permalink),
@@ -283,14 +310,97 @@ impl<'a> Publisher<'a> {
             PostedCarousel {
                 media_id,
                 permalink,
-                cover_url,
-                outro_url,
+                cover_url: cover.url.clone(),
+                outro_url: outro.url.clone(),
                 asset_urls,
                 published_at,
             },
         )
         .await
-        .map_err(|error| (true, error))
+        .map_err(|error| (true, error))?;
+        if !INSTAGRAM_PUBLISHING.post_slides_to_story {
+            return Ok(None);
+        }
+        let frames = async {
+            let mut frames = Vec::new();
+            for slide in &slides {
+                frames.push(self.renderer.story_frame(slide).await?);
+            }
+            anyhow::Ok(frames)
+        }
+        .await
+        .map_err(|error| format!("Story frames were not made: {}", error_message(&error)));
+        Ok(Some(PendingStory {
+            batch_id: row.id,
+            access_token: access_token.to_owned(),
+            user_id: user_id.to_owned(),
+            frames,
+        }))
+    }
+
+    /// Post a published carousel's frames to its account's story in slide
+    /// order, and record how that went; the carousel stays published either way.
+    async fn post_story(&self, story: PendingStory) -> Result<()> {
+        let outcome = match &story.frames {
+            Ok(frames) => {
+                self.post_frames(&story.access_token, &story.user_id, frames)
+                    .await
+            }
+            Err(error) => Err(error.clone()),
+        };
+        let (status, error) = match outcome {
+            Ok(()) => (STORY_POSTED, None),
+            Err(error) => {
+                tracing::error!(
+                    "Instagram batch {} story was not posted: {error}",
+                    story.batch_id
+                );
+                (STORY_FAILED, Some(error))
+            }
+        };
+        // `updated_at` stays: the song's retries are timed from it.
+        sqlx::query(
+            "UPDATE public.instagram_publish_batches SET story_status = $2, story_error = $3 \
+             WHERE id = $1",
+        )
+        .bind(story.batch_id)
+        .bind(status)
+        .bind(error)
+        .execute(self.db)
+        .await?;
+        Ok(())
+    }
+
+    /// Every frame's container first, so Meta prepares them together, then
+    /// each posted in turn. The error says how many went up before it.
+    async fn post_frames(
+        &self,
+        access_token: &str,
+        user_id: &str,
+        frames: &[String],
+    ) -> Result<(), String> {
+        let mut posted = 0;
+        let result = async {
+            let client = self.graph(access_token)?;
+            let mut containers = Vec::new();
+            for frame in frames {
+                containers.push(client.create_story_container(user_id, frame).await?);
+            }
+            for container in &containers {
+                client.wait_until_ready(container).await?;
+                client.publish(user_id, container).await?;
+                posted += 1;
+            }
+            anyhow::Ok(())
+        }
+        .await;
+        result.map_err(|error| {
+            format!(
+                "{posted} of {} slides posted: {}",
+                frames.len(),
+                error_message(&error)
+            )
+        })
     }
 
     /// The slides are history now: the batch keeps the images it posted
@@ -319,6 +429,9 @@ impl<'a> Publisher<'a> {
             .execute(self.db)
             .await?;
         }
+        let story_status = INSTAGRAM_PUBLISHING
+            .post_slides_to_story
+            .then_some(STORY_PENDING);
         let (music_status, music_error) = match posted.permalink {
             Some(_) => (MUSIC_PENDING, None),
             None => (
@@ -329,8 +442,8 @@ impl<'a> Publisher<'a> {
         sqlx::query(
             "UPDATE public.instagram_publish_batches SET status = $2, meta_media_id = $3, \
              permalink = $4, music_status = $5, music_error = $6, published_cover_url = $7, \
-             published_outro_url = $8, published_at = $9, updated_at = $9, error_message = NULL \
-             WHERE id = $1",
+             published_outro_url = $8, published_at = $9, updated_at = $9, error_message = NULL, \
+             story_status = $10, story_error = NULL WHERE id = $1",
         )
         .bind(batch.row.id)
         .bind(STATUS_PUBLISHED)
@@ -341,10 +454,20 @@ impl<'a> Publisher<'a> {
         .bind(&posted.cover_url)
         .bind(&posted.outro_url)
         .bind(posted.published_at)
+        .bind(story_status)
         .execute(self.db)
         .await?;
         Ok(())
     }
+}
+
+/// A published carousel's story, still to post: its frames in slide order,
+/// or why they could not be made, and the account to post them as.
+struct PendingStory {
+    batch_id: Uuid,
+    access_token: String,
+    user_id: String,
+    frames: Result<Vec<String>, String>,
 }
 
 /// What Instagram now shows for a batch.

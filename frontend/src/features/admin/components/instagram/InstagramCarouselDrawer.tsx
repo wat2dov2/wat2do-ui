@@ -22,6 +22,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
 import { InstagramMusicStatus } from "./InstagramMusicStatus";
+import { InstagramStoryStatus } from "./InstagramStoryStatus";
 import { InstagramEventEditor } from "./InstagramEventEditor";
 import { fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";
@@ -328,6 +329,7 @@ export function InstagramCarouselDrawer({
             </FormGrid>
             <Stack gap={6}>
             <InstagramMusicStatus batch={batch} />
+            <InstagramStoryStatus batch={batch} />
             {/*
               A published run is a record, so it has no editing surface at all -
               the slides above are the images that were posted, and the caption

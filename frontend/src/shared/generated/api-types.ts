@@ -3465,6 +3465,16 @@ export interface components {
             music_track?: string | null;
             /** Music Error */
             music_error?: string | null;
+            /**
+             * Story Status
+             * @description Whether the slides went to the account's story: pending, posted or failed
+             */
+            story_status?: string | null;
+            /**
+             * Story Error
+             * @description Why the story was not posted, with how many slides went up first
+             */
+            story_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */
@@ -3560,6 +3570,16 @@ export interface components {
             music_track?: string | null;
             /** Music Error */
             music_error?: string | null;
+            /**
+             * Story Status
+             * @description Whether the slides went to the account's story: pending, posted or failed
+             */
+            story_status?: string | null;
+            /**
+             * Story Error
+             * @description Why the story was not posted, with how many slides went up first
+             */
+            story_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */

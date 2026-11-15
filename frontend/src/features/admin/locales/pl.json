@@ -412,6 +412,14 @@
         "failed": "Nie dodano utworu: {{reason}}",
         "none": "Ta karuzela została opublikowana, zanim utwory były dodawane automatycznie.",
         "viewPost": "Zobacz na Instagramie"
+      },
+      "story": {
+        "title": "Relacja",
+        "afterPublish": "Każdy slajd trafia do relacji konta zaraz po opublikowaniu tej karuzeli.",
+        "pending": "Publikowanie slajdów w relacji.",
+        "posted": "Wszystkie slajdy zostały opublikowane w relacji.",
+        "failed": "Nie opublikowano w relacji: {{reason}}",
+        "none": "Ta karuzela została opublikowana, zanim slajdy zaczęły trafiać do relacji."
       }
     },
     "socialAccounts": {

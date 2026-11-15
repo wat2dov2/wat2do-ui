@@ -412,6 +412,14 @@
         "failed": "Aucune chanson ajoutée : {{reason}}",
         "none": "Ce carrousel a été publié avant l'ajout automatique des chansons.",
         "viewPost": "Voir sur Instagram"
+      },
+      "story": {
+        "title": "Story",
+        "afterPublish": "Chaque diapositive est publiée dans la story du compte juste après la publication de ce carrousel.",
+        "pending": "Publication des diapositives dans la story.",
+        "posted": "Toutes les diapositives ont été publiées dans la story.",
+        "failed": "Non publié dans la story : {{reason}}",
+        "none": "Ce carrousel a été publié avant que les diapositives soient publiées dans la story."
       }
     },
     "socialAccounts": {

@@ -412,6 +412,14 @@
         "failed": "Walang naidagdag na kanta: {{reason}}",
         "none": "Nailathala ang carousel na ito bago awtomatikong idinagdag ang mga kanta.",
         "viewPost": "Tingnan sa Instagram"
+      },
+      "story": {
+        "title": "Story",
+        "afterPublish": "Ipo-post ang bawat slide sa story ng account pagkatapos mismong mailathala ang carousel na ito.",
+        "pending": "Ipino-post ang mga slide sa story.",
+        "posted": "Na-post sa story ang lahat ng slide.",
+        "failed": "Hindi na-post sa story: {{reason}}",
+        "none": "Nailathala ang carousel na ito bago pa ipinapadala ang mga slide sa story."
       }
     },
     "socialAccounts": {

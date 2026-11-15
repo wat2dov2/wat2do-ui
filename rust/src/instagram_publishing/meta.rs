@@ -1,5 +1,5 @@
 //! A small Graph API client (`services/instagram_publishing/meta.py`) for
-//! carousel publishing, token refreshes and each account's own stats.
+//! carousel and story publishing, token refreshes and each account's own stats.
 //!
 //! Requests carry the same query strings and form bodies Python's httpx sent,
 //! encoded the way `urllib.parse.urlencode` encodes them.
@@ -148,6 +148,17 @@ impl MetaClient {
             .post(
                 &format!("/{user_id}/media"),
                 &[("image_url", image_url), ("is_carousel_item", "true")],
+            )
+            .await?;
+        required_string(&payload, "id")
+    }
+
+    /// A story frame's container: one image for the account's story.
+    pub async fn create_story_container(&self, user_id: &str, image_url: &str) -> Result<String> {
+        let payload = self
+            .post(
+                &format!("/{user_id}/media"),
+                &[("image_url", image_url), ("media_type", "STORIES")],
             )
             .await?;
         required_string(&payload, "id")

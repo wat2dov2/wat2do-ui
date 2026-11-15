@@ -412,6 +412,14 @@
         "failed": "No se añadió ninguna canción: {{reason}}",
         "none": "Este carrusel se publicó antes de que las canciones se añadieran automáticamente.",
         "viewPost": "Ver en Instagram"
+      },
+      "story": {
+        "title": "Historia",
+        "afterPublish": "Cada diapositiva se publica en la historia de la cuenta justo después de publicar este carrusel.",
+        "pending": "Publicando las diapositivas en la historia.",
+        "posted": "Todas las diapositivas se publicaron en la historia.",
+        "failed": "No se publicó en la historia: {{reason}}",
+        "none": "Este carrusel se publicó antes de que las diapositivas se publicaran en la historia."
       }
     },
     "socialAccounts": {
