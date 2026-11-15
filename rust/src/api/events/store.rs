@@ -625,12 +625,21 @@ pub enum LowerBound {
     /// No lower bound (`include_past`).
     #[default]
     None,
-    /// The feed's default: occurrences starting at or after it (today's start).
-    StartsFrom(DateTime<Utc>),
-    /// A caller's `start_utc`: occurrences still on at it, by the rule the site
-    /// lists by (an end at or after it, or with no end, a start within
-    /// `event_without_end_visibility_minutes` before it or later).
+    /// Occurrences still on at it ([`still_on_at`]): a caller's `start_utc`,
+    /// or by default today's start, so an event that began on an earlier day
+    /// and is still running stays in the feed.
     OnAt(DateTime<Utc>),
+}
+
+/// Whether occurrence `d` is still on at `at` (an SQL timestamp), by the rule
+/// the site lists by: it ends at or after `at`, or, with no end, it starts no
+/// more than `event_without_end_visibility_minutes` before `at`.
+fn still_on_at(at: &str) -> String {
+    format!(
+        "(d.dtend_utc >= {at} OR (d.dtend_utc IS NULL \
+         AND d.dtstart_utc >= {at} - make_interval(mins => {})))",
+        crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+    )
 }
 
 /// What the default date-ordered feed (`_load_lightweight_date_page`) reads.
@@ -668,15 +677,11 @@ struct LatestJson {
 }
 
 /// `get_latest_added_event`'s condition: the event still has an occurrence on
-/// or ahead (an end in the future, or no end and a start within
-/// `event_without_end_visibility_minutes`), since selecting it searches the
-/// feed, which hides ended events.
+/// now or ahead, since selecting it searches the feed, which hides ended events.
 fn not_ended_sql() -> String {
     format!(
-        "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id \
-         AND (d.dtend_utc >= now() OR (d.dtend_utc IS NULL \
-         AND d.dtstart_utc >= now() - make_interval(mins => {}))))",
-        crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+        "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id AND {})",
+        still_on_at("now()")
     )
 }
 
@@ -790,17 +795,8 @@ fn window_conditions(window: &DateWindow, binds: &mut Binds) -> Vec<String> {
     let mut conditions = vec!["TRUE".to_owned()];
     match window.lower {
         LowerBound::None => {}
-        LowerBound::StartsFrom(start) => conditions.push(format!(
-            "d.dtstart_utc >= {}",
-            binds.push(Bind::Time(start))
-        )),
         LowerBound::OnAt(start) => {
-            let start = binds.push(Bind::Time(start));
-            conditions.push(format!(
-                "(d.dtend_utc >= {start} OR (d.dtend_utc IS NULL \
-                 AND d.dtstart_utc >= {start} - make_interval(mins => {})))",
-                crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
-            ));
+            conditions.push(still_on_at(&binds.push(Bind::Time(start))));
         }
     }
     if let Some(end) = window.end_utc {
@@ -1045,26 +1041,28 @@ pub async fn page_of(
     Ok((hydrate_json(db, events).await?, parse_latest(Some(latest))?))
 }
 
-/// `load_upcoming_event_ids`: up to `cap` event ids with an occurrence at or
-/// after `since`, in first-occurrence order.
+/// `load_upcoming_event_ids`: up to `cap` event ids with an occurrence still on
+/// at `since` (the feed's default lower bound), in first-occurrence order.
 pub async fn upcoming_ids(
     db: &PgPool,
     since: DateTime<Utc>,
     school_id: i64,
     cap: i64,
 ) -> Result<Vec<i64>, ApiError> {
+    let sql = format!(
+        "SELECT firsts.event_id::int8 FROM (SELECT scanned.event_id, min(scanned.dtstart_utc) AS first_start \
+         FROM (SELECT d.event_id, d.dtstart_utc FROM public.event_dates d JOIN public.events e ON e.id = d.event_id \
+         WHERE {} AND e.school_id = $2 ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT $3) scanned \
+         GROUP BY scanned.event_id) firsts ORDER BY firsts.first_start, firsts.event_id LIMIT $4",
+        still_on_at("$1")
+    );
     Ok(read_with_retry(|| {
-        sqlx::query_scalar::<_, i64>(
-            "SELECT firsts.event_id::int8 FROM (SELECT scanned.event_id, min(scanned.dtstart_utc) AS first_start \
-             FROM (SELECT d.event_id, d.dtstart_utc FROM public.event_dates d JOIN public.events e ON e.id = d.event_id \
-             WHERE d.dtstart_utc >= $1 AND e.school_id = $2 ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT $3) scanned \
-             GROUP BY scanned.event_id) firsts ORDER BY firsts.first_start, firsts.event_id LIMIT $4",
-        )
-        .bind(since)
-        .bind(school_id)
-        .bind(cap * 5)
-        .bind(cap)
-        .fetch_all(db)
+        sqlx::query_scalar::<_, i64>(&sql)
+            .bind(since)
+            .bind(school_id)
+            .bind(cap * 5)
+            .bind(cap)
+            .fetch_all(db)
     })
     .await?)
 }
@@ -1254,7 +1252,7 @@ mod tests {
     }
 
     #[test]
-    fn a_callers_start_keeps_what_is_still_on_and_the_default_keeps_what_starts() {
+    fn a_lower_bound_keeps_what_is_still_on_at_it() {
         let at = "2026-11-08T17:00:00Z".parse::<DateTime<Utc>>().unwrap();
         let conditions = |lower| {
             let mut binds = Binds::default();
@@ -1269,10 +1267,6 @@ mod tests {
             (sql, binds.values.len())
         };
         assert_eq!(conditions(LowerBound::None), ("TRUE".to_owned(), 0));
-        assert_eq!(
-            conditions(LowerBound::StartsFrom(at)),
-            ("TRUE AND d.dtstart_utc >= $1".to_owned(), 1)
-        );
         let (on_at, binds) = conditions(LowerBound::OnAt(at));
         assert_eq!(binds, 1);
         assert!(on_at.contains("d.dtend_utc >= $1 OR (d.dtend_utc IS NULL"));
@@ -1330,13 +1324,16 @@ mod tests {
     #[test]
     fn the_latest_added_event_has_not_ended() {
         // test_get_latest_added_event_skips_ended_events: an occurrence ending
-        // now or later, or with no end and a start within the hour.
-        let condition = "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id \
+        // now or later, or with no end and a start within the no-end window.
+        let condition = format!(
+            "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id \
              AND (d.dtend_utc >= now() OR (d.dtend_utc IS NULL \
-             AND d.dtstart_utc >= now() - make_interval(mins => 60))))";
+             AND d.dtstart_utc >= now() - make_interval(mins => {}))))",
+            crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+        );
         assert_eq!(not_ended_sql(), condition);
         for school in [Some("$1"), None] {
-            assert!(latest_sql(school).contains(condition), "{school:?}");
+            assert!(latest_sql(school).contains(&condition), "{school:?}");
         }
     }
 }

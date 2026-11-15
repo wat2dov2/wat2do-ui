@@ -241,12 +241,13 @@ pub async fn list_events(
     let pagination = feed.pagination;
     let first_page = pagination.page == 1;
     let school = feed.school.as_deref().filter(|school| !school.is_empty());
-    // An explicit start wins (keeping what is still on at it, as the site
-    // lists), then `include_past`, then occurrences starting from today.
+    // An explicit start wins, then `include_past`, then today's start; each
+    // keeps what is still on at it, as the site lists, so an event that began
+    // on an earlier day and runs through today is not dropped.
     let lower = match (feed.start_utc, feed.include_past) {
         (Some(start), _) => LowerBound::OnAt(start),
         (None, true) => LowerBound::None,
-        (None, false) => LowerBound::StartsFrom(store::today_start_utc(
+        (None, false) => LowerBound::OnAt(store::today_start_utc(
             &store::school_timezone(db, school).await?,
             Utc::now(),
         )?),
@@ -521,13 +522,18 @@ mod tests {
     }
 }
 
-/// The stats route against a real Postgres loaded with our schema; it runs
-/// only when `WAT2DO_TEST_DATABASE_URL` is set (CI's "Rust database tests" job).
+/// The feed and stats routes against a real Postgres loaded with our schema;
+/// they run only when `WAT2DO_TEST_DATABASE_URL` is set (CI's "Rust database
+/// tests" job).
 #[cfg(test)]
 mod database_tests {
     use axum::body::Body as HttpBody;
     use axum::http::{Request, header};
+    use chrono::Duration;
+    use http_body_util::BodyExt;
+    use serde_json::Value;
     use tower::ServiceExt;
+    use uuid::Uuid;
 
     use super::*;
     use crate::api::auth::test_tokens::access_token;
@@ -569,6 +575,104 @@ mod database_tests {
                     "{vary}"
                 );
             }
+        }
+    }
+
+    /// An unsigned GET through the whole app: its JSON body.
+    async fn get(state: &AppState, uri: &str) -> Value {
+        let mut request = Request::builder()
+            .uri(uri)
+            .header(header::HOST, "testserver")
+            .body(HttpBody::empty())
+            .unwrap();
+        request.extensions_mut().insert(Peer(peer()));
+        let response = crate::api::app(router(state.clone()))
+            .oneshot(request)
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        serde_json::from_slice(&body).unwrap()
+    }
+
+    #[tokio::test]
+    async fn the_default_feed_keeps_an_event_that_began_before_today_and_is_still_on() {
+        let Some(db) = database() else { return };
+        let settings: &'static Settings = Box::leak(Box::new(test_settings(&[])));
+        let state = AppState::new(settings, db.clone(), None).unwrap();
+        let tag = Uuid::new_v4().simple().to_string();
+        // Forty hours ago is before today's start in every zone, even on a day
+        // a clock falls back, and so is an end 27 hours ago.
+        let now = Utc::now();
+        let began = now - Duration::hours(40);
+        let mut ids = Vec::new();
+        for (title, end) in [
+            ("Still running", Some(now + Duration::days(1))),
+            ("Ended yesterday", Some(now - Duration::hours(27))),
+            ("No end, began yesterday", None),
+        ] {
+            let event: i32 = sqlx::query_scalar(
+                "INSERT INTO public.events (title, location, club, school_id) \
+                 SELECT $1, 'SLC', 'Feed Club', id FROM public.schools WHERE slug = 'uwaterloo' \
+                 RETURNING id",
+            )
+            .bind(format!("{title} {tag}"))
+            .fetch_one(&db)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc) VALUES ($1, $2, $3)",
+            )
+            .bind(event)
+            .bind(began)
+            .bind(end)
+            .execute(&db)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO public.user_interactions (session_id, event_id, interaction_type) \
+                 VALUES ($1, $2, 'click')",
+            )
+            .bind(format!("feed-{tag}"))
+            .bind(event)
+            .execute(&db)
+            .await
+            .unwrap();
+            ids.push(i64::from(event));
+        }
+
+        let mut listed = Vec::new();
+        for page in 1.. {
+            let feed = get(
+                &state,
+                &format!("/events/?school=uwaterloo&page={page}&page_size=100"),
+            )
+            .await;
+            let items = feed["items"].as_array().unwrap();
+            listed.extend(items.iter().map(|item| item["id"].as_i64().unwrap()));
+            if items.len() < 100 {
+                break;
+            }
+        }
+        let stats = get(&state, "/events/stats?school=uwaterloo").await;
+
+        let [running, ended, no_end] = ids[..] else {
+            unreachable!("three events")
+        };
+        assert!(
+            listed.contains(&running),
+            "an event that began yesterday and is still on is listed"
+        );
+        assert!(
+            stats.get(running.to_string()).is_some(),
+            "and counted: {stats}"
+        );
+        for gone in [ended, no_end] {
+            assert!(
+                !listed.contains(&gone),
+                "event {gone} was over before today"
+            );
+            assert!(stats.get(gone.to_string()).is_none(), "{stats}");
         }
     }
 }
