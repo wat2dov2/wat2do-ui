@@ -246,3 +246,25 @@ def test_a_recently_failed_follow_is_not_offered_again_yet(monkeypatch):
     module.approved(7, 5)
     (filter_,) = [args[0] for name, args in calls if name == "or_"]
     assert filter_.startswith("follow_error.is.null,updated_at.lt.")
+
+
+def test_scoring_takes_an_equal_share_of_each_schools_oldest_accounts(sb, monkeypatch):
+    monkeypatch.setattr(
+        module,
+        "EMULATOR",
+        module.EMULATOR.model_copy(update={"android_user_by_school": {"ubc": 0, "mit": 0}}),
+    )
+    monkeypatch.setattr(module.school_service, "get_school_id", {"ubc": 1, "mit": 2}.get)
+    sb.queue_responses(
+        [
+            [{"id": "1", "handle": "a", "school_record": {"slug": "ubc"}}],
+            [{"id": "2", "handle": "b", "school_record": {"slug": "mit"}}],
+        ]
+    )
+
+    rows = module.unscored(10)
+
+    assert [(row["handle"], row["school"]) for row in rows] == [("a", "ubc"), ("b", "mit")]
+    sb.eq.assert_any_call("school_id", 1)
+    sb.eq.assert_any_call("school_id", 2)
+    assert [call.args[0] for call in sb.limit.call_args_list] == [5, 5]

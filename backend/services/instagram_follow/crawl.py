@@ -105,6 +105,8 @@ _rested_until: dict[str, float] = {}
 _known: dict[int, set[str]] = {}
 # When each waiting read is next checked, and the gap after that (time.monotonic).
 _next_check: dict[str, tuple[float, float]] = {}
+# When each school's crawl last queued a read (time.monotonic), so running crawls take turns.
+_last_turn: dict[str, float] = {}
 # How many Following reads the worker runs at once, and when it was last asked.
 _READERS_SECONDS = 60
 _readers_checked: dict[str, float] = {"at": float("-inf"), "count": 1}
@@ -186,25 +188,30 @@ def advance() -> int:
     """Collect what waiting crawls' reads returned, then take the next step of the crawls
     whose turn it is, as many as the worker has Following readers. Returns how many
     candidates were added."""
-    schools = next_schools(_readers())
     found = 0
     for school in EMULATOR.android_user_by_school:
-        if school not in schools and crawl_running(school):
+        if crawl_running(school):
             found += _Crawl(school, _load(school)).step(request=False)
-    for school in schools:
+    for school in next_schools(_readers()):
         found += _Crawl(school, _load(school)).step()
     return found
 
 
 def next_schools(count: int) -> list[str]:
-    """Up to ``count`` schools to crawl now: crawls already under way first, so each
-    finishes before another starts, then schools never crawled, then the ones whose last
-    crawl finished longest ago. A crawl resting after failures waits its turn."""
+    """Up to ``count`` schools to crawl now. Crawls already under way come first and take
+    turns a read at a time: one still waiting for its read keeps its place, then the one
+    that queued a read longest ago, so with fewer readers than crawls every running crawl
+    keeps moving instead of waiting for the others to finish. Then schools never crawled,
+    then the ones whose last crawl finished longest ago. A crawl resting after failures
+    waits its turn."""
     now = time.monotonic()
     ready = [
         school for school in EMULATOR.android_user_by_school if _rested_until.get(school, 0) <= now
     ]
-    running = [school for school in ready if crawl_running(school)]
+    running = sorted(
+        (school for school in ready if crawl_running(school)),
+        key=lambda school: (not _read_waiting(school), _last_turn.get(school, 0.0)),
+    )
     if len(running) >= count:
         return running[:count]
     never = datetime.min.replace(tzinfo=timezone.utc)
@@ -289,6 +296,7 @@ class _Crawl:
             arguments.append(f"--max-id={reading['max_id']}")
         state["job"] = _browser(*arguments)["job_id"]
         state["job_queued_at"] = time.time()
+        _last_turn[self.school] = time.monotonic()
         _save(self.school, state)
 
     def _absorb(self, page: dict[str, Any]) -> int:
@@ -511,6 +519,14 @@ def _school_id(school: str) -> int:
 
 def _state_path(school: str) -> Path:
     return STATE_DIRECTORY / f"{school}.json"
+
+
+def _read_waiting(school: str) -> bool:
+    """Whether the school's running crawl has a read queued that is not collected yet."""
+    try:
+        return json.loads(_state_path(school).read_text()).get("job") is not None
+    except (OSError, ValueError):
+        return False
 
 
 def _load(school: str) -> dict[str, Any]:

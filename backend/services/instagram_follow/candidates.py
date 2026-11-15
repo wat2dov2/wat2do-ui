@@ -263,18 +263,28 @@ def _club_for(row: dict) -> int:
 
 
 def unscored(limit: int) -> list[dict[str, Any]]:
-    """Pending accounts not scored yet, oldest first."""
-    response = (
-        get_sb()
-        .table(INSTAGRAM_FOLLOW_CANDIDATES)
-        .select(_SELECT)
-        .eq("status", FOLLOW_CANDIDATE_PENDING)
-        .is_("scored_at", "null")
-        .order("created_at")
-        .limit(limit)
-        .execute()
-    )
-    return [school_service.with_school_slug(row) for row in response.data or []]
+    """Pending accounts not scored yet, an equal share of each school's oldest, so one
+    school's long backlog never keeps another's new finds waiting."""
+    schools = list(EMULATOR.android_user_by_school)
+    share = max(1, -(-limit // len(schools))) if schools else limit
+    rows: list[dict[str, Any]] = []
+    for school in schools:
+        school_id = school_service.get_school_id(school)
+        if school_id is None:
+            continue
+        response = (
+            get_sb()
+            .table(INSTAGRAM_FOLLOW_CANDIDATES)
+            .select(_SELECT)
+            .eq("status", FOLLOW_CANDIDATE_PENDING)
+            .eq("school_id", school_id)
+            .is_("scored_at", "null")
+            .order("created_at")
+            .limit(share)
+            .execute()
+        )
+        rows.extend(school_service.with_school_slug(row) for row in response.data or [])
+    return rows[:limit]
 
 
 def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, Any] | None) -> None:
