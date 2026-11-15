@@ -5300,7 +5300,9 @@ test.describe("Navigation", () => {
     await expect(page).toHaveURL(/\/clubs$/);
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
     await page.getByRole("button", { name: "Open navigation menu" }).click();
-    await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("link", { name: "Events", exact: true }).click();
+    // The menu's logo is a link to Events too, so take the page link from its list of pages.
+    await page.getByRole("dialog", { name: "Primary navigation" }).getByRole("navigation")
+      .getByRole("link", { name: "Events", exact: true }).click();
     await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
   });
 
@@ -5490,10 +5492,12 @@ test.describe("Navigation", () => {
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
-    // The side menu then lists only what the bar does not.
+    // The side menu still opens on the logo (its link to Events) and one divider, then lists only what the bar does not.
+    await expect(menu.getByRole("link", { name: "Events", exact: true }).locator("img")).toBeVisible();
+    await expect(menu.locator('[data-slot="separator"]:visible')).toHaveCount(1);
+    await expect(menu.getByRole("navigation")).toHaveCount(0);
     await expect(menu.getByRole("link", { name: "My tickets", exact: true })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-    await expect(menu.getByRole("link", { name: "Events", exact: true })).toHaveCount(0);
     await expect(menu.getByRole("button", { name: "Submit", exact: true })).toHaveCount(0);
     await expect(drawer.getByRole("button", { name: "Switch to dark mode" })).toHaveCount(0);
     await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
