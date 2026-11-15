@@ -21,8 +21,6 @@
       "refunded": "Erstattet"
     },
     "card": {
-      "freeTitle": "Kostenlose Tickets",
-      "freeDescription": "Hol dir jetzt dein Ticket und zeig dann seinen QR-Code am Einlass.",
       "paidTitle": "Tickets",
       "price": "{{price}} pro Ticket",
       "noFees": "Keine Buchungsgebühren",
@@ -30,15 +28,12 @@
       "left_other": "Noch {{count}} übrig",
       "left_one": "Noch {{count}} übrig",
       "quantity": "Anzahl Tickets",
-      "getFree": "Kostenloses Ticket holen",
       "buy": "Tickets kaufen · {{total}}",
       "continueToPayment": "Weiter zur Zahlung",
       "payNote": "Sichere Zahlung über Stripe. {{club}} erhält deinen Namen und deine E-Mail-Adresse für den Einlass.",
       "checkInNote": "{{club}} erhält deinen Namen und deine E-Mail-Adresse für den Einlass.",
-      "youreIn": "Du bist dabei",
       "showAtDoor": "Zeig diesen QR-Code am Einlass. Du findest ihn auch in deinem Postfach.",
       "openTicket": "Ticket öffnen",
-      "anotherDate": "Ticket für einen anderen Termin holen",
       "youHave": "Du hast {{count}} Ticket",
       "youHave_other": "Du hast {{count}} Tickets",
       "youHave_one": "Du hast {{count}} Ticket",
@@ -49,6 +44,17 @@
         "soldOut": "Es sind keine Tickets mehr übrig.",
         "closed": "Tickets sind nicht mehr verfügbar.",
         "notYet": "Tickets sind noch nicht verfügbar."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Zusagen",
+      "anotherDate": "Für einen anderen Termin zusagen",
+      "unavailable": {
+        "cancelled": "Diese Veranstaltung wurde abgesagt.",
+        "paused": "Zusagen sind gerade pausiert.",
+        "soldOut": "Es sind keine Plätze mehr frei.",
+        "closed": "Zusagen sind nicht mehr möglich.",
+        "notYet": "Zusagen sind noch nicht möglich."
       }
     },
     "pass": {
@@ -78,12 +84,12 @@
       }
     },
     "return": {
-      "prompt": "Klappt es doch nicht? Gib dein Ticket zurück",
-      "title": "Ticket zurückgeben?",
-      "description": "Dann kann jemand anderes deinen Platz bekommen. Wenn später noch Tickets übrig sind, kannst du dir ein neues holen.",
-      "keep": "Behalten",
-      "confirm": "Zurückgeben",
-      "done": "Ticket zurückgegeben"
+      "prompt": "Klappt es doch nicht? Sag ab",
+      "title": "Absagen?",
+      "description": "Dann kann jemand anderes deinen Platz bekommen. Wenn später noch Plätze frei sind, kannst du wieder zusagen.",
+      "keep": "Platz behalten",
+      "confirm": "Absagen",
+      "done": "Abgesagt"
     },
     "order": {
       "confirming": "Deine Zahlung wird bestätigt",

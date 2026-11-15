@@ -44,7 +44,7 @@ async function signIn(page: Page, next: NextFixture, clubs: unknown[] = []) {
   await mockApi(page, next, (url) => url.pathname === "/api/clubs/mine", () => ({ json: clubs }));
 }
 
-test("a holder shows their free ticket's QR code, and can give it back", async ({ page, next }) => {
+test("a holder shows their RSVP's QR code, and can cancel the RSVP", async ({ page, next }) => {
   await signIn(page, next);
   let returned = false;
   await mockApi(page, next, (url) => url.pathname === `/api/tickets/${CODE}`, (request) => {
@@ -60,8 +60,8 @@ test("a holder shows their free ticket's QR code, and can give it back", async (
   await expect(page.getByRole("img", { name: "QR code for this ticket" })).toBeVisible();
   await expect(page.getByText("7KQ2 MZ4P ABCD EFGH IJKL MNOP")).toBeVisible();
 
-  await page.getByRole("button", { name: "Can't make it? Give your ticket back" }).click();
-  await page.getByRole("button", { name: "Give it back" }).click();
+  await page.getByRole("button", { name: "Can't make it? Cancel your RSVP" }).click();
+  await page.getByRole("button", { name: "Cancel RSVP", exact: true }).click();
   await expect(page).toHaveURL(/\/tickets$/);
   expect(returned).toBe(true);
 });

@@ -21,8 +21,6 @@
       "refunded": "Remboursé"
     },
     "card": {
-      "freeTitle": "Billets gratuits",
-      "freeDescription": "Obtenez votre billet dès maintenant, puis présentez son code QR à l'entrée.",
       "paidTitle": "Billets",
       "price": "{{price}} par billet",
       "noFees": "Sans frais de réservation",
@@ -31,15 +29,12 @@
       "left_one": "{{count}} billet restant",
       "left_many": "{{count}} billets restants",
       "quantity": "Nombre de billets",
-      "getFree": "Obtenir un billet gratuit",
       "buy": "Acheter des billets · {{total}}",
       "continueToPayment": "Continuer vers le paiement",
       "payNote": "Paiement sécurisé par Stripe. {{club}} reçoit votre nom et votre adresse e-mail pour valider votre entrée.",
       "checkInNote": "{{club}} reçoit votre nom et votre adresse e-mail pour valider votre entrée.",
-      "youreIn": "Votre place est réservée",
       "showAtDoor": "Présentez ce code QR à l'entrée. Vous l'avez aussi reçu par e-mail.",
       "openTicket": "Ouvrir le billet",
-      "anotherDate": "Obtenir un billet pour une autre date",
       "youHave": "Vous avez {{count}} billet",
       "youHave_other": "Vous avez {{count}} billets",
       "youHave_one": "Vous avez {{count}} billet",
@@ -51,6 +46,17 @@
         "soldOut": "Il ne reste plus de billets.",
         "closed": "Les billets ne sont plus disponibles.",
         "notYet": "Les billets ne sont pas encore disponibles."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Confirmer ma présence",
+      "anotherDate": "Confirmer ma présence pour une autre date",
+      "unavailable": {
+        "cancelled": "Cet événement a été annulé.",
+        "paused": "Les inscriptions sont suspendues pour le moment.",
+        "soldOut": "Il ne reste plus de places.",
+        "closed": "Les inscriptions sont closes.",
+        "notYet": "Les inscriptions ne sont pas encore ouvertes."
       }
     },
     "pass": {
@@ -80,12 +86,12 @@
       }
     },
     "return": {
-      "prompt": "Vous ne pouvez plus venir ? Rendez votre billet",
-      "title": "Rendre votre billet ?",
-      "description": "Quelqu'un d'autre pourra prendre votre place. S'il reste des billets plus tard, vous pourrez en obtenir un nouveau.",
-      "keep": "Le garder",
-      "confirm": "Le rendre",
-      "done": "Billet rendu"
+      "prompt": "Vous ne pouvez plus venir ? Annulez votre présence",
+      "title": "Annuler votre présence ?",
+      "description": "Quelqu'un d'autre pourra prendre votre place. S'il reste des places plus tard, vous pourrez confirmer à nouveau.",
+      "keep": "Garder ma place",
+      "confirm": "Annuler ma présence",
+      "done": "Présence annulée"
     },
     "order": {
       "confirming": "Confirmation de votre paiement",

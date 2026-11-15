@@ -3241,6 +3241,44 @@ test.describe("Events Page", () => {
     }
   }
 
+  test("free tickets are an RSVP, and the RSVP shows its QR code on the event page", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const startsAt = new Date(Date.now() + 86_400_000).toISOString();
+    const dateId = "00000000-0000-0000-0000-000000000001";
+    let mine: unknown[] = [];
+    let rsvped: unknown = null;
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, club_id: 1, title: "Board Games Night", school: "uwaterloo", club: "Board Game Club",
+      description: "Games and snacks", location: "SLC", price: 0, food: [], registration: true,
+      source_image_url: null, category: null, cancelled: false,
+      occurrences: [{ id: dateId, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1/ticketing", async () => ({ json: {
+      event_id: 1, price_cents: 0, currency: null, capacity: null, paused: false, available: true,
+      maximum_per_order: 1,
+      dates: [{ event_date_id: dateId, dtstart_utc: startsAt, dtend_utc: null, remaining: null, open: true }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/events/1/ticketing/tickets", async request => {
+      rsvped = await request.json();
+      mine = [{
+        code: "7KQ2MZ4PABCDEFGHIJKLMNOP", status: "valid", paid: false, checked_in_at: null, event_id: 1,
+        event_title: "Board Games Night", event_date_id: dateId, dtstart_utc: startsAt, dtend_utc: null,
+        location: "SLC", club_id: 1, club_name: "Board Game Club", school: "uwaterloo", image_url: null,
+        holder_name: null, can_check_in: false, refund_requested_at: null, refund_declined_at: null,
+        can_request_refund: false, can_return: true,
+      }];
+      return { json: mine[0] };
+    });
+    await mockApi(page, next, url => apiPath(url) === "/tickets/mine", async () => ({ json: mine }));
+
+    await page.goto(`${BASE}/events/1`);
+    await page.getByRole("button", { name: "RSVP", exact: true }).click();
+    await expect.poll(() => rsvped).toEqual({ event_date_id: dateId });
+    await expect(page.getByRole("img", { name: "QR code for this ticket" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Can't make it? Cancel your RSVP" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Save to calendar/i })).toBeVisible();
+  });
+
   for (const hasEndTime of [true, false]) {
     test(`Going blocks future recurring registration while a session is live and reopens after ${hasEndTime ? "its end time" : "the no-end visibility window"}`, async ({ page, next }) => {
       await seedAuthenticatedSession(page, next);

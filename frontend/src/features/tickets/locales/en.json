@@ -21,23 +21,18 @@
       "refunded": "Refunded"
     },
     "card": {
-      "freeTitle": "Free tickets",
-      "freeDescription": "Get your ticket now, then show its QR code at the door.",
       "paidTitle": "Tickets",
       "price": "{{price}} per ticket",
       "noFees": "No booking fees",
       "left": "{{count}} left",
       "left_other": "{{count}} left",
       "quantity": "How many tickets",
-      "getFree": "Get free ticket",
       "buy": "Get tickets · {{total}}",
       "continueToPayment": "Continue to payment",
       "payNote": "Secure payment through Stripe. {{club}} gets your name and email for check-in.",
       "checkInNote": "{{club}} gets your name and email for check-in.",
-      "youreIn": "You're in",
       "showAtDoor": "Show this QR code at the door. It's in your email too.",
       "openTicket": "Open ticket",
-      "anotherDate": "Get a ticket for another date",
       "youHave": "You have {{count}} ticket",
       "youHave_other": "You have {{count}} tickets",
       "viewTickets": "View my tickets",
@@ -47,6 +42,17 @@
         "soldOut": "No tickets are left.",
         "closed": "Tickets are no longer available.",
         "notYet": "Tickets aren't available yet."
+      }
+    },
+    "rsvp": {
+      "rsvp": "RSVP",
+      "anotherDate": "RSVP for another date",
+      "unavailable": {
+        "cancelled": "This event was cancelled.",
+        "paused": "RSVPs are paused for now.",
+        "soldOut": "No spots are left.",
+        "closed": "RSVPs are closed.",
+        "notYet": "RSVPs aren't open yet."
       }
     },
     "pass": {
@@ -76,12 +82,12 @@
       }
     },
     "return": {
-      "prompt": "Can't make it? Give your ticket back",
-      "title": "Give your ticket back?",
-      "description": "Someone else can take your spot. If any are left later, you can get a new ticket.",
-      "keep": "Keep it",
-      "confirm": "Give it back",
-      "done": "Ticket given back"
+      "prompt": "Can't make it? Cancel your RSVP",
+      "title": "Cancel your RSVP?",
+      "description": "Someone else can take your spot. If spots are left later, you can RSVP again.",
+      "keep": "Keep my spot",
+      "confirm": "Cancel RSVP",
+      "done": "RSVP cancelled"
     },
     "order": {
       "confirming": "Confirming your payment",

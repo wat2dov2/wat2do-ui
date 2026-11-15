@@ -1,4 +1,9 @@
-import type { ApiTicketAttendee, ApiTicketResponse } from "@/shared/generated";
+import type {
+  ApiEventTicketingResponse,
+  ApiTicketAttendee,
+  ApiTicketResponse,
+} from "@/shared/generated";
+import type { Event } from "@/shared/types";
 import { getCurrentSchool, getSchoolOrigin } from "@/shared/constants/schools";
 import { ticketPath } from "@/shared/constants/routes";
 
@@ -38,4 +43,21 @@ export function refundRequestState(
 ): RefundRequestState {
   if (ticket.status !== "valid" || !ticket.refund_requested_at) return "none";
   return ticket.refund_declined_at ? "declined" : "waiting";
+}
+
+export type TicketDate = ApiEventTicketingResponse["dates"][number];
+export type TicketUnavailable = "cancelled" | "paused" | "soldOut" | "closed" | "notYet";
+
+/** Why nobody can get a ticket (or RSVP) right now, or null when they can. */
+export function ticketUnavailableReason(
+  event: Pick<Event, "cancelled">,
+  ticketing: ApiEventTicketingResponse,
+  openDates: TicketDate[],
+): TicketUnavailable | null {
+  if (event.cancelled) return "cancelled";
+  if (ticketing.paused) return "paused";
+  if (!openDates.length) {
+    return ticketing.dates.some((date) => date.remaining === 0) ? "soldOut" : "closed";
+  }
+  return ticketing.available ? null : "notYet";
 }

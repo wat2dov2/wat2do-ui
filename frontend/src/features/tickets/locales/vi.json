@@ -21,23 +21,18 @@
       "refunded": "Đã hoàn tiền"
     },
     "card": {
-      "freeTitle": "Vé miễn phí",
-      "freeDescription": "Nhận vé ngay bây giờ, rồi đưa mã QR của vé khi vào cửa.",
       "paidTitle": "Vé",
       "price": "{{price}} mỗi vé",
       "noFees": "Không phí đặt vé",
       "left": "Còn {{count}} vé",
       "left_other": "Còn {{count}} vé",
       "quantity": "Số lượng vé",
-      "getFree": "Nhận vé miễn phí",
       "buy": "Mua vé · {{total}}",
       "continueToPayment": "Tiếp tục thanh toán",
       "payNote": "Thanh toán an toàn qua Stripe. {{club}} sẽ nhận tên và email của bạn để check-in.",
       "checkInNote": "{{club}} sẽ nhận tên và email của bạn để check-in.",
-      "youreIn": "Bạn đã có vé",
       "showAtDoor": "Hãy đưa mã QR này khi vào cửa. Mã này cũng có trong email của bạn.",
       "openTicket": "Mở vé",
-      "anotherDate": "Nhận vé cho ngày khác",
       "youHave": "Bạn có {{count}} vé",
       "youHave_other": "Bạn có {{count}} vé",
       "viewTickets": "Xem vé của tôi",
@@ -47,6 +42,17 @@
         "soldOut": "Đã hết vé.",
         "closed": "Vé không còn khả dụng.",
         "notYet": "Vé chưa được mở."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Đăng ký tham dự",
+      "anotherDate": "Đăng ký tham dự ngày khác",
+      "unavailable": {
+        "cancelled": "Sự kiện này đã bị hủy.",
+        "paused": "Tạm dừng đăng ký tham dự.",
+        "soldOut": "Đã hết chỗ.",
+        "closed": "Đã đóng đăng ký tham dự.",
+        "notYet": "Chưa mở đăng ký tham dự."
       }
     },
     "pass": {
@@ -76,12 +82,12 @@
       }
     },
     "return": {
-      "prompt": "Không thể tham dự? Trả lại vé",
-      "title": "Trả lại vé của bạn?",
-      "description": "Người khác có thể lấy chỗ của bạn. Nếu sau này vẫn còn vé, bạn có thể nhận vé mới.",
-      "keep": "Giữ lại",
-      "confirm": "Trả lại",
-      "done": "Đã trả lại vé"
+      "prompt": "Không thể tham dự? Hủy đăng ký",
+      "title": "Hủy đăng ký tham dự?",
+      "description": "Người khác có thể nhận chỗ của bạn. Nếu sau này còn chỗ, bạn có thể đăng ký lại.",
+      "keep": "Giữ chỗ của tôi",
+      "confirm": "Hủy đăng ký",
+      "done": "Đã hủy đăng ký"
     },
     "order": {
       "confirming": "Đang xác nhận thanh toán của bạn",

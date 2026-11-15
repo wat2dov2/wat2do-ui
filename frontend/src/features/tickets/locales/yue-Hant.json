@@ -21,23 +21,18 @@
       "refunded": "已退款"
     },
     "card": {
-      "freeTitle": "免費門票",
-      "freeDescription": "而家就攞你張門票，入場時喺門口出示佢嘅 QR code 就得。",
       "paidTitle": "門票",
       "price": "每張 {{price}}",
       "noFees": "冇手續費",
       "left": "仲有 {{count}} 張",
       "left_other": "仲有 {{count}} 張",
       "quantity": "要幾多張",
-      "getFree": "攞免費門票",
       "buy": "買門票 · {{total}}",
       "continueToPayment": "繼續付款",
       "payNote": "經 Stripe 安全付款。{{club}} 會收到你嘅名同電郵，用嚟簽到。",
       "checkInNote": "{{club}} 會收到你嘅名同電郵，用嚟簽到。",
-      "youreIn": "攞到門票喇",
       "showAtDoor": "入場時喺門口出示呢個 QR code。你嘅電郵入面都有。",
       "openTicket": "睇門票",
-      "anotherDate": "攞另一個日期嘅門票",
       "youHave": "你有 {{count}} 張門票",
       "youHave_other": "你有 {{count}} 張門票",
       "viewTickets": "睇我嘅門票",
@@ -47,6 +42,17 @@
         "soldOut": "門票已經冇晒。",
         "closed": "已經攞唔到門票。",
         "notYet": "門票仲未開放。"
+      }
+    },
+    "rsvp": {
+      "rsvp": "報名出席",
+      "anotherDate": "報名另一個日期",
+      "unavailable": {
+        "cancelled": "呢個活動已經取消咗。",
+        "paused": "報名暫時停咗。",
+        "soldOut": "已經冇位喇。",
+        "closed": "報名已經截止。",
+        "notYet": "報名仲未開始。"
       }
     },
     "pass": {
@@ -76,12 +82,12 @@
       }
     },
     "return": {
-      "prompt": "去唔到？退返張門票",
-      "title": "退返你張門票？",
-      "description": "咁其他人就可以頂你個位。如果之後仲有剩，你可以再攞過一張新門票。",
-      "keep": "保留",
-      "confirm": "退返",
-      "done": "已經退返門票"
+      "prompt": "去唔到？取消報名",
+      "title": "取消報名？",
+      "description": "其他人可以攞你個位。如果之後仲有位，你可以再報名。",
+      "keep": "保留我個位",
+      "confirm": "取消報名",
+      "done": "已取消報名"
     },
     "order": {
       "confirming": "確認緊你嘅付款",

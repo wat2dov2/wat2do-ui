@@ -21,8 +21,6 @@
       "refunded": "Reembolsado"
     },
     "card": {
-      "freeTitle": "Ingressos gratuitos",
-      "freeDescription": "Garanta seu ingresso agora e depois mostre o código QR dele na entrada.",
       "paidTitle": "Ingressos",
       "price": "{{price}} por ingresso",
       "noFees": "Sem taxa de conveniência",
@@ -31,15 +29,12 @@
       "left_one": "Resta {{count}}",
       "left_many": "Restam {{count}}",
       "quantity": "Quantos ingressos",
-      "getFree": "Garantir ingresso gratuito",
       "buy": "Comprar ingressos · {{total}}",
       "continueToPayment": "Continuar para o pagamento",
       "payNote": "Pagamento seguro pela Stripe. {{club}} recebe seu nome e e-mail para o check-in.",
       "checkInNote": "{{club}} recebe seu nome e e-mail para o check-in.",
-      "youreIn": "Você está dentro",
       "showAtDoor": "Mostre este código QR na entrada. Ele também está no seu e-mail.",
       "openTicket": "Abrir ingresso",
-      "anotherDate": "Garantir ingresso para outra data",
       "youHave": "Você tem {{count}} ingresso",
       "youHave_other": "Você tem {{count}} ingressos",
       "youHave_one": "Você tem {{count}} ingresso",
@@ -51,6 +46,17 @@
         "soldOut": "Não há mais ingressos.",
         "closed": "Os ingressos não estão mais disponíveis.",
         "notYet": "Os ingressos ainda não estão disponíveis."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Confirmar presença",
+      "anotherDate": "Confirmar presença em outra data",
+      "unavailable": {
+        "cancelled": "Este evento foi cancelado.",
+        "paused": "As confirmações estão pausadas por enquanto.",
+        "soldOut": "Não há mais vagas.",
+        "closed": "As confirmações estão encerradas.",
+        "notYet": "As confirmações ainda não abriram."
       }
     },
     "pass": {
@@ -80,12 +86,12 @@
       }
     },
     "return": {
-      "prompt": "Não vai mais poder ir? Devolva seu ingresso",
-      "title": "Devolver seu ingresso?",
-      "description": "Outra pessoa pode ficar com a sua vaga. Se sobrarem ingressos depois, você pode garantir um novo.",
-      "keep": "Ficar com ele",
-      "confirm": "Devolver",
-      "done": "Ingresso devolvido"
+      "prompt": "Não vai mais poder ir? Cancele sua presença",
+      "title": "Cancelar sua presença?",
+      "description": "Outra pessoa poderá ficar com sua vaga. Se sobrarem vagas depois, você pode confirmar de novo.",
+      "keep": "Manter minha vaga",
+      "confirm": "Cancelar presença",
+      "done": "Presença cancelada"
     },
     "order": {
       "confirming": "Confirmando seu pagamento",

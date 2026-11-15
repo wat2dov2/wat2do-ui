@@ -21,8 +21,6 @@
       "refunded": "Zwrócony"
     },
     "card": {
-      "freeTitle": "Bezpłatne bilety",
-      "freeDescription": "Odbierz bilet teraz, a potem pokaż jego kod QR przy wejściu.",
       "paidTitle": "Bilety",
       "price": "{{price}} za bilet",
       "noFees": "Bez opłat serwisowych",
@@ -32,15 +30,12 @@
       "left_few": "Zostały {{count}} bilety",
       "left_many": "Zostało {{count}} biletów",
       "quantity": "Liczba biletów",
-      "getFree": "Odbierz bezpłatny bilet",
       "buy": "Kup bilety · {{total}}",
       "continueToPayment": "Przejdź do płatności",
       "payNote": "Bezpieczna płatność przez Stripe. Do {{club}} trafią Twoje imię i nazwisko oraz e-mail, potrzebne przy wejściu.",
       "checkInNote": "Do {{club}} trafią Twoje imię i nazwisko oraz e-mail, potrzebne przy wejściu.",
-      "youreIn": "Jesteś na liście",
       "showAtDoor": "Pokaż ten kod QR przy wejściu. Znajdziesz go też w e-mailu.",
       "openTicket": "Otwórz bilet",
-      "anotherDate": "Odbierz bilet na inny termin",
       "youHave": "Masz {{count}} bilet",
       "youHave_other": "Masz {{count}} biletu",
       "youHave_one": "Masz {{count}} bilet",
@@ -53,6 +48,17 @@
         "soldOut": "Nie ma już biletów.",
         "closed": "Bilety nie są już dostępne.",
         "notYet": "Bilety nie są jeszcze dostępne."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Potwierdź udział",
+      "anotherDate": "Potwierdź udział w innym terminie",
+      "unavailable": {
+        "cancelled": "To wydarzenie zostało odwołane.",
+        "paused": "Zapisy są na razie wstrzymane.",
+        "soldOut": "Nie ma już wolnych miejsc.",
+        "closed": "Zapisy są zamknięte.",
+        "notYet": "Zapisy jeszcze się nie zaczęły."
       }
     },
     "pass": {
@@ -82,12 +88,12 @@
       }
     },
     "return": {
-      "prompt": "Nie możesz jednak przyjść? Oddaj bilet",
-      "title": "Oddać bilet?",
-      "description": "Ktoś inny będzie mógł zająć Twoje miejsce. Jeśli później zostaną jakieś bilety, możesz odebrać nowy.",
-      "keep": "Zatrzymaj",
-      "confirm": "Oddaj",
-      "done": "Bilet oddany"
+      "prompt": "Nie możesz jednak przyjść? Odwołaj udział",
+      "title": "Odwołać udział?",
+      "description": "Ktoś inny będzie mógł zająć twoje miejsce. Jeśli później zostaną wolne miejsca, możesz znowu potwierdzić udział.",
+      "keep": "Zostaw moje miejsce",
+      "confirm": "Odwołaj udział",
+      "done": "Udział odwołany"
     },
     "order": {
       "confirming": "Potwierdzamy Twoją płatność",
