@@ -21,8 +21,6 @@
       "refunded": "Na-refund"
     },
     "card": {
-      "freeTitle": "Libreng tiket",
-      "freeDescription": "Kunin na ang tiket mo, tapos ipakita ang QR code nito sa pasukan.",
       "paidTitle": "Mga tiket",
       "price": "{{price}} bawat tiket",
       "noFees": "Walang booking fee",
@@ -30,15 +28,12 @@
       "left_other": "{{count}} na lang ang natitira",
       "left_one": "{{count}} na lang ang natitira",
       "quantity": "Ilang tiket",
-      "getFree": "Kunin ang libreng tiket",
       "buy": "Bumili ng tiket · {{total}}",
       "continueToPayment": "Magpatuloy sa pagbabayad",
       "payNote": "Ligtas na pagbabayad sa Stripe. Makukuha ng {{club}} ang pangalan at email mo para sa check-in.",
       "checkInNote": "Makukuha ng {{club}} ang pangalan at email mo para sa check-in.",
-      "youreIn": "Pasok ka na",
       "showAtDoor": "Ipakita ang QR code na ito sa pasukan. Nasa email mo rin ito.",
       "openTicket": "Buksan ang tiket",
-      "anotherDate": "Kumuha ng tiket para sa ibang petsa",
       "youHave": "May {{count}} tiket ka",
       "youHave_other": "May {{count}} tiket ka",
       "youHave_one": "May {{count}} tiket ka",
@@ -49,6 +44,17 @@
         "soldOut": "Wala nang natitirang tiket.",
         "closed": "Hindi na available ang mga tiket.",
         "notYet": "Hindi pa available ang mga tiket."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Mag-RSVP",
+      "anotherDate": "Mag-RSVP para sa ibang petsa",
+      "unavailable": {
+        "cancelled": "Kinansela ang kaganapang ito.",
+        "paused": "Naka-pause muna ang mga RSVP.",
+        "soldOut": "Wala nang natitirang puwesto.",
+        "closed": "Sarado na ang mga RSVP.",
+        "notYet": "Hindi pa bukas ang mga RSVP."
       }
     },
     "pass": {
@@ -78,12 +84,12 @@
       }
     },
     "return": {
-      "prompt": "Hindi ka makakapunta? Ibalik ang tiket mo",
-      "title": "Ibalik ang tiket mo?",
-      "description": "Puwedeng makuha ng iba ang puwesto mo. Kung may matira pa mamaya, puwede kang kumuha ng bagong tiket.",
-      "keep": "Itago ito",
-      "confirm": "Ibalik ito",
-      "done": "Naibalik na ang tiket"
+      "prompt": "Hindi ka makakapunta? Kanselahin ang RSVP mo",
+      "title": "Kanselahin ang RSVP mo?",
+      "description": "Puwedeng makuha ng iba ang puwesto mo. Kung may matitirang puwesto mamaya, puwede kang mag-RSVP ulit.",
+      "keep": "Panatilihin ang puwesto ko",
+      "confirm": "Kanselahin ang RSVP",
+      "done": "Nakansela ang RSVP"
     },
     "order": {
       "confirming": "Kinukumpirma ang bayad mo",

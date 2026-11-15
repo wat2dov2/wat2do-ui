@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
@@ -18,7 +19,9 @@ import {
   stopEventTicketing,
   takeFreeTicket,
 } from "@/features/tickets/api/tickets.api";
+import { ticketUnavailableReason } from "@/features/tickets/lib/ticketFormat";
 import type {
+  ApiEventTicketingResponse,
   ApiEventTicketingUpdate,
   ApiTicketCheckInResponse,
   ApiTicketOrderResponse,
@@ -26,6 +29,7 @@ import type {
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
+import type { Event } from "@/shared/types";
 
 // Stripe usually reports a payment within seconds; the order page checks this often.
 const ORDER_POLL_MS = 2000;
@@ -118,6 +122,37 @@ export function useTakeFreeTicket(eventId: number) {
     onSuccess: invalidate,
     onError: showError,
   });
+}
+
+/**
+ * RSVPing to an event with free tickets: the viewer's RSVPs (valid tickets), the
+ * dates still open to them, the date picked, and the RSVP itself.
+ */
+export function useFreeTicketRsvp(event: Event, ticketing: ApiEventTicketingResponse) {
+  const { data: myTickets } = useMyTickets();
+  const take = useTakeFreeTicket(event.id);
+  const held = (myTickets ?? []).filter(
+    (ticket) => ticket.event_id === event.id && ticket.status === "valid",
+  );
+  const heldDates = new Set(held.map((ticket) => ticket.event_date_id));
+  const openDates = ticketing.dates.filter(
+    (date) => date.open && !heldDates.has(date.event_date_id),
+  );
+  const [dateId, setDateId] = useState("");
+  const selected = openDates.find((date) => date.event_date_id === dateId) ?? openDates[0];
+  const unavailable = ticketUnavailableReason(event, ticketing, openDates);
+  const rsvp = () => {
+    if (selected && !take.isPending) take.mutate(selected.event_date_id);
+  };
+  return {
+    held,
+    openDates,
+    selectedDateId: selected?.event_date_id ?? "",
+    selectDate: setDateId,
+    unavailable,
+    rsvp,
+    isPending: take.isPending,
+  };
 }
 
 /** Give a free ticket back, freeing the seat. */

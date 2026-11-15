@@ -19,6 +19,7 @@ import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, Utens
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { LoadingButton } from "@/shared/ui/loading-button";
 import {
   Card,
   CardAction,
@@ -57,7 +58,14 @@ import { controlBox } from "@/shared/config/controlBox";
 import { translateFoods } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
-import { EventTicketCard, useEventTicketing } from "@/features/tickets";
+import {
+  EventTicketCard,
+  HeldTicket,
+  TicketDatePicker,
+  useEventTicketing,
+  useFreeTicketRsvp,
+} from "@/features/tickets";
+import type { ApiEventTicketingResponse } from "@/shared/generated";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
@@ -231,7 +239,7 @@ function ticketedEventId(event: Event): number | null {
   return event.registration && event.id > 0 ? event.id : null;
 }
 
-/** How someone gets in: a ticket when the club runs tickets, otherwise Register. */
+/** How someone gets in: an RSVP for free tickets, buying for paid ones, otherwise Going. */
 function EventAdmissionCard({
   event,
   school,
@@ -244,10 +252,156 @@ function EventAdmissionCard({
   if (ticketedId != null && isPending) {
     return <Skeleton className="h-40 w-full rounded-xl" />;
   }
-  return ticketing ? (
-    <EventTicketCard event={event} ticketing={ticketing} />
+  if (!ticketing) return <EventRegistrationCard event={event} school={school} />;
+  return ticketing.price_cents === 0 ? (
+    <EventRsvpCard event={event} school={school} ticketing={ticketing} />
   ) : (
-    <EventRegistrationCard event={event} school={school} />
+    <EventTicketCard event={event} ticketing={ticketing} />
+  );
+}
+
+/**
+ * Free tickets work like Going: one RSVP tap (or the email sign-in that leads
+ * to it), and the RSVP comes with a QR code the club scans at the door.
+ */
+function EventRsvpCard({
+  event,
+  school,
+  ticketing,
+}: {
+  event: Event;
+  school: string | null | undefined;
+  ticketing: ApiEventTicketingResponse;
+}) {
+  const { t } = useTranslation();
+  const rsvp = useFreeTicketRsvp(event, ticketing);
+  const now = useCurrentTime(event.occurrences);
+  // "RSVP for another date" stays open until that RSVP lands.
+  const [addingAt, setAddingAt] = useState<number | null>(null);
+  const adding = addingAt === rsvp.held.length;
+  const unavailableText = rsvp.unavailable
+    ? t(`tickets.rsvp.unavailable.${rsvp.unavailable}`)
+    : undefined;
+  const datePicker = (
+    <TicketDatePicker
+      event={event}
+      dates={rsvp.openDates}
+      selectedDateId={rsvp.selectedDateId}
+      onSelect={rsvp.selectDate}
+    />
+  );
+
+  if (rsvp.held.length) {
+    const nextStartMs = rsvp.held
+      .map((ticket) => new Date(ticket.dtstart_utc).getTime())
+      .filter((startMs) => now !== null && startMs > now)
+      .sort((a, b) => a - b)[0];
+    const countdown =
+      now !== null && nextStartMs !== undefined ? formatCountdown(nextStartMs, now) : null;
+    const another = rsvp.unavailable ? null : adding ? (
+      <Stack gap={3}>
+        {datePicker}
+        <LoadingButton type="button" isLoading={rsvp.isPending} onClick={rsvp.rsvp}>
+          {t("tickets.rsvp.rsvp")}
+        </LoadingButton>
+      </Stack>
+    ) : (
+      <Button
+        type="button"
+        variant="link"
+        size="inline"
+        className="self-start"
+        onClick={() => setAddingAt(rsvp.held.length)}
+      >
+        {t("tickets.rsvp.anotherDate")}
+      </Button>
+    );
+    return (
+      <EventYoureInCard event={event} countdown={countdown} footer={another}>
+        <CardDescription>{t("tickets.card.showAtDoor")}</CardDescription>
+        {rsvp.held.map((ticket) => (
+          <HeldTicket key={ticket.code} ticket={ticket} event={event} />
+        ))}
+      </EventYoureInCard>
+    );
+  }
+
+  return (
+    <EventRegistrationPrompt
+      school={event.school ?? school}
+      label={t("tickets.rsvp.rsvp")}
+      unavailable={rsvp.unavailable !== null}
+      unavailableReason={unavailableText}
+      isPending={rsvp.isPending}
+      onRegister={rsvp.rsvp}
+    >
+      {rsvp.unavailable ? (
+        <CardDescription>{unavailableText}</CardDescription>
+      ) : (
+        <>
+          {datePicker}
+          <CardDescription>
+            {t("tickets.card.checkInNote", { club: event.club ?? t("tickets.refund.theClub") })}
+          </CardDescription>
+        </>
+      )}
+    </EventRegistrationPrompt>
+  );
+}
+
+/**
+ * The card once someone is in: a countdown, what they bring (their picture, or
+ * the QR code an RSVP comes with), add to calendar and share, then the way out.
+ */
+function EventYoureInCard({
+  event,
+  countdown,
+  children,
+  footer,
+}: {
+  event: Event;
+  countdown: string | null;
+  children?: ReactNode;
+  footer?: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [shareOpen, setShareOpen] = useState(false);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("events.youreIn")}</CardTitle>
+        {countdown ? (
+          <CardAction>
+            <Badge variant="secondary" size="lg">
+              {t("events.startingIn")} {countdown}
+            </Badge>
+          </CardAction>
+        ) : null}
+      </CardHeader>
+      <CardContent>
+        <Stack gap={3}>
+          {children}
+          <Stack direction="horizontal" gap={2}>
+            <EventCalendarDownloadMenu event={event}>
+              <Button type="button" data-slot="dropdown-menu-trigger">
+                <Calendar className="size-4" />
+                {t("common.addToCalendar")}
+              </Button>
+            </EventCalendarDownloadMenu>
+            <Button type="button" variant="outline" onClick={() => setShareOpen(true)}>
+              <Share2 className="size-4" />
+              {t("common.share")}
+            </Button>
+          </Stack>
+          {footer}
+        </Stack>
+        {shareOpen && (
+          <Suspense fallback={null}>
+            <EventShareDialog event={event} open={shareOpen} onOpenChange={setShareOpen} />
+          </Suspense>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -265,7 +419,6 @@ function EventRegistrationCard({
   const { getSchoolTimezone } = useSchoolDirectory();
   const now = going.currentTimeMs;
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
   const isGoingActive = profileCompleted && going.isActive;
   const disabledReason = going.isTimeUnavailable
     ? t("events.goingEvents.timeUnavailable")
@@ -300,57 +453,28 @@ function EventRegistrationCard({
 
   if (isGoingActive && !pickerOpen) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("events.youreIn")}</CardTitle>
-          {countdown ? (
-            <CardAction>
-              <Badge variant="secondary" size="lg">
-                {t("events.startingIn")} {countdown}
-              </Badge>
-            </CardAction>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          <Stack gap={3}>
-            {userAvatarUrl ? (
-              <LazyImage src={userAvatarUrl} alt="" width={48} height={48} className="size-12" fallback={null} />
-            ) : null}
-            <Stack direction="horizontal" gap={2}>
-              <EventCalendarDownloadMenu event={event}>
-                <Button
-                  type="button"
-                  data-slot="dropdown-menu-trigger"
-                >
-                  <Calendar className="size-4" />
-                  {t("common.addToCalendar")}
-                </Button>
-              </EventCalendarDownloadMenu>
-              <Button type="button" variant="outline" onClick={() => setShareOpen(true)}>
-                <Share2 className="size-4" />
-                {t("common.share")}
-              </Button>
-            </Stack>
-            <CardDescription>
-              {t("events.cancelGoingPrompt")}{" "}
-              <Button
-                type="button"
-                variant="link"
-                size="inline"
-                disabled={going.isPending}
-                onClick={() => void going.saveSelection([])}
-              >
-                {t("events.cancelGoing")}
-              </Button>
-            </CardDescription>
-          </Stack>
-          {shareOpen && (
-            <Suspense fallback={null}>
-              <EventShareDialog event={event} open={shareOpen} onOpenChange={setShareOpen} />
-            </Suspense>
-          )}
-        </CardContent>
-      </Card>
+      <EventYoureInCard
+        event={event}
+        countdown={countdown}
+        footer={
+          <CardDescription>
+            {t("events.cancelGoingPrompt")}{" "}
+            <Button
+              type="button"
+              variant="link"
+              size="inline"
+              disabled={going.isPending}
+              onClick={() => void going.saveSelection([])}
+            >
+              {t("events.cancelGoing")}
+            </Button>
+          </CardDescription>
+        }
+      >
+        {userAvatarUrl ? (
+          <LazyImage src={userAvatarUrl} alt="" width={48} height={48} className="size-12" fallback={null} />
+        ) : null}
+      </EventYoureInCard>
     );
   }
 
@@ -393,18 +517,25 @@ function EventRegistrationCard({
  */
 export function EventRegistrationPrompt({
   school,
+  label,
   unavailable,
   unavailableReason,
   isPending,
   onRegister,
+  children,
 }: {
   school: string | null | undefined;
+  /** The button's words: Going, or RSVP for an event with free tickets. */
+  label?: string;
   unavailable: boolean;
   unavailableReason?: string;
   isPending: boolean;
   onRegister: () => void | Promise<void>;
+  /** Shown under the account, e.g. which date an RSVP is for. */
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const action = label ?? t("events.going");
   const { userEmail, userFullName, userAvatarUrl } = useAuthState();
   // Until the page wakes up, who is signed in is not known: the signed-in look holds their lines' places.
   const sessionKnown = useSessionKnown();
@@ -434,8 +565,8 @@ export function EventRegistrationPrompt({
               <EmailOtpForm
                 data-testid="event-registration-auth"
                 school={school}
-                requestCodeLabel={t("events.going")}
-                actionLabel={t("events.going")}
+                requestCodeLabel={action}
+                actionLabel={action}
                 focusOnMount={false}
                 isSubmitDisabled={unavailable}
                 submitDisabledReason={unavailableReason}
@@ -443,6 +574,7 @@ export function EventRegistrationPrompt({
               />
             }
           />
+          {children}
         </Stack>
       </CardContent>
       <SessionView
@@ -455,9 +587,9 @@ export function EventRegistrationPrompt({
               disabled={isPending || unavailable}
               disabledReason={unavailableReason}
               onClick={() => void onRegister()}
-              aria-label={t("events.going")}
+              aria-label={action}
             >
-              {t("events.going")}
+              {action}
             </Button>
           </CardFooter>
         }

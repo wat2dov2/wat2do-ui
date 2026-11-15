@@ -165,9 +165,8 @@ fn tickets_message(
              Can't make it? Ask {host} for a refund from your ticket's page, \
              and you'll get an email when they decide."
         ),
-        None => {
-            "Can't make it? Give your ticket back from its page, so someone else can go.".to_owned()
-        }
+        None => "Can't make it? Cancel your RSVP from your ticket's page, so someone else can go."
+            .to_owned(),
     };
     let poster = hero.as_ref().map_or(String::new(), |image| {
         format!(
@@ -209,11 +208,16 @@ fn tickets_message(
     text.push(closing);
     Ok(EmailMessage {
         to: vec![recipient.to_owned()],
-        subject: format!(
-            "Your {} for {}",
-            if count == 1 { "ticket" } else { "tickets" },
-            event.title
-        ),
+        // A free ticket is an RSVP: it confirms the spot rather than a purchase.
+        subject: if payment.is_some() {
+            format!(
+                "Your {} for {}",
+                if count == 1 { "ticket" } else { "tickets" },
+                event.title
+            )
+        } else {
+            format!("You're in: {}", event.title)
+        },
         body_html: layout::shell("You're in", &content, &[]),
         body_text: text.join("\n"),
         inline_images: std::iter::once(layout::LOGO.clone())
@@ -422,7 +426,7 @@ mod tests {
             None,
         )
         .unwrap();
-        assert_eq!(message.subject, "Your ticket for Board Games Night");
+        assert_eq!(message.subject, "You're in: Board Games Night");
         assert!(message.body_html.contains("cid:ticket-1"));
         assert!(message.body_html.contains("Hosted by"));
         assert!(!message.body_html.contains("Total paid"));
@@ -431,7 +435,7 @@ mod tests {
                 .body_text
                 .contains("https://uwaterloo.wat2do.io/tickets/CODE2222222222222222222A")
         );
-        assert!(message.body_text.contains("Give your ticket back"));
+        assert!(message.body_text.contains("Cancel your RSVP"));
         // The logo, then one QR code per ticket.
         assert_eq!(message.inline_images.len(), 2);
         assert_eq!(message.inline_images[1].content_type, "image/png");

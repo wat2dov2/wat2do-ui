@@ -21,8 +21,6 @@
       "refunded": "Rimborsato"
     },
     "card": {
-      "freeTitle": "Biglietti gratuiti",
-      "freeDescription": "Prendi subito il tuo biglietto, poi mostra il suo codice QR all'ingresso.",
       "paidTitle": "Biglietti",
       "price": "{{price}} a biglietto",
       "noFees": "Nessuna commissione",
@@ -31,15 +29,12 @@
       "left_one": "Ne resta {{count}}",
       "left_many": "Ne restano {{count}}",
       "quantity": "Quanti biglietti",
-      "getFree": "Prendi il biglietto gratuito",
       "buy": "Acquista biglietti · {{total}}",
       "continueToPayment": "Procedi al pagamento",
       "payNote": "Pagamento sicuro con Stripe. {{club}} riceve il tuo nome e la tua email per registrare il tuo ingresso.",
       "checkInNote": "{{club}} riceve il tuo nome e la tua email per registrare il tuo ingresso.",
-      "youreIn": "Sei dentro",
       "showAtDoor": "Mostra questo codice QR all'ingresso. Lo trovi anche nella tua email.",
       "openTicket": "Apri il biglietto",
-      "anotherDate": "Prendi un biglietto per un'altra data",
       "youHave": "Hai {{count}} biglietto",
       "youHave_other": "Hai {{count}} biglietti",
       "youHave_one": "Hai {{count}} biglietto",
@@ -51,6 +46,17 @@
         "soldOut": "Non ci sono più biglietti.",
         "closed": "I biglietti non sono più disponibili.",
         "notYet": "I biglietti non sono ancora disponibili."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Partecipo",
+      "anotherDate": "Partecipa in un'altra data",
+      "unavailable": {
+        "cancelled": "Questo evento è stato annullato.",
+        "paused": "Le adesioni sono in pausa per ora.",
+        "soldOut": "Non ci sono più posti.",
+        "closed": "Le adesioni sono chiuse.",
+        "notYet": "Le adesioni non sono ancora aperte."
       }
     },
     "pass": {
@@ -80,12 +86,12 @@
       }
     },
     "return": {
-      "prompt": "Non riesci più a venire? Restituisci il biglietto",
-      "title": "Restituire il biglietto?",
-      "description": "Qualcun altro potrà prendere il tuo posto. Se più avanti ne restano, potrai prendere un nuovo biglietto.",
-      "keep": "Tienilo",
-      "confirm": "Restituiscilo",
-      "done": "Biglietto restituito"
+      "prompt": "Non riesci più a venire? Annulla la partecipazione",
+      "title": "Annullare la partecipazione?",
+      "description": "Qualcun altro potrà prendere il tuo posto. Se più avanti restano posti, potrai partecipare di nuovo.",
+      "keep": "Tieni il posto",
+      "confirm": "Annulla partecipazione",
+      "done": "Partecipazione annullata"
     },
     "order": {
       "confirming": "Stiamo confermando il pagamento",

@@ -21,8 +21,6 @@
       "refunded": "Reembolsado"
     },
     "card": {
-      "freeTitle": "Boletos gratis",
-      "freeDescription": "Consigue tu boleto ahora y luego muestra su código QR en la entrada.",
       "paidTitle": "Boletos",
       "price": "{{price}} por boleto",
       "noFees": "Sin cargos por servicio",
@@ -31,15 +29,12 @@
       "left_one": "Queda {{count}}",
       "left_many": "Quedan {{count}}",
       "quantity": "Cantidad de boletos",
-      "getFree": "Conseguir boleto gratis",
       "buy": "Comprar boletos · {{total}}",
       "continueToPayment": "Continuar al pago",
       "payNote": "Pago seguro con Stripe. {{club}} recibe tu nombre y tu correo para registrar tu entrada.",
       "checkInNote": "{{club}} recibe tu nombre y tu correo para registrar tu entrada.",
-      "youreIn": "Ya tienes tu lugar",
       "showAtDoor": "Muestra este código QR en la entrada. También está en tu correo.",
       "openTicket": "Abrir boleto",
-      "anotherDate": "Conseguir un boleto para otra fecha",
       "youHave": "Tienes {{count}} boleto",
       "youHave_other": "Tienes {{count}} boletos",
       "youHave_one": "Tienes {{count}} boleto",
@@ -51,6 +46,17 @@
         "soldOut": "Ya no quedan boletos.",
         "closed": "Los boletos ya no están disponibles.",
         "notYet": "Los boletos todavía no están disponibles."
+      }
+    },
+    "rsvp": {
+      "rsvp": "Confirmar asistencia",
+      "anotherDate": "Confirmar asistencia para otra fecha",
+      "unavailable": {
+        "cancelled": "Este evento fue cancelado.",
+        "paused": "Las confirmaciones están en pausa por ahora.",
+        "soldOut": "Ya no quedan lugares.",
+        "closed": "Las confirmaciones están cerradas.",
+        "notYet": "Las confirmaciones aún no están abiertas."
       }
     },
     "pass": {
@@ -80,12 +86,12 @@
       }
     },
     "return": {
-      "prompt": "¿Ya no puedes ir? Devuelve tu boleto",
-      "title": "¿Devolver tu boleto?",
-      "description": "Alguien más podrá tomar tu lugar. Si después quedan boletos, podrás conseguir uno nuevo.",
-      "keep": "Conservarlo",
-      "confirm": "Devolverlo",
-      "done": "Boleto devuelto"
+      "prompt": "¿Ya no puedes ir? Cancela tu asistencia",
+      "title": "¿Cancelar tu asistencia?",
+      "description": "Otra persona podrá ocupar tu lugar. Si después quedan lugares, puedes volver a confirmar.",
+      "keep": "Mantener mi lugar",
+      "confirm": "Cancelar asistencia",
+      "done": "Asistencia cancelada"
     },
     "order": {
       "confirming": "Confirmando tu pago",
