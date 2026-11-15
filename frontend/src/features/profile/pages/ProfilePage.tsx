@@ -91,14 +91,12 @@ export function ProfilePage() {
             email,
             schoolName: school ? getSchoolName(school) : null,
           }}
-          actions={
-            <>
-              <ProfileTeamActions />
-              <Button type="button" variant="outline" size="sm" disabled={isSigningOut} onClick={() => void handleSignOut()}>
-                <LogOut />
-                {t("modals.signOut.logOut")}
-              </Button>
-            </>
+          actions={<ProfileTeamActions />}
+          signOut={
+            <Button type="button" variant="outline" size="sm" disabled={isSigningOut} onClick={() => void handleSignOut()}>
+              <LogOut />
+              {t("modals.signOut.logOut")}
+            </Button>
           }
         />
         <Tabs value={tab} onValueChange={selectTab}>
@@ -160,7 +158,8 @@ export function ProfilePageLoading() {
         <ProfileHeader
           avatar={<ProfileAvatarSkeleton />}
           identity={null}
-          actions={<Skeleton className="h-8 w-24 rounded-xl" />}
+          actions={null}
+          signOut={<Skeleton className="h-8 w-24 rounded-xl" />}
         />
         <Stack gap={6}>
           <TabsListSkeleton count={TAB_ORDER.length} />

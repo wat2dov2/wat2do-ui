@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 đã chọn - cần ít nhất 2 để tiếp tục",
       "reactionGroup": "Phản ứng cho {{title}}",
       "reactions": {
-        "interested": "Hứng thú",
+        "interested": "Nhắc tôi",
         "maybe": "Có thể",
         "notForMe": "Không phải cho tôi"
       }
@@ -101,8 +101,8 @@
       "progress": "{{count}} / {{total}} sự kiện",
       "reward": "Phần thưởng: +7 ngày Pro",
       "progressAria": "Tiến trình thử thách",
-      "markedInterested": "{{count}} sự kiện được đánh dấu quan tâm trong quá trình thiết lập",
-      "markedInterested_other": "{{count}} sự kiện được đánh dấu quan tâm trong quá trình thiết lập"
+      "markedInterested": "{{count}} sự kiện được đặt nhắc trong quá trình thiết lập",
+      "markedInterested_other": "{{count}} sự kiện được đặt nhắc trong quá trình thiết lập"
     },
     "home": {
       "badge": "Demo hoàn tất",

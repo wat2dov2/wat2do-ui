@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "بھرتی: {{positions}}",
-    "minimumGoing": "کم از کم دلچسپی رکھنے والے",
+    "minimumGoing": "کم از کم مطلع ہونے والے",
     "eventTitle": "ایونٹ کا عنوان",
     "loadFailed": "ایونٹس لوڈ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     "deleteFailed": "ایونٹ حذف کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
@@ -112,9 +112,9 @@
     },
     "new": "نیا",
     "updated": "اپڈیٹ شدہ",
-    "goingCount": "{{count}} دلچسپی رکھنے والے",
-    "goingCount_one": "{{count}} دلچسپی رکھنے والا",
-    "goingCount_other": "{{count}} دلچسپی رکھنے والے",
+    "goingCount": "{{count}} مطلع ہونے والے",
+    "goingCount_one": "{{count}} مطلع ہونے والا",
+    "goingCount_other": "{{count}} مطلع ہونے والے",
     "hostedBy": "میزبان",
     "aboutEvent": "ایونٹ کے بارے میں",
     "fetchingDetails": "تفصیلات حاصل کی جارہی ہیں۔۔۔",

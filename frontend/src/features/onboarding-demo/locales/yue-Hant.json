@@ -51,7 +51,7 @@
       "pickedStatus": "已選 {{count}}/3 - 至少選 2 個以繼續",
       "reactionGroup": "對 {{title}} 的反應",
       "reactions": {
-        "interested": "有興趣",
+        "interested": "提醒我",
         "maybe": "可能",
         "notForMe": "不適合我"
       }
@@ -101,8 +101,8 @@
       "progress": "{{count}} / {{total}} 個活動",
       "reward": "獎勵：+7 天 Pro",
       "progressAria": "挑戰進度",
-      "markedInterested": "在入職期間標記 {{count}} 個感興趣的活動",
-      "markedInterested_other": "在入職期間標記 {{count}} 個感興趣的活動"
+      "markedInterested": "在入門期間為 {{count}} 個活動設定提醒",
+      "markedInterested_other": "在入門期間為 {{count}} 個活動設定提醒"
     },
     "home": {
       "badge": "示範完成",

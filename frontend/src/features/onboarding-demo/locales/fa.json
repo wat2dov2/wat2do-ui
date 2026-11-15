@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 انتخاب شده - برای ادامه حداقل 2 لازم است",
       "reactionGroup": "واکنش برای {{title}}",
       "reactions": {
-        "interested": "علاقه‌مند",
+        "interested": "خبرم کن",
         "maybe": "شاید",
         "notForMe": "مناسب من نیست"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} رویداد",
       "reward": "پاداش: +7 روز Pro",
       "progressAria": "پیشرفت چالش",
-      "markedInterested": "{{count}} رویداد در طول راه‌اندازی به‌عنوان علاقه‌مند علامت‌گذاری شده‌اند",
-      "markedInterested_one": "{{count}} رویداد به عنوان علاقه‌مند در طول راه‌اندازی علامت‌گذاری شد",
-      "markedInterested_other": "{{count}} رویداد در طول راه‌اندازی به‌عنوان علاقه‌مند علامت‌گذاری شده‌اند"
+      "markedInterested": "{{count}} رویداد در طول راه‌اندازی برای خبر گرفتن علامت‌گذاری شده‌اند",
+      "markedInterested_one": "{{count}} رویداد در طول راه‌اندازی برای خبر گرفتن علامت‌گذاری شد",
+      "markedInterested_other": "{{count}} رویداد در طول راه‌اندازی برای خبر گرفتن علامت‌گذاری شده‌اند"
     },
     "home": {
       "badge": "نمایش کامل شد",

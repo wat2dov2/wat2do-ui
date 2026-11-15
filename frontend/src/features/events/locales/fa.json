@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "استخدام: {{positions}}",
-    "minimumGoing": "حداقل علاقه‌مند",
+    "minimumGoing": "حداقل افرادی که خبر می‌گیرند",
     "eventTitle": "عنوان رویداد",
     "loadFailed": "بارگذاری رویدادها ناموفق بود. لطفاً دوباره تلاش کنید.",
     "deleteFailed": "حذف رویداد ناموفق بود. لطفاً دوباره تلاش کنید.",
@@ -112,9 +112,9 @@
     },
     "new": "جدید",
     "updated": "به‌روز شد",
-    "goingCount": "{{count}} علاقه‌مند",
-    "goingCount_one": "{{count}} علاقه‌مند",
-    "goingCount_other": "{{count}} علاقه‌مند",
+    "goingCount": "{{count}} نفر خبر می‌گیرند",
+    "goingCount_one": "{{count}} نفر خبر می‌گیرد",
+    "goingCount_other": "{{count}} نفر خبر می‌گیرند",
     "hostedBy": "برگزارکننده",
     "aboutEvent": "درباره رویداد",
     "fetchingDetails": "در حال دریافت جزئیات...",

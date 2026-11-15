@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 picked - need at least 2 to continue",
       "reactionGroup": "Reaction for {{title}}",
       "reactions": {
-        "interested": "Interested",
+        "interested": "Notify me",
         "maybe": "Maybe",
         "notForMe": "Not for me"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} events",
       "reward": "Reward: +7 days of Pro",
       "progressAria": "Challenge progress",
-      "markedInterested": "{{count}} events marked as interested during onboarding",
-      "markedInterested_one": "{{count}} event marked as interested during onboarding",
-      "markedInterested_other": "{{count}} events marked as interested during onboarding"
+      "markedInterested": "{{count}} events marked to get notified during onboarding",
+      "markedInterested_one": "{{count}} event marked to get notified during onboarding",
+      "markedInterested_other": "{{count}} events marked to get notified during onboarding"
     },
     "home": {
       "badge": "Demo complete",

@@ -36,3 +36,13 @@ export function stripTrailingSlash(url: string): string {
   return url.replace(/\/$/, "");
 }
 
+
+/**
+ * A name's first letter, capitalized, for a picture that failed to load.
+ * An Instagram handle's leading "@" is skipped.
+ *
+ * Example: "@uwcsclub" -> "U"
+ */
+export function nameInitial(name: string): string {
+  return name.replace(/^@/, "").slice(0, 1).toUpperCase();
+}

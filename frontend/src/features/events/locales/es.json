@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Contratando: {{positions}}",
-    "minimumGoing": "Mínimo de interesados",
+    "minimumGoing": "Mínimo de notificados",
     "eventTitle": "Título del Evento",
     "loadFailed": "No se pudo cargar los eventos. Por favor, inténtelo de nuevo.",
     "deleteFailed": "No se pudo eliminar el evento. Por favor, inténtelo de nuevo.",
@@ -113,9 +113,9 @@
     },
     "new": "NUEVO",
     "updated": "ACTUALIZADO",
-    "goingCount": "{{count}} interesado",
-    "goingCount_one": "{{count}} interesado",
-    "goingCount_other": "{{count}} interesados",
+    "goingCount": "{{count}} notificados",
+    "goingCount_one": "{{count}} notificado",
+    "goingCount_other": "{{count}} notificados",
     "hostedBy": "Organizado por",
     "aboutEvent": "Acerca del evento",
     "fetchingDetails": "Recuperando detalles...",
@@ -145,7 +145,7 @@
     "upcomingEventCount_many": "eventos próximos",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clics",
-    "goingCount_many": "{{count}} interesados",
+    "goingCount_many": "{{count}} notificados",
     "moreDatesCount_one": "+{{count}} fecha",
     "moreDatesCount_many": "+{{count}} fechas",
     "views": {

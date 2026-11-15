@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Offene Stellen: {{positions}}",
-    "minimumGoing": "Mindestens interessiert",
+    "minimumGoing": "Mindestens benachrichtigt",
     "eventTitle": "Veranstaltungstitel",
     "loadFailed": "Fehler beim Laden der Veranstaltungen. Bitte versuchen Sie es erneut.",
     "deleteFailed": "Fehler beim Löschen der Veranstaltung. Bitte versuchen Sie es erneut.",
@@ -112,9 +112,9 @@
     },
     "new": "NEU",
     "updated": "AKTUALISIERT",
-    "goingCount": "{{count}} interessiert",
-    "goingCount_one": "{{count}} interessiert",
-    "goingCount_other": "{{count}} interessiert",
+    "goingCount": "{{count}} benachrichtigt",
+    "goingCount_one": "{{count}} benachrichtigt",
+    "goingCount_other": "{{count}} benachrichtigt",
     "hostedBy": "Veranstaltet von",
     "aboutEvent": "Über die Veranstaltung",
     "fetchingDetails": "Details werden abgerufen...",

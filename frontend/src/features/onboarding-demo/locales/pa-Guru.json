@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 ਚੁਣਿਆ ਗਿਆ - ਜਾਰੀ ਰੱਖਣ ਲਈ ਘੱਟੋ-ਘੱਟ 2 ਦੀ ਲੋੜ ਹੈ",
       "reactionGroup": "{{title}} ਲਈ ਪ੍ਰਤੀਕਿਰਿਆ",
       "reactions": {
-        "interested": "ਦਿਲਚਸਪੀ ਹੈ",
+        "interested": "ਮੈਨੂੰ ਸੂਚਿਤ ਕਰੋ",
         "maybe": "ਹੋ ਸਕਦਾ ਹੈ",
         "notForMe": "ਮੇਰੇ ਲਈ ਨਹੀਂ"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} ਇਵੈਂਟ",
       "reward": "ਇਨਾਮ: Pro ਦੇ +7 ਦਿਨ",
       "progressAria": "ਚੁਣੌਤੀ ਤਰੱਕੀ",
-      "markedInterested": "{{count}} ਇਵੈਂਟਾਂ ਨੂੰ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਦਿਲਚਸਪੀ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਕੀਤਾ ਗਿਆ",
-      "markedInterested_one": "{{count}} ਇਵੈਂਟ ਨੂੰ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਦਿਲਚਸਪੀ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਕੀਤਾ ਗਿਆ",
-      "markedInterested_other": "{{count}} ਇਵੈਂਟਾਂ ਨੂੰ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਦਿਲਚਸਪੀ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਕੀਤਾ ਗਿਆ"
+      "markedInterested": "{{count}} ਇਵੈਂਟਾਂ ਲਈ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਸੂਚਨਾ ਚੁਣੀ ਗਈ",
+      "markedInterested_one": "{{count}} ਇਵੈਂਟ ਲਈ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਸੂਚਨਾ ਚੁਣੀ ਗਈ",
+      "markedInterested_other": "{{count}} ਇਵੈਂਟਾਂ ਲਈ ਆਨਬੋਰਡਿੰਗ ਦੌਰਾਨ ਸੂਚਨਾ ਚੁਣੀ ਗਈ"
     },
     "home": {
       "badge": "ਡੈਮੋ ਪੂਰਾ ਹੋਇਆ",

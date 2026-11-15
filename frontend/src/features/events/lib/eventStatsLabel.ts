@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type { EventStats } from "@/features/events/api/events.api";
 
-/** An event's live counts as one line ("12 clicks · 4 interested", counting Notify me), or nothing until it has any. */
+/** An event's live counts as one line ("12 clicks · 4 notified", counting Notify me), or nothing until it has any. */
 export function buildEventStatsLabel(
   t: TFunction,
   stats: EventStats | undefined,

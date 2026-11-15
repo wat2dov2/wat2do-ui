@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Posizioni aperte: {{positions}}",
-    "minimumGoing": "Minimo di interessati",
+    "minimumGoing": "Minimo di avvisati",
     "eventTitle": "Titolo dell'evento",
     "loadFailed": "Impossibile caricare gli eventi. Per favore riprova.",
     "deleteFailed": "Impossibile eliminare l'evento. Per favore riprova.",
@@ -113,9 +113,9 @@
     },
     "new": "NUOVO",
     "updated": "AGGIORNATO",
-    "goingCount": "{{count}} interessato",
-    "goingCount_one": "{{count}} interessato",
-    "goingCount_other": "{{count}} interessati",
+    "goingCount": "{{count}} avvisati",
+    "goingCount_one": "{{count}} avvisato",
+    "goingCount_other": "{{count}} avvisati",
     "hostedBy": "Ospitato da",
     "aboutEvent": "Informazioni sull'evento",
     "fetchingDetails": "Recupero dettagli...",
@@ -145,7 +145,7 @@
     "upcomingEventCount_many": "eventi in arrivo",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clic",
-    "goingCount_many": "{{count}} interessati",
+    "goingCount_many": "{{count}} avvisati",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} date",
     "views": {

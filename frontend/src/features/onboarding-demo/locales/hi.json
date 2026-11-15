@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 चुना गया - जारी रखने के लिए कम से कम 2 की आवश्यकता है",
       "reactionGroup": "{{title}} के लिए प्रतिक्रिया",
       "reactions": {
-        "interested": "इच्छुक",
+        "interested": "मुझे सूचित करें",
         "maybe": "शायद",
         "notForMe": "मेरे लिए नहीं"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} इवेंट",
       "reward": "इनाम: Pro के +7 दिन",
       "progressAria": "चुनौती प्रगति",
-      "markedInterested": "ऑनबोर्डिंग के दौरान {{count}} इवेंट में रुचि दिखाई गई",
-      "markedInterested_one": "ऑनबोर्डिंग के दौरान {{count}} इवेंट में रुचि दिखाई गई",
-      "markedInterested_other": "ऑनबोर्डिंग के दौरान {{count}} इवेंट में रुचि दिखाई गई"
+      "markedInterested": "ऑनबोर्डिंग के दौरान {{count}} इवेंट के लिए सूचना चुनी गई",
+      "markedInterested_one": "ऑनबोर्डिंग के दौरान {{count}} इवेंट के लिए सूचना चुनी गई",
+      "markedInterested_other": "ऑनबोर्डिंग के दौरान {{count}} इवेंट के लिए सूचना चुनी गई"
     },
     "home": {
       "badge": "डेमो पूरा हुआ",

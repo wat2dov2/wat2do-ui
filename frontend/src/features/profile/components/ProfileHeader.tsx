@@ -15,16 +15,18 @@ interface ProfileHeaderProps {
   avatar: ReactNode;
   /** Who the visitor is; null while the session is still being read. */
   identity: ProfileIdentity | null;
-  /** The visitor's own controls: the club panel, Admin, Log out. */
+  /** The visitor's own controls: the club panel and Admin. */
   actions: ReactNode;
+  /** Log out, at the right end of the controls' row. */
+  signOut: ReactNode;
 }
 
 /**
  * The top of the visitor's own page: a large photo beside their name, email
- * and school, with their own controls beneath. It keeps one height while the
+ * and school, with their own controls beneath and Log out at their right. It keeps one height while the
  * session loads, so the tabs below never move.
  */
-export function ProfileHeader({ avatar, identity, actions }: ProfileHeaderProps) {
+export function ProfileHeader({ avatar, identity, actions, signOut }: ProfileHeaderProps) {
   return (
     <header data-slot="profile-header">
       <Stack gap={5}>
@@ -47,8 +49,11 @@ export function ProfileHeader({ avatar, identity, actions }: ProfileHeaderProps)
             ) : null}
           </Stack>
         </Stack>
-        <Stack direction="horizontal" gap={2} wrap>
-          {actions}
+        <Stack direction="horizontal" gap={2} align="start" justify="between">
+          <Stack direction="horizontal" gap={2} wrap>
+            {actions}
+          </Stack>
+          {signOut}
         </Stack>
       </Stack>
     </header>

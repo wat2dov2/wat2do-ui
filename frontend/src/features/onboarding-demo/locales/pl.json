@@ -51,7 +51,7 @@
       "pickedStatus": "Wybrano {{count}}/3 - potrzebujesz co najmniej 2, aby kontynuować",
       "reactionGroup": "Reakcja na {{title}}",
       "reactions": {
-        "interested": "Interesuje mnie",
+        "interested": "Powiadom mnie",
         "maybe": "Może",
         "notForMe": "Nie dla mnie"
       }
@@ -101,11 +101,11 @@
       "progress": "{{count}} / {{total}} wydarzeń",
       "reward": "Nagroda: +7 dni Pro",
       "progressAria": "Postęp wyzwania",
-      "markedInterested": "{{count}} wydarzenie oznaczone jako interesujące podczas wdrażania",
-      "markedInterested_one": "{{count}} wydarzenie oznaczone jako interesujące podczas wdrażania",
-      "markedInterested_other": "{{count}} wydarzenia oznaczone jako interesujące podczas wdrażania",
-      "markedInterested_few": "{{count}} wydarzenia oznaczone jako interesujące podczas wdrażania",
-      "markedInterested_many": "{{count}} wydarzeń oznaczonych jako interesujące podczas wdrażania"
+      "markedInterested": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
+      "markedInterested_one": "{{count}} wydarzenie oznaczone do powiadomień podczas wdrażania",
+      "markedInterested_other": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
+      "markedInterested_few": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
+      "markedInterested_many": "{{count}} wydarzeń oznaczonych do powiadomień podczas wdrażania"
     },
     "home": {
       "badge": "Demo zakończone",

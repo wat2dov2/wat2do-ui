@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Hiring: {{positions}}",
-    "minimumGoing": "Minimum interested",
+    "minimumGoing": "Minimum notified",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",
     "deleteFailed": "Failed to delete event. Please try again.",
@@ -111,9 +111,9 @@
     },
     "new": "NEW",
     "updated": "UPDATED",
-    "goingCount": "{{count}} interested",
-    "goingCount_one": "{{count}} interested",
-    "goingCount_other": "{{count}} interested",
+    "goingCount": "{{count}} notified",
+    "goingCount_one": "{{count}} notified",
+    "goingCount_other": "{{count}} notified",
     "hostedBy": "Hosted by",
     "aboutEvent": "About Event",
     "fetchingDetails": "Fetching details...",

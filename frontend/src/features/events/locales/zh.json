@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "招聘：{{positions}}",
-    "minimumGoing": "最少感兴趣人数",
+    "minimumGoing": "最少收到通知人数",
     "eventTitle": "活动标题",
     "loadFailed": "加载活动失败。请重试。",
     "deleteFailed": "删除活动失败。请重试。",
@@ -111,8 +111,8 @@
     },
     "new": "新",
     "updated": "已更新",
-    "goingCount": "{{count}} 人感兴趣",
-    "goingCount_other": "{{count}} 人感兴趣",
+    "goingCount": "{{count}} 人会收到通知",
+    "goingCount_other": "{{count}} 人会收到通知",
     "hostedBy": "主办方",
     "aboutEvent": "关于活动",
     "fetchingDetails": "正在获取详情...",

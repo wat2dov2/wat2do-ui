@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "모집 중: {{positions}}",
-    "minimumGoing": "최소 관심 인원",
+    "minimumGoing": "최소 알림 받는 인원",
     "eventTitle": "이벤트 제목",
     "loadFailed": "이벤트를 불러오지 못했습니다. 다시 시도해 주세요.",
     "deleteFailed": "이벤트 삭제에 실패했습니다. 다시 시도해 주세요.",
@@ -111,8 +111,8 @@
     },
     "new": "신규",
     "updated": "업데이트됨",
-    "goingCount": "{{count}}명 관심",
-    "goingCount_other": "{{count}}명 관심",
+    "goingCount": "{{count}}명 알림 받음",
+    "goingCount_other": "{{count}}명 알림 받음",
     "hostedBy": "주최: ",
     "aboutEvent": "이벤트 정보",
     "fetchingDetails": "세부 정보 가져오는 중...",

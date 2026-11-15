@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "ਭਰਤੀ: {{positions}}",
-    "minimumGoing": "ਘੱਟੋ-ਘੱਟ ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲੇ",
+    "minimumGoing": "ਘੱਟੋ-ਘੱਟ ਸੂਚਿਤ ਹੋਣ ਵਾਲੇ",
     "eventTitle": "ਇਵੈਂਟ ਦਾ ਸਿਰਲੇਖ",
     "loadFailed": "ਇਵੈਂਟ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "deleteFailed": "ਇਵੈਂਟ ਨੂੰ ਮਿਟਾਉਣਾ ਅਸਫਲ ਰਿਹਾ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
@@ -112,9 +112,9 @@
     },
     "new": "ਨਵਾਂ",
     "updated": "ਅੱਪਡੇਟ ਹੋਇਆ",
-    "goingCount": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲਾ",
-    "goingCount_one": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲਾ",
-    "goingCount_other": "{{count}} ਦਿਲਚਸਪੀ ਰੱਖਣ ਵਾਲੇ",
+    "goingCount": "{{count}} ਸੂਚਿਤ ਹੋਣ ਵਾਲੇ",
+    "goingCount_one": "{{count}} ਸੂਚਿਤ ਹੋਣ ਵਾਲਾ",
+    "goingCount_other": "{{count}} ਸੂਚਿਤ ਹੋਣ ਵਾਲੇ",
     "hostedBy": "ਦੁਆਰਾ ਮੇਜ਼ਬਾਨੀ ਕੀਤੀ ਗਈ",
     "aboutEvent": "ਘਟਨਾ ਬਾਰੇ",
     "fetchingDetails": "ਵੇਰਵੇ ਪ੍ਰਾਪਤ ਕੀਤੇ ਜਾ ਰਹੇ ਹਨ...",

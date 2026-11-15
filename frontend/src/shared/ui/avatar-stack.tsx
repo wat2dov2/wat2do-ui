@@ -1,5 +1,6 @@
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { logoThumbnailUrl } from "@/shared/utils/media";
+import { nameInitial } from "@/shared/utils/string";
 
 interface AvatarStackProps {
   avatars: { src: string; name: string }[];
@@ -39,7 +40,7 @@ export function AvatarStack({ avatars, size = "default", overflowCount = 0, over
             height={px}
             loading={loading}
             className="size-full"
-            fallback={<span aria-hidden="true" className={`text-muted-foreground ${fallback}`}>{avatar.name.replace(/^@/, "").slice(0, 1).toUpperCase()}</span>}
+            fallback={<span aria-hidden="true" className={`text-muted-foreground ${fallback}`}>{nameInitial(avatar.name)}</span>}
           />
         </div>
       ))}

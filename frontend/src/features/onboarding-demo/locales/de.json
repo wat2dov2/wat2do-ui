@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 ausgewählt - mindestens 2 erforderlich, um fortzufahren",
       "reactionGroup": "Reaktion auf {{title}}",
       "reactions": {
-        "interested": "Interessiert",
+        "interested": "Benachrichtige mich",
         "maybe": "Vielleicht",
         "notForMe": "Nicht für mich"
       }
@@ -101,9 +101,9 @@
       "progress": "{{count}} / {{total}} Veranstaltungen",
       "reward": "Belohnung: +7 Tage Pro",
       "progressAria": "Fortschritt der Challenge",
-      "markedInterested": "{{count}} Ereignisse während des Onboardings als interessiert markiert",
-      "markedInterested_one": "{{count}} Veranstaltung während des Onboardings als interessiert markiert",
-      "markedInterested_other": "{{count}} Ereignisse während des Onboardings als interessiert markiert"
+      "markedInterested": "{{count}} Veranstaltungen während des Onboardings für Benachrichtigungen markiert",
+      "markedInterested_one": "{{count}} Veranstaltung während des Onboardings für Benachrichtigungen markiert",
+      "markedInterested_other": "{{count}} Veranstaltungen während des Onboardings für Benachrichtigungen markiert"
     },
     "home": {
       "badge": "Demo abgeschlossen",

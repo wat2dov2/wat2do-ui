@@ -3,9 +3,10 @@ import { useTranslation } from "react-i18next";
 import { ChevronRight, Users } from "lucide-react";
 import { ProfileListSection } from "@/features/profile/components/ProfileListSection";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
-import { AvatarStack } from "@/shared/ui/avatar-stack";
 import type { Club } from "@/shared/types";
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from "@/shared/ui/item";
+import { ImageTile } from "@/shared/ui/tile";
+import { nameInitial } from "@/shared/utils/string";
 
 /** The clubs the visitor follows at this school, each a row that opens its page. */
 export function FollowedClubsSection({ clubs, isPending }: { clubs: Club[]; isPending: boolean }) {
@@ -21,7 +22,11 @@ export function FollowedClubsSection({ clubs, isPending }: { clubs: Club[]; isPe
         <Item size="sm" asChild>
           <NextLink href={clubPagePath(club.id)}>
             <ItemMedia>
-              <AvatarStack decorative avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
+              <ImageTile
+                src={club.logo_url ?? null}
+                kind="logo"
+                fallback={<span className="text-sm font-medium text-muted-foreground">{nameInitial(club.club_name)}</span>}
+              />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>{club.club_name}</ItemTitle>

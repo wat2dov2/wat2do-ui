@@ -9,7 +9,7 @@ import {
 } from "@/shared/ui/card";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/shared/ui/item";
 import { StatCard } from "@/shared/ui/stat-card";
-import { DateTile, IconTile } from "@/shared/ui/tile";
+import { DateLeaf, DateTile, IconTile, ImageTile } from "@/shared/ui/tile";
 import { Ticket } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
@@ -42,7 +42,7 @@ export function CardsSection() {
           <StatCard icon={Ticket} label="Tickets" value="128" note="Updated just now" />
         </div>
       </ShowcaseBlock>
-      <ShowcaseBlock label="Item group: one list on one surface, hairlines between rows, led by a date or icon tile">
+      <ShowcaseBlock label="Item group: one list on one surface, hairlines between rows, led by a date, image or icon tile">
         <ItemGroup className="max-w-md">
           <Item size="sm">
             <ItemMedia>
@@ -51,6 +51,19 @@ export function CardsSection() {
             <ItemContent>
               <ItemTitle>Board Game Social</ItemTitle>
               <ItemDescription>Fri, Nov 20, 6:00 PM · SLC Great Hall</ItemDescription>
+            </ItemContent>
+          </Item>
+          <Item size="sm">
+            <ItemMedia>
+              <ImageTile
+                src={null}
+                kind="poster"
+                fallback={<DateLeaf dtstartUtc="2026-11-27T23:00:00Z" locale="en" timeZone="America/Toronto" />}
+              />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Trivia Night</ItemTitle>
+              <ItemDescription>Image tile: the poster, or this calendar leaf until there is one</ItemDescription>
             </ItemContent>
           </Item>
           <Item size="sm">
