@@ -40,7 +40,6 @@
     "addClubDescription": "یہ تنظیم {{school}} کے لیے درج کی جائے گی۔",
     "optionalDetailsDescription": "وہ روابط اور تنظیم کی قسم کی تفصیلات شامل کریں جو طلباء کو تنظیم کو پہچاننے میں مدد دیں۔",
     "editClub": "تنظیم میں ترمیم کریں",
-    "updateClub": "تنظیم کو اپ ڈیٹ کریں",
     "editClubDescription": "نیچے دی گئی تنظیم کی معلومات کو اپ ڈیٹ کریں",
     "clubCreatedMessage": "تنظیم \"{{name}}\" کامیابی سے تخلیق کر دی گئی ہے!",
     "clubUpdatedMessage": "تنظیم \"{{name}}\" کو اپ ڈیٹ کر دیا گیا ہے۔",

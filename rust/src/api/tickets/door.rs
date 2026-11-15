@@ -12,7 +12,7 @@ use super::model::{
     TicketCheckInResponse, TicketDateCounts, TicketRow, TicketStatus,
 };
 use super::ticketing::{closes_at, managed_event, view};
-use super::{codes, store};
+use super::{codes, releases, store};
 use crate::api::AppState;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;
@@ -156,11 +156,7 @@ pub async fn desk(
         }
         revenue_cents += i64::from(ticket.unit_amount_cents.unwrap_or(0));
     }
-    let remaining: HashMap<Uuid, Option<i64>> = ticketing
-        .dates
-        .iter()
-        .map(|date| (date.event_date_id, date.remaining))
-        .collect();
+    let taken = store::current_seats_taken(&state.db, event_id, Utc::now()).await?;
     let valid = issued.values().sum();
     Ok(EventTicketDeskResponse {
         issued: valid,
@@ -180,7 +176,8 @@ pub async fn desk(
                 dtstart_utc: occurrence.dtstart_utc,
                 issued: issued.get(&occurrence.id).copied().unwrap_or(0),
                 checked_in: admitted.get(&occurrence.id).copied().unwrap_or(0),
-                remaining: remaining.get(&occurrence.id).copied().flatten(),
+                // Left across every release, on sale or not.
+                remaining: releases::left_in_all(&row.releases, &taken, occurrence.id),
             })
             .collect(),
         // Holders waiting on a refund answer come first, so a request never sits unseen.
@@ -204,7 +201,7 @@ pub async fn club_summaries(
 ) -> Result<Vec<ClubEventTicketSummary>, ApiError> {
     let rows = read_with_retry(|| {
         sqlx::query(
-            "SELECT et.event_id::int8 AS event_id, et.price_cents, et.currency, et.capacity, et.paused, \
+            "SELECT et.event_id::int8 AS event_id, et.currency, et.paused, \
                     count(t.id) FILTER (WHERE t.status = 'valid') AS issued, \
                     count(t.id) FILTER (WHERE t.status = 'valid' AND t.checked_in_at IS NOT NULL) AS checked_in, \
                     coalesce(sum(o.unit_amount_cents) FILTER (WHERE t.status = 'valid'), 0)::int8 AS revenue_cents, \
@@ -225,9 +222,7 @@ pub async fn club_summaries(
         .map(|row| {
             Ok(ClubEventTicketSummary {
                 event_id: row.try_get("event_id")?,
-                price_cents: row.try_get("price_cents")?,
                 currency: row.try_get("currency")?,
-                capacity: row.try_get("capacity")?,
                 paused: row.try_get("paused")?,
                 issued: row.try_get("issued")?,
                 checked_in: row.try_get("checked_in")?,

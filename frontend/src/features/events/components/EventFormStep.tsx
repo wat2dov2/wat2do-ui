@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { FormActions, FormLayout } from "@/shared/layout";
 import { LoadingButton } from "@/shared/ui/loading-button";
+import { SaveBar } from "@/shared/ui/save-bar";
 import { FieldGroup } from "@/shared/ui/field";
 import { EventFormPreview } from "@/features/events/components/EventForm/EventForm/EventFormPreview";
 import { EventFormFields } from "@/features/events/components/EventForm/EventForm/EventFormFields";
@@ -50,6 +51,8 @@ interface EventFormStepProps {
     | "onRemoveImage"
     | "updateLocation"
     | "fixedClub"
+    | "isDirty"
+    | "discard"
   >;
   isDarkMode: boolean;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -61,7 +64,11 @@ interface EventFormStepProps {
   previewBase?: Event | null;
   /** Lets a host render its own preview of what the form currently describes. */
   onPreviewEventChange?: (event: Event) => void;
-  /** Off where the host saves the form, so there is one save button, not two. */
+  /**
+   * Off where the host saves the form, so there is one save button, not two.
+   * On, an edit saves from the floating save bar once something changed, and
+   * a new event from its submit button.
+   */
   showSubmit?: boolean;
 }
 
@@ -205,23 +212,22 @@ export function EventFormStep({
           <FormLayout noValidate onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
             <FieldGroup>
               <EventFormFields />
-              {showSubmit ? (
+              {showSubmit && !isEditMode ? (
                 <FormActions align="start">
                   <LoadingButton
                     type="submit"
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}
                   >
-                    {isEditMode
-                      ? t("events.updateEvent")
-                      : canCreateEvents
-                        ? t("events.createEvent")
-                        : t("events.submitForReview")}
+                    {canCreateEvents ? t("events.createEvent") : t("events.submitForReview")}
                   </LoadingButton>
                 </FormActions>
               ) : null}
             </FieldGroup>
           </FormLayout>
+          {showSubmit && isEditMode && eventForm.isDirty ? (
+            <SaveBar isSaving={isSubmitting} onDiscard={eventForm.discard} onSave={onSubmit} />
+          ) : null}
         </div>
 
         {showPreview ? <EventFormPreview className="hidden lg:flex" /> : null}

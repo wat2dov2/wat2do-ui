@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Modifiche non salvate",
-    "unsavedChangesDescription": "Salva o annulla le modifiche delle impostazioni.",
     "saveSuccess": "Le tue impostazioni sono state salvate.",
     "saveError": "Non siamo riusciti a salvare le tue impostazioni. Le tue modifiche sono ancora qui.",
     "tabs": {

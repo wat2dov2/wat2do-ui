@@ -40,7 +40,6 @@
     "addClubDescription": "આ સંસ્થા {{school}} માટે યાદીમાં આવશે.",
     "optionalDetailsDescription": "લિંક અને સંસ્થાની પ્રકારની વિગતો ઉમેરો જે વિદ્યાર્થીઓને સંસ્થાને ઓળખવામાં મદદ કરે.",
     "editClub": "સંસ્થા સંપાદિત કરો",
-    "updateClub": "સંસ્થાને અપડેટ કરો",
     "editClubDescription": "નીચે સંસ્થાની માહિતી અપડેટ કરો",
     "clubCreatedMessage": "સંસ્થા \"{{name}}\" સફળતાપૂર્વક બનાવવામાં આવી છે!",
     "clubUpdatedMessage": "સંસ્થા \"{{name}}\" અપડેટ કરવામાં આવી છે.",

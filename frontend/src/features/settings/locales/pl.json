@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Niezapisane zmiany",
-    "unsavedChangesDescription": "Zapisz lub anuluj zmiany ustawień.",
     "saveSuccess": "Twoje ustawienia zostały zapisane.",
     "saveError": "Nie udało nam się zapisać Twoich ustawień. Twoje zmiany wciąż są tutaj.",
     "tabs": {

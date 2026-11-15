@@ -522,8 +522,10 @@ pub struct Ticketing {
     pub currency_by_country: HashMap<String, String>,
     pub minimum_price_cents: i32,
     pub maximum_price_cents: i32,
-    /// Per date of an event.
+    /// A release's tickets, per date of an event.
     pub maximum_capacity: i32,
+    /// Releases one event's tickets can go on sale in.
+    pub maximum_releases: usize,
     pub maximum_tickets_per_order: i32,
     pub checkout_minutes: i64,
     pub reservation_grace_minutes: i64,

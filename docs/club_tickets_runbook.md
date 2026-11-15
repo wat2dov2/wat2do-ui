@@ -15,10 +15,21 @@ wat2do takes no fee and pays no Connect fees.
 - `rust/src/api/tickets` is the whole feature, and `rust/src/api/tickets/stripe.rs` is the only code that calls Stripe.
   Every Stripe call that touches money names the club's connected account, and every write carries an idempotency key.
 - The routes are `/events/{event_id}/ticketing` (an event's tickets, the desk, the door and refunds), `/tickets` (tickets as their holders see them), `/clubs/{club_id}/payouts` and `/clubs/{club_id}/ticket-sales`, and `POST /webhooks/stripe`.
-- `backend/database/migrations/20261106010000_club_tickets.sql` holds the tables: `event_ticketing` (a price of zero is free), `ticket_orders` (one Stripe Checkout each), `tickets` and `club_payment_accounts`; `20261115200000_event_ticketing_dates.sql` adds `event_ticketing_dates`, the dates of an event that have tickets.
+- `backend/database/migrations/20261106010000_club_tickets.sql` holds the tables: `event_ticketing` (one row per event with tickets), `ticket_orders` (one Stripe Checkout each), `tickets` and `club_payment_accounts`; `20261115200000_event_ticketing_dates.sql` adds `event_ticketing_dates`, the dates of an event that have tickets, and `20261115220000_event_ticket_releases.sql` adds `event_ticket_releases`, the releases they go on sale in.
+- An event's tickets go on sale in releases (`rust/src/api/tickets/releases.rs`).
+  Each release has a time it goes on sale, a number of tickets for each date with tickets (empty is no limit) and a price (zero is free).
+  A release stays on sale until it sells out or the date is over, so releases add up: a buyer always gets a ticket from the earliest release on sale with tickets left, at that release's price.
+  A release covers every date with tickets, the way the old per-date limit did, and which date a ticket admits to is still the date the buyer picked.
+  Every ticket and order records its release (`release_id`), so a ticket given back or refunded frees a seat in its own release, and an order's Stripe charge and the club's revenue use its release's price.
+  One order draws from one release: a buyer who wants more tickets than its release has left buys the rest once the next release is the one on sale.
+  An event's releases are all free or all priced, only the last to go on sale can have no limit, and two can't go on sale at the same time.
+  A release someone got a ticket from keeps its price and can't be removed.
+  Until a release is on sale, the event page says when tickets go on sale, and Get tickets turns on at that time.
 - Every change to an event's tickets locks the event's row, then its `event_ticketing` row, the order an event's edit takes them too, so two people can never both take the last seat and a cancellation is seen by every change after it.
 - A paid checkout holds its seats in Postgres while the buyer is on Stripe Checkout, and becomes tickets exactly once however often Stripe repeats its webhook.
-- A club sets tickets up in the event's form, when it submits the event or edits it: one switch, then which dates have tickets, the price (empty is free), a limit per date and pausing. Only the club's own team sees that part of the form, and the form saves the tickets (`PUT /events/{event_id}/ticketing`) right after the event.
+- A club sets tickets up in the event's form, when it submits the event or edits it: one switch, then which dates have tickets, its releases and pausing.
+  Only the club's own team sees that part of the form, and the form saves the tickets (`PUT /events/{event_id}/ticketing`) right after the event.
+- The club's own team never gets tickets to its own event: the event page turns Get tickets off for them and says why, and the API refuses them too.
 - A date people hold tickets to keeps its tickets: taking it off is refused, and pausing stops new ones instead. Tickets can be turned off only while nobody has one.
 - Taking or buying a ticket turns on the holder's Notify me for that date (`user_going_events`), so reminders and change alerts reach them. Notify me is never public, and turning tickets on gives nobody a ticket they did not take.
 - A free ticket's holder can give it back until the date ends; a paid ticket's holder asks the club for a refund instead, and everyone on the club's team gets an email.

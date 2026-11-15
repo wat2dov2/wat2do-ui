@@ -180,14 +180,11 @@ export function SubmitEventFlow({
   useEffect(() => {
     if (!saveRef) return;
     saveRef.current = () =>
-      isEditMode && !eventForm.imageFile &&
-      JSON.stringify(eventForm.formData) === JSON.stringify(initialData)
-        ? Promise.resolve(true)
-        : handleSubmit();
+      isEditMode && !eventForm.isDirty ? Promise.resolve(true) : handleSubmit();
     return () => {
       saveRef.current = null;
     };
-  }, [saveRef, handleSubmit, isEditMode, eventForm.imageFile, eventForm.formData, initialData]);
+  }, [saveRef, handleSubmit, isEditMode, eventForm.isDirty]);
 
   const currentStep: SubmitEventStep = submitResult && !isEditMode
     ? "submit-success"

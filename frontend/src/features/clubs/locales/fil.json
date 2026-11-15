@@ -40,7 +40,6 @@
     "addClubDescription": "Ang organisasyong ito ay ililista para sa {{school}}.",
     "optionalDetailsDescription": "Magdagdag ng mga link at detalye ng uri ng organisasyon na makakatulong sa mga estudyante na makilala ang organisasyon.",
     "editClub": "I-edit ang Organisasyon",
-    "updateClub": "I-update ang Organisasyon",
     "editClubDescription": "I-update ang impormasyon ng organisasyon sa ibaba",
     "clubCreatedMessage": "Matagumpay na nalikha ang Organisasyon \"{{name}}\"!",
     "clubUpdatedMessage": "Na-update ang Organisasyon \"{{name}}\".",

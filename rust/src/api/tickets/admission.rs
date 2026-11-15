@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use super::model::{OrderRow, TicketCheckoutResponse, TicketResponse, TicketingRow};
 use super::stripe::{ConnectedAccount, Stripe, WebhookEvent};
-use super::ticketing::{lock_for_change, refuse_unless_open};
+use super::ticketing::{lock_for_change, refuse_own_event, release_on_sale};
 use super::{codes, emails, holders, payouts, refunds, store};
 use crate::api::AppState;
 use crate::api::auth::User;
@@ -65,14 +65,19 @@ pub async fn take_free(
         drop(transaction);
         return holders::by_code(state, &code, Some(user)).await;
     }
-    refuse_unless_open(&row, &occurrence, now)?;
-    if let Some(capacity) = row.capacity
-        && store::seats_taken(&mut *transaction, event_date_id, now).await? >= i64::from(capacity)
-    {
-        return Err(ApiError::validation(TICKETS_SOLD_OUT));
-    }
+    refuse_own_event(&mut transaction, &event, user).await?;
+    let taken = store::seats_taken(&mut *transaction, event_id, now).await?;
+    let (release, _) = release_on_sale(&row, &taken, &occurrence, now)?;
     let code = codes::new_code();
-    store::insert_free_ticket(&mut *transaction, event_id, event_date_id, user.id, &code).await?;
+    store::insert_free_ticket(
+        &mut *transaction,
+        event_id,
+        event_date_id,
+        release.id,
+        user.id,
+        &code,
+    )
+    .await?;
     transaction.commit().await?;
 
     mark_going(state, user.id, event_id, event_date_id).await;
@@ -211,29 +216,32 @@ async fn reserve(
         .await?
         .filter(|row| !row.is_free())
         .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
-    refuse_unless_open(&row, occurrence, now)?;
-    if let Some(capacity) = row.capacity
-        && store::seats_taken(&mut *transaction, occurrence.id, now).await? + i64::from(quantity)
-            > i64::from(capacity)
-    {
+    refuse_own_event(&mut transaction, event, buyer).await?;
+    let taken = store::seats_taken(&mut *transaction, event.id, now).await?;
+    // An order draws from one release, at its price: the earliest on sale
+    // with tickets left, which must have enough for the whole order.
+    let (release, remaining) = release_on_sale(&row, &taken, occurrence, now)?;
+    if remaining.is_some_and(|left| left < i64::from(quantity)) {
         return Err(ApiError::validation(TICKETS_SOLD_OUT));
     }
     let order = sqlx::query_as::<_, OrderRow>(
-        "INSERT INTO public.ticket_orders (id, event_id, event_date_id, club_id, buyer_user_id, \
-         buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, reserved_until) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) \
+        "INSERT INTO public.ticket_orders (id, event_id, event_date_id, release_id, club_id, \
+         buyer_user_id, buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, \
+         reserved_until) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \
          RETURNING id, event_id, event_date_id, club_id, buyer_user_id, buyer_email, quantity, \
          unit_amount_cents, currency, status, stripe_account_id, stripe_checkout_session_id, \
-         stripe_payment_intent_id, reserved_until",
+         stripe_payment_intent_id, reserved_until, release_id",
     )
     .bind(Uuid::new_v4())
     .bind(event.id as i32)
     .bind(occurrence.id)
+    .bind(release.id)
     .bind(club_id as i32)
     .bind(buyer.id)
     .bind(&buyer.email)
     .bind(quantity)
-    .bind(row.price_cents)
+    .bind(release.price_cents)
     .bind(row.currency.as_deref().unwrap_or("cad"))
     .bind(&account.stripe_account_id)
     .bind(reserved_until)
@@ -399,12 +407,14 @@ async fn fulfil(
     .await?;
     let codes: Vec<String> = (0..order.quantity).map(|_| codes::new_code()).collect();
     sqlx::query(
-        "INSERT INTO public.tickets (order_id, event_id, event_date_id, holder_user_id, code) \
-         SELECT $1, $2, $3, $4, code FROM unnest($5::text[]) AS code",
+        "INSERT INTO public.tickets (order_id, event_id, event_date_id, release_id, \
+         holder_user_id, code) \
+         SELECT $1, $2, $3, $4, $5, code FROM unnest($6::text[]) AS code",
     )
     .bind(order_id)
     .bind(order.event_id)
     .bind(order.event_date_id)
+    .bind(order.release_id)
     .bind(order.buyer_user_id)
     .bind(&codes)
     .execute(&mut *transaction)

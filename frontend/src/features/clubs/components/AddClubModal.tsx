@@ -8,6 +8,7 @@ import {
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { LoadingButton } from "@/shared/ui/loading-button";
+import { SaveBar } from "@/shared/ui/save-bar";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -360,17 +361,26 @@ export function ClubForm({
         </FormGrid>
       </FormSection>
 
-      <FormActions>
-        <LoadingButton
-          type="submit"
-          isLoading={isSubmitting}
-          loadingText={t("common.pleaseWait")}
-        >
-          {isEditMode
-            ? t("clubs.updateClub")
-            : t("clubs.addClub")}
-        </LoadingButton>
-      </FormActions>
+      {/* An edit saves from the floating save bar once something changed. */}
+      {isEditMode ? (
+        form.isDirty ? (
+          <SaveBar
+            isSaving={isSubmitting}
+            onDiscard={form.reset}
+            onSave={() => void handleSubmit()}
+          />
+        ) : null
+      ) : (
+        <FormActions>
+          <LoadingButton
+            type="submit"
+            isLoading={isSubmitting}
+            loadingText={t("common.pleaseWait")}
+          >
+            {t("clubs.addClub")}
+          </LoadingButton>
+        </FormActions>
+      )}
     </FormLayout>
   );
 }

@@ -20,7 +20,7 @@ test("submissions carry the signed-in account's email without inventing ownershi
     await submitEventForReview({
       club_id: 7, title: "Visitor Event", description: "Details", location: "Campus", map_location: "Campus",
       timeZone: "America/Toronto", occurrences: [{ dtstart_local: "2026-12-01T12:00", dtend_local: "", tickets: true }],
-      price: 0, food: [], registration: false, category: "Arts & Culture", tickets: { enabled: false, price: "", capacity: "", paused: false },
+      price: 0, food: [], registration: false, category: "Arts & Culture", tickets: { enabled: false, releases: [], paused: false },
       source_url: "https://example.com/event", source_image_url: "https://example.com/flyer.png",
     } as EventFormData);
     await submitPosition({

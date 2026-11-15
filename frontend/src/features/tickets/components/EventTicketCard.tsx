@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { TicketDatePicker } from "@/features/tickets/components/TicketDatePicker";
-import { useMyTickets, useTicketCheckout } from "@/features/tickets/hooks/useTickets";
+import {
+  useMyTickets,
+  useTicketCheckout,
+  useTicketsClub,
+  useTicketUnavailableText,
+} from "@/features/tickets/hooks/useTickets";
 import { ticketUnavailableReason } from "@/features/tickets/lib/ticketFormat";
 import { ROUTES } from "@/shared/constants/routes";
 import type { ApiEventTicketingResponse } from "@/shared/generated";
@@ -48,13 +53,20 @@ export function EventTicketCard({ event, ticketing }: EventTicketCardProps) {
   const selected = openDates.find((date) => date.event_date_id === dateId) ?? openDates[0];
   const [quantity, setQuantity] = useState(1);
   const currency = ticketing.currency ?? "cad";
+  // A ticket costs what the release it comes from costs, which can differ by date.
+  const priceCents = (selected ?? ticketing.dates[0])?.price_cents ?? 0;
   const maxQuantity = Math.max(
     1,
     Math.min(ticketing.maximum_per_order, selected?.remaining ?? ticketing.maximum_per_order),
   );
   const count = Math.min(quantity, maxQuantity);
   const money = (cents: number) => formatCents(cents, currency, i18n.language);
-  const unavailable = ticketUnavailableReason(event, ticketing, openDates);
+  const ownEvent = useTicketsClub(event.club_id) !== null;
+  const unavailable = ticketUnavailableReason(event, ticketing, openDates, ownEvent);
+  const unavailableText = useTicketUnavailableText(event, ticketing, unavailable);
+  const total = money(priceCents * count);
+  // The club's own team sees the button, turned off, beside why.
+  const showBuy = profileCompleted && (!unavailable || unavailable === "ownEvent");
   // Stay busy after success too: the browser is already on its way to Stripe.
   const leaving = checkout.isPending || checkout.isSuccess;
 
@@ -68,7 +80,7 @@ export function EventTicketCard({ event, ticketing }: EventTicketCardProps) {
       <CardHeader>
         <CardTitle>{t("tickets.card.paidTitle")}</CardTitle>
         <CardDescription>
-          {t("tickets.card.price", { price: money(ticketing.price_cents) })} ·{" "}
+          {t("tickets.card.price", { price: money(priceCents) })} ·{" "}
           {t("tickets.card.noFees")}
         </CardDescription>
         {held.length ? (
@@ -79,7 +91,7 @@ export function EventTicketCard({ event, ticketing }: EventTicketCardProps) {
       </CardHeader>
       <CardContent>
         {unavailable ? (
-          <CardDescription>{t(`tickets.card.unavailable.${unavailable}`)}</CardDescription>
+          <CardDescription>{unavailableText}</CardDescription>
         ) : (
           <Stack gap={4}>
             <TicketDatePicker
@@ -113,12 +125,19 @@ export function EventTicketCard({ event, ticketing }: EventTicketCardProps) {
           </Stack>
         )}
       </CardContent>
-      {held.length || (!unavailable && profileCompleted) ? (
+      {held.length || showBuy ? (
         <CardFooter>
           <Stack gap={2} grow>
-            {!unavailable && profileCompleted ? (
-              <LoadingButton type="button" isLoading={leaving} onClick={buy}>
-                {t("tickets.card.buy", { total: money(ticketing.price_cents * count) })}
+            {showBuy ? (
+              <LoadingButton
+                type="button"
+                isLoading={leaving}
+                disabled={unavailable !== null}
+                onClick={buy}
+              >
+                {selected?.remaining != null
+                  ? t("tickets.card.buyLeft", { total, count: selected.remaining })
+                  : t("tickets.card.buy", { total })}
               </LoadingButton>
             ) : null}
             {held.length ? (

@@ -70,30 +70,55 @@ pub struct TicketDateAvailability {
     #[serde(serialize_with = "json::option_datetime")]
     #[schema(value_type = Option<String>, format = DateTime, required = true)]
     pub dtend_utc: Option<DateTime<Utc>>,
-    /// Null when the event has no capacity limit.
+    /// What a ticket costs now: the price of the release on sale, or of the
+    /// next one while none is.
+    pub price_cents: i32,
+    /// Tickets left in that release; null when it has no limit.
     #[schema(required = true)]
     pub remaining: Option<i64>,
+    /// When the next release goes on sale, while none is on sale for this date.
+    #[serde(serialize_with = "json::option_datetime")]
+    #[schema(value_type = Option<String>, format = DateTime, required = true)]
+    pub on_sale_at: Option<DateTime<Utc>>,
     /// Someone could take or buy a ticket for this date right now.
     pub open: bool,
 }
 
-/// How people get into an event, or null when it has no tickets. A price of
-/// zero means free tickets, one per person and date. `dates` lists only the
-/// dates that have tickets.
+/// One release of an event's tickets: it goes on sale at `on_sale_at` and
+/// stays on sale until it sells out or the date is over.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct TicketReleaseResponse {
+    #[schema(value_type = String, format = Uuid)]
+    pub id: Uuid,
+    #[serde(serialize_with = "json::datetime")]
+    #[schema(value_type = String, format = DateTime)]
+    pub on_sale_at: DateTime<Utc>,
+    /// Tickets for each date with tickets; null for no limit.
+    #[schema(required = true)]
+    pub quantity: Option<i32>,
+    /// Zero for free tickets.
+    pub price_cents: i32,
+    /// Someone got a ticket from it, so its price stays and it can't be removed.
+    pub has_tickets: bool,
+}
+
+/// How people get into an event, or null when it has no tickets. Free
+/// tickets are one per person and date. `dates` lists only the dates that
+/// have tickets, and `releases` goes on sale in order.
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct EventTicketingResponse {
     pub event_id: i64,
-    pub price_cents: i32,
+    /// Every release is free.
+    pub free: bool,
     /// "cad" or "usd" for paid tickets; null for free ones.
     #[schema(required = true)]
     pub currency: Option<String>,
-    #[schema(required = true)]
-    pub capacity: Option<i32>,
     pub paused: bool,
     /// Some date is open and the event takes tickets right now.
     pub available: bool,
     /// The most tickets one person gets at a time: one when they are free.
     pub maximum_per_order: i32,
+    pub releases: Vec<TicketReleaseResponse>,
     pub dates: Vec<TicketDateAvailability>,
 }
 
@@ -101,14 +126,26 @@ pub struct EventTicketingResponse {
 #[allow(dead_code)]
 #[derive(ToSchema)]
 pub struct EventTicketingUpdate {
-    /// Zero for free tickets.
-    price_cents: i32,
-    /// Tickets per date; null for no limit.
-    capacity: Option<i32>,
+    /// At least one release; they go on sale in order of `on_sale_at`.
+    releases: Vec<TicketReleaseInput>,
     paused: bool,
     /// The event's dates that have tickets: at least one.
     #[schema(value_type = Vec<String>)]
     event_date_ids: Vec<Uuid>,
+}
+
+/// One release as the club sets it; a release already saved keeps its `id`.
+#[allow(dead_code)]
+#[derive(ToSchema)]
+pub struct TicketReleaseInput {
+    #[schema(value_type = Option<String>, format = Uuid)]
+    id: Option<Uuid>,
+    #[schema(value_type = String, format = DateTime)]
+    on_sale_at: DateTime<Utc>,
+    /// Tickets for each date with tickets; null for no limit.
+    quantity: Option<i32>,
+    /// Zero for free tickets.
+    price_cents: i32,
 }
 
 #[allow(dead_code)]
@@ -296,11 +333,8 @@ pub struct ClubPayoutStatus {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ClubEventTicketSummary {
     pub event_id: i64,
-    pub price_cents: i32,
     #[schema(required = true)]
     pub currency: Option<String>,
-    #[schema(required = true)]
-    pub capacity: Option<i32>,
     pub paused: bool,
     pub issued: i64,
     pub checked_in: i64,
@@ -315,22 +349,33 @@ pub struct StripeRedirectResponse {
     pub url: String,
 }
 
-/// An `event_ticketing` row.
+/// An `event_ticketing` row with its releases.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct TicketingRow {
     pub event_id: i32,
-    pub price_cents: i32,
     pub currency: Option<String>,
-    pub capacity: Option<i32>,
     pub paused: bool,
     /// The event's dates that have tickets.
     pub dates: Vec<Uuid>,
+    /// In the order they go on sale.
+    #[sqlx(skip)]
+    pub releases: Vec<ReleaseRow>,
 }
 
 impl TicketingRow {
+    /// Every release is free: an event's releases are all free or all paid.
     pub fn is_free(&self) -> bool {
-        self.price_cents == 0
+        self.releases.iter().all(|release| release.price_cents == 0)
     }
+}
+
+/// An `event_ticket_releases` row.
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct ReleaseRow {
+    pub id: Uuid,
+    pub on_sale_at: DateTime<Utc>,
+    pub quantity: Option<i32>,
+    pub price_cents: i32,
 }
 
 /// A `tickets` row with its holder and, for a paid ticket, its order.
@@ -397,6 +442,7 @@ pub struct OrderRow {
     pub id: Uuid,
     pub event_id: i32,
     pub event_date_id: Uuid,
+    pub release_id: Uuid,
     pub club_id: i32,
     pub buyer_user_id: Uuid,
     pub buyer_email: String,

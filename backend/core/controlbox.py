@@ -1566,8 +1566,10 @@ class TicketingControl(_ControlModel):
     # Stripe refuses card charges under 50 cents.
     minimum_price_cents: int = Field(ge=50, le=100_000)
     maximum_price_cents: int = Field(gt=0, le=1_000_000)
-    # Capacity is per date of an event.
+    # A release's tickets are per date of an event.
     maximum_capacity: int = Field(gt=0, le=100_000)
+    # Releases one event's tickets can go on sale in.
+    maximum_releases: int = Field(gt=0, le=50)
     maximum_tickets_per_order: int = Field(gt=0, le=20)
     # Stripe Checkout sessions last 30 minutes to 24 hours.
     checkout_minutes: int = Field(ge=30, le=1440)

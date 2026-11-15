@@ -1,7 +1,5 @@
 {
   "settings": {
-    "unsavedChanges": "Ungespeicherte Änderungen",
-    "unsavedChangesDescription": "Speichern oder abbrechen Ihrer Einstellungenänderungen.",
     "saveSuccess": "Ihre Einstellungen wurden gespeichert.",
     "saveError": "Wir konnten Ihre Einstellungen nicht speichern. Ihre Änderungen sind weiterhin vorhanden.",
     "tabs": {

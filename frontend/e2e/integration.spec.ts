@@ -3323,23 +3323,40 @@ test.describe("Events Page", () => {
     }
   }
 
-  test("free tickets are one Get tickets tap, and the ticket shows its QR code on the event page", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+  /** A free event with tickets, hosted by `clubId` (the signed-in visitor runs club 1). */
+  async function mockFreeTicketedEvent(
+    page: Page,
+    next: NextFixture,
+    { clubId = 2, remaining = null as number | null, onSaleAt = null as string | null } = {},
+  ) {
     const startsAt = new Date(Date.now() + 86_400_000).toISOString();
     const dateId = "00000000-0000-0000-0000-000000000001";
-    let mine: unknown[] = [];
-    let rsvped: unknown = null;
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
-      id: 1, club_id: 1, title: "Board Games Night", school: "uwaterloo", club: "Board Game Club",
+      id: 1, club_id: clubId, title: "Board Games Night", school: "uwaterloo", club: "Board Game Club",
       description: "Games and snacks", location: "SLC", price: 0, food: [], registration: true,
       source_image_url: null, category: null, cancelled: false,
       occurrences: [{ id: dateId, event_id: 1, dtstart_utc: startsAt, dtend_utc: null }],
     } }));
-    await mockApi(page, next, url => apiPath(url) === "/events/1/ticketing", async () => ({ json: {
-      event_id: 1, price_cents: 0, currency: null, capacity: null, paused: false, available: true,
-      maximum_per_order: 1,
-      dates: [{ event_date_id: dateId, dtstart_utc: startsAt, dtend_utc: null, remaining: null, open: true }],
-    } }));
+    const releaseAt = onSaleAt ?? new Date(Date.now() - 86_400_000).toISOString();
+    await mockApi(page, next, url => apiPath(url) === "/events/1/ticketing", async () => {
+      const onSale = Date.parse(releaseAt) <= Date.now();
+      return { json: {
+        event_id: 1, free: true, currency: null, paused: false, available: onSale, maximum_per_order: 1,
+        releases: [{ id: "release-1", on_sale_at: releaseAt, quantity: remaining, price_cents: 0, has_tickets: false }],
+        dates: [{
+          event_date_id: dateId, dtstart_utc: startsAt, dtend_utc: null, price_cents: 0, remaining,
+          on_sale_at: onSale ? null : releaseAt, open: onSale,
+        }],
+      } };
+    });
+    return { startsAt, dateId };
+  }
+
+  test("free tickets are one Get tickets tap, and the ticket shows its QR code on the event page", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const { startsAt, dateId } = await mockFreeTicketedEvent(page, next);
+    let mine: unknown[] = [];
+    let rsvped: unknown = null;
     await mockApi(page, next, url => apiPath(url) === "/events/1/ticketing/tickets", async request => {
       rsvped = await request.json();
       mine = [{
@@ -3359,6 +3376,36 @@ test.describe("Events Page", () => {
     await expect(page.getByRole("img", { name: "QR code for this ticket" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Can't make it? Give your ticket back" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Add to calendar/i })).toBeVisible();
+  });
+
+  test("Get tickets carries how many are left when the club set a limit", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await mockFreeTicketedEvent(page, next, { remaining: 5 });
+    await mockApi(page, next, url => apiPath(url) === "/tickets/mine", async () => ({ json: [] }));
+    await page.goto(`${BASE}/events/1`);
+    await expect(page.getByRole("button", { name: "Get tickets (5 left)", exact: true })).toBeEnabled();
+    await expect(page.getByText("5 left", { exact: true })).toHaveCount(0);
+  });
+
+  test("the hosting club's own team sees Get tickets turned off, and why", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await mockFreeTicketedEvent(page, next, { clubId: 1 });
+    await mockApi(page, next, url => apiPath(url) === "/tickets/mine", async () => ({ json: [] }));
+    await page.goto(`${BASE}/events/1`);
+    await expect(page.getByRole("button", { name: "Get tickets", exact: true })).toBeDisabled();
+    await expect(page.getByText("You run this event, so you can't get tickets to it.")).toBeVisible();
+  });
+
+  test("before tickets go on sale the event says when, and Get tickets turns on at that time", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    const onSaleAt = new Date(Date.now() + 4_000).toISOString();
+    await mockFreeTicketedEvent(page, next, { onSaleAt });
+    await mockApi(page, next, url => apiPath(url) === "/tickets/mine", async () => ({ json: [] }));
+    await page.goto(`${BASE}/events/1`);
+    const getTickets = page.getByRole("button", { name: "Get tickets", exact: true });
+    await expect(getTickets).toBeDisabled();
+    await expect(page.getByText(/^Tickets go on sale /)).toBeVisible();
+    await expect(getTickets).toBeEnabled({ timeout: 15_000 });
   });
 
   for (const hasEndTime of [true, false]) {
@@ -4807,6 +4854,30 @@ test("direct admin clubs visits load both pending tab counts", async ({ page, ne
   await expect(page.getByRole("tab", { name: "Clubs List", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tab", { name: "Claim Requests 1", exact: true })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Club submissions 2", exact: true })).toBeVisible();
+});
+
+test("editing a club saves from the floating save bar, which shows only once something changed", async ({ page, next }) => {
+  await seedAuthenticatedSession(page, next);
+  let patched: unknown = null;
+  await mockApi(page, next, url => apiPath(url) === "/clubs/1", async request => {
+    if (request.method === "PATCH") patched = await request.json();
+    return { json: { ...MOCK_CLUBS[0], ...(patched as object | null) } };
+  });
+  await page.goto(`${BASE}/admin/clubs`);
+  await page.getByRole("row", { name: /UW Tech Club/ }).getByRole("button", { name: "Edit", exact: true }).click();
+  const drawer = page.getByRole("dialog");
+  const saveBar = page.getByTestId("save-bar");
+  await expect(drawer.getByRole("button", { name: "Update Club" })).toHaveCount(0);
+  await expect(saveBar).toHaveCount(0);
+  const name = drawer.getByLabel("Club Name");
+  await name.fill("UW Tech Society");
+  await expect(saveBar).toBeVisible();
+  await saveBar.getByRole("button", { name: "Discard" }).click();
+  await expect(name).toHaveValue("UW Tech Club");
+  await expect(saveBar).toHaveCount(0);
+  await name.fill("UW Tech Society");
+  await saveBar.getByRole("button", { name: "Save", exact: true }).click();
+  await expect.poll(() => (patched as { club_name?: string } | null)?.club_name).toBe("UW Tech Society");
 });
 
 test("club submissions use consistent naming and show multiple schools", async ({ page, next }) => {

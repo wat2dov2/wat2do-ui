@@ -1,9 +1,12 @@
 //! Club tickets: free QR tickets and paid ones, one admission model
-//! (`event_ticketing`, `event_ticketing_dates`, `ticket_orders`, `tickets`).
+//! (`event_ticketing`, `event_ticketing_dates`, `event_ticket_releases`,
+//! `ticket_orders`, `tickets`).
 //!
 //! A club turns tickets on for one of its events, and for the dates of it it
-//! picks, in the event's own form. With a price of zero, anyone signed in
-//! takes a free ticket to a date in one tap. With a price, the
+//! picks, in the event's own form, and sells them in releases (`releases`):
+//! each goes on sale at its own time with its own price and number of tickets
+//! per date. With free releases, anyone signed in (but the club's own team)
+//! takes a free ticket to a date in one tap. With priced ones, the
 //! buyer pays through Stripe Checkout on the club's own Connect Standard
 //! account, so money never passes through wat2do. Every ticket's QR code
 //! holds the link to its page: the holder shows it at the door, and the club
@@ -21,6 +24,7 @@ pub mod holders;
 pub mod model;
 pub mod payouts;
 pub mod refunds;
+pub mod releases;
 pub mod requests;
 pub mod store;
 pub mod stripe;

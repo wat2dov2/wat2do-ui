@@ -40,7 +40,6 @@
     "addClubDescription": "이 조직은 {{school}}에 등록됩니다.",
     "optionalDetailsDescription": "학생들이 조직을 인식할 수 있도록 링크와 조직 유형 세부 정보를 추가하세요.",
     "editClub": "조직 편집",
-    "updateClub": "조직 업데이트",
     "editClubDescription": "아래의 조직 정보를 업데이트하세요",
     "clubCreatedMessage": "조직 \"{{name}}\"이(가) 성공적으로 생성되었습니다!",
     "clubUpdatedMessage": "조직 \"{{name}}\"이(가) 업데이트되었습니다.",
