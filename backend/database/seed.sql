@@ -818,7 +818,7 @@ SELECT
     'Open board game nights with snacks, the kind of night students drop into.',
     'POV: your next game night is packed and you don''t recognize half the room. I''m Tony, and I run Wat2Do.',
     'Your game nights, on Wat2Do',
-    E'Hi Board Games Club team,\n\nI made you a short video.\n\nClaim your page: {{claim_url}}\n\nTony',
+    E'Hi Board Games Club team,\n\nI made you a short video.\n\nThe payout terms:\n{{payout_terms_url}}\n\nClaim your page: {{claim_url}}\n\nTony',
     now()
 FROM public.clubs WHERE club_name = 'UW Board Games Club'
 ORDER BY id LIMIT 1

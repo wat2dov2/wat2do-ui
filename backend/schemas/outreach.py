@@ -23,15 +23,17 @@ class FoundClubEmail(BaseModel):
 
 
 _CLAIM_URL = "{{claim_url}}"
+_PAYOUT_TERMS_URL = "{{payout_terms_url}}"
+_EMAIL_LINKS = (_CLAIM_URL, _PAYOUT_TERMS_URL)
 
 
 class Pitch(BaseModel):
     """Claude's verdict on a lead's club and, for a fit, its video script and email.
 
     A fit's script is a short, relaxed video script (at most one exclamation mark),
-    its email names the claim link exactly once as ``{{claim_url}}`` (the admin page
-    fills it in), and nothing written carries another link, a template key or an em
-    dash.
+    its email names the claim link and the club payout terms exactly once each, as
+    ``{{claim_url}}`` and ``{{payout_terms_url}}`` (the admin page fills them in),
+    and nothing written carries another link, a template key or an em dash.
     """
 
     model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
@@ -53,15 +55,17 @@ class Pitch(BaseModel):
             raise ValueError("script may use at most one exclamation mark")
         if not (1 <= len(self.email_subject) <= 150):
             raise ValueError("email subject must be 1 to 150 characters")
-        if self.email_body.count(_CLAIM_URL) != 1:
-            raise ValueError("email body must name {{claim_url}} exactly once")
+        for link in _EMAIL_LINKS:
+            if self.email_body.count(link) != 1:
+                raise ValueError(f"email body must name {link} exactly once")
         texts = (self.reason, self.script, self.email_subject, self.email_body)
         if any("—" in text for text in texts):
             raise ValueError("no em dashes")
         if any("http" in text.lower() or "www." in text.lower() for text in texts):
-            raise ValueError("no links but the claim link")
-        if any("{{" in text for text in texts[:3]) or "{{" in self.email_body.replace(
-            _CLAIM_URL, ""
-        ):
-            raise ValueError("no template keys but the claim link")
+            raise ValueError("no links but the claim link and the payout terms")
+        body_without_links = self.email_body
+        for link in _EMAIL_LINKS:
+            body_without_links = body_without_links.replace(link, "")
+        if any("{{" in text for text in (*texts[:3], body_without_links)):
+            raise ValueError("no template keys but the claim link and the payout terms")
         return self

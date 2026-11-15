@@ -15,6 +15,7 @@ import {
 } from "@/shared/ui/dialog";
 import { ExternalLink } from "lucide-react";
 import { formatCents } from "@/shared/utils/currency";
+import { formatDayOfMonth } from "@/shared/utils/date";
 
 interface PromoterTermsDialogProps {
   open: boolean;
@@ -32,18 +33,6 @@ const TERMS_SECTIONS = [
   "privacy",
   "changes",
 ] as const;
-
-function formatPayoutDay(day: number, language: string): string {
-  if (!language.toLowerCase().startsWith("en")) {
-    return String(day);
-  }
-  const remainder100 = day % 100;
-  if (remainder100 >= 11 && remainder100 <= 13) {
-    return `${day}th`;
-  }
-  const suffix = { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
-  return `${day}${suffix}`;
-}
 
 export function PromoterTermsDialog({
   open,
@@ -74,7 +63,7 @@ export function PromoterTermsDialog({
   const termsValues = {
     seconds: promoterProgram.landingConfirmationSeconds,
     rate: formatCents(promoterProgram.rateCents, "cad", i18n.language),
-    payoutDay: formatPayoutDay(promoterProgram.payoutDayOfMonth, i18n.language),
+    payoutDay: formatDayOfMonth(promoterProgram.payoutDayOfMonth, i18n.language),
   };
 
   return (

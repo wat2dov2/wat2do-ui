@@ -1,0 +1,444 @@
+{
+  "legal": {
+    "common": {
+      "effective": "Em vigor a partir de {{date}}",
+      "summary": "Em resumo",
+      "contents": "Nesta página",
+      "translationNotice": "Oferecemos esta tradução para sua conveniência. Se ela for diferente da versão em inglês, vale a versão em inglês."
+    },
+    "clubPayoutTerms": {
+      "title": "Termos de pagamento a organizações",
+      "intro": "Estes termos explicam como o Wat2Do paga as organizações estudantis pelas pessoas de quem elas fazem o check-in nos eventos delas com os ingressos QR gratuitos do Wat2Do. Eles são um acordo entre a sua organização e o Wat2Do, então leia tudo antes que a sua organização conte com eles. Se algo não estiver claro, escreva para <email>{{email}}</email>.",
+      "summary": {
+        "rate": "O Wat2Do paga à sua organização {{rate}} por cada participante elegível de quem você fizer o check-in na entrada com os ingressos QR do Wat2Do.",
+        "who": "Sua organização precisa ter uma página reivindicada no Wat2Do em uma destas universidades: {{schools}}. O evento precisa estar publicado no Wat2Do com os ingressos do Wat2Do ativados.",
+        "attendees": "Cada participante conta uma vez por data de evento, com a própria conta do Wat2Do, e precisa estar presente no evento pessoalmente.",
+        "limits": "Pagamos até {{maxPerEventDate}} por uma data de evento, e até {{monthlyCap}} a uma mesma organização por mês civil.",
+        "payment": "Enviamos os pagamentos de cada mês por Interac e-Transfer até o dia {{payoutDay}} do mês seguinte.",
+        "fraud": "Não pagamos por check-ins que não sejam de participantes reais. Podemos reter um pagamento enquanto verificamos, e recuperar pagamentos por check-ins que, no fim, não contam.",
+        "leave": "Sua organização pode sair a qualquer momento e ainda recebe pelos check-ins elegíveis de antes da saída.",
+        "full": "Este resumo deixa detalhes de fora. O que vale são os termos completos abaixo."
+      },
+      "sections": {
+        "about": {
+          "title": "A quem estes termos se aplicam",
+          "p1": "O Wat2Do (\"nós\") opera o wat2do.io, onde estudantes descobrem o que está acontecendo na universidade deles. Nestes termos, \"sua organização\" (ou \"você\") é uma organização estudantil (clube, associação, equipe ou grupo) cuja página no Wat2Do foi reivindicada, e que age por meio das pessoas que gerenciam essa página no Wat2Do (seus \"gerentes\").",
+          "p2": "Um gerente que ativa os ingressos do Wat2Do para um evento, ou que nos envia dados para pagamento, aceita estes termos em nome da organização, e confirma que tem pelo menos 18 anos e autorização para tomar essa decisão por ela. Se esse não é o seu caso, não participe até que alguém que possa fazer isso concorde.",
+          "p3": "Estes termos tratam apenas dos pagamentos a organizações. Nossa <dataPolicy>Política de dados</dataPolicy> explica como tratamos dados pessoais."
+        },
+        "eligibility": {
+          "title": "Quais organizações podem participar",
+          "p1": "Sua organização pode participar enquanto todas estas condições forem atendidas:",
+          "conditions": {
+            "school": "É uma organização liderada por estudantes (clube, associação, equipe ou grupo) em uma destas universidades: {{schools}}.",
+            "claimed": "Um gerente da organização reivindicou a página dela no Wat2Do.",
+            "rules": "Ela organiza os próprios eventos e segue as regras da sua universidade e da sua união estudantil para organizações, incluindo as regras sobre o dinheiro das organizações.",
+            "transfer": "Ela pode receber um Interac e-Transfer em dólares canadenses."
+          },
+          "p2": "Departamentos, escritórios e serviços universitários, empresas e pessoas ou companhias que organizam eventos com fins lucrativos não podem participar. Podemos incluir outras universidades mais tarde atualizando estes termos."
+        },
+        "events": {
+          "title": "Quais eventos contam",
+          "p1": "Um evento gera pagamentos quando todas estas condições são atendidas:",
+          "conditions": {
+            "listed": "Sua organização o realiza, e ele está publicado na página da sua organização no Wat2Do com título, data, horário e local reais.",
+            "tickets": "Os ingressos do Wat2Do estão ativados para ele antes do início, e você faz o check-in das pessoas com o leitor de ingressos do Wat2Do.",
+            "inPerson": "Ele acontece presencialmente, no local e no horário publicados, e os estudantes da sua universidade podem ir.",
+            "rules": "Ele é legal e segue as regras da sua universidade e da sua união estudantil."
+          },
+          "p2": "Estes eventos não geram pagamentos, mesmo que você escaneie ingressos neles:",
+          "excluded": {
+            "meetings": "Reuniões de qualquer tipo, incluindo assembleias gerais, reuniões da diretoria e assembleias anuais, eleições e sessões informativas.",
+            "practices": "Treinos, capacitações, aulas, cursos, monitorias, sessões de estudo e horários de atendimento.",
+            "recruiting": "Eventos de recrutamento, entrevistas e audições.",
+            "sales": "Mesas de vendas e de arrecadação de fundos.",
+            "religious": "Celebrações religiosas.",
+            "private": "Eventos só para a sua diretoria ou para uma lista de convidados.",
+            "notHeld": "Eventos que não aconteceram como publicado no Wat2Do."
+          }
+        },
+        "scans": {
+          "title": "Quais check-ins contam",
+          "p1": "Um check-in é uma leitura elegível, e gera um pagamento, somente quando todas estas condições são atendidas:",
+          "conditions": {
+            "ticket": "O ingresso é um ingresso válido do Wat2Do para aquela data de evento, na própria conta do Wat2Do do participante.",
+            "present": "O participante está pessoalmente no evento quando você escaneia o ingresso dele.",
+            "scanner": "Um gerente faz o check-in do ingresso com a ferramenta de check-in do Wat2Do, escaneando ou digitando o código, enquanto o check-in está aberto para aquela data: de {{opensHours}} antes do início até {{closesHours}} depois do fim.",
+            "first": "É o primeiro check-in dessa conta para aquela data de evento. Escanear a mesma pessoa de novo conta uma vez só.",
+            "notManager": "O participante não é gerente da sua organização no Wat2Do."
+          },
+          "p2": "Nunca contam:",
+          "excluded": {
+            "absent": "Ingressos escaneados sem o participante presente, como capturas de tela ou códigos enviados com antecedência.",
+            "fakeAccounts": "Contas criadas, compradas ou controladas pela sua organização ou pelos membros dela para somar check-ins, e contas que não pertencem a uma pessoa real.",
+            "paid": "Check-ins de pessoas pagas ou recompensadas para fazer o check-in, em vez de virem pelo evento.",
+            "undone": "Check-ins desfeitos, e ingressos reembolsados ou cancelados.",
+            "tests": "Check-ins feitos para testar o leitor.",
+            "otherTools": "Check-ins feitos fora do próprio leitor do Wat2Do, ou por qualquer meio automatizado."
+          },
+          "p3": "O painel da sua organização mostra os check-ins de cada data de evento. Pagamos as leituras elegíveis que constam nos nossos registros depois que terminam as verificações descritas em \"Verificações e fraude\"."
+        },
+        "amount": {
+          "title": "Quanto pagamos",
+          "p1": "Pagamos {{rate}} por cada leitura elegível.",
+          "p2": "Pagamos no máximo {{maxPerEventDate}} por uma mesma data de evento, e no máximo {{monthlyCap}} à sua organização por todas as datas de evento dela em um mesmo mês civil. As leituras elegíveis que passarem de qualquer um desses limites não geram pagamentos.",
+          "p3": "A tarifa e os limites que se aplicam a uma data de evento são os que constam nestes termos naquela data.",
+          "p4": "Os pagamentos são valores promocionais que o Wat2Do paga à sua organização. Não são salário nem remuneração por serviços, e não tornam o Wat2Do organizador, anfitrião ou patrocinador do seu evento. Eles são separados do dinheiro dos ingressos pagos, que vai direto para a própria conta da sua organização na Stripe."
+        },
+        "payment": {
+          "title": "Como e quando pagamos",
+          "p1": "Depois que cada mês civil termina, contamos as leituras elegíveis da sua organização para as datas de evento daquele mês e enviamos um resumo por e-mail aos gerentes dela.",
+          "p2": "Até o dia {{payoutDay}} do mês seguinte, enviamos o pagamento por Interac e-Transfer, em dólares canadenses, para o e-mail de pagamento da sua organização, e pagamos qualquer tarifa que o nosso banco cobre para enviá-lo. Se esse dia não for dia útil em Ontario, enviamos até o dia útil seguinte.",
+          "p3": "Sua organização nos informa um único e-mail de pagamento. Ele precisa poder receber Interac e-Transfers e pertencer à sua organização, ou a quem guarda o dinheiro da sua organização pelas regras da sua união estudantil, como o escritório de organizações da união ou o tesoureiro da sua organização. Se não tivermos um, vamos pedir aos gerentes da sua organização. Depois que um pagamento é depositado, ele não pode ser revertido, então nos avise assim que o seu e-mail de pagamento mudar.",
+          "expired": "Se um Interac e-Transfer expirar antes de alguém depositá-lo, nós o enviamos de novo assim que a sua organização confirmar o e-mail de pagamento.",
+          "p4": "Se a sua organização não nos der uma forma de pagá-la dentro de {{deadlineDays}} após uma data de evento, o pagamento daquela data caduca e deixamos de devê-lo.",
+          "p5": "Sua organização deve lidar com os pagamentos pelas regras da sua universidade e da sua união estudantil, por exemplo depositando-os na conta da própria organização. Se a sua união precisar aprovar dinheiro externo ou patrocínios, consiga essa aprovação antes que a sua organização aceite pagamentos."
+        },
+        "taxes": {
+          "title": "Impostos",
+          "p1": "Sua organização é responsável por quaisquer impostos sobre os seus pagamentos, e cada pagamento inclui o GST ou o HST aplicável, se houver. Não retemos impostos, a menos que a lei nos obrigue.",
+          "p2": "Se a lei nos obrigar a informar os pagamentos a uma autoridade fiscal, por exemplo em um formulário T4A, podemos pedir à sua organização as informações de que precisarmos, incluindo um número de seguro social (Social Insurance Number) somente quando a lei exigir, e reter os pagamentos dela até recebê-las."
+        },
+        "reviews": {
+          "title": "Verificações e fraude",
+          "p1": "Verificamos os check-ins antes de pagar, e podemos verificá-los de novo depois.",
+          "p2": "Podemos pedir à sua organização provas razoáveis de que um evento aconteceu como publicado e de que os check-ins dele são reais, como fotos, posts sobre o evento ou uma contagem de pessoas. Se a sua organização não enviar isso dentro de {{proofDays}} após o nosso pedido, podemos considerar esses check-ins como não elegíveis.",
+          "p3": "Podemos reter, por até {{holdDays}} após a data de pagamento, o pagamento dos check-ins que estamos verificando, e depois pagar os que considerarmos elegíveis. Não pagamos por check-ins que acreditamos, com motivos razoáveis, não serem leituras elegíveis.",
+          "clawback": "Se, dentro de {{clawbackDays}} após um pagamento, descobrirmos que ele cobriu check-ins que não eram leituras elegíveis, sua organização nos deve esse valor. Primeiro descontamos dos próximos pagamentos da sua organização, e pedimos que ela devolva o que faltar. Os pagamentos pelos outros check-ins dela, que são elegíveis, continuam sendo feitos.",
+          "p4": "Se uma organização violar estes termos de propósito ou mais de uma vez, por exemplo escaneando contas falsas ou ingressos sem participante, podemos removê-la do programa, cancelar os pagamentos ainda devidos pelos eventos envolvidos e limitar o uso que ela faz do Wat2Do.",
+          "p5": "Tomamos essas decisões de forma razoável e de boa-fé, e informamos o motivo à sua organização."
+        },
+        "disputes": {
+          "title": "Dúvidas e contestações",
+          "p1": "Se você acha que um pagamento está errado, escreva para <email>{{email}}</email> dentro de {{disputeDays}} após o envio, ou após a data de pagamento, se ele nunca chegou. Diga qual é o evento e o que você acha que está errado.",
+          "p2": "Analisamos o caso, sempre que possível com alguém que não tomou a primeira decisão, e respondemos com a nossa decisão dentro de {{replyDays}}. Se devermos mais à sua organização, pagamos esse valor com o próximo pagamento ou antes.",
+          "talkFirst": "Antes que qualquer uma das partes vá à Justiça por causa destes termos, as duas partes tentarão, de boa-fé, resolver a questão por e-mail durante 30 dias."
+        },
+        "responsibilities": {
+          "title": "Responsabilidades da sua organização",
+          "p1": "Sua organização é responsável pelos seus eventos, incluindo planejamento, segurança, acessibilidade, comida, bebidas alcoólicas, lotação, seguro e reembolsos, e por cumprir a lei e as regras da sua universidade.",
+          "p2": "Mantenha corretas as informações dos seus eventos publicados, e avise os participantes de que você vai escanear os ingressos do Wat2Do deles na entrada.",
+          "p3": "Use os dados dos participantes que você vê no Wat2Do apenas para realizar o seu evento. Não os copie, venda nem compartilhe.",
+          "p4": "Mantenha seguro o acesso à sua conta do Wat2Do, e nos avise em <email>{{email}}</email> se achar que alguém usou indevidamente a página da sua organização.",
+          "describe": "Descreva os pagamentos com precisão: eles vão para a sua organização, não para as pessoas de quem você faz o check-in. Não dê a entender que a sua universidade ou a sua união estudantil administra ou endossa o Wat2Do ou estes pagamentos."
+        },
+        "names": {
+          "title": "Nomes e logotipos",
+          "p1": "Podemos dizer publicamente que a sua organização participa, usando o nome e o logotipo da página dela no Wat2Do. Você pode dizer às pessoas que o seu evento usa ingressos do Wat2Do, mas não use o nome ou o logotipo do Wat2Do de um jeito que dê a entender que organizamos ou patrocinamos o seu evento."
+        },
+        "privacy": {
+          "title": "Dados pessoais",
+          "p1": "Para fazer os pagamentos, usamos os registros de check-in da sua organização, as contas que têm os ingressos que você escaneia, os nomes e e-mails dos gerentes da sua organização e o e-mail de pagamento da sua organização. Usamos esses dados para contar e verificar as leituras, enviar pagamentos, evitar fraudes e manter os registros que a lei exige.",
+          "p2": "Nossa <dataPolicy>Política de dados</dataPolicy> explica como tratamos dados pessoais, incluindo os dos participantes, e as escolhas que as pessoas têm sobre eles."
+        },
+        "changes": {
+          "title": "Mudanças e saída",
+          "p1": "Podemos mudar estes termos, incluindo a tarifa e os limites, ou encerrar os pagamentos por completo. Publicamos cada mudança nesta página com uma nova data de vigência.",
+          "p2": "Uma mudança que reduza o que pagamos às organizações, ou o fim dos pagamentos, só se aplica a datas de evento que caiam pelo menos {{noticeDays}} depois da publicação, e avisamos os gerentes das organizações por e-mail quando a publicamos. As outras mudanças se aplicam às datas de evento posteriores à publicação.",
+          "p3": "Nenhuma mudança reduz os pagamentos de datas de evento anteriores à sua entrada em vigor.",
+          "p4": "Sua organização pode sair a qualquer momento escrevendo para <email>{{email}}</email> ou desativando os ingressos do Wat2Do para os eventos dela. Mesmo assim, pagamos as leituras elegíveis de antes da saída.",
+          "survival": "Se a sua organização sair ou os pagamentos terminarem, continuam valendo as partes destes termos sobre pagamentos já gerados, impostos, verificações, recuperação de pagamentos e a parte jurídica.",
+          "archive": "Guardamos as versões anteriores destes termos, e enviaremos uma cópia se você nos escrever."
+        },
+        "legal": {
+          "title": "A parte jurídica",
+          "p1": "Sua organização e o Wat2Do são independentes um do outro. Nada nestes termos torna qualquer um deles sócio, empregador, empregado ou agente do outro.",
+          "p2": "Oferecemos o leitor de ingressos do Wat2Do e o resto do site do jeito que estão. Trabalhamos para manter o check-in funcionando, mas não podemos prometer que ele nunca vai falhar. Se ele falhar durante o seu evento, podemos contar os check-ins que a sua organização conseguir comprovar de outra forma, embora não sejamos obrigados a isso.",
+          "p3": "Na medida em que a lei permitir, a responsabilidade total de cada parte perante a outra com base nestes termos fica limitada ao maior valor entre {{liabilityFloor}} e os pagamentos que fizemos ou devíamos à sua organização nos 12 meses anteriores à reclamação, e nenhuma das partes é responsável por perdas indiretas, como receita perdida ou o custo de um evento. Esses limites não se aplicam aos pagamentos que devemos, nem a casos de fraude ou conduta dolosa.",
+          "p4": "Estes termos são regidos pelas leis de Ontario e pelas leis federais do Canadá aplicáveis em Ontario, e os tribunais de Ontario decidem qualquer disputa sobre eles.",
+          "delays": "Nenhuma das partes é responsável por atrasos causados por circunstâncias fora do seu controle razoável, como falhas nos nossos fornecedores ou bancos, mas essas circunstâncias não cancelam pagamentos já gerados.",
+          "p5": "Se um tribunal considerar alguma disposição destes termos inexequível, o restante continua valendo. Se não exigirmos o cumprimento de uma disposição imediatamente, ainda podemos exigi-lo depois. Sua organização não pode transferir a ninguém os direitos que tem com base nestes termos.",
+          "notices": "Enviamos os avisos sobre estes termos para os e-mails das contas do Wat2Do dos gerentes da sua organização, e você envia os seus para <email>{{email}}</email>.",
+          "p6": "Estes termos são o acordo completo entre a sua organização e o Wat2Do sobre os pagamentos. Nós os escrevemos em inglês. Se uma tradução for diferente, vale a versão em inglês."
+        },
+        "contact": {
+          "title": "Contato",
+          "p1": "Envie dúvidas sobre estes termos ou sobre um pagamento para <email>{{email}}</email>, com o nome da sua organização.",
+          "formats": "Se você precisar destes termos em outro formato, como em fonte ampliada, escreva para nós e vamos fornecê-lo."
+        }
+      }
+    },
+    "dataPolicy": {
+      "title": "Política de dados",
+      "intro": "Esta política explica quais dados pessoais o Wat2Do coleta, por quê, com quem os compartilhamos, por quanto tempo os guardamos e quais escolhas você tem. Ela abrange o wat2do.io e cada site de universidade dentro dele (como uwaterloo.wat2do.io), os e-mails que enviamos e as contas do Instagram que administramos para cada universidade. Se tiver alguma dúvida, escreva para <email>{{email}}</email>.",
+      "summary": {
+        "collect": "Coletamos o que você nos informa (seu e-mail, universidade, faculdade e interesses), o que você faz no Wat2Do (eventos a que você vai ou que salva, ingressos, organizações que segue) e alguns dados técnicos, como uma forma embaralhada do seu endereço IP.",
+        "noSale": "Não vendemos seus dados pessoais e não mostramos anúncios.",
+        "share": "Quando você marca que vai a um evento, outros visitantes veem seu primeiro nome, a inicial do seu sobrenome e sua foto, e as organizações veem seu nome e seu e-mail quando você tem um ingresso para o evento delas. Empresas como Amazon Web Services, Cloudflare e Google operam partes do Wat2Do para nós, algumas delas fora do Canadá.",
+        "analytics": "Usamos o Google Analytics para contar visitas, e removemos códigos e endereços de e-mail dos endereços de página que ele recebe.",
+        "public": "Também usamos informações públicas: eventos de organizações tirados de posts públicos do Instagram e os e-mails de contato que as organizações publicam na internet.",
+        "choices": "Você pode desativar nossos e-mails a qualquer momento, mudar seu perfil em Configurações e nos pedir para mostrar, corrigir ou excluir suas informações.",
+        "contact": "Envie dúvidas e pedidos para <email>{{email}}</email>."
+      },
+      "sections": {
+        "who": {
+          "title": "Quem somos",
+          "p1": "O Wat2Do é um site que mostra aos estudantes o que está acontecendo na universidade deles. Ele foi criado por estudantes da University of Waterloo, e nós o operamos a partir do Canadá. Nesta política, \"Wat2Do\" e \"nós\" significam as pessoas que o operam.",
+          "p2": "A pessoa que fundou o Wat2Do é responsável por proteger os dados pessoais (nosso responsável pela privacidade) e responde pela forma como o Wat2Do os trata. Você pode falar com essa pessoa em <email>{{email}}</email>.",
+          "governance": "Nosso responsável pela privacidade aprova como coletamos e usamos dados pessoais, responde a pedidos e reclamações, mantém um registro de incidentes de privacidade e revisa esta política pelo menos uma vez por ano."
+        },
+        "collect": {
+          "title": "O que coletamos",
+          "p1": "O que coletamos depende de como você usa o Wat2Do. Você pode ver eventos, organizações e vagas sem conta, e uma conta precisa só do seu e-mail; tudo o mais que você adicionar é escolha sua. Coletamos estas informações de você:",
+          "fromYou": {
+            "account": {
+              "term": "Sua conta.",
+              "text": "Seu e-mail, com o qual você entra por um código ou link de uso único, ou pelo Google. No login com o Google, guardamos apenas seu e-mail verificado, não seu nome nem sua foto do Google. Nunca pedimos senha."
+            },
+            "profile": {
+              "term": "Seu perfil.",
+              "text": "Sua universidade, que identificamos pelo site de universidade em que você se cadastra, e tudo o que você adicionar: uma foto, sua faculdade, seus interesses, se você está no primeiro ano e seu idioma."
+            },
+            "activity": {
+              "term": "O que você faz no Wat2Do.",
+              "text": "Eventos que você marca com \"Vou participar\" ou salva, organizações que você segue, ingressos que você garante, quando uma organização faz o seu check-in e pedidos de reembolso que você envia."
+            },
+            "submissions": {
+              "term": "O que você nos envia.",
+              "text": "Eventos, vagas e organizações que você envia, com seu e-mail para podermos informar nossa decisão, cartazes que você pede para lermos e eventos que você sinaliza."
+            },
+            "clubs": {
+              "term": "Se você gerencia uma organização.",
+              "text": "A organização que você gerencia e o seu papel nela, os e-mails das pessoas que você convida, a comprovação que você envia ao reivindicar uma organização e o e-mail de pagamento da sua organização, se ela participar dos pagamentos a organizações."
+            },
+            "promoters": {
+              "term": "Se você promove o Wat2Do.",
+              "text": "Seu e-mail de pagamento, quando você aceitou os termos de promotor e os pôsteres que você cria."
+            },
+            "messages": {
+              "term": "Mensagens.",
+              "text": "O que você escreve nos nossos formulários de contato e de indicação de negócios, que chegam às nossas caixas de entrada de e-mail, e as mensagens que você envia às nossas contas do Instagram."
+            }
+          },
+          "p2": "Coletamos algumas informações automaticamente:",
+          "automatic": {
+            "usage": {
+              "term": "Como você usa o site.",
+              "text": "Cliques, visualizações e compartilhamentos de eventos, vinculados à sua conta quando você está com a sessão iniciada e, caso contrário, a um ID aleatório que vale para uma única aba do navegador. Também guardamos as palavras que você pesquisa e os filtros que usa, sem vinculá-los a você."
+            },
+            "network": {
+              "term": "Dispositivo e rede.",
+              "text": "Uma forma embaralhada (com hash) do seu endereço IP, que usamos para limitar abusos e identificar cliques falsos e leituras falsas de pôsteres. Não guardamos o seu endereço IP em si no nosso banco de dados, mas as empresas que entregam o site o veem, e os logs do nosso servidor o registram quando uma requisição ultrapassa nossos limites de frequência. Nas leituras de pôsteres, também guardamos o tipo do seu navegador e do seu sistema, como Chrome no iOS."
+            },
+            "location": {
+              "term": "Localização, só se você permitir.",
+              "text": "Quando você escaneia um pôster do Wat2Do que ainda não tem localização, seu navegador pode pedir para compartilhar a sua localização. Se você permitir, nós a salvamos como a localização do pôster, não com a sua leitura nem com a sua conta."
+            }
+          },
+          "p3": "Também coletamos informações de fontes públicas:",
+          "public": {
+            "posts": {
+              "term": "Posts de organizações.",
+              "text": "Lemos os posts públicos do Instagram das organizações estudantis para listar os eventos e as vagas delas. Guardamos o texto, as imagens e o vídeo de cada post, a conta que o publicou e os nomes de usuário marcados nele, e copiamos as fotos de perfil das organizações para usar como logotipos delas."
+            },
+            "contacts": {
+              "term": "Contatos de organizações.",
+              "text": "Coletamos os e-mails que as organizações publicam nas próprias páginas e nos diretórios das universidades, para podermos convidá-las a reivindicar a página delas no Wat2Do."
+            },
+            "instagram": {
+              "term": "Contas do Instagram.",
+              "text": "Nossas contas de cada universidade recebem notificações e mensagens, e lemos as listas de contas que as organizações seguem para encontrar outras organizações. Guardamos os nomes de usuário e os nomes de contas públicas que poderíamos seguir."
+            },
+            "feedback": {
+              "term": "Posts públicos sobre apps para estudantes.",
+              "text": "Lemos posts públicos no X e no Reddit sobre apps como o nosso para entender o que os estudantes querem, e guardamos cada post, o nome de usuário do autor e o link dele."
+            }
+          }
+        },
+        "use": {
+          "title": "Como os usamos",
+          "p1": "Usamos dados pessoais apenas para estas finalidades:",
+          "purposes": {
+            "account": "Para gerenciar sua conta, fazer seu login e manter sua sessão ativa.",
+            "show": "Para mostrar a você o que está acontecendo na sua universidade, e os eventos que você salvou, a que vai ou para os quais tem ingressos.",
+            "emails": "Para enviar os e-mails que você controla: o e-mail matinal de eventos, lembretes antes dos eventos a que você vai e alertas quando algum deles muda. Também enviamos e-mails de que você precisa, como códigos de login, ingressos e nossas decisões sobre o que você enviou.",
+            "tickets": "Para emitir ingressos e permitir que as organizações façam o seu check-in.",
+            "payouts": "Para pagar promotores e organizações dos nossos programas de pagamento, e para manter os registros que a lei exige.",
+            "safety": "Para manter o Wat2Do seguro: limitar abusos, detectar contas falsas, cliques falsos e leituras falsas, e investigar problemas.",
+            "improve": "Para contar visitas e ver quais páginas e recursos as pessoas usam, com o Google Analytics e nossos próprios registros de cliques, para podermos corrigi-los e melhorá-los.",
+            "clubs": "Para listar eventos de organizações, convidar organizações a reivindicar suas páginas e responder às mensagens enviadas às nossas contas do Instagram.",
+            "law": "Para cumprir a lei e atender a solicitações legais."
+          },
+          "p2": "Parte desse trabalho usa IA. O Claude, um modelo criado pela Anthropic, lê os posts públicos das organizações e as mensagens que nossas contas do Instagram recebem, para listar eventos e ajudar a decidir como responder. Os modelos da OpenAI leem os cartazes que você pede para lermos. Nada disso toma decisões sobre você com efeitos jurídicos ou igualmente significativos.",
+          "training": "Não usamos seus dados pessoais para treinar modelos de IA.",
+          "p3": "Não vendemos nem alugamos dados pessoais, e não os usamos para publicidade."
+        },
+        "emails": {
+          "title": "E-mails",
+          "p1": "Enviamos dois tipos de e-mail. Os e-mails de que você precisa, como códigos de login, ingressos, decisões sobre o que você enviou e respostas a você, sempre chegam. Os e-mails de notificação sobre eventos (o e-mail matinal, os lembretes e os alertas de alteração) vêm ativados quando você se cadastra, e você pode desativar cada um deles em Configurações ou pelo link de cancelamento de inscrição que vem nele. Paramos de enviá-los em até 10 dias úteis, e geralmente na hora.",
+          "p2": "Também enviamos e-mails para as organizações, nos endereços que elas publicam, sobre a própria página delas no Wat2Do. Uma organização pode nos pedir para parar a qualquer momento."
+        },
+        "sharing": {
+          "title": "Quem vê e com quem compartilhamos",
+          "p1": "Parte do que você faz no Wat2Do fica visível para outras pessoas:",
+          "visible": {
+            "going": "Quando você marca que vai, quem vê o evento pode ver seu primeiro nome, a inicial do seu sobrenome e sua foto entre as pessoas que vão.",
+            "tickets": "Quando você tem um ingresso, a organização responsável pelo evento vê seu nome (ou o início do seu e-mail), seu e-mail, o código do seu ingresso, quando foi feito o seu check-in e qualquer pedido de reembolso. Se uma organização ativar ingressos para um evento a que você disse que vai, emitimos um ingresso para você e a organização vê os mesmos dados.",
+            "teams": "As pessoas que gerenciam a mesma organização veem os nomes, e-mails e fotos umas das outras.",
+            "submissions": "Os eventos, vagas e organizações que publicamos a partir do que você envia são públicos, mas o seu e-mail não."
+          },
+          "p2": "Compartilhamos dados pessoais com empresas que operam partes do Wat2Do para nós, e apenas o que cada uma precisa para esse trabalho:",
+          "providers": {
+            "aws": {
+              "term": "Amazon Web Services:",
+              "text": "hospeda o site e envia nossos e-mails, a partir do Canadá."
+            },
+            "cloudflare": {
+              "term": "Cloudflare:",
+              "text": "entrega o site e armazena imagens e vídeos, na América do Norte."
+            },
+            "google": {
+              "term": "Google:",
+              "text": "o login com Google, o Google Analytics e os mapas nas páginas de eventos."
+            },
+            "ai": {
+              "term": "Anthropic e OpenAI:",
+              "text": "leem posts, cartazes e mensagens, como descrito acima."
+            },
+            "stripe": {
+              "term": "Stripe:",
+              "text": "processa o pagamento quando uma organização vende ingressos. A Stripe recebe o e-mail e os dados do cartão de quem compra e também os usa de acordo com a própria política de privacidade; nunca vemos nem guardamos números de cartão."
+            },
+            "github": {
+              "term": "GitHub:",
+              "text": "processa as notificações que nossas contas do Instagram de cada universidade recebem."
+            },
+            "meta": {
+              "term": "Meta:",
+              "text": "opera o Instagram, onde publicamos nas nossas contas de cada universidade."
+            },
+            "maps": {
+              "term": "Serviços do OpenStreetMap:",
+              "text": "fornecem imagens de mapas e localizam os endereços dos eventos no mapa."
+            },
+            "bank": {
+              "term": "Nosso banco:",
+              "text": "envia os pagamentos por Interac e-Transfer."
+            }
+          },
+          "p3": "Também podemos compartilhar dados pessoais quando a lei exigir, para proteger a segurança, os direitos ou os bens de alguém, ou como parte de uma fusão ou venda do Wat2Do; nesse caso, esta política continua valendo para esses dados."
+        },
+        "cookies": {
+          "title": "Cookies, métricas e armazenamento do navegador",
+          "p1": "Usamos estes cookies e este armazenamento do navegador:",
+          "items": {
+            "signIn": {
+              "term": "Cookies de login:",
+              "text": "mantêm sua sessão ativa por até {{sessionDays}} e avisam às páginas que você entrou na sua conta. O login com Google adiciona um que dura 10 minutos."
+            },
+            "theme": {
+              "term": "Cookie de tema:",
+              "text": "lembra o modo claro ou escuro por um ano."
+            },
+            "poster": {
+              "term": "Cookie de visitante de pôster:",
+              "text": "um ID aleatório, guardado por dois anos, que nos permite contar leituras únicas de pôsteres sem saber quem você é."
+            },
+            "storage": {
+              "term": "Armazenamento do navegador:",
+              "text": "guarda seu idioma, uma cópia do seu perfil para as páginas carregarem mais rápido e dados de uma aba do navegador, como seus filtros."
+            },
+            "analytics": {
+              "term": "Google Analytics:",
+              "text": "define os próprios cookies para medir quantas pessoas visitam o site e quais páginas elas usam. Removemos códigos, links e endereços de e-mail dos endereços de página que enviamos a ele."
+            }
+          },
+          "p2": "Você pode bloquear ou apagar cookies nas configurações do seu navegador, mas precisa dos cookies de login para continuar na sua conta. Para desativar o Google Analytics em todos os sites, use o complemento do navegador para desativação do Google Analytics, oferecido pelo Google, ou bloqueie os cookies dele.",
+          "tracking": "Nossas páginas carregam mapas do Google e do OpenFreeMap, e o Google Analytics mede as visitas, então essas empresas recebem seu endereço IP e dados do seu navegador de acordo com as próprias políticas de privacidade. Não usamos redes de publicidade, e o Wat2Do não muda o que coleta em resposta aos sinais Do Not Track ou Global Privacy Control."
+        },
+        "location": {
+          "title": "Onde os armazenamos",
+          "p1": "Nosso banco de dados roda no nosso próprio servidor no Canadá. Nosso site e nossos serviços de e-mail rodam na Amazon Web Services no Canadá, e a Cloudflare armazena imagens e vídeos na América do Norte. Algumas das empresas com que trabalhamos, como Google, Anthropic, OpenAI, Stripe, GitHub e Meta, processam informações nos Estados Unidos ou em outros lugares.",
+          "p2": "As informações processadas fora do Canadá estão sujeitas às leis do país em questão, e os tribunais, a polícia e as agências de segurança desse país podem conseguir acessá-las. Escolhemos fornecedores que protegem dados pessoais, e enviamos a cada um apenas o que ele precisa.",
+          "quebec": "Se você está no Quebec, seus dados pessoais podem ser comunicados para fora do Quebec, como descrito acima. Para saber quais fornecedores fora do Canadá tratam suas informações e por quê, escreva para <email>{{email}}</email>."
+        },
+        "retention": {
+          "title": "Por quanto tempo os guardamos",
+          "p1": "Guardamos dados pessoais apenas pelo tempo necessário para as finalidades acima, ou pelo tempo que a lei exigir:",
+          "periods": {
+            "account": {
+              "term": "Sua conta e seu perfil:",
+              "text": "até você nos pedir para excluir sua conta, o que fazemos em até 30 dias."
+            },
+            "signIn": {
+              "term": "Códigos de login e sessões:",
+              "text": "os códigos expiram após {{codeMinutes}}, e uma sessão termina {{sessionDays}} depois da última vez que você a usou."
+            },
+            "activity": {
+              "term": "Eventos marcados com \"Vou participar\", eventos salvos, organizações seguidas e ingressos:",
+              "text": "até você removê-los ou excluir sua conta."
+            },
+            "usage": {
+              "term": "Cliques, pesquisas e leituras de pôsteres:",
+              "text": "nós os guardamos sem o seu nome, e quando você exclui sua conta desvinculamos seus cliques dela."
+            },
+            "emails": {
+              "term": "Registros de e-mails:",
+              "text": "enquanto sua conta existir, guardamos um registro de quais e-mails enviamos a você, sem o conteúdo deles."
+            },
+            "payouts": {
+              "term": "Registros de pagamentos:",
+              "text": "seis anos após o pagamento, como exige a legislação tributária canadense."
+            },
+            "outreach": {
+              "term": "Contatos de organizações:",
+              "text": "com nossas anotações sobre se entramos em contato com a organização. Se uma organização pedir, paramos de contatá-la e excluímos os contatos dela."
+            },
+            "messages": {
+              "term": "Mensagens:",
+              "text": "pelo tempo que precisarmos para responder a você e manter um registro da conversa."
+            },
+            "logs": {
+              "term": "Logs:",
+              "text": "os logs do nosso site são excluídos após 14 dias. Os logs do próprio servidor podem conter endereços IP ou endereços de e-mail, e só os guardamos pelo tempo necessário para operar e consertar o Wat2Do."
+            }
+          }
+        },
+        "security": {
+          "title": "Como os protegemos",
+          "p1": "Protegemos dados pessoais com medidas adequadas à sensibilidade deles: conexões criptografadas, login sem senha, códigos de login, tokens de sessão e endereços IP com hash, regras de banco de dados que mantêm privados os registros de cada pessoa e acesso limitado às pessoas que precisam dele.",
+          "p2": "Nenhum sistema é perfeitamente seguro. Se uma violação das nossas medidas de segurança envolvendo seus dados pessoais criar um risco real de dano significativo para você, avisaremos você e o Escritório do Comissário de Privacidade do Canadá (Office of the Privacy Commissioner of Canada), como a lei exige."
+        },
+        "rights": {
+          "title": "Suas escolhas e direitos",
+          "p1": "Por conta própria, você pode:",
+          "choices": {
+            "emails": "Desativar o e-mail matinal, os lembretes e os alertas de alteração em Configurações, ou pelo link de cancelamento de inscrição em qualquer um deles. Códigos de login e ingressos continuam chegando, porque você precisa deles.",
+            "profile": "Mudar sua foto, universidade, faculdade, interesses e idioma em Configurações.",
+            "activity": "Remover quando quiser os eventos a que vai ou que salvou, e as organizações que segue.",
+            "analytics": "Bloquear os cookies do Google Analytics no seu navegador."
+          },
+          "p2": "Você também pode nos pedir para:",
+          "requests": {
+            "access": "Dizer quais dados pessoais temos sobre você, como os usamos e com quem os compartilhamos.",
+            "copy": "Dar a você uma cópia das informações que você nos forneceu, em um formato comum que um computador consiga ler.",
+            "correct": "Corrigir informações erradas ou incompletas.",
+            "delete": "Excluir sua conta e seus dados pessoais.",
+            "withdraw": "Parar de usar suas informações para uma finalidade com a qual você concordou, a menos que a lei nos obrigue a mantê-las.",
+            "stopPublishing": "Parar de mostrar suas informações publicamente, ou desindexá-las, quando a lei der esse direito a você."
+          },
+          "p3": "Escreva para <email>{{email}}</email> a partir do endereço da sua conta. É gratuito, e respondemos em até 30 dias. Talvez precisemos confirmar que é você, e podemos manter algumas informações que a lei nos obriga a guardar, como registros de pagamentos.",
+          "p4": "Se você não ficar satisfeito com a nossa resposta, pode reclamar ao Escritório do Comissário de Privacidade do Canadá (Office of the Privacy Commissioner of Canada). No Quebec, você também pode recorrer à Commission d'accès à l'information, e em Alberta ou na Colúmbia Britânica, ao Comissário de Informação e Privacidade dessa província."
+        },
+        "others": {
+          "title": "Se você não usa o Wat2Do",
+          "p1": "Algumas informações que temos são sobre pessoas que não usam o Wat2Do: nomes de usuário marcados no post público de uma organização, mensagens enviadas às nossas contas do Instagram e e-mails de organizações publicados na internet.",
+          "p2": "Quando você manda mensagem para uma das nossas contas do Instagram, lemos sua mensagem e qualquer post que você compartilhar para poder responder, e a IA ajuda a decidir como. Guardamos um registro curto de cada conversa (o nome da conta e a última mensagem) para saber quais já respondemos, e as palavras de uma organização quando ela nos pede para corrigir um dos eventos dela publicados no Wat2Do. Nunca gravamos o texto das mensagens nos nossos logs.",
+          "p3": "Você tem os mesmos direitos que qualquer outra pessoa: pode perguntar o que temos sobre você e pedir que removamos essas informações. Uma organização também pode nos pedir para deixá-la de fora dos nossos posts no Instagram, ou para parar de entrar em contato com ela."
+        },
+        "children": {
+          "title": "Crianças",
+          "p1": "O Wat2Do é para estudantes de universidades e faculdades. Ele não se destina a crianças com menos de 13 anos, e não coletamos os dados delas intencionalmente. No Quebec, quem tem menos de 14 anos precisa do consentimento de um dos pais ou do responsável legal antes de nos fornecer dados pessoais. Se você acha que uma criança nos forneceu dados pessoais sem o consentimento necessário, escreva para nós e vamos excluí-los."
+        },
+        "changes": {
+          "title": "Mudanças nesta política",
+          "p1": "Publicamos cada mudança nesta página com uma nova data de vigência, e guardamos as versões anteriores, que enviaremos se você pedir. Antes que uma mudança significativa passe a valer, como um novo uso das suas informações, avisaremos você por e-mail ou no Wat2Do e pediremos seu consentimento quando a lei exigir. Não usaremos de uma nova forma as informações que já temos sem o consentimento que a lei exige."
+        },
+        "contact": {
+          "title": "Contato",
+          "p1": "Envie dúvidas, pedidos e reclamações sobre privacidade para <email>{{email}}</email>."
+        }
+      }
+    }
+  }
+}

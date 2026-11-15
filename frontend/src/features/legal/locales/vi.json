@@ -1,0 +1,444 @@
+{
+  "legal": {
+    "common": {
+      "effective": "Có hiệu lực từ {{date}}",
+      "summary": "Tóm tắt ngắn gọn",
+      "contents": "Trên trang này",
+      "translationNotice": "Chúng tôi cung cấp bản dịch này để bạn tiện theo dõi. Nếu bản dịch khác với bản tiếng Anh, bản tiếng Anh sẽ được áp dụng."
+    },
+    "clubPayoutTerms": {
+      "title": "Điều khoản chi trả cho tổ chức",
+      "intro": "Các điều khoản này giải thích cách Wat2Do chi trả cho các tổ chức sinh viên theo số người mà họ check-in tại sự kiện của mình bằng vé QR miễn phí của Wat2Do. Đây là thỏa thuận giữa tổ chức của bạn và Wat2Do, vì vậy hãy đọc toàn bộ trước khi tổ chức của bạn dựa vào các điều khoản này. Nếu có điều gì chưa rõ, hãy gửi email cho chúng tôi tại <email>{{email}}</email>.",
+      "summary": {
+        "rate": "Wat2Do trả cho tổ chức của bạn {{rate}} cho mỗi người tham dự hợp lệ mà bạn check-in tại cửa bằng vé QR của Wat2Do.",
+        "who": "Tổ chức của bạn cần có một trang Wat2Do đã được nhận quản lý tại một trong các trường sau: {{schools}}. Sự kiện phải được đăng trên Wat2Do và đã bật vé Wat2Do.",
+        "attendees": "Mỗi người tham dự chỉ được tính một lần cho mỗi ngày sự kiện, bằng tài khoản Wat2Do của chính họ, khi có mặt trực tiếp tại sự kiện.",
+        "limits": "Chúng tôi trả tối đa {{maxPerEventDate}} cho một ngày sự kiện, và tối đa {{monthlyCap}} cho một tổ chức trong một tháng dương lịch.",
+        "payment": "Chúng tôi gửi khoản chi trả của mỗi tháng qua Interac e-Transfer chậm nhất vào ngày {{payoutDay}} của tháng tiếp theo.",
+        "fraud": "Chúng tôi không trả tiền cho những lượt check-in không phải người tham dự thật. Chúng tôi có thể tạm giữ khoản chi trả trong lúc kiểm tra, và thu hồi khoản chi trả cho những lượt check-in mà sau đó được xác định là không được tính.",
+        "leave": "Tổ chức của bạn có thể rút khỏi chương trình bất cứ lúc nào và vẫn được trả tiền cho các lượt check-in hợp lệ có từ trước khi rút.",
+        "full": "Bản tóm tắt này lược bớt các chi tiết. Các điều khoản đầy đủ bên dưới mới là nội dung được áp dụng."
+      },
+      "sections": {
+        "about": {
+          "title": "Các điều khoản này áp dụng cho ai",
+          "p1": "Wat2Do (“chúng tôi”) vận hành wat2do.io, nơi sinh viên tìm hiểu những gì đang diễn ra ở trường mình. Trong các điều khoản này, “tổ chức của bạn” (hoặc “bạn”) được hiểu là một tổ chức, hội, đội hoặc nhóm sinh viên có trang Wat2Do đã được nhận quản lý, và hành động thông qua những người quản lý trang đó trên Wat2Do (gọi là “người quản lý tổ chức”).",
+          "p2": "Người quản lý tổ chức nào bật vé Wat2Do cho một sự kiện, hoặc gửi cho chúng tôi thông tin nhận tiền, được xem là đã thay mặt tổ chức chấp nhận các điều khoản này, và xác nhận rằng mình đủ 18 tuổi trở lên và được phép đưa ra quyết định đó cho tổ chức. Nếu bạn không đáp ứng các điều kiện này, đừng tham gia cho đến khi có một người đủ điều kiện đồng ý.",
+          "p3": "Các điều khoản này chỉ áp dụng cho việc chi trả cho tổ chức. <dataPolicy>Chính sách dữ liệu</dataPolicy> của chúng tôi giải thích cách chúng tôi xử lý thông tin cá nhân."
+        },
+        "eligibility": {
+          "title": "Tổ chức nào được tham gia",
+          "p1": "Tổ chức của bạn được tham gia chừng nào vẫn đáp ứng tất cả các điều kiện sau:",
+          "conditions": {
+            "school": "Là một tổ chức, hội, đội hoặc nhóm do sinh viên điều hành tại một trong các trường sau: {{schools}}.",
+            "claimed": "Một người quản lý tổ chức đã nhận quản lý trang của tổ chức trên Wat2Do.",
+            "rules": "Tự điều hành các sự kiện của mình và tuân thủ quy định dành cho tổ chức của trường và của hội sinh viên, bao gồm cả quy định về tài chính của tổ chức.",
+            "transfer": "Có khả năng nhận Interac e-Transfer bằng đô la Canada."
+          },
+          "p2": "Các khoa, văn phòng và dịch vụ của trường đại học, các doanh nghiệp, cũng như cá nhân hoặc công ty tổ chức sự kiện vì lợi nhuận không được tham gia. Chúng tôi có thể bổ sung thêm trường sau này bằng cách cập nhật các điều khoản này."
+        },
+        "events": {
+          "title": "Sự kiện nào được tính",
+          "p1": "Một sự kiện được nhận chi trả khi đáp ứng tất cả các điều kiện sau:",
+          "conditions": {
+            "listed": "Sự kiện do tổ chức của bạn điều hành và được đăng trên trang Wat2Do của tổ chức bạn với đúng tên, ngày, giờ và địa điểm thực tế.",
+            "tickets": "Vé Wat2Do được bật cho sự kiện trước khi sự kiện bắt đầu, và bạn check-in cho mọi người bằng trình quét check-in của Wat2Do.",
+            "inPerson": "Sự kiện diễn ra trực tiếp, đúng địa điểm và thời gian đã đăng, và sinh viên trường bạn có thể đến tham dự.",
+            "rules": "Sự kiện hợp pháp và tuân thủ quy định của trường và hội sinh viên của bạn."
+          },
+          "p2": "Các sự kiện sau không được nhận chi trả, kể cả khi bạn có quét vé tại đó:",
+          "excluded": {
+            "meetings": "Mọi loại cuộc họp, bao gồm họp toàn thể, họp ban điều hành, họp thường niên, bầu cử và buổi giới thiệu thông tin.",
+            "practices": "Buổi tập luyện, buổi huấn luyện, buổi học, lớp học, buổi dạy kèm, buổi học nhóm và giờ trực.",
+            "recruiting": "Sự kiện tuyển thành viên, buổi phỏng vấn và buổi thử giọng hoặc thử vai.",
+            "sales": "Quầy bán hàng và quầy gây quỹ.",
+            "religious": "Các buổi lễ tôn giáo.",
+            "private": "Sự kiện chỉ dành cho ban điều hành của bạn hoặc cho danh sách khách mời.",
+            "notHeld": "Sự kiện không diễn ra như thông tin đã đăng trên Wat2Do."
+          }
+        },
+        "scans": {
+          "title": "Lượt check-in nào được tính",
+          "p1": "Một lượt check-in chỉ được xem là lượt quét hợp lệ, và được nhận chi trả, khi đáp ứng tất cả các điều kiện sau:",
+          "conditions": {
+            "ticket": "Vé là vé Wat2Do hợp lệ cho ngày sự kiện đó, nằm trong tài khoản Wat2Do của chính người tham dự.",
+            "present": "Người tham dự có mặt trực tiếp tại sự kiện khi bạn quét vé của họ.",
+            "scanner": "Một người quản lý tổ chức check-in vé qua tính năng check-in của Wat2Do, bằng cách quét hoặc nhập mã vé, trong thời gian check-in đang mở cho ngày đó: từ {{opensHours}} trước khi sự kiện bắt đầu đến {{closesHours}} sau khi sự kiện kết thúc.",
+            "first": "Đây là lượt check-in đầu tiên của tài khoản đó cho ngày sự kiện đó. Quét lại cùng một người vẫn chỉ được tính một lần.",
+            "notManager": "Người tham dự không phải là người quản lý tổ chức của bạn trên Wat2Do."
+          },
+          "p2": "Các trường hợp sau không bao giờ được tính:",
+          "excluded": {
+            "absent": "Vé được quét khi người tham dự không có mặt, chẳng hạn ảnh chụp màn hình hoặc mã được gửi trước.",
+            "fakeAccounts": "Tài khoản do tổ chức của bạn hoặc thành viên của tổ chức tạo, mua hoặc kiểm soát để tăng số lượt check-in, và tài khoản không thuộc về một người thật.",
+            "paid": "Lượt check-in của những người được trả tiền hoặc nhận thưởng để được check-in, thay vì đến để tham dự sự kiện.",
+            "undone": "Lượt check-in đã bị hủy, và vé đã được hoàn tiền hoặc đã bị hủy.",
+            "tests": "Lượt check-in được thực hiện để thử trình quét.",
+            "otherTools": "Lượt check-in được thực hiện ngoài trình quét của chính Wat2Do, hoặc bằng bất kỳ phương thức tự động nào."
+          },
+          "p3": "Bảng điều khiển tổ chức của bạn hiển thị các lượt check-in cho từng ngày sự kiện. Chúng tôi chi trả cho các lượt quét hợp lệ trong hồ sơ của chúng tôi sau khi hoàn tất các bước kiểm tra được mô tả trong mục “Kiểm tra và chống gian lận”."
+        },
+        "amount": {
+          "title": "Chúng tôi trả bao nhiêu",
+          "p1": "Chúng tôi trả {{rate}} cho mỗi lượt quét hợp lệ.",
+          "p2": "Chúng tôi trả tối đa {{maxPerEventDate}} cho mỗi ngày sự kiện, và tối đa {{monthlyCap}} cho tổ chức của bạn đối với tất cả các ngày sự kiện của tổ chức trong một tháng dương lịch. Các lượt quét hợp lệ vượt quá một trong hai giới hạn này sẽ không được chi trả.",
+          "p3": "Mức chi trả và các giới hạn áp dụng cho một ngày sự kiện là mức và giới hạn được ghi trong các điều khoản này vào đúng ngày đó.",
+          "p4": "Khoản chi trả là một khoản thanh toán mang tính quảng bá từ Wat2Do cho tổ chức của bạn. Đây không phải là tiền lương hay phí dịch vụ, và không biến Wat2Do thành đơn vị tổ chức, đơn vị chủ trì hay nhà tài trợ cho sự kiện của bạn. Khoản này tách biệt với tiền bán vé trả phí, vốn được chuyển thẳng vào tài khoản Stripe riêng của tổ chức bạn."
+        },
+        "payment": {
+          "title": "Cách thức và thời điểm chi trả",
+          "p1": "Sau khi mỗi tháng dương lịch kết thúc, chúng tôi đếm số lượt quét hợp lệ của tổ chức bạn cho các ngày sự kiện trong tháng đó và gửi email tóm tắt cho những người quản lý tổ chức của bạn.",
+          "p2": "Chậm nhất vào ngày {{payoutDay}} của tháng tiếp theo, chúng tôi gửi khoản chi trả qua Interac e-Transfer, bằng đô la Canada, đến email nhận tiền của tổ chức bạn, và trả mọi khoản phí mà ngân hàng của chúng tôi thu để gửi khoản đó. Nếu ngày đó không phải là ngày làm việc ở Ontario, chúng tôi sẽ gửi chậm nhất vào ngày làm việc kế tiếp.",
+          "p3": "Tổ chức của bạn cung cấp cho chúng tôi một email nhận tiền. Email này phải có khả năng nhận Interac e-Transfer và thuộc về tổ chức của bạn, hoặc thuộc về người hay bộ phận giữ tiền của tổ chức theo quy định của hội sinh viên, chẳng hạn văn phòng phụ trách các tổ chức của hội sinh viên hoặc thủ quỹ của tổ chức bạn. Nếu chúng tôi chưa có email này, chúng tôi sẽ hỏi những người quản lý tổ chức của bạn. Khi một khoản chi trả đã được nhận vào tài khoản thì không thể đảo ngược, vì vậy hãy báo cho chúng tôi ngay khi email nhận tiền của tổ chức bạn thay đổi.",
+          "expired": "Nếu một khoản e-Transfer hết hạn trước khi có người nhận tiền vào tài khoản, chúng tôi sẽ gửi lại sau khi tổ chức của bạn xác nhận email nhận tiền.",
+          "p4": "Nếu trong vòng {{deadlineDays}} sau một ngày sự kiện mà tổ chức của bạn vẫn chưa cung cấp cho chúng tôi cách để chi trả, khoản chi trả cho ngày đó sẽ mất hiệu lực và chúng tôi không còn nợ khoản đó nữa.",
+          "p5": "Tổ chức của bạn phải xử lý các khoản chi trả theo quy định của trường và hội sinh viên, ví dụ như gửi tiền vào tài khoản riêng của tổ chức. Nếu hội sinh viên của bạn phải phê duyệt các khoản tiền hoặc tài trợ từ bên ngoài, hãy xin phê duyệt đó trước khi tổ chức của bạn nhận khoản chi trả."
+        },
+        "taxes": {
+          "title": "Thuế",
+          "p1": "Tổ chức của bạn chịu trách nhiệm về mọi khoản thuế đối với các khoản chi trả mà tổ chức nhận được, và mỗi khoản chi trả đã bao gồm mọi khoản thuế GST hoặc HST áp dụng cho khoản đó. Chúng tôi không khấu trừ thuế trừ khi pháp luật yêu cầu.",
+          "p2": "Nếu pháp luật yêu cầu chúng tôi báo cáo các khoản chi trả cho cơ quan thuế, chẳng hạn trên phiếu T4A, chúng tôi có thể yêu cầu tổ chức của bạn cung cấp thông tin cần thiết, bao gồm cả Số Bảo hiểm Xã hội (SIN), nhưng chỉ khi pháp luật yêu cầu, và tạm giữ các khoản chi trả của tổ chức cho đến khi nhận được thông tin đó."
+        },
+        "reviews": {
+          "title": "Kiểm tra và chống gian lận",
+          "p1": "Chúng tôi kiểm tra các lượt check-in trước khi chi trả, và có thể kiểm tra lại sau đó.",
+          "p2": "Chúng tôi có thể yêu cầu tổ chức của bạn cung cấp bằng chứng hợp lý cho thấy sự kiện đã diễn ra như thông tin đã đăng và các lượt check-in là thật, chẳng hạn như ảnh, bài đăng về sự kiện hoặc số người tham dự đã kiểm đếm. Nếu tổ chức của bạn không gửi trong vòng {{proofDays}} kể từ khi chúng tôi yêu cầu, chúng tôi có thể coi các lượt check-in đó là không hợp lệ.",
+          "p3": "Chúng tôi có thể tạm giữ khoản chi trả cho những lượt check-in đang được kiểm tra trong tối đa {{holdDays}} sau ngày chi trả, rồi chi trả cho những lượt mà chúng tôi xác định là hợp lệ. Chúng tôi không chi trả cho những lượt check-in mà chúng tôi có cơ sở hợp lý để tin là không phải lượt quét hợp lệ.",
+          "clawback": "Nếu trong vòng {{clawbackDays}} sau khi chi trả, chúng tôi phát hiện một khoản chi trả đã bao gồm các lượt check-in không phải lượt quét hợp lệ, tổ chức của bạn nợ chúng tôi số tiền đó. Trước tiên, chúng tôi trừ số tiền này vào các khoản chi trả tiếp theo của tổ chức, rồi yêu cầu tổ chức hoàn trả phần còn lại. Các khoản chi trả cho những lượt check-in hợp lệ khác của tổ chức vẫn được thanh toán.",
+          "p4": "Nếu một tổ chức cố ý vi phạm các điều khoản này hoặc vi phạm nhiều hơn một lần, ví dụ như quét tài khoản giả hoặc quét vé khi không có người tham dự, chúng tôi có thể loại tổ chức đó khỏi chương trình, hủy các khoản chi trả còn nợ cho những sự kiện liên quan, và hạn chế việc tổ chức đó sử dụng Wat2Do.",
+          "p5": "Chúng tôi đưa ra những quyết định này một cách hợp lý và thiện chí, và sẽ cho tổ chức của bạn biết lý do."
+        },
+        "disputes": {
+          "title": "Thắc mắc và tranh chấp",
+          "p1": "Nếu bạn cho rằng một khoản chi trả bị sai, hãy gửi email đến <email>{{email}}</email> trong vòng {{disputeDays}} sau khi chúng tôi gửi khoản đó, hoặc sau ngày chi trả nếu khoản đó không hề đến. Hãy nêu tên sự kiện và cho chúng tôi biết bạn nghĩ điều gì bị sai.",
+          "p2": "Chúng tôi sẽ xem xét vấn đề, nếu có thể thì với sự tham gia của một người không đưa ra quyết định ban đầu, và trả lời bạn kèm quyết định của chúng tôi trong vòng {{replyDays}}. Nếu chúng tôi còn nợ tổ chức của bạn thêm, chúng tôi sẽ trả cùng khoản chi trả tiếp theo hoặc sớm hơn.",
+          "talkFirst": "Trước khi bất kỳ bên nào đưa vấn đề liên quan đến các điều khoản này ra tòa, cả hai bên sẽ thiện chí cố gắng giải quyết vấn đề qua email trong 30 ngày."
+        },
+        "responsibilities": {
+          "title": "Trách nhiệm của tổ chức bạn",
+          "p1": "Tổ chức của bạn chịu trách nhiệm về các sự kiện của mình, bao gồm lên kế hoạch, an toàn, khả năng tiếp cận, đồ ăn, rượu bia, sức chứa, bảo hiểm và hoàn tiền, cũng như việc tuân thủ pháp luật và quy định của trường bạn.",
+          "p2": "Hãy giữ thông tin sự kiện bạn đăng luôn chính xác, và cho người tham dự biết rằng bạn sẽ quét vé Wat2Do của họ tại cửa.",
+          "p3": "Chỉ sử dụng thông tin người tham dự mà bạn thấy trên Wat2Do để điều hành sự kiện của bạn. Không sao chép, bán hoặc chia sẻ các thông tin đó.",
+          "p4": "Hãy giữ an toàn thông tin đăng nhập Wat2Do của bạn, và báo cho chúng tôi qua <email>{{email}}</email> nếu bạn nghĩ ai đó đã lạm dụng trang của tổ chức bạn.",
+          "describe": "Hãy mô tả các khoản chi trả một cách chính xác: tiền được trả cho tổ chức của bạn, không phải cho những người bạn check-in. Đừng ngụ ý rằng trường hoặc hội sinh viên của bạn điều hành hay ủng hộ Wat2Do hoặc các khoản chi trả này."
+        },
+        "names": {
+          "title": "Tên và logo",
+          "p1": "Chúng tôi có thể công khai việc tổ chức của bạn tham gia chương trình, sử dụng tên và logo trên trang Wat2Do của tổ chức. Bạn có thể cho mọi người biết sự kiện của bạn sử dụng vé Wat2Do, nhưng đừng dùng tên hoặc logo của Wat2Do theo cách ngụ ý rằng chúng tôi điều hành hoặc tài trợ sự kiện của bạn."
+        },
+        "privacy": {
+          "title": "Thông tin cá nhân",
+          "p1": "Để thực hiện việc chi trả, chúng tôi sử dụng hồ sơ check-in của tổ chức bạn, các tài khoản giữ vé mà bạn quét, tên và địa chỉ email của những người quản lý tổ chức của bạn, và email nhận tiền của tổ chức bạn. Chúng tôi dùng các thông tin này để đếm và kiểm tra lượt quét, gửi khoản chi trả, ngăn chặn gian lận và lưu giữ hồ sơ theo yêu cầu của pháp luật.",
+          "p2": "<dataPolicy>Chính sách dữ liệu</dataPolicy> của chúng tôi giải thích cách chúng tôi xử lý thông tin cá nhân, bao gồm cả thông tin của người tham dự, và những lựa chọn mà mọi người có đối với thông tin đó."
+        },
+        "changes": {
+          "title": "Thay đổi và rút khỏi chương trình",
+          "p1": "Chúng tôi có thể thay đổi các điều khoản này, bao gồm mức chi trả và các giới hạn, hoặc chấm dứt hoàn toàn việc chi trả. Chúng tôi đăng mọi thay đổi trên trang này kèm ngày có hiệu lực mới.",
+          "p2": "Một thay đổi khiến các tổ chức được trả ít hơn, hoặc việc chấm dứt chi trả, chỉ áp dụng cho các ngày sự kiện diễn ra ít nhất {{noticeDays}} sau khi chúng tôi đăng thay đổi đó, và chúng tôi sẽ gửi email cho những người quản lý tổ chức khi đăng. Các thay đổi khác áp dụng cho các ngày sự kiện sau thời điểm chúng tôi đăng.",
+          "p3": "Không thay đổi nào làm giảm khoản chi trả cho các ngày sự kiện trước thời điểm thay đổi đó có hiệu lực.",
+          "p4": "Tổ chức của bạn có thể rút khỏi chương trình bất cứ lúc nào bằng cách gửi email đến <email>{{email}}</email> hoặc tắt vé Wat2Do cho các sự kiện của mình. Chúng tôi vẫn chi trả cho các lượt quét hợp lệ có từ trước khi tổ chức rút khỏi chương trình.",
+          "survival": "Nếu tổ chức của bạn rút khỏi chương trình hoặc việc chi trả chấm dứt, các phần trong các điều khoản này về các khoản chi trả đã được hưởng, thuế, việc kiểm tra, việc thu hồi khoản chi trả và phần pháp lý vẫn tiếp tục được áp dụng.",
+          "archive": "Chúng tôi lưu giữ các phiên bản trước của các điều khoản này, và sẽ gửi cho bạn một bản nếu bạn gửi email cho chúng tôi."
+        },
+        "legal": {
+          "title": "Phần pháp lý",
+          "p1": "Tổ chức của bạn và Wat2Do độc lập với nhau. Không điều gì trong các điều khoản này khiến bên nào trở thành đối tác, người sử dụng lao động, người lao động hoặc người đại diện của bên kia.",
+          "p2": "Chúng tôi cung cấp trình quét check-in của Wat2Do và phần còn lại của trang web theo hiện trạng. Chúng tôi nỗ lực duy trì hoạt động check-in nhưng không thể hứa rằng tính năng này không bao giờ gặp sự cố. Nếu tính năng này gặp sự cố trong sự kiện của bạn, chúng tôi có thể tính những lượt check-in mà tổ chức của bạn chứng minh được bằng cách khác, nhưng chúng tôi không bắt buộc phải làm vậy.",
+          "p3": "Trong phạm vi pháp luật cho phép, tổng trách nhiệm của mỗi bên đối với bên kia theo các điều khoản này được giới hạn ở mức cao hơn giữa {{liabilityFloor}} và tổng các khoản chi trả mà chúng tôi đã trả hoặc còn nợ tổ chức của bạn trong 12 tháng trước khi có yêu cầu bồi thường. Không bên nào chịu trách nhiệm về các tổn thất gián tiếp, chẳng hạn như doanh thu bị mất hoặc chi phí của một sự kiện. Các giới hạn này không áp dụng cho các khoản chi trả mà chúng tôi còn nợ, hoặc cho hành vi gian lận hay cố ý sai phạm.",
+          "p4": "Các điều khoản này chịu sự điều chỉnh của luật Ontario và luật liên bang Canada áp dụng tại Ontario, và tòa án Ontario sẽ giải quyết mọi tranh chấp liên quan đến các điều khoản này.",
+          "delays": "Không bên nào chịu trách nhiệm về sự chậm trễ do những tình huống nằm ngoài khả năng kiểm soát hợp lý của mình gây ra, chẳng hạn sự cố gián đoạn tại các nhà cung cấp hoặc ngân hàng của chúng tôi, nhưng những tình huống đó không hủy bỏ các khoản chi trả đã được hưởng.",
+          "p5": "Nếu tòa án xác định một phần của các điều khoản này không thể thi hành, phần còn lại vẫn có hiệu lực. Nếu chúng tôi không thực thi một điều khoản ngay lập tức, chúng tôi vẫn có thể thực thi điều khoản đó sau này. Tổ chức của bạn không được chuyển nhượng quyền của mình theo các điều khoản này cho bất kỳ ai khác.",
+          "notices": "Chúng tôi gửi thông báo về các điều khoản này đến địa chỉ email trên tài khoản Wat2Do của những người quản lý tổ chức của bạn, còn bạn gửi thông báo của mình đến <email>{{email}}</email>.",
+          "p6": "Các điều khoản này là toàn bộ thỏa thuận giữa tổ chức của bạn và Wat2Do về việc chi trả. Chúng tôi soạn các điều khoản này bằng tiếng Anh; nếu bản dịch có điểm khác biệt, bản tiếng Anh sẽ được áp dụng."
+        },
+        "contact": {
+          "title": "Liên hệ",
+          "p1": "Hãy gửi thắc mắc về các điều khoản này hoặc về một khoản chi trả đến <email>{{email}}</email>, kèm theo tên tổ chức của bạn.",
+          "formats": "Nếu bạn cần các điều khoản này ở định dạng khác, chẳng hạn bản in chữ lớn, hãy gửi email cho chúng tôi và chúng tôi sẽ cung cấp."
+        }
+      }
+    },
+    "dataPolicy": {
+      "title": "Chính sách dữ liệu",
+      "intro": "Chính sách này giải thích Wat2Do thu thập những thông tin cá nhân nào, vì sao, chúng tôi chia sẻ thông tin với ai, lưu giữ trong bao lâu và bạn có những lựa chọn gì. Chính sách áp dụng cho wat2do.io và mọi trang của từng trường trên đó (chẳng hạn uwaterloo.wat2do.io), các email chúng tôi gửi và các tài khoản Instagram chúng tôi vận hành cho từng trường. Nếu bạn có thắc mắc, hãy gửi email cho chúng tôi tại <email>{{email}}</email>.",
+      "summary": {
+        "collect": "Chúng tôi thu thập những gì bạn cung cấp (email, trường, khoa và sở thích của bạn), những gì bạn làm trên Wat2Do (sự kiện bạn sẽ tham gia hoặc đã lưu, vé, tổ chức bạn theo dõi) và một số chi tiết kỹ thuật, chẳng hạn một dạng đã xáo trộn của địa chỉ IP của bạn.",
+        "noSale": "Chúng tôi không bán thông tin cá nhân của bạn, và không hiển thị quảng cáo.",
+        "share": "Khi bạn đánh dấu sẽ tham gia, những người truy cập khác thấy tên, chữ cái đầu trong họ và ảnh của bạn, còn các tổ chức thấy tên và địa chỉ email của bạn khi bạn có vé tham dự sự kiện của họ. Các công ty như Amazon Web Services, Cloudflare và Google vận hành một số phần của Wat2Do cho chúng tôi, trong đó có công ty ở ngoài Canada.",
+        "analytics": "Chúng tôi dùng Google Analytics để đếm lượt truy cập, và loại bỏ mã cũng như địa chỉ email khỏi các địa chỉ trang mà Google Analytics nhận được.",
+        "public": "Chúng tôi cũng sử dụng thông tin công khai: sự kiện của các tổ chức từ những bài đăng Instagram công khai, và email liên hệ mà các tổ chức công bố trên mạng.",
+        "choices": "Bạn có thể tắt email của chúng tôi bất cứ lúc nào, thay đổi hồ sơ trong Cài đặt, và yêu cầu chúng tôi cho bạn xem, sửa hoặc xóa thông tin của bạn.",
+        "contact": "Hãy gửi thắc mắc và yêu cầu đến <email>{{email}}</email>."
+      },
+      "sections": {
+        "who": {
+          "title": "Chúng tôi là ai",
+          "p1": "Wat2Do là một trang web cho sinh viên biết những gì đang diễn ra ở trường mình. Wat2Do do các sinh viên University of Waterloo sáng lập, và chúng tôi vận hành Wat2Do từ Canada. Trong chính sách này, “Wat2Do” và “chúng tôi” được hiểu là những người vận hành Wat2Do.",
+          "p2": "Nhà sáng lập của chúng tôi phụ trách việc bảo vệ thông tin cá nhân (là người phụ trách quyền riêng tư của chúng tôi) và chịu trách nhiệm về cách Wat2Do xử lý thông tin đó. Bạn có thể liên hệ người này qua <email>{{email}}</email>.",
+          "governance": "Người phụ trách quyền riêng tư của chúng tôi phê duyệt cách chúng tôi thu thập và sử dụng thông tin cá nhân, trả lời các yêu cầu và khiếu nại, lưu sổ ghi chép các sự cố về quyền riêng tư và rà soát chính sách này ít nhất mỗi năm một lần."
+        },
+        "collect": {
+          "title": "Chúng tôi thu thập những gì",
+          "p1": "Những gì chúng tôi thu thập tùy thuộc vào cách bạn sử dụng Wat2Do. Bạn có thể xem sự kiện, tổ chức và vị trí đang tuyển mà không cần tài khoản, và để tạo tài khoản bạn chỉ cần địa chỉ email; mọi thông tin khác bạn thêm vào là tùy bạn. Chúng tôi thu thập những thông tin sau từ bạn:",
+          "fromYou": {
+            "account": {
+              "term": "Tài khoản của bạn.",
+              "text": "Địa chỉ email của bạn, dùng để đăng nhập bằng mã hoặc liên kết dùng một lần, hoặc qua Google. Khi đăng nhập bằng Google, chúng tôi chỉ lưu địa chỉ email đã xác minh của bạn, không lưu tên hay ảnh Google của bạn. Chúng tôi không bao giờ yêu cầu mật khẩu."
+            },
+            "profile": {
+              "term": "Hồ sơ của bạn.",
+              "text": "Trường của bạn, được xác định từ trang của trường nơi bạn đăng ký, và bất cứ thông tin nào bạn thêm vào: ảnh, khoa, sở thích, việc bạn có phải sinh viên năm nhất hay không, và ngôn ngữ của bạn."
+            },
+            "activity": {
+              "term": "Hoạt động của bạn trên Wat2Do.",
+              "text": "Sự kiện bạn đánh dấu sẽ tham gia hoặc đã lưu, tổ chức bạn theo dõi, vé bạn nhận, thời điểm một tổ chức check-in cho bạn và các yêu cầu hoàn tiền bạn gửi."
+            },
+            "submissions": {
+              "term": "Nội dung bạn gửi cho chúng tôi.",
+              "text": "Sự kiện, vị trí đang tuyển và tổ chức bạn gửi lên, kèm địa chỉ email của bạn để chúng tôi có thể báo cho bạn quyết định của chúng tôi, poster bạn nhờ chúng tôi đọc và sự kiện bạn báo cáo."
+            },
+            "clubs": {
+              "term": "Nếu bạn điều hành một tổ chức.",
+              "text": "Tổ chức bạn quản lý và vai trò của bạn trong đó, địa chỉ email của những người bạn mời, bằng chứng bạn tải lên khi nhận quản lý một tổ chức, và email nhận tiền của tổ chức nếu tổ chức tham gia chương trình chi trả cho tổ chức."
+            },
+            "promoters": {
+              "term": "Nếu bạn quảng bá Wat2Do.",
+              "text": "Email nhận tiền của bạn, thời điểm bạn chấp nhận điều khoản dành cho người quảng bá và các poster bạn tạo."
+            },
+            "messages": {
+              "term": "Tin nhắn.",
+              "text": "Nội dung bạn viết trong biểu mẫu liên hệ và biểu mẫu đề cử doanh nghiệp của chúng tôi, vốn được gửi đến hộp thư email của chúng tôi, và tin nhắn bạn gửi đến các tài khoản Instagram của chúng tôi."
+            }
+          },
+          "p2": "Chúng tôi tự động thu thập một số thông tin:",
+          "automatic": {
+            "usage": {
+              "term": "Cách bạn sử dụng trang web.",
+              "text": "Lượt nhấp, lượt xem và lượt chia sẻ sự kiện, được liên kết với tài khoản của bạn khi bạn đăng nhập, còn nếu không thì với một ID ngẫu nhiên chỉ tồn tại trong một thẻ trình duyệt. Chúng tôi cũng lưu các từ bạn tìm kiếm và bộ lọc bạn dùng, nhưng không liên kết chúng với bạn."
+            },
+            "network": {
+              "term": "Thiết bị và mạng.",
+              "text": "Một dạng đã xáo trộn (băm) của địa chỉ IP của bạn, được chúng tôi dùng để hạn chế lạm dụng và phát hiện lượt nhấp giả cũng như lượt quét poster giả. Chúng tôi không lưu chính địa chỉ IP của bạn trong cơ sở dữ liệu, nhưng các công ty phân phối trang web thấy địa chỉ này, và nhật ký máy chủ của chúng tôi ghi lại địa chỉ đó khi một yêu cầu vượt quá giới hạn tần suất của chúng tôi. Với lượt quét poster, chúng tôi cũng lưu loại trình duyệt và hệ điều hành của bạn, chẳng hạn Chrome trên iOS."
+            },
+            "location": {
+              "term": "Vị trí, chỉ khi bạn cho phép.",
+              "text": "Khi bạn quét một poster Wat2Do chưa có vị trí, trình duyệt có thể hỏi bạn có muốn chia sẻ vị trí không. Nếu bạn cho phép, chúng tôi lưu vị trí đó làm vị trí của poster, không gắn với lượt quét hay tài khoản của bạn."
+            }
+          },
+          "p3": "Chúng tôi cũng thu thập thông tin từ các nguồn công khai:",
+          "public": {
+            "posts": {
+              "term": "Bài đăng của các tổ chức.",
+              "text": "Chúng tôi đọc các bài đăng Instagram công khai của các tổ chức sinh viên để đăng sự kiện và vị trí đang tuyển của họ. Chúng tôi lưu nội dung chữ, hình ảnh và video của từng bài đăng, tài khoản đã đăng bài và các tên người dùng được gắn thẻ trong bài, đồng thời sao chép ảnh đại diện của các tổ chức để dùng làm logo."
+            },
+            "contacts": {
+              "term": "Thông tin liên hệ của tổ chức.",
+              "text": "Chúng tôi thu thập địa chỉ email mà các tổ chức công bố trên trang của chính họ và trong danh bạ của trường, để mời họ nhận quản lý trang Wat2Do của mình."
+            },
+            "instagram": {
+              "term": "Tài khoản Instagram.",
+              "text": "Các tài khoản Instagram của chúng tôi cho từng trường nhận thông báo và tin nhắn, và chúng tôi đọc danh sách các tài khoản mà các tổ chức theo dõi để tìm các tổ chức khác. Chúng tôi lưu tên người dùng và tên của những tài khoản công khai mà chúng tôi có thể theo dõi."
+            },
+            "feedback": {
+              "term": "Bài đăng công khai về ứng dụng cho sinh viên.",
+              "text": "Chúng tôi đọc các bài đăng công khai trên X và Reddit về những ứng dụng giống như của chúng tôi để tìm hiểu sinh viên muốn gì, và lưu từng bài đăng, tên người dùng của tác giả và đường link của bài."
+            }
+          }
+        },
+        "use": {
+          "title": "Chúng tôi sử dụng thông tin như thế nào",
+          "p1": "Chúng tôi chỉ sử dụng thông tin cá nhân cho các mục đích sau:",
+          "purposes": {
+            "account": "Để vận hành tài khoản của bạn, giúp bạn đăng nhập và duy trì trạng thái đăng nhập.",
+            "show": "Để cho bạn biết những gì đang diễn ra ở trường bạn, cùng các sự kiện bạn đã lưu, sẽ tham gia hoặc đã có vé.",
+            "emails": "Để gửi các email mà bạn kiểm soát: email buổi sáng về các sự kiện, nhắc nhở trước các sự kiện bạn sẽ tham gia và cảnh báo khi một trong các sự kiện đó thay đổi. Chúng tôi cũng gửi các email bạn cần, chẳng hạn mã đăng nhập, vé và quyết định của chúng tôi về nội dung bạn gửi.",
+            "tickets": "Để phát hành vé và cho phép các tổ chức check-in cho bạn.",
+            "payouts": "Để chi trả cho người quảng bá và các tổ chức tham gia chương trình chi trả của chúng tôi, và để lưu giữ hồ sơ theo yêu cầu của pháp luật.",
+            "safety": "Để giữ an toàn cho Wat2Do: hạn chế lạm dụng, phát hiện tài khoản, lượt nhấp và lượt quét giả mạo, và điều tra các sự cố.",
+            "improve": "Để đếm lượt truy cập và xem mọi người sử dụng những trang và tính năng nào, bằng Google Analytics và dữ liệu lượt nhấp của chính chúng tôi, nhờ đó chúng tôi có thể sửa lỗi và cải thiện chúng.",
+            "clubs": "Để đăng sự kiện của các tổ chức, mời các tổ chức nhận quản lý trang của mình và trả lời tin nhắn gửi đến các tài khoản Instagram của chúng tôi.",
+            "law": "Để tuân thủ pháp luật và đáp ứng các yêu cầu hợp pháp."
+          },
+          "p2": "Một phần công việc này có sử dụng AI. Claude, một mô hình do Anthropic phát triển, đọc các bài đăng công khai của các tổ chức và tin nhắn mà các tài khoản Instagram của chúng tôi nhận được, để đăng sự kiện và giúp quyết định cách trả lời. Các mô hình của OpenAI đọc những poster mà bạn nhờ chúng tôi đọc. Không quy trình nào trong số này đưa ra quyết định về bạn có hiệu lực pháp lý hoặc tác động đáng kể tương tự.",
+          "training": "Chúng tôi không sử dụng thông tin cá nhân của bạn để huấn luyện các mô hình AI.",
+          "p3": "Chúng tôi không bán hay cho thuê thông tin cá nhân, và không sử dụng thông tin đó cho mục đích quảng cáo."
+        },
+        "emails": {
+          "title": "Email",
+          "p1": "Chúng tôi gửi hai loại email. Các email bạn cần, chẳng hạn mã đăng nhập, vé, quyết định về nội dung bạn gửi và thư trả lời bạn, luôn được gửi đến. Các email thông báo về sự kiện (email buổi sáng, nhắc nhở sự kiện và cảnh báo thay đổi sự kiện) được bật khi bạn đăng ký, và bạn có thể tắt từng loại trong Cài đặt hoặc bằng liên kết hủy đăng ký trong email đó. Chúng tôi ngừng gửi trong vòng 10 ngày làm việc, và thường là ngay lập tức.",
+          "p2": "Chúng tôi cũng gửi email cho các tổ chức theo địa chỉ mà họ công bố, về trang Wat2Do của chính họ. Một tổ chức có thể yêu cầu chúng tôi ngừng gửi bất cứ lúc nào."
+        },
+        "sharing": {
+          "title": "Ai thấy thông tin, và chúng tôi chia sẻ với ai",
+          "p1": "Một số hoạt động của bạn trên Wat2Do được người khác nhìn thấy:",
+          "visible": {
+            "going": "Khi bạn đánh dấu sẽ tham gia, những người xem sự kiện có thể thấy tên, chữ cái đầu trong họ và ảnh của bạn trong danh sách những người sẽ tham gia.",
+            "tickets": "Khi bạn có vé, tổ chức điều hành sự kiện sẽ thấy tên của bạn (hoặc phần đầu địa chỉ email của bạn), địa chỉ email, mã vé, thời điểm bạn được check-in và mọi yêu cầu hoàn tiền. Nếu một tổ chức bật vé cho một sự kiện mà bạn đã báo sẽ tham gia, chúng tôi sẽ phát vé cho bạn và tổ chức cũng thấy các thông tin tương tự.",
+            "teams": "Những người cùng quản lý một tổ chức thấy tên, địa chỉ email và ảnh của nhau.",
+            "submissions": "Sự kiện, vị trí đang tuyển và tổ chức mà chúng tôi đăng từ nội dung bạn gửi đều được công khai, nhưng địa chỉ email của bạn thì không."
+          },
+          "p2": "Chúng tôi chia sẻ thông tin cá nhân với các công ty vận hành một số phần của Wat2Do cho chúng tôi, và chỉ chia sẻ những gì mỗi công ty cần cho công việc đó:",
+          "providers": {
+            "aws": {
+              "term": "Amazon Web Services:",
+              "text": "lưu trữ trang web và gửi email của chúng tôi, từ Canada."
+            },
+            "cloudflare": {
+              "term": "Cloudflare:",
+              "text": "phân phối trang web và lưu trữ hình ảnh, video, tại Bắc Mỹ."
+            },
+            "google": {
+              "term": "Google:",
+              "text": "đăng nhập bằng Google, Google Analytics và bản đồ trên trang sự kiện."
+            },
+            "ai": {
+              "term": "Anthropic và OpenAI:",
+              "text": "đọc bài đăng, poster và tin nhắn, như đã mô tả ở trên."
+            },
+            "stripe": {
+              "term": "Stripe:",
+              "text": "xử lý thanh toán khi một tổ chức bán vé. Stripe nhận địa chỉ email và thông tin thẻ của người mua, đồng thời sử dụng các thông tin này theo chính sách quyền riêng tư của riêng Stripe; chúng tôi không bao giờ nhìn thấy hay lưu trữ số thẻ."
+            },
+            "github": {
+              "term": "GitHub:",
+              "text": "xử lý các thông báo mà tài khoản Instagram của chúng tôi cho từng trường nhận được."
+            },
+            "meta": {
+              "term": "Meta:",
+              "text": "vận hành Instagram, nơi chúng tôi đăng bài lên các tài khoản của từng trường."
+            },
+            "maps": {
+              "term": "Các dịch vụ OpenStreetMap:",
+              "text": "cung cấp hình ảnh bản đồ và xác định địa chỉ sự kiện trên bản đồ."
+            },
+            "bank": {
+              "term": "Ngân hàng của chúng tôi:",
+              "text": "gửi các khoản chi trả qua Interac e-Transfer."
+            }
+          },
+          "p3": "Chúng tôi cũng có thể chia sẻ thông tin cá nhân khi pháp luật yêu cầu, để bảo vệ sự an toàn, quyền hoặc tài sản của một người nào đó, hoặc trong khuôn khổ việc sáp nhập hay bán Wat2Do, khi đó chính sách này vẫn tiếp tục áp dụng cho thông tin đó."
+        },
+        "cookies": {
+          "title": "Cookie, công cụ phân tích và bộ nhớ trình duyệt",
+          "p1": "Chúng tôi sử dụng các cookie và bộ nhớ trình duyệt sau:",
+          "items": {
+            "signIn": {
+              "term": "Cookie đăng nhập:",
+              "text": "giữ bạn ở trạng thái đăng nhập tối đa {{sessionDays}} và cho các trang biết bạn đã đăng nhập. Đăng nhập bằng Google thêm một cookie có thời hạn 10 phút."
+            },
+            "theme": {
+              "term": "Cookie giao diện:",
+              "text": "ghi nhớ chế độ sáng hoặc tối trong một năm."
+            },
+            "poster": {
+              "term": "Cookie khách truy cập từ poster:",
+              "text": "một ID ngẫu nhiên, được lưu trong hai năm, giúp chúng tôi đếm số lượt quét poster không trùng lặp mà không cần biết bạn là ai."
+            },
+            "storage": {
+              "term": "Bộ nhớ trình duyệt:",
+              "text": "lưu ngôn ngữ của bạn, một bản sao hồ sơ của bạn để trang tải nhanh hơn, và thông tin cho một thẻ trình duyệt, chẳng hạn các bộ lọc của bạn."
+            },
+            "analytics": {
+              "term": "Google Analytics:",
+              "text": "đặt cookie riêng để đo lường số người truy cập và những trang họ sử dụng. Chúng tôi loại bỏ mã, liên kết và địa chỉ email khỏi các địa chỉ trang mà chúng tôi gửi cho Google Analytics."
+            }
+          },
+          "p2": "Bạn có thể chặn hoặc xóa cookie trong phần cài đặt trình duyệt, tuy nhiên bạn cần cookie đăng nhập để duy trì trạng thái đăng nhập. Để từ chối Google Analytics trên mọi trang web, hãy dùng tiện ích trình duyệt từ chối Google Analytics do Google cung cấp, hoặc chặn cookie của Google Analytics.",
+          "tracking": "Các trang của chúng tôi tải bản đồ từ Google và OpenFreeMap, và Google Analytics đo lường lượt truy cập, vì vậy các công ty đó nhận được địa chỉ IP và thông tin trình duyệt của bạn theo chính sách quyền riêng tư của riêng họ. Chúng tôi không sử dụng mạng quảng cáo, và Wat2Do không thay đổi những gì mình thu thập khi nhận được tín hiệu Do Not Track hoặc Global Privacy Control."
+        },
+        "location": {
+          "title": "Nơi chúng tôi lưu trữ thông tin",
+          "p1": "Cơ sở dữ liệu của chúng tôi chạy trên máy chủ riêng của chúng tôi tại Canada. Trang web và dịch vụ email của chúng tôi chạy trên Amazon Web Services tại Canada, và Cloudflare lưu trữ hình ảnh, video tại Bắc Mỹ. Một số công ty hợp tác với chúng tôi, như Google, Anthropic, OpenAI, Stripe, GitHub và Meta, xử lý thông tin tại Hoa Kỳ hoặc ở nơi khác.",
+          "p2": "Thông tin được xử lý bên ngoài Canada chịu sự điều chỉnh của luật pháp nước đó, và tòa án, cảnh sát cùng các cơ quan an ninh của nước đó có thể truy cập được thông tin. Chúng tôi chọn những nhà cung cấp có bảo vệ thông tin cá nhân, và chỉ gửi cho mỗi nhà cung cấp những gì họ cần.",
+          "quebec": "Nếu bạn ở Quebec, thông tin cá nhân của bạn có thể được chuyển ra ngoài Quebec, như đã mô tả ở trên. Để biết những nhà cung cấp nào ở ngoài Canada xử lý thông tin của bạn và vì sao, hãy gửi email đến <email>{{email}}</email>."
+        },
+        "retention": {
+          "title": "Chúng tôi lưu giữ thông tin trong bao lâu",
+          "p1": "Chúng tôi chỉ lưu giữ thông tin cá nhân trong thời gian cần thiết cho các mục đích nêu trên, hoặc trong thời gian pháp luật yêu cầu:",
+          "periods": {
+            "account": {
+              "term": "Tài khoản và hồ sơ của bạn:",
+              "text": "cho đến khi bạn yêu cầu chúng tôi xóa tài khoản, việc mà chúng tôi thực hiện trong vòng 30 ngày."
+            },
+            "signIn": {
+              "term": "Mã đăng nhập và phiên đăng nhập:",
+              "text": "mã hết hạn sau {{codeMinutes}}, và một phiên kết thúc {{sessionDays}} sau lần cuối bạn sử dụng phiên đó."
+            },
+            "activity": {
+              "term": "Sự kiện sẽ tham gia, mục đã lưu, lượt theo dõi và vé:",
+              "text": "cho đến khi bạn gỡ bỏ chúng hoặc xóa tài khoản."
+            },
+            "usage": {
+              "term": "Lượt nhấp, lượt tìm kiếm và lượt quét poster:",
+              "text": "chúng tôi lưu chúng mà không kèm tên của bạn, và khi bạn xóa tài khoản, chúng tôi gỡ liên kết giữa các lượt nhấp của bạn và tài khoản đó."
+            },
+            "emails": {
+              "term": "Hồ sơ email:",
+              "text": "khi tài khoản của bạn còn tồn tại, chúng tôi lưu bản ghi về những email đã gửi cho bạn, không kèm nội dung."
+            },
+            "payouts": {
+              "term": "Hồ sơ chi trả:",
+              "text": "sáu năm sau khoản chi trả, theo yêu cầu của luật thuế Canada."
+            },
+            "outreach": {
+              "term": "Thông tin liên hệ của tổ chức:",
+              "text": "kèm ghi chú của chúng tôi về việc đã liên hệ với tổ chức hay chưa. Nếu một tổ chức yêu cầu, chúng tôi sẽ ngừng liên hệ và xóa thông tin liên hệ của tổ chức đó."
+            },
+            "messages": {
+              "term": "Tin nhắn:",
+              "text": "trong thời gian chúng tôi cần để trả lời bạn và lưu lại hồ sơ cuộc trò chuyện."
+            },
+            "logs": {
+              "term": "Nhật ký:",
+              "text": "nhật ký của trang web được xóa sau 14 ngày. Nhật ký riêng của máy chủ có thể chứa địa chỉ IP hoặc địa chỉ email, và chúng tôi chỉ lưu giữ chúng trong thời gian cần thiết để vận hành và sửa lỗi Wat2Do."
+            }
+          }
+        },
+        "security": {
+          "title": "Chúng tôi bảo vệ thông tin như thế nào",
+          "p1": "Chúng tôi bảo vệ thông tin cá nhân bằng các biện pháp phù hợp với mức độ nhạy cảm của thông tin: kết nối được mã hóa, đăng nhập không cần mật khẩu, mã đăng nhập, token phiên và địa chỉ IP được băm, quy tắc cơ sở dữ liệu giữ kín hồ sơ của từng người, và quyền truy cập chỉ giới hạn cho những người cần.",
+          "p2": "Không có hệ thống nào an toàn tuyệt đối. Nếu một sự cố vi phạm các biện pháp bảo vệ của chúng tôi liên quan đến thông tin cá nhân của bạn tạo ra nguy cơ thực sự gây tổn hại đáng kể cho bạn, chúng tôi sẽ thông báo cho bạn và Văn phòng Ủy viên Quyền riêng tư Canada (Office of the Privacy Commissioner of Canada), theo quy định của pháp luật."
+        },
+        "rights": {
+          "title": "Lựa chọn và quyền của bạn",
+          "p1": "Bạn có thể tự mình:",
+          "choices": {
+            "emails": "Tắt email buổi sáng, nhắc nhở sự kiện và cảnh báo thay đổi sự kiện trong Cài đặt, hoặc bằng liên kết hủy đăng ký trong bất kỳ email nào trong số đó. Mã đăng nhập và vé vẫn sẽ được gửi đến, vì bạn cần chúng.",
+            "profile": "Thay đổi ảnh, trường, khoa, sở thích và ngôn ngữ của bạn trong Cài đặt.",
+            "activity": "Gỡ các sự kiện bạn sẽ tham gia hoặc đã lưu, và các tổ chức bạn theo dõi, bất cứ khi nào bạn muốn.",
+            "analytics": "Chặn cookie của Google Analytics trong trình duyệt."
+          },
+          "p2": "Bạn cũng có thể yêu cầu chúng tôi:",
+          "requests": {
+            "access": "Cho bạn biết chúng tôi đang giữ những thông tin cá nhân nào về bạn, cách chúng tôi sử dụng và đã chia sẻ với ai.",
+            "copy": "Cung cấp cho bạn bản sao thông tin bạn đã cung cấp cho chúng tôi, ở định dạng phổ biến mà máy tính có thể đọc được.",
+            "correct": "Sửa thông tin sai hoặc chưa đầy đủ.",
+            "delete": "Xóa tài khoản và thông tin cá nhân của bạn.",
+            "withdraw": "Ngừng sử dụng thông tin của bạn cho một mục đích mà bạn đã đồng ý, trừ khi pháp luật yêu cầu chúng tôi giữ lại thông tin đó.",
+            "stopPublishing": "Ngừng hiển thị công khai thông tin của bạn, hoặc gỡ thông tin đó khỏi chỉ mục tìm kiếm, khi pháp luật cho bạn quyền đó."
+          },
+          "p3": "Hãy gửi email đến <email>{{email}}</email> từ địa chỉ email của tài khoản bạn. Việc này miễn phí, và chúng tôi sẽ trả lời trong vòng 30 ngày. Chúng tôi có thể cần xác nhận đó đúng là bạn, và có thể giữ lại một số thông tin mà pháp luật yêu cầu chúng tôi lưu giữ, chẳng hạn hồ sơ chi trả.",
+          "p4": "Nếu bạn không hài lòng với câu trả lời của chúng tôi, bạn có thể khiếu nại lên Văn phòng Ủy viên Quyền riêng tư Canada (Office of the Privacy Commissioner of Canada). Tại Quebec, bạn cũng có thể gửi khiếu nại đến Commission d'accès à l'information, còn tại Alberta hoặc British Columbia, đến Ủy viên Thông tin và Quyền riêng tư của tỉnh đó."
+        },
+        "others": {
+          "title": "Nếu bạn không sử dụng Wat2Do",
+          "p1": "Một số thông tin chúng tôi lưu giữ là về những người không sử dụng Wat2Do: tên người dùng được gắn thẻ trong bài đăng công khai của một tổ chức, tin nhắn gửi đến các tài khoản Instagram của chúng tôi và địa chỉ email của các tổ chức được công bố trên mạng.",
+          "p2": "Khi bạn nhắn tin cho một trong các tài khoản Instagram của chúng tôi, chúng tôi đọc tin nhắn và mọi bài đăng bạn chia sẻ để trả lời, và AI giúp quyết định cách trả lời. Chúng tôi lưu một bản ghi ngắn về mỗi cuộc trò chuyện (tên tài khoản và tin nhắn mới nhất) để biết những cuộc trò chuyện nào đã được trả lời, cùng lời của một tổ chức khi tổ chức đó yêu cầu chúng tôi sửa một mục đã đăng của mình. Chúng tôi không bao giờ ghi nội dung tin nhắn vào nhật ký.",
+          "p3": "Bạn có các quyền giống như bất kỳ ai khác: bạn có thể hỏi chúng tôi đang lưu giữ những gì về bạn và yêu cầu chúng tôi xóa. Một tổ chức cũng có thể yêu cầu chúng tôi không đưa tổ chức đó vào các bài đăng Instagram của chúng tôi, hoặc ngừng liên hệ với tổ chức đó."
+        },
+        "children": {
+          "title": "Trẻ em",
+          "p1": "Wat2Do dành cho sinh viên đại học và cao đẳng. Wat2Do không dành cho trẻ em dưới 13 tuổi, và chúng tôi không cố ý thu thập thông tin của trẻ em. Tại Quebec, bất kỳ ai dưới 14 tuổi đều cần có sự đồng ý của cha mẹ hoặc người giám hộ trước khi cung cấp thông tin cá nhân cho chúng tôi. Nếu bạn cho rằng một trẻ em đã cung cấp thông tin cá nhân cho chúng tôi mà không có sự đồng ý cần thiết, hãy gửi email cho chúng tôi và chúng tôi sẽ xóa thông tin đó."
+        },
+        "changes": {
+          "title": "Thay đổi đối với chính sách này",
+          "p1": "Chúng tôi đăng mọi thay đổi trên trang này kèm ngày có hiệu lực mới, và lưu giữ các phiên bản trước để gửi cho bạn nếu bạn yêu cầu. Trước khi một thay đổi quan trọng có hiệu lực, chẳng hạn một cách sử dụng mới đối với thông tin của bạn, chúng tôi sẽ thông báo cho bạn qua email hoặc trên Wat2Do và xin sự đồng ý của bạn khi pháp luật yêu cầu. Chúng tôi sẽ không sử dụng thông tin mà chúng tôi đang lưu giữ theo một cách mới khi chưa có sự đồng ý mà pháp luật yêu cầu."
+        },
+        "contact": {
+          "title": "Liên hệ",
+          "p1": "Hãy gửi thắc mắc, yêu cầu và khiếu nại về quyền riêng tư đến <email>{{email}}</email>."
+        }
+      }
+    }
+  }
+}

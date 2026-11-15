@@ -14,7 +14,7 @@ What every hook here has to be, and what to check before adding one:
 - Paid off: the rest of the video answers whatever the hook opens.
 - Safe for a club inbox: no shock bait, fake urgency, money flexing, looks, dating, politics or religion.
 - No "stop scrolling" or "don't scroll": the video arrives by email, not in a feed.
-- `<club>` and `<event>` stand for the club's name and one of its real events (its upcoming one, when it has one), which Claude fills in; `{{school_name}}` and `{{qr_reimbursement_dollars}}` are filled in like the prompt's own, and no other `{{` key works here.
+- `<club>` and `<event>` stand for the club's name and one of its real events (its upcoming one, when it has one), which Claude fills in; `{{school_name}}` and `{{payout_per_scan}}` (the club payout per scanned student, such as "$2") are filled in like the prompt's own, and no other `{{` key works here.
 
 ### Identity call
 
@@ -46,7 +46,7 @@ Keep it a scene they would picture, never a claim about what happened at their e
 - "POV: it's ten minutes before <event> and you're doing a headcount in your head."
 - "POV: you're the exec making the poster, the post, the story and the reminder for <event>."
 - "POV: your next event pays for its own snacks."
-- "POV: you're scanning people into <event>, and every scan pays you back."
+- "POV: you're scanning people into <event>, and every scan pays the club {{payout_per_scan}}."
 
 ### Question
 
@@ -55,13 +55,13 @@ Ask something they will answer in their head before you finish the sentence.
 - "How many people at <event> had never heard of <club> before?"
 - "What would <event> look like with twice the people?"
 - "Be honest, how much of your budget goes to snacks?"
-- "Would you take ${{qr_reimbursement_dollars}} for every student you scan into <event>?"
+- "Would you take {{payout_per_scan}} for every student you scan into <event>?"
 - "Did you know <event> is already on Wat2Do?"
 
 ### Results first
 
 Lead with the most concrete thing they get, then explain it.
-- "${{qr_reimbursement_dollars}} back for every student you scan into your next event."
+- "{{payout_per_scan}} for every student you scan into your next event."
 - "<event> is already on Wat2Do. Claim it, and it's verified and set up for QR check-in, free."
 - "<club> already has a page on Wat2Do. You just haven't claimed it."
 - "Your <club> page is already up, and <event> is on it."
@@ -80,9 +80,9 @@ A true, mildly spicy take about running a club, one they would nod at.
 ### Founder confession
 
 One honest line about Tony, then turn it to them fast.
-Use only what the prompt says about him: a software engineer on co-op at Amazon, busy, building Wat2Do because it is his dream.
+Use only what the prompt says about him: a software engineer on co-op at Amazon who builds Wat2Do on the side, because good club events should not go unnoticed.
 - "I'm on co-op at Amazon, and outside of work I'm building one thing: Wat2Do."
 - "I'm a software engineer at Amazon, and I've been spending every spare hour on this."
-- "Okay, honest moment: Wat2Do is my dream, and <club> is exactly why."
+- "Wat2Do is my side project, and <club> is the kind of club I built it for."
 - "I work at Amazon on co-op, and the thing I can't stop thinking about is events like <event>."
 - "I build software at Amazon by day, and the problem I'm trying to fix is good events nobody hears about."

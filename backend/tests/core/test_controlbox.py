@@ -982,12 +982,56 @@ def test_outreach_pitches_waterloo_with_a_claim_link() -> None:
     control = load_controlbox().outreach
     assert control.pitch_schools == ["uwaterloo"]
     assert "{school}" in control.claim_url_template and "{token}" in control.claim_url_template
+    assert control.payout_terms_url_template == "https://{school}.wat2do.io/club-payout-terms"
+
+
+def test_every_pitched_school_takes_part_in_club_payouts() -> None:
+    # Every pitch offers the club payout, so a pitched school must be one that pays it.
+    box = load_controlbox()
+    assert set(box.outreach.pitch_schools) <= set(box.club_payouts.schools)
+
+
+def test_club_payouts_pay_two_dollars_a_scan_within_limits() -> None:
+    control = load_controlbox().club_payouts
+    assert (control.rate_cents, control.currency) == (200, "cad")
+    assert control.max_payout_cents_per_club_per_month >= control.rate_cents
+    assert 1 <= control.payout_day_of_month <= 28
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"rate_cents": 0},
+        {"currency": "usd"},
+        {"schools": []},
+        {"schools": ["uwaterloo", "uwaterloo"]},
+        {"schools": ["UWaterloo"]},
+        {"max_payout_cents_per_club_per_month": 100},
+        {"payout_day_of_month": 31},
+        {"terms_effective_date": "soon"},
+    ],
+)
+def test_club_payouts_reject_unusable_settings(tmp_path: Path, patch: dict) -> None:
+    path = _write_control(tmp_path, "club_payouts", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [{"contact_email": "team at wat2do"}, {"data_policy_effective_date": "2026-13-01"}],
+)
+def test_legal_controls_reject_an_unusable_contact_or_date(tmp_path: Path, patch: dict) -> None:
+    path = _write_control(tmp_path, "legal", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
 
 
 @pytest.mark.parametrize(
     "patch",
     [
         {"claim_url_template": "https://{school}.wat2do.io/claim"},
+        {"payout_terms_url_template": "https://wat2do.io/club-payout-terms"},
         {"pitch_schools": []},
         {"pitch_schools": ["uwaterloo", "uwaterloo"]},
         {"pitch_schools": ["UWaterloo"]},

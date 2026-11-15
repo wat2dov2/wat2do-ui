@@ -1,0 +1,19 @@
+{
+  "rate_cents": 200,
+  "currency": "cad",
+  "schools": [
+    "uwaterloo"
+  ],
+  "max_paid_scans_per_event_date": 150,
+  "max_payout_cents_per_club_per_month": 50000,
+  "payout_day_of_month": 15,
+  "payout_details_deadline_days": 180,
+  "dispute_window_days": 30,
+  "dispute_reply_days": 14,
+  "proof_response_days": 14,
+  "review_hold_days": 60,
+  "clawback_days": 90,
+  "change_notice_days": 30,
+  "liability_floor_cents": 10000,
+  "terms_effective_date": "2026-11-15"
+}

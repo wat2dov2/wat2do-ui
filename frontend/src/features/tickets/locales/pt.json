@@ -129,6 +129,8 @@
       "pauseHint": "Ninguém mais consegue garantir ingresso até você desativar isso.",
       "fees": "A Stripe fica com cerca de 2,9% + 30 centavos de cada pedido. O resto vai para a sua organização.",
       "goingNote": "Todo mundo que já disse que vai recebe um ingresso por e-mail.",
+      "payoutNoteSetup": "Cada check-in elegível rende {{rate}} à sua organização. Ao ativar os ingressos, sua organização aceita os <terms>Termos de pagamento a organizações</terms>.",
+      "payoutNote": "Cada check-in elegível rende {{rate}} à sua organização, conforme os <terms>Termos de pagamento a organizações</terms>.",
       "payoutsNeeded": "Configure os repasses primeiro, para que o dinheiro tenha para onde ir.",
       "setUpPayouts": "Configurar repasses",
       "turnOnFree": "Ativar ingressos gratuitos",

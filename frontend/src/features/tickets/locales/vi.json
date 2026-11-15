@@ -123,6 +123,8 @@
       "pauseHint": "Sẽ không ai nhận thêm vé được cho đến khi bạn tắt tùy chọn này.",
       "fees": "Stripe giữ lại khoảng 2,9% + 30 xu trên mỗi đơn hàng. Phần còn lại thuộc về tổ chức của bạn.",
       "goingNote": "Tất cả những ai đã báo sẽ tham dự đều nhận được vé qua email.",
+      "payoutNoteSetup": "Mỗi lượt check-in hợp lệ mang về cho tổ chức của bạn {{rate}}. Khi bật vé, tổ chức của bạn đồng ý với <terms>Điều khoản chi trả cho tổ chức</terms>.",
+      "payoutNote": "Mỗi lượt check-in hợp lệ mang về cho tổ chức của bạn {{rate}}, theo <terms>Điều khoản chi trả cho tổ chức</terms>.",
       "payoutsNeeded": "Hãy thiết lập nhận tiền trước để tiền có nơi chuyển đến.",
       "setUpPayouts": "Thiết lập nhận tiền",
       "turnOnFree": "Bật vé miễn phí",

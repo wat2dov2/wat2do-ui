@@ -2,7 +2,9 @@
 
 Claude reads one club's newest events (``pitch_prompt.md``) and decides whether
 students would come out for them; for a club that is a fit it writes the video
-script the admin records and the personal email sent with the video. Each script
+script the admin records and the personal email sent with the video. Both offer
+the club payout per scanned student (``controlbox/club_payouts.json``), and the
+email links its terms. Each script
 opens with a hook in one style from ``hooks.md``, the same style for a lead every
 time, so scripts across clubs do not all open the same way. Only leads at
 the control box's ``pitch_schools`` are pitched, and only fit leads reach the admin
@@ -30,6 +32,7 @@ from services.outreach import service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
+PAYOUTS = controlbox.club_payouts
 PROMPT = (Path(__file__).with_name("pitch_prompt.md")).read_text()
 # Each "### " section of hooks.md is one hook style; its preamble is for people only.
 HOOK_STYLES = [
@@ -125,13 +128,19 @@ def _hook_style(lead_id: str) -> str:
     return HOOK_STYLES[int.from_bytes(digest[:8]) % len(HOOK_STYLES)]
 
 
+def _payout_per_scan() -> str:
+    """The club payout for one scanned student as a script says it, such as "$2" or "$2.50"."""
+    dollars, cents = divmod(PAYOUTS.rate_cents, 100)
+    return f"${dollars}" if cents == 0 else f"${dollars}.{cents:02d}"
+
+
 def _prompt(lead: dict[str, Any]) -> str:
     # The hook style goes in first, so the keys below are filled inside it too.
     values = {
         "hook_style": _hook_style(lead["lead_id"]),
         "sender_name": CONTROL.sender_name,
         "school_name": lead["school_name"],
-        "qr_reimbursement_dollars": str(CONTROL.qr_reimbursement_dollars),
+        "payout_per_scan": _payout_per_scan(),
     }
     prompt = PROMPT
     for key, value in values.items():

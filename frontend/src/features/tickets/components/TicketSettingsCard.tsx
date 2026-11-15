@@ -1,9 +1,11 @@
 import { useId, useState } from "react";
 import NextLink from "next/link";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
+import clubPayouts from "../../../../../backend/controlbox/club_payouts.json" with { type: "json" };
 import { useTicketingSettings } from "@/features/tickets/hooks/useTickets";
 import { controlBox } from "@/shared/config/controlBox";
 import { ROUTES } from "@/shared/constants/routes";
+import { getCurrentSchool } from "@/shared/constants/schools";
 import type { ApiEventTicketingResponse } from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { FormActions, Stack } from "@/shared/layout";
@@ -18,6 +20,7 @@ import {
 } from "@/shared/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/shared/ui/field";
 import { FormInput } from "@/shared/ui/form-field";
+import { Link } from "@/shared/ui/link";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { RadioOptionGroup } from "@/shared/ui/radio-option-group";
 import { Switch } from "@/shared/ui/switch";
@@ -176,6 +179,17 @@ export function TicketSettingsCard({
           <CardDescription>
             {paid ? t("tickets.desk.fees") : ticketing ? null : t("tickets.desk.goingNote")}
           </CardDescription>
+          {/* The club panel runs on the club's own school site, so its school decides. */}
+          {clubPayouts.schools.includes(getCurrentSchool()) ? (
+            <CardDescription>
+              <Trans
+                t={t}
+                i18nKey={ticketing ? "tickets.desk.payoutNote" : "tickets.desk.payoutNoteSetup"}
+                values={{ rate: formatCents(clubPayouts.rate_cents, clubPayouts.currency, i18n.language) }}
+                components={{ terms: <Link href={ROUTES.CLUB_PAYOUT_TERMS} target="_blank" /> }}
+              />
+            </CardDescription>
+          ) : null}
         </Stack>
       </CardContent>
       <CardFooter>

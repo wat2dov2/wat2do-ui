@@ -126,6 +126,8 @@
       "pauseHint": "Bis du das wieder ausschaltest, kann sich niemand mehr ein Ticket holen.",
       "fees": "Stripe behält etwa 2,9 % + 30 Cent pro Bestellung ein. Den Rest bekommt deine Organisation.",
       "goingNote": "Alle, die schon zugesagt haben, bekommen ein Ticket per E-Mail.",
+      "payoutNoteSetup": "Jeder berechtigte Check-in bringt deiner Organisation {{rate}}. Wenn du Tickets aktivierst, akzeptiert deine Organisation die <terms>Auszahlungsbedingungen für Organisationen</terms>.",
+      "payoutNote": "Jeder berechtigte Check-in bringt deiner Organisation {{rate}}, gemäß den <terms>Auszahlungsbedingungen für Organisationen</terms>.",
       "payoutsNeeded": "Richte zuerst Auszahlungen ein, damit das Geld irgendwo ankommen kann.",
       "setUpPayouts": "Auszahlungen einrichten",
       "turnOnFree": "Kostenlose Tickets aktivieren",

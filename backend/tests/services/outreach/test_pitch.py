@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
@@ -22,7 +23,10 @@ LEAD = {
     ],
 }
 SCRIPT = "Hey Running Club! " + "Your bonfire socials are exactly what campus needs. " * 8
-BODY = "Hi Running Club team,\n\nI made you a video.\n\n{{claim_url}}\n\nTony"
+BODY = (
+    "Hi Running Club team,\n\nI made you a video.\n\nThe payout terms:\n{{payout_terms_url}}"
+    "\n\n{{claim_url}}\n\nTony"
+)
 
 
 def _fit(**changes):
@@ -36,9 +40,10 @@ def _fit(**changes):
     }
 
 
-def test_a_fit_keeps_its_script_and_email_with_one_claim_link():
+def test_a_fit_keeps_its_script_and_email_with_one_claim_link_and_one_terms_link():
     written = Pitch.model_validate(_fit())
     assert written.fit and written.email_body.count("{{claim_url}}") == 1
+    assert written.email_body.count("{{payout_terms_url}}") == 1
 
 
 def test_a_club_that_is_not_a_fit_keeps_only_its_reason():
@@ -60,6 +65,11 @@ def test_a_club_that_is_not_a_fit_keeps_only_its_reason():
         {"email_body": BODY.replace("{{claim_url}}", "")},
         {"email_body": BODY + "\n{{claim_url}}"},
         {"email_body": BODY.replace("{{claim_url}}", "https://wat2do.io/claim/x")},
+        {"email_body": BODY.replace("{{payout_terms_url}}", "")},
+        {"email_body": BODY + "\n{{payout_terms_url}}"},
+        {"email_body": BODY.replace("{{payout_terms_url}}", "https://wat2do.io/club-payout-terms")},
+        {"email_body": BODY + "\n{{club_name}}"},
+        {"script": SCRIPT + " Terms: {{payout_terms_url}}"},
         {"email_body": BODY + "\nSee https://uwrunning.ca"},
         {"script": SCRIPT + " Visit www.example.com"},
         {"script": SCRIPT.replace("!", " —")},
@@ -76,14 +86,20 @@ def test_a_pitch_that_breaks_the_rules_is_refused(changes):
         Pitch.model_validate(_fit(**changes))
 
 
-def test_the_prompt_names_the_school_offer_and_sender_but_leaves_the_claim_link():
+def test_the_prompt_names_the_school_payout_and_sender_but_leaves_both_links():
     prompt = pitch._prompt(LEAD)
     assert "University of Waterloo" in prompt
-    assert f"${pitch.CONTROL.qr_reimbursement_dollars}" in prompt
+    assert "$2 for every student" in prompt
     assert pitch.CONTROL.sender_name in prompt
-    assert "{{claim_url}}" in prompt
-    assert "{{" not in prompt.replace("{{claim_url}}", "")
+    assert "{{claim_url}}" in prompt and "{{payout_terms_url}}" in prompt
+    assert "{{" not in prompt.replace("{{claim_url}}", "").replace("{{payout_terms_url}}", "")
     assert "—" not in prompt
+
+
+@pytest.mark.parametrize(("cents", "said"), [(200, "$2"), (250, "$2.50"), (205, "$2.05")])
+def test_the_payout_reads_as_dollars(monkeypatch, cents, said):
+    monkeypatch.setattr(pitch, "PAYOUTS", SimpleNamespace(rate_cents=cents))
+    assert pitch._payout_per_scan() == said
 
 
 def test_every_lead_gets_one_hook_style_and_keeps_it():

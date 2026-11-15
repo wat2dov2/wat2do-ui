@@ -410,3 +410,16 @@ export function formatOccurrence(
   const event = { occurrences: [occurrence] };
   return `${formatCardDate(event, timeZone, locale)}, ${formatCardTime(event, timeZone, locale)}`;
 }
+
+/** A day of the month as a sentence says it: "15th" in English, the number in the language's own digits elsewhere. */
+export function formatDayOfMonth(day: number, language: string): string {
+  if (!language.toLowerCase().startsWith("en")) {
+    return new Intl.NumberFormat(language).format(day);
+  }
+  const remainder100 = day % 100;
+  if (remainder100 >= 11 && remainder100 <= 13) {
+    return `${day}th`;
+  }
+  const suffix = { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
+  return `${day}${suffix}`;
+}

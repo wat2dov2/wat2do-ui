@@ -123,6 +123,8 @@
       "pauseHint": "Nobody new can get a ticket until you turn this off.",
       "fees": "Stripe keeps about 2.9% + 30¢ of each order. Your club gets the rest.",
       "goingNote": "Everyone who already said they're going gets a ticket by email.",
+      "payoutNoteSetup": "Each eligible check-in earns your club {{rate}}. Turning on tickets means your club accepts the <terms>Club Payout Terms</terms>.",
+      "payoutNote": "Each eligible check-in earns your club {{rate}}, under the <terms>Club Payout Terms</terms>.",
       "payoutsNeeded": "Set up payouts first, so the money has somewhere to go.",
       "setUpPayouts": "Set up payouts",
       "turnOnFree": "Turn on free tickets",

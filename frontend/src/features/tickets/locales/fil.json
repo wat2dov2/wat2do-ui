@@ -126,6 +126,8 @@
       "pauseHint": "Walang bagong makakakuha ng tiket hangga't hindi mo ito ino-off.",
       "fees": "Kinukuha ng Stripe ang mga 2.9% + 30¢ ng bawat order. Mapupunta sa organisasyon mo ang natitira.",
       "goingNote": "Makakatanggap ng tiket sa email ang lahat ng nagsabing pupunta sila.",
+      "payoutNoteSetup": "Bawat kwalipikadong check-in ay kumikita ng {{rate}} para sa organisasyon mo. Kapag binuksan mo ang tickets, tinatanggap ng organisasyon mo ang <terms>Mga Tuntunin sa Bayad sa Organisasyon</terms>.",
+      "payoutNote": "Bawat kwalipikadong check-in ay kumikita ng {{rate}} para sa organisasyon mo, ayon sa <terms>Mga Tuntunin sa Bayad sa Organisasyon</terms>.",
       "payoutsNeeded": "I-set up muna ang mga payout para may mapupuntahan ang pera.",
       "setUpPayouts": "I-set up ang mga payout",
       "turnOnFree": "I-on ang libreng tiket",

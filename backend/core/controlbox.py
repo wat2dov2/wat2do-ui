@@ -1304,6 +1304,56 @@ class OutreachFormalityControl(_ControlModel):
         return self
 
 
+class ClubPayoutsControl(_ControlModel):
+    """What Wat2Do pays a club for each attendee its free QR check-in scans in.
+
+    The club payout terms page (frontend/src/features/legal) shows every value
+    here, and outreach pitches offer the rate.
+    """
+
+    rate_cents: int = Field(ge=1, le=10000)
+    currency: Literal["cad"]
+    # Only clubs at these schools take part, so only they are pitched the payout.
+    schools: list[str] = Field(min_length=1)
+    max_paid_scans_per_event_date: int = Field(ge=1, le=10000)
+    max_payout_cents_per_club_per_month: int = Field(ge=1, le=10_000_000)
+    # Each month's payouts go out by this day of the next month.
+    payout_day_of_month: int = Field(ge=1, le=28)
+    # A payout lapses when the club has given no way to pay it this long after the event.
+    payout_details_deadline_days: int = Field(ge=30, le=730)
+    # A club may question a payout this long after it is sent, and hears back within this long.
+    dispute_window_days: int = Field(ge=7, le=365)
+    dispute_reply_days: int = Field(ge=1, le=60)
+    # A club asked for proof that an event's check-ins are real has this long to send it.
+    proof_response_days: int = Field(ge=7, le=90)
+    # The longest a payout under review waits past its payout date.
+    review_hold_days: int = Field(ge=1, le=180)
+    # How long after paying Wat2Do may take back a payout for check-ins that were not eligible.
+    clawback_days: int = Field(ge=1, le=365)
+    # A change that pays clubs less is announced this long before it applies.
+    change_notice_days: int = Field(ge=1, le=90)
+    # Either side's liability is capped at the greater of this and a year of payouts.
+    liability_floor_cents: int = Field(ge=0, le=10_000_000)
+    terms_effective_date: date
+
+    @model_validator(mode="after")
+    def _validate_payouts(self) -> "ClubPayoutsControl":
+        if len(set(self.schools)) != len(self.schools) or not all(
+            re.fullmatch(r"[a-z0-9-]{1,80}", school) for school in self.schools
+        ):
+            raise ValueError("club payout schools must be unique school slugs")
+        if self.max_payout_cents_per_club_per_month < self.rate_cents:
+            raise ValueError("a club's monthly payout limit must cover at least one scan")
+        return self
+
+
+class LegalControl(_ControlModel):
+    """Who to contact about the site's legal pages, and when the data policy last changed."""
+
+    contact_email: str = Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=254)
+    data_policy_effective_date: date
+
+
 class OutreachControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
@@ -1335,15 +1385,14 @@ class OutreachControl(_ControlModel):
     pitch_recheck_days: int = Field(ge=1, le=365)
     # The club's newest events Claude reads.
     pitch_event_limit: int = Field(ge=1, le=50)
-    # What the pitch offers: this much of a club's event-related expenses back for
-    # every attendee its free Wat2Do QR check-in scans in.
-    qr_reimbursement_dollars: int = Field(ge=1, le=100)
     # Who records the video and signs the email.
     sender_name: str = Field(min_length=1, max_length=60)
     # "{school}" becomes the school's slug and "{club_id}" the club's id.
     club_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{club_id\}\S*$")
     # "{school}" becomes the school's slug and "{token}" the lead's claim token.
     claim_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{token\}\S*$")
+    # The club payout terms page each email links; "{school}" becomes the school's slug.
+    payout_terms_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
     formality: OutreachFormalityControl
 
     @model_validator(mode="after")
@@ -1592,6 +1641,8 @@ class ControlBox(_ControlModel):
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl
+    club_payouts: ClubPayoutsControl
+    legal: LegalControl
     instagram_follow: InstagramFollowControl
     instagram_dms: InstagramDmsControl
     instagram_emulator: InstagramEmulatorControl

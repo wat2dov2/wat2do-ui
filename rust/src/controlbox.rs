@@ -555,6 +555,8 @@ pub struct Outreach {
     pub club_url_template: String,
     /// A lead's claim link, with `{school}` and `{token}` filled in.
     pub claim_url_template: String,
+    /// The club payout terms page each email links, with `{school}` filled in.
+    pub payout_terms_url_template: String,
 }
 
 /// `controlbox/positions.json`, every field.
@@ -965,6 +967,7 @@ mod tests {
         assert!(TICKETING.maximum_tickets_per_order > 0);
         assert!(POSITIONS.undated_visibility_months > 0);
         assert!(OUTREACH.club_url_template.contains("{club_id}"));
+        assert!(OUTREACH.payout_terms_url_template.contains("{school}"));
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 
         assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);

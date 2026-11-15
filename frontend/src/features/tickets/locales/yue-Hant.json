@@ -123,6 +123,8 @@
       "pauseHint": "喺你關閉呢個設定之前，唔會再有新嘅人攞到門票。",
       "fees": "Stripe 會喺每張訂單收取大約 2.9% + 30¢，其餘嘅錢歸你嘅組織。",
       "goingNote": "所有已經話會去嘅人都會經電郵收到門票。",
+      "payoutNoteSetup": "每次合資格簽到可以為你嘅組織賺 {{rate}}。開啟門票即代表你嘅組織接受<terms>組織付款條款</terms>。",
+      "payoutNote": "每次合資格簽到可以按照<terms>組織付款條款</terms>為你嘅組織賺 {{rate}}。",
       "payoutsNeeded": "請先設定收款，等啲錢有地方去。",
       "setUpPayouts": "設定收款",
       "turnOnFree": "開啟免費門票",

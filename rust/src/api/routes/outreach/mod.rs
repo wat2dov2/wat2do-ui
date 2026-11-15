@@ -45,6 +45,8 @@ const MAX_NOTES_LENGTH: usize = 4000;
 
 /// Where a pitch's email names its claim link.
 const CLAIM_URL_KEY: &str = "{{claim_url}}";
+/// Where a pitch's email links the club payout terms.
+const PAYOUT_TERMS_URL_KEY: &str = "{{payout_terms_url}}";
 
 #[derive(ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -197,7 +199,7 @@ impl LeadRow {
         })
     }
 
-    /// The lead as the page shows it, its claim link filled into the email.
+    /// The lead as the page shows it, its claim link and the payout terms filled into the email.
     fn into_response(self, listings: i64) -> OutreachLeadResponse {
         let club_url = OUTREACH
             .club_url_template
@@ -207,12 +209,18 @@ impl LeadRow {
             .claim_url_template
             .replace("{school}", &self.school_slug)
             .replace("{token}", &self.claim_token.to_string());
+        let payout_terms_url = OUTREACH
+            .payout_terms_url_template
+            .replace("{school}", &self.school_slug);
         OutreachLeadResponse {
             id: self.id,
             club_id: self.club_id.into(),
             club_name: self.club_name,
             club_url,
-            email_body: self.pitch_email_body.replace(CLAIM_URL_KEY, &claim_url),
+            email_body: self
+                .pitch_email_body
+                .replace(CLAIM_URL_KEY, &claim_url)
+                .replace(PAYOUT_TERMS_URL_KEY, &payout_terms_url),
             claim_url,
             listings,
             school_slug: self.school_slug,
@@ -464,7 +472,8 @@ mod tests {
             pitch_reason: "Open game nights with snacks students drop into.".into(),
             pitch_script: "Hey Board Games Club! Your game nights are the best on campus.".into(),
             pitch_email_subject: "Your game nights, on Wat2Do".into(),
-            pitch_email_body: "Hi Board Games Club team,\n\nClaim it here:\n{{claim_url}}\n\nTony"
+            pitch_email_body: "Hi Board Games Club team,\n\nClaim it here:\n{{claim_url}}\n\n\
+                Payout terms: {{payout_terms_url}}\n\nTony"
                 .into(),
             status: "new".into(),
             notes: String::new(),
@@ -477,7 +486,7 @@ mod tests {
     }
 
     #[test]
-    fn a_lead_carries_its_pitch_with_the_claim_link_filled_in() {
+    fn a_lead_carries_its_pitch_with_the_claim_link_and_payout_terms_filled_in() {
         let lead = lead().into_response(4);
         assert_eq!(lead.club_url, "https://uwaterloo.wat2do.io/clubs/10");
         assert_eq!(
@@ -488,7 +497,8 @@ mod tests {
         assert_eq!(
             lead.email_body,
             format!(
-                "Hi Board Games Club team,\n\nClaim it here:\n{}\n\nTony",
+                "Hi Board Games Club team,\n\nClaim it here:\n{}\n\n\
+                 Payout terms: https://uwaterloo.wat2do.io/club-payout-terms\n\nTony",
                 lead.claim_url
             )
         );
