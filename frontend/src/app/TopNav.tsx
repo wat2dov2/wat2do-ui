@@ -381,21 +381,22 @@ export function TopNav() {
             </DrawerHeader>
             <DrawerBody className="gap-3">
               {/*
-                On a wide screen the bar already shows the pages, Submit,
-                language and theme, so the menu there lists only what the bar
+                The menu always opens on the logo and a divider. On a wide
+                screen the bar already shows the pages, Submit, language and
+                theme, so below the divider the menu lists only what the bar
                 does not: the visitor's own pages and club and admin tools.
               */}
-              <Stack direction="horizontal" align="center" justify="between" gap={2} className="md:hidden">
+              <Stack direction="horizontal" align="center" justify="between" gap={2}>
                 <Wat2DoLogoLink
                   label={t("navigation.events")}
                   onNavigate={closeNavigation}
                 />
-                <Stack direction="horizontal" align="center" gap={2}>
+                <Stack direction="horizontal" align="center" gap={2} className="md:hidden">
                   <LanguageSelector />
                   <ThemeToggle />
                 </Stack>
               </Stack>
-              <Separator className="md:hidden" />
+              <Separator />
               {!isAuthenticated && (
                 <>
                   <Button
