@@ -376,7 +376,7 @@ async fn draw_once(event: &Waiting, feedback: Option<&str>) -> Result<Drawn> {
         _ => return Ok(Drawn::Plain),
     };
     let problem = if !is_title_svg(svg) {
-        Some("it held something besides <text>, <tspan>, <g> and <rect>, or ran past 20000 characters".to_owned())
+        Some("it held a script, image, frame, javascript: link or event handler, or ran past 20000 characters".to_owned())
     } else {
         let missing = missing_words(svg, &event.title);
         if missing.is_empty() {
