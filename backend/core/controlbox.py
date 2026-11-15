@@ -445,10 +445,6 @@ class ScrapingControl(_ControlModel):
         return self
 
 
-class PublicAttendanceControl(_ControlModel):
-    maximum_display_names: int = Field(gt=0)
-
-
 class SocialPreviewsControl(_ControlModel):
     """The school share image the frontend renders at `/og-image.png`."""
 
@@ -1629,7 +1625,6 @@ class ControlBox(_ControlModel):
     contact: ContactControl
     admin: AdminControl
     uploads: UploadsControl
-    public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl

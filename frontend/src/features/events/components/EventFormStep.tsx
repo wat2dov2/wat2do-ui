@@ -23,6 +23,8 @@ type EventFormHookReturn = ReturnType<typeof useEventForm>;
 
 interface EventFormStepProps {
   isEditMode: boolean;
+  /** The saved event being edited; absent while it is new. */
+  editEventId?: number;
   canCreateEvents: boolean;
   isSubmitting: boolean;
   onSubmit: () => void;
@@ -34,8 +36,10 @@ interface EventFormStepProps {
     | "touched"
     | "handleBlur"
     | "updateOccurrence"
+    | "updateOccurrenceTickets"
     | "addOccurrence"
     | "removeOccurrence"
+    | "updateTickets"
     | "foodInput"
     | "setFoodInput"
     | "addFood"
@@ -63,6 +67,7 @@ interface EventFormStepProps {
 
 export function EventFormStep({
   isEditMode,
+  editEventId,
   canCreateEvents,
   isSubmitting,
   onSubmit,
@@ -127,6 +132,7 @@ export function EventFormStep({
   // form state actually changes, not on every parent render.
   const formContextValue = useMemo(
     () => ({
+      editEventId: editEventId ?? null,
       formData: eventForm.formData,
       previewEvent,
       updateField: eventForm.updateField,
@@ -136,8 +142,10 @@ export function EventFormStep({
       clubs,
       selectedClubName,
       updateOccurrence: eventForm.updateOccurrence,
+      updateOccurrenceTickets: eventForm.updateOccurrenceTickets,
       addOccurrence: eventForm.addOccurrence,
       removeOccurrence: eventForm.removeOccurrence,
+      updateTickets: eventForm.updateTickets,
       foodInput: eventForm.foodInput,
       setFoodInput: eventForm.setFoodInput,
       addFood: eventForm.addFood,
@@ -152,6 +160,7 @@ export function EventFormStep({
       isDarkMode,
     }),
     [
+      editEventId,
       eventForm,
       isClubFixed,
       isDarkMode,

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { usePayoutOnboarding } from "@/features/club-panel/hooks/useClubPayouts";
+import { usePayoutOnboarding } from "@/features/club-panel/hooks/usePayoutOnboarding";
 import type { ApiClubPayoutStatus } from "@/shared/generated";
 import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";

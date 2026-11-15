@@ -50,10 +50,6 @@
       "appliedHealthSciences": "Ciencias de la Salud Aplicadas"
     },
     "stepProgress": "Paso {{step}} de {{total}}",
-    "safetyTitle": "Bienvenido a tu página de eventos del campus.",
-    "safetyDescription": "Te ayudamos a descubrir lo que está ocurriendo en tu escuela y a conectarte con comunidades que coincidan con tus intereses.",
-    "safetyGoingEvents": "Marca los eventos a los que vas a asistir, realiza un seguimiento de los plazos y filtra rápidamente por lo que te importa.",
-    "safetySafeguards": "Las medidas de seguridad y de la comunidad ayudan a mantener los eventos de alta calidad y confiables.",
     "doneTitle": "¡Todo listo!",
     "doneDescription": "Tu feed personalizado del campus está listo. Es hora de descubrir lo que ocurre a tu alrededor.",
     "doneButton": "Vamos a explorar",

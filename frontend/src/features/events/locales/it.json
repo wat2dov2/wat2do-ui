@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Posizioni aperte: {{positions}}",
-    "minimumGoing": "Partecipanti minimi",
+    "minimumGoing": "Minimo di interessati",
     "eventTitle": "Titolo dell'evento",
     "loadFailed": "Impossibile caricare gli eventi. Per favore riprova.",
     "deleteFailed": "Impossibile eliminare l'evento. Per favore riprova.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "è stato aggiornato.",
     "noResults": "Nessun risultato trovato.",
     "signInToView": "Accedi per visualizzare i tuoi eventi",
-    "signInToViewDesc": "Segna gli eventi a cui parteciperai e visualizzali tutti in un unico posto.",
     "signIn": "Accedi",
     "upcoming": "Prossimi",
-    "emptyEventsDesc": "Segna gli eventi a cui parteciperai e appariranno qui. Tocca il pulsante di partecipazione su qualsiasi evento.",
     "noUpcomingEvents": "Nessun evento in arrivo",
     "upcomingEventCount": "evento in arrivo",
     "upcomingEventCount_other": "eventi in arrivo",
@@ -84,12 +82,10 @@
       "submitFailed": "Impossibile inviare la segnalazione"
     },
     "goingEvents": {
-      "timeUnavailable": "Questo evento è già iniziato o è stato annullato, quindi non puoi indicare che parteciperai.",
-      "markFailed": "Impossibile segnare questo evento come parteciperò",
-      "unmarkFailed": "Impossibile rimuovere la marcatura di partecipazione a questo evento",
+      "timeUnavailable": "Questo evento è già iniziato o è stato annullato, quindi Avvisami non è disponibile.",
       "saveFailed": "Impossibile salvare l'orario selezionato",
-      "chooseOccurrences": "A quale orario parteciperai?",
-      "chooseOccurrencesDescription": "Scegli ogni occorrenza a cui intendi partecipare."
+      "chooseOccurrences": "Per quali date vuoi essere avvisato?",
+      "chooseOccurrencesDescription": "Scegli ogni data per cui vuoi un promemoria e gli aggiornamenti."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -116,19 +112,15 @@
     },
     "new": "NUOVO",
     "updated": "AGGIORNATO",
-    "goingCount": "{{count}} partecipante",
-    "goingCount_one": "{{count}} partecipante",
-    "goingCount_other": "{{count}} partecipanti",
-    "andOthersCount": "e {{count}} altro",
-    "andOthersCount_other": "e {{count}} altri",
+    "goingCount": "{{count}} interessato",
+    "goingCount_one": "{{count}} interessato",
+    "goingCount_other": "{{count}} interessati",
     "hostedBy": "Ospitato da",
     "aboutEvent": "Informazioni sull'evento",
     "fetchingDetails": "Recupero dettagli...",
-    "sourceLabel": "Fonte:",
-    "youreIn": "Sei Dentro",
+    "sourceUrl": "URL di origine",
+    "youreIn": "Fatto!",
     "startingIn": "Inizio tra",
-    "cancelGoingPrompt": "Non puoi più partecipare? Avvisa l'host",
-    "cancelGoing": "segnalandoti come non presente.",
     "viewFullImage": "Visualizza l'immagine completa dell'evento",
     "fullImageDescription": "Manifesto ingrandito dell'evento per {{title}}",
     "moreDatesCount": "+{{count}} data",
@@ -138,14 +130,21 @@
     "moreEvents": "Altri eventi",
     "submitEvent": "Aggiungi evento",
     "allEvents": "Tutti gli eventi",
-    "going": "Partecipo",
+    "going": "Iscritto",
+    "notifyMe": {
+      "action": "Avvisami",
+      "description": "Ricevi un promemoria prima dell'inizio e un'email se cambia qualcosa.",
+      "otherDates": "Le altre date non richiedono un biglietto. Ricevi un promemoria prima di ognuna e un'email se cambia qualcosa.",
+      "onTitle": "Ti avviseremo",
+      "onDescription": "Ti manderemo un promemoria via email prima dell'inizio e ti avviseremo se cambia qualcosa.",
+      "offPrompt": "Non ti servono aggiornamenti?",
+      "off": "Disattiva Avvisami."
+    },
     "upcomingEventCount_one": "evento in arrivo",
     "upcomingEventCount_many": "eventi in arrivo",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clic",
-    "goingCount_many": "{{count}} partecipanti",
-    "andOthersCount_one": "e {{count}} altro",
-    "andOthersCount_many": "e {{count}} altri",
+    "goingCount_many": "{{count}} interessati",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} date",
     "views": {
@@ -177,8 +176,8 @@
       "networking": "Opportunità di networking"
     },
     "savedEvents": {
-      "save": "Salva evento",
-      "unsave": "Rimuovi dai salvati",
+      "save": "Salva",
+      "saved": "Salvato",
       "saveFailed": "Impossibile salvare questo evento"
     }
   }

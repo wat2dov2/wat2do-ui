@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "Pupunta",
     "cancel": "Kanselahin",
     "confirm": "Kumpirmahin",
     "saving": "Sine-save...",
@@ -55,7 +54,7 @@
     "of": "ng",
     "share": "Ibahagi",
     "export": "I-export",
-    "addToCalendar": "Idagdag sa Kalendaryo",
+    "addToCalendar": "Idagdag sa kalendaryo",
     "report": "I-report",
     "download": "I-download",
     "done": "Tapos na",
@@ -175,7 +174,7 @@
     "max": "Max",
     "today": "Ngayon",
     "forYou": "Para sa Iyo",
-    "going": "Pupunta",
+    "going": "Naka-subscribe",
     "dateRange": "Saklaw ng Petsa",
     "dayOfWeek": "Araw ng Linggo",
     "registration": "Kinakailangan ang Rehistrasyon",
@@ -204,7 +203,7 @@
     "showPersonalizedEvents": "Ipakita ang Mga Personalized na Kaganapan",
     "openFilters": "Buksan ang Mga Filter",
     "createNewEvent": "Magsumite ng event",
-    "goingEvents": "Mga event na pupuntahan",
+    "goingEvents": "Mga naka-subscribe na event",
     "notificationPreferences": "Mga Kagustuhan sa Abiso",
     "themeAppearance": "Tema at Hitsura",
     "helpSupport": "Tulong at Suporta",
@@ -400,7 +399,7 @@
       },
       "account": {
         "title": "Mag-sign in para sa higit pa",
-        "desc": "Sa account, makakapag-save ka ng event, makakapagmarka ng mga pupuntahan mo, makakatanggap ng paalala, at magagamit ang mga tool sa pagpapatakbo ng club."
+        "desc": "Sa account, makakapag-save ka ng event, makakapag-on ng Paalalahanan ako para sa mga paalala at update, at magagamit ang mga tool sa pagpapatakbo ng club."
       }
     },
     "help": {
@@ -566,7 +565,7 @@
       "items": {
         "free": {
           "question": "Libre ba ang Wat2Do?",
-          "answer": "Oo. Libre ang Wat2Do para sa mga estudyante, at puwede mong i-browse ang lahat ng kaganapan kahit walang account. Mag-sign in para markahan ang mga kaganapan bilang Pupunta at makatanggap ng mga paalala."
+          "answer": "Oo. Libre ang Wat2Do para sa mga estudyante, at puwede mong i-browse ang lahat ng kaganapan kahit walang account. Mag-sign in para i-on ang Paalalahanan ako at makatanggap ng mga paalala."
         },
         "clubs": {
           "question": "Kailangan bang mag-sign up ng organisasyon ko?",

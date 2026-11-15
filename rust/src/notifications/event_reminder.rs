@@ -1,4 +1,4 @@
-//! One-hour reminders for occurrence-aware Going selections
+//! One-hour reminders for the dates people turned Notify me on for
 //! (`services/notifications/event_reminder.py`).
 //!
 //! Each run reminds about occurrences starting `lead_minutes` from now, within
@@ -25,7 +25,7 @@ use crate::constants::NOTIFICATION_TYPE_EVENT_REMINDER;
 use crate::controlbox::EVENT_REMINDER;
 use crate::email::{EmailMessage, InlineImage, layout};
 
-/// One user's Going selection of one occurrence, due a reminder.
+/// One user's Notify me selection of one occurrence, due a reminder.
 #[derive(Debug, Clone)]
 pub struct DueReminder {
     pub user_id: Uuid,

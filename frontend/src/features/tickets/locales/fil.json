@@ -4,8 +4,6 @@
     "description": "Ipakita ang QR code ng tiket sa pasukan.",
     "upcoming": "Paparating",
     "past": "Nakaraan",
-    "manage": "Mga tiket",
-    "setUp": "I-set up ang mga tiket",
     "empty": {
       "title": "Wala ka pang tiket",
       "description": "Kapag nakakuha ka ng tiket sa isang kaganapan, lalabas ito rito.",
@@ -28,6 +26,8 @@
       "left_other": "{{count}} na lang ang natitira",
       "left_one": "{{count}} na lang ang natitira",
       "quantity": "Ilang tiket",
+      "get": "Kumuha ng tiket",
+      "anotherDate": "Kumuha ng tiket para sa ibang petsa",
       "buy": "Bumili ng tiket · {{total}}",
       "continueToPayment": "Magpatuloy sa pagbabayad",
       "payNote": "Ligtas na pagbabayad sa Stripe. Makukuha ng {{club}} ang pangalan at email mo para sa check-in.",
@@ -44,17 +44,6 @@
         "soldOut": "Wala nang natitirang tiket.",
         "closed": "Hindi na available ang mga tiket.",
         "notYet": "Hindi pa available ang mga tiket."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Mag-RSVP",
-      "anotherDate": "Mag-RSVP para sa ibang petsa",
-      "unavailable": {
-        "cancelled": "Kinansela ang kaganapang ito.",
-        "paused": "Naka-pause muna ang mga RSVP.",
-        "soldOut": "Wala nang natitirang puwesto.",
-        "closed": "Sarado na ang mga RSVP.",
-        "notYet": "Hindi pa bukas ang mga RSVP."
       }
     },
     "pass": {
@@ -84,12 +73,12 @@
       }
     },
     "return": {
-      "prompt": "Hindi ka makakapunta? Kanselahin ang RSVP mo",
-      "title": "Kanselahin ang RSVP mo?",
-      "description": "Puwedeng makuha ng iba ang puwesto mo. Kung may matitirang puwesto mamaya, puwede kang mag-RSVP ulit.",
-      "keep": "Panatilihin ang puwesto ko",
-      "confirm": "Kanselahin ang RSVP",
-      "done": "Nakansela ang RSVP"
+      "prompt": "Hindi ka makakapunta? Ibalik ang tiket mo",
+      "title": "Ibalik ang tiket mo?",
+      "description": "Puwedeng makuha ng iba ang puwesto mo. Kung may matitirang tiket mamaya, puwede kang kumuha ulit.",
+      "keep": "Panatilihin ang tiket ko",
+      "confirm": "Ibalik",
+      "done": "Naibalik ang tiket"
     },
     "order": {
       "confirming": "Kinukumpirma ang bayad mo",
@@ -108,14 +97,11 @@
     "desk": {
       "title": "Mga tiket",
       "notFound": "Wala na ang kaganapang ito",
-      "setupTitle": "Mga tiket para sa kaganapang ito",
-      "setupDescription": "Bawat isa ay makakakuha ng tiket na may QR code, at ii-scan mo ito sa pasukan para i-check in sila.",
-      "settingsTitle": "Mga setting ng tiket",
-      "settingsDescription": "Baguhin kung ilan ang tiket, o i-pause muna ang mga ito.",
-      "free": "Libre",
-      "freeHint": "Isang tiket bawat tao para sa bawat petsa.",
-      "paid": "May bayad",
-      "paidHint": "Nagbabayad ang mga tao sa Stripe, at napupunta ang pera sa organisasyon mo.",
+      "noTickets": "Walang tiket ang kaganapang ito",
+      "noTicketsDescription": "I-on ang mga ito kapag ine-edit mo ang kaganapan.",
+      "setupDescription": "Bawat isa ay makakakuha ng tiket na may QR code, at ii-scan mo ito sa pasukan. Kapag kumuha ng tiket, naka-on na rin ang Paalalahanan ako para sa petsang iyon.",
+      "dates": "Mga petsang may tiket",
+      "datesRequired": "Pumili ng kahit isang petsa.",
       "price": "Presyo ng tiket ({{currency}})",
       "priceLocked": "Hindi na mababago ang presyo kapag may tiket na ang isang tao.",
       "priceRange": "Maglagay ng presyo mula {{minimum}} hanggang {{maximum}}.",
@@ -124,21 +110,15 @@
       "capacityRange": "Maglagay ng numero mula 1 hanggang {{maximum}}, o iwanang blangko para walang limit.",
       "pause": "I-pause ang mga tiket",
       "pauseHint": "Walang bagong makakakuha ng tiket hangga't hindi mo ito ino-off.",
+      "turnOffLocked": "May mga tao nang may tiket, kaya mananatiling naka-on ang mga ito. I-pause para wala nang bagong makakuha.",
       "fees": "Kinukuha ng Stripe ang mga 2.9% + 30¢ ng bawat order. Mapupunta sa organisasyon mo ang natitira.",
-      "goingNote": "Makakatanggap ng tiket sa email ang lahat ng nagsabing pupunta sila.",
       "payoutNoteSetup": "Bawat kwalipikadong check-in ay kumikita ng {{rate}} para sa organisasyon mo. Kapag binuksan mo ang tickets, tinatanggap ng organisasyon mo ang <terms>Mga Tuntunin sa Bayad sa Organisasyon</terms>.",
       "payoutNote": "Bawat kwalipikadong check-in ay kumikita ng {{rate}} para sa organisasyon mo, ayon sa <terms>Mga Tuntunin sa Bayad sa Organisasyon</terms>.",
       "payoutsNeeded": "I-set up muna ang mga payout para may mapupuntahan ang pera.",
       "setUpPayouts": "I-set up ang mga payout",
-      "turnOnFree": "I-on ang libreng tiket",
-      "startSelling": "Simulan ang pagbebenta",
-      "freeStarted": "Naka-on na ang libreng tiket",
-      "sellingStarted": "Mabibili na ang mga tiket",
-      "save": "I-save ang mga pagbabago",
-      "saved": "Na-save ang mga setting ng tiket",
-      "turnOff": "I-off ang mga tiket",
-      "turnedOff": "Wala nang tiket ang kaganapang ito",
       "openScanner": "I-scan ang mga tiket",
+      "openDesk": "Listahan sa pinto at scanner",
+      "notSaved": "Na-save ang kaganapan, pero hindi ang mga tiket nito",
       "attendees": "Listahan sa pasukan",
       "attendeesEmpty": "Wala pang may tiket",
       "search": "Maghanap ayon sa pangalan, email o code",

@@ -22,9 +22,9 @@ use crate::api::auth::User;
 use crate::api::errors::ApiError;
 use crate::api::events::going;
 use crate::api::messages::{
-    EVENT_HAS_PAID_TICKETS, TICKET_ALREADY_USED, TICKET_CAPACITY_BELOW_GOING,
-    TICKET_CAPACITY_BELOW_ISSUED, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED,
-    TICKETS_ALREADY_TAKEN, TICKETS_SOLD_OUT,
+    EVENT_HAS_PAID_TICKETS, TICKET_ALREADY_USED, TICKET_CAPACITY_BELOW_ISSUED,
+    TICKET_DATE_HAS_TICKETS, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED, TICKETS_ALREADY_TAKEN,
+    TICKETS_NOT_FOR_DATE, TICKETS_SOLD_OUT,
 };
 use crate::settings::{Settings, test_settings};
 
@@ -138,11 +138,13 @@ async fn club_event_at(
     (i64::from(event), dates)
 }
 
-fn free(capacity: Option<i32>) -> TicketingInput {
+/// Free tickets to `dates`.
+fn free(dates: &[Uuid], capacity: Option<i32>) -> TicketingInput {
     TicketingInput {
         price_cents: 0,
         capacity,
         paused: false,
+        dates: dates.to_vec(),
     }
 }
 
@@ -159,7 +161,7 @@ async fn free_tickets_are_one_per_person_and_stop_at_capacity() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(Some(2)), &officer)
+    ticketing::configure(&state, event, free(&dates, Some(2)), &officer)
         .await
         .unwrap();
     let (ada, ben, cy) = (
@@ -216,7 +218,7 @@ async fn people_racing_for_the_last_seats_never_overfill_a_date() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(Some(3)), &officer)
+    ticketing::configure(&state, event, free(&dates, Some(3)), &officer)
         .await
         .unwrap();
     let mut people = Vec::new();
@@ -236,70 +238,74 @@ async fn people_racing_for_the_last_seats_never_overfill_a_date() {
 }
 
 #[tokio::test]
-async fn turning_free_tickets_on_hands_one_to_everyone_going() {
+async fn turning_tickets_on_gives_nobody_a_ticket_they_did_not_ask_for() {
     let Some(db) = database() else { return };
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    let early = person(&db, "early").await;
-    going::set_occurrences(&db, early.id, event, &dates)
+    // Notify me asks for updates, not a seat.
+    let notified = person(&db, "notified").await;
+    going::set_occurrences(&db, notified.id, event, &dates)
         .await
         .unwrap();
 
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, Some(1)), &officer)
         .await
         .unwrap();
-    let held = store::tickets_for_holder(&db, early.id).await.unwrap();
-    assert_eq!(held.len(), 2, "one ticket per date they were going to");
-
+    assert!(
+        store::tickets_for_holder(&db, notified.id)
+            .await
+            .unwrap()
+            .is_empty()
+    );
     let desk = door::desk(&state, event, &officer).await.unwrap();
-    assert_eq!(desk.issued, 2);
-    assert_eq!(desk.revenue_cents, 0);
-    // A capacity of one still fits the one ticket per date already handed out.
-    ticketing::configure(&state, event, free(Some(1)), &officer)
+    assert_eq!(desk.issued, 0);
+    ticketing::stop(&state, event, &officer).await.unwrap();
+}
+
+#[tokio::test]
+async fn tickets_go_only_to_the_dates_the_club_picks() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let (event, dates) = club_event(&db, &officer).await;
+    let offered = ticketing::configure(&state, event, free(&dates[..1], None), &officer)
         .await
         .unwrap();
-    let crowded = person(&db, "crowded").await;
+    assert_eq!(offered.dates.len(), 1);
+    assert_eq!(offered.dates[0].event_date_id, dates[0]);
+
+    let guest = person(&db, "guest").await;
     assert_eq!(
         detail(
-            admission::take_free(&state, event, dates[0], &crowded)
+            admission::take_free(&state, event, dates[1], &guest)
                 .await
                 .unwrap_err()
         ),
-        TICKETS_SOLD_OUT
+        TICKETS_NOT_FOR_DATE
     );
+    admission::take_free(&state, event, dates[0], &guest)
+        .await
+        .unwrap();
+    // A date people hold tickets to keeps its tickets.
+    assert_eq!(
+        detail(
+            ticketing::configure(&state, event, free(&dates[1..], None), &officer)
+                .await
+                .unwrap_err()
+        ),
+        TICKET_DATE_HAS_TICKETS
+    );
+    let both = ticketing::configure(&state, event, free(&dates, None), &officer)
+        .await
+        .unwrap();
+    assert_eq!(both.dates.len(), 2);
+    let desk = door::desk(&state, event, &officer).await.unwrap();
+    assert_eq!(desk.dates.len(), 2);
     assert_eq!(
         detail(ticketing::stop(&state, event, &officer).await.unwrap_err()),
         TICKETS_ALREADY_TAKEN
     );
-    // Ticket holders count toward Going but are never named.
-    let attendees = going::attendees(&db, event).await.unwrap();
-    assert_eq!(attendees.going_count, 1);
-    assert!(attendees.attendees.is_empty());
-}
-
-#[tokio::test]
-async fn free_tickets_go_on_only_with_room_for_everyone_going() {
-    let Some(db) = database() else { return };
-    let state = state(db.clone());
-    let officer = person(&db, "officer").await;
-    let (event, dates) = club_event(&db, &officer).await;
-    for name in ["early", "earlier"] {
-        let user = person(&db, name).await;
-        going::set_occurrences(&db, user.id, event, &dates[..1])
-            .await
-            .unwrap();
-    }
-    let refused = ticketing::configure(&state, event, free(Some(1)), &officer)
-        .await
-        .unwrap_err();
-    assert_eq!(detail(refused), TICKET_CAPACITY_BELOW_GOING);
-    assert!(store::ticketing(&db, event).await.unwrap().is_none());
-    ticketing::configure(&state, event, free(Some(2)), &officer)
-        .await
-        .unwrap();
-    let issued = store::valid_tickets_by_date(&db, event).await.unwrap();
-    assert_eq!(issued[&dates[0]], 2);
 }
 
 #[tokio::test]
@@ -308,7 +314,7 @@ async fn a_cancelled_event_takes_no_tickets() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, None), &officer)
         .await
         .unwrap();
     cancel(&db, event).await;
@@ -323,7 +329,7 @@ async fn a_cancelled_event_takes_no_tickets() {
     );
     assert_eq!(
         detail(
-            ticketing::configure(&state, event, free(Some(5)), &officer)
+            ticketing::configure(&state, event, free(&dates, Some(5)), &officer)
                 .await
                 .unwrap_err()
         ),
@@ -345,7 +351,7 @@ async fn capacity_never_drops_below_the_tickets_taken() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, None), &officer)
         .await
         .unwrap();
     for name in ["a", "b"] {
@@ -354,7 +360,7 @@ async fn capacity_never_drops_below_the_tickets_taken() {
             .await
             .unwrap();
     }
-    let refused = ticketing::configure(&state, event, free(Some(1)), &officer)
+    let refused = ticketing::configure(&state, event, free(&dates, Some(1)), &officer)
         .await
         .unwrap_err();
     assert_eq!(detail(refused), TICKET_CAPACITY_BELOW_ISSUED);
@@ -373,7 +379,7 @@ async fn a_ticket_is_admitted_once_and_only_at_its_own_event() {
     )
     .await;
     let (other_event, _) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, None), &officer)
         .await
         .unwrap();
     let guest = person(&db, "guest").await;
@@ -450,6 +456,15 @@ async fn pending_order(
         "INSERT INTO public.event_ticketing (event_id, price_cents, currency) VALUES ($1, 1500, 'cad')",
     )
     .bind(event as i32)
+    .execute(db)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO public.event_ticketing_dates (event_id, event_date_id) \
+         SELECT $1, date FROM unnest($2::uuid[]) AS date",
+    )
+    .bind(event as i32)
+    .bind(&dates)
     .execute(db)
     .await
     .unwrap();
@@ -591,7 +606,7 @@ async fn removing_a_date_or_the_event_takes_its_free_tickets_along() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, None), &officer)
         .await
         .unwrap();
     let guest = person(&db, "guest").await;
@@ -647,7 +662,7 @@ async fn the_ingestion_agent_leaves_an_event_with_tickets_as_the_club_set_it() {
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
     let (plain, plain_dates) = club_event(&db, &officer).await;
-    ticketing::configure(&state, event, free(None), &officer)
+    ticketing::configure(&state, event, free(&dates, None), &officer)
         .await
         .unwrap();
     // A ticket holder is going, so a change the agent made would email them.

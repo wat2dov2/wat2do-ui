@@ -4,10 +4,10 @@
     "events": {
       "saved": "Mga naka-save na kaganapan",
       "savedEmpty": "Dito lalabas ang mga kaganapang ise-save mo.",
-      "past": "Mga kaganapang pinuntahan mo",
-      "pastEmpty": "Dito lalabas ang mga kaganapang pinuntahan mo.",
-      "upcoming": "Mga kaganapang pupuntahan mo",
-      "upcomingEmpty": "Dito lalabas ang mga kaganapang pupuntahan mo.",
+      "past": "Mga nakaraan mong kaganapan",
+      "pastEmpty": "Dito lalabas, kapag tapos na, ang mga kaganapang in-on mo ang Paalalahanan ako o may tiket ka.",
+      "upcoming": "Mga paparating mong kaganapan",
+      "upcomingEmpty": "Dito lalabas ang mga kaganapang in-on mo ang Paalalahanan ako o kinuhanan mo ng tiket.",
       "ticket": "Tiket"
     },
     "clubs": {

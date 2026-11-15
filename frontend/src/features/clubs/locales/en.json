@@ -70,7 +70,7 @@
     "minimumEvents": "Minimum events",
     "claimLink": {
       "title": "Claim {{club}} on Wat2Do",
-      "description": "Your club's page is ready. Claiming it makes you its owner, so you can post events and positions, keep them up to date and see who's going.",
+      "description": "Your club's page is ready. Claiming it makes you its owner, so you can post events and positions, keep them up to date and give out or sell tickets.",
       "checking": "Checking your claim link...",
       "claim": "Claim club",
       "claiming": "Claiming...",

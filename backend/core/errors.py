@@ -154,13 +154,16 @@ TICKETS_PAUSED = "Tickets are paused for this event"
 TICKETS_CLOSED = "Tickets for this date are no longer available"
 TICKETS_SOLD_OUT = "There aren't enough tickets left for this date"
 TICKET_DATE_NOT_FOUND = "That date isn't part of this event"
+TICKETS_NOT_FOR_DATE = "This date doesn't have tickets"
+TICKET_DATE_HAS_TICKETS = (
+    "People have tickets to a date you took tickets off. Pause tickets instead."
+)
 TICKETED_EVENT_CANCELLED = "This event was cancelled"
 TICKET_QUANTITY_TOO_HIGH = "That's more tickets than one order allows"
 TICKET_PRICE_OUT_OF_RANGE = "Enter a ticket price within the allowed range"
 TICKET_CAPACITY_TOO_HIGH = "That capacity is too high"
 TICKET_PRICE_LOCKED = "The price can't change once people have tickets"
 TICKET_CAPACITY_BELOW_ISSUED = "Capacity can't be lower than the tickets already taken for a date"
-TICKET_CAPACITY_BELOW_GOING = "Capacity can't be lower than the people already going to a date"
 TICKETS_ALREADY_TAKEN = "People already have tickets for this event. Pause tickets instead."
 TICKET_REFUNDS_NEED_CANCELLATION = "Cancel the event first to refund every ticket"
 EVENT_HAS_PAID_TICKETS = (

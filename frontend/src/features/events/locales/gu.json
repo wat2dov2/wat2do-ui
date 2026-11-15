@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "ભરતી: {{positions}}",
-    "minimumGoing": "ઓછામાં ઓછા હાજર",
+    "minimumGoing": "ઓછામાં ઓછા રસ ધરાવનાર",
     "eventTitle": "ઇવેન્ટ શીર્ષક",
     "loadFailed": "ઇવેન્ટ્સ લોડ કરવાની નિષ્ફળતા. કૃપા કરીને ફરી પ્રયાસ કરો.",
     "deleteFailed": "ઇવેન્ટ મૌલિક રીતે કાઢી ન શકી. કૃપા કરીને ફરી પ્રયાસ કરો.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "અપડેટ થઈ ગઈ છે.",
     "noResults": "કોઈ પરિણામ મળ્યું નથી.",
     "signInToView": "તમારા ઇવન્ટ જોવા માટે સાઇન ઇન કરો",
-    "signInToViewDesc": "જ્યાં તમે જવાના ઇવન્ટ માર્ક કરો અને બધા એક જ જગ્યાએ જુઓ.",
     "signIn": "સાઇન ઈન",
     "upcoming": "આવતા",
-    "emptyEventsDesc": "જ્યાં તમે જવાના ઇવન્ટ માર્ક કરો અને તે અહીં દેખાશે. કોઈપણ ઇવન્ટ પર જાની બટન દબાવો.",
     "noUpcomingEvents": "કોઈ આવનારા ઇવન્ટ નથી",
     "upcomingEventCount": "આવનારી ઇવેન્ટ",
     "upcomingEventCount_other": "આવનારી ઇવેન્ટ્સ",
@@ -83,12 +81,10 @@
       "submitFailed": "રિપોર્ટ સબમિટ થઈ શક્યું નહીં"
     },
     "goingEvents": {
-      "timeUnavailable": "આ ઇવેન્ટ શરૂ થઈ ગઈ છે અથવા રદ થઈ છે, તેથી તમે તમારી હાજરી નોંધાવી શકતા નથી.",
-      "markFailed": "આ ઇવેન્ટને જવાનું તરીકે ચિહ્નિત કરવામાં આવી ન શક્યું",
-      "unmarkFailed": "આ ઇવેન્ટને જવાનું ચિહ્ન કાઢી શક્યું નહીં",
+      "timeUnavailable": "આ ઇવેન્ટ શરૂ થઈ ગઈ છે અથવા રદ થઈ છે, તેથી \"મને જાણ કરો\" ઉપલબ્ધ નથી.",
       "saveFailed": "તમારું પસંદ કરેલો સમય સાચવો નહીં",
-      "chooseOccurrences": "તમે કયો સમય જવાના છો?",
-      "chooseOccurrencesDescription": "તમે ભાગ લેશે તે દરેક ઘટના પસંદ કરો"
+      "chooseOccurrences": "અમે તમને કઈ તારીખો વિશે જાણ કરીએ?",
+      "chooseOccurrencesDescription": "જેના માટે તમને રિમાઇન્ડર અને અપડેટ જોઈએ તે દરેક તારીખ પસંદ કરો."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "નવું",
     "updated": "અપડેટ થયું",
-    "goingCount": "{{count}} ભાગ લેનાર",
-    "goingCount_one": "{{count}} ભાગ લેનાર",
-    "goingCount_other": "{{count}} ભાગ લેનાર",
-    "andOthersCount": "અને {{count}} અન્ય",
-    "andOthersCount_other": "અને {{count}} અન્ય",
+    "goingCount": "{{count}} રસ ધરાવનાર",
+    "goingCount_one": "{{count}} રસ ધરાવનાર",
+    "goingCount_other": "{{count}} રસ ધરાવનાર",
     "hostedBy": "આયોજક",
     "aboutEvent": "ઇવેન્ટ વિશે",
     "fetchingDetails": "વિગતો મેળવી રહ્યા છીએ...",
-    "sourceLabel": "સ્ત્રોત:",
-    "youreIn": "તમે જોડાયા છો",
+    "sourceUrl": "સ્રોત URL",
+    "youreIn": "તમે જોડાયા છો!",
     "startingIn": "શરૂ થવામાં",
-    "cancelGoingPrompt": "હવે હાજરી આપી શકતા નથી? આ રીતે આયોજકને જાણ કરો",
-    "cancelGoing": "પોતાને હાજર નહીં તરીકે ચિહ્નિત કરીને.",
     "viewFullImage": "ઇવેન્ટનું સંપૂર્ણ ચિત્ર જુઓ",
     "fullImageDescription": "{{title}} માટે મોટું કરેલું ઇવેન્ટ પોસ્ટર",
     "moreDatesCount": "+{{count}} તારીખ",
@@ -137,10 +129,18 @@
     "moreEvents": "વધુ ઇવેન્ટ્સ",
     "submitEvent": "ઇવેન્ટ ઉમેરો",
     "allEvents": "બધા ઇવેન્ટ્સ",
-    "going": "જઈ રહ્યાં છો",
+    "going": "સબ્સ્ક્રાઇબ કર્યું",
+    "notifyMe": {
+      "action": "મને જાણ કરો",
+      "description": "શરૂ થાય તે પહેલાં રિમાઇન્ડર મેળવો, અને કંઈ બદલાય તો ઇમેઇલ.",
+      "otherDates": "બાકીની તારીખો માટે ટિકિટની જરૂર નથી. તેના પહેલાં રિમાઇન્ડર મેળવો, અને કંઈ બદલાય તો ઇમેઇલ.",
+      "onTitle": "તમને જાણ કરવામાં આવશે",
+      "onDescription": "શરૂ થાય તે પહેલાં અમે તમને રિમાઇન્ડર ઇમેઇલ કરીશું, અને કંઈ બદલાય તો જણાવીશું.",
+      "offPrompt": "અપડેટ નથી જોઈતા?",
+      "off": "\"મને જાણ કરો\" બંધ કરો."
+    },
     "upcomingEventCount_one": "આવનારી ઇવેન્ટ",
     "clickCount_one": "{{count}} ક્લિક",
-    "andOthersCount_one": "અને {{count}} અન્ય",
     "moreDatesCount_one": "+{{count}} તારીખ",
     "views": {
       "label": "કાર્યક્રમ દૃશ્ય",
@@ -169,8 +169,8 @@
       "networking": "નેટવર્કિંગની તકો"
     },
     "savedEvents": {
-      "save": "ઇવેન્ટ સાચવો",
-      "unsave": "સાચવેલામાંથી દૂર કરો",
+      "save": "સાચવો",
+      "saved": "સાચવેલી",
       "saveFailed": "આ ઇવેન્ટ સાચવી શકાઈ નહીં"
     }
   }

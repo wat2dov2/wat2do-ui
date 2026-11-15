@@ -80,10 +80,17 @@ export function ModalContainer() {
 
   const loadEventForEdit = useCallback(
     async (eventId: number): Promise<EventFormData> => {
-      const { fetchEventById } = await import("@/features/events/api/events.api");
-      const fullEvent = await fetchEventById(eventId);
+      const [{ fetchEventById }, { fetchEventTicketing }] = await Promise.all([
+        import("@/features/events/api/events.api"),
+        import("@/features/tickets/api/tickets.api"),
+      ]);
+      // The form holds the event's tickets too, which its club's team edits there.
+      const [fullEvent, ticketing] = await Promise.all([
+        fetchEventById(eventId),
+        fetchEventTicketing(eventId),
+      ]);
       fullEvent.category = getEventCategory(fullEvent);
-      return eventToFormData(fullEvent, getSchoolTimezone(fullEvent.school));
+      return eventToFormData(fullEvent, getSchoolTimezone(fullEvent.school), ticketing);
     },
     [getSchoolTimezone],
   );
@@ -96,12 +103,8 @@ export function ModalContainer() {
           onClose={handleSubmitEventClose}
           canCreateEvents
           editEventId={editingEvent.id}
-          initialData={"title" in editingEvent ? eventToFormData(editingEvent, getSchoolTimezone(editingEvent.school)) : undefined}
           loadEventForEdit={loadEventForEdit}
-          onUpdate={async (eventId, eventData) => {
-            await updateEventAPI(eventId, eventData);
-            handleSubmitEventClose();
-          }}
+          onUpdate={updateEventAPI}
         />
       ) : null}
 

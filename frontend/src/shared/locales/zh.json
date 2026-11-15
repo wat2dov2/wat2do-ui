@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "参加中",
     "cancel": "取消",
     "confirm": "确认",
     "saving": "保存中...",
@@ -172,7 +171,7 @@
     "max": "最大",
     "today": "今天",
     "forYou": "为你推荐",
-    "going": "参加中",
+    "going": "已订阅",
     "dateRange": "日期范围",
     "dayOfWeek": "星期",
     "registration": "需要报名",
@@ -201,7 +200,7 @@
     "showPersonalizedEvents": "显示个性化推荐活动",
     "openFilters": "打开筛选条件",
     "createNewEvent": "提交活动",
-    "goingEvents": "参加的活动",
+    "goingEvents": "已订阅的活动",
     "notificationPreferences": "通知偏好设置",
     "themeAppearance": "主题与外观",
     "helpSupport": "帮助与支持",
@@ -396,7 +395,7 @@
       },
       "account": {
         "title": "登录解锁更多功能",
-        "desc": "账号可让你收藏活动、标记你要参加的活动、接收提醒，并使用管理社团的工具。"
+        "desc": "有了账号，你可以收藏活动、开启“提醒我”接收提醒和更新，并使用管理社团的工具。"
       }
     },
     "help": {
@@ -556,7 +555,7 @@
       "items": {
         "free": {
           "question": "Wat2Do 免费吗？",
-          "answer": "免费。Wat2Do 对学生完全免费，不用注册账号就能浏览所有活动。登录后可以把活动标记为“参加中”并接收提醒。"
+          "answer": "免费。Wat2Do 对学生完全免费，不用注册账号就能浏览所有活动。登录后即可开启“提醒我”并接收提醒。"
         },
         "clubs": {
           "question": "我的组织需要注册吗？",

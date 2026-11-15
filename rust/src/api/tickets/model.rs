@@ -78,7 +78,8 @@ pub struct TicketDateAvailability {
 }
 
 /// How people get into an event, or null when it has no tickets. A price of
-/// zero means free tickets, one per person and date.
+/// zero means free tickets, one per person and date. `dates` lists only the
+/// dates that have tickets.
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct EventTicketingResponse {
     pub event_id: i64,
@@ -105,6 +106,9 @@ pub struct EventTicketingUpdate {
     /// Tickets per date; null for no limit.
     capacity: Option<i32>,
     paused: bool,
+    /// The event's dates that have tickets: at least one.
+    #[schema(value_type = Vec<String>)]
+    event_date_ids: Vec<Uuid>,
 }
 
 #[allow(dead_code)]
@@ -319,6 +323,8 @@ pub struct TicketingRow {
     pub currency: Option<String>,
     pub capacity: Option<i32>,
     pub paused: bool,
+    /// The event's dates that have tickets.
+    pub dates: Vec<Uuid>,
 }
 
 impl TicketingRow {

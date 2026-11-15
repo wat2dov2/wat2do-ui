@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Offene Stellen: {{positions}}",
-    "minimumGoing": "Mindestteilnehmer",
+    "minimumGoing": "Mindestens interessiert",
     "eventTitle": "Veranstaltungstitel",
     "loadFailed": "Fehler beim Laden der Veranstaltungen. Bitte versuchen Sie es erneut.",
     "deleteFailed": "Fehler beim Löschen der Veranstaltung. Bitte versuchen Sie es erneut.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "wurde aktualisiert.",
     "noResults": "Keine Ergebnisse gefunden.",
     "signInToView": "Melde dich an, um deine Veranstaltungen zu sehen",
-    "signInToViewDesc": "Markiere Veranstaltungen, an denen du teilnimmst, und sieh sie alle an einem Ort.",
     "signIn": "Anmelden",
     "upcoming": "Kommend",
-    "emptyEventsDesc": "Markiere Veranstaltungen, an denen du teilnimmst, und sie werden hier angezeigt. Tippe auf den „Gehe hin“-Button bei jeder Veranstaltung.",
     "noUpcomingEvents": "Keine bevorstehenden Veranstaltungen",
     "upcomingEventCount": "bevorstehende Veranstaltung",
     "upcomingEventCount_other": "bevorstehende Veranstaltungen",
@@ -83,12 +81,10 @@
       "submitFailed": "Meldung konnte nicht gesendet werden"
     },
     "goingEvents": {
-      "timeUnavailable": "Diese Veranstaltung hat bereits begonnen oder wurde abgesagt. Du kannst deine Teilnahme nicht mehr markieren.",
-      "markFailed": "Dieses Ereignis konnte nicht als 'Teilnahme' markiert werden",
-      "unmarkFailed": "Dieses Ereignis konnte nicht als 'Nicht teilnehmen' markiert werden",
+      "timeUnavailable": "Diese Veranstaltung hat bereits begonnen oder wurde abgesagt, daher ist Benachrichtige mich nicht verfügbar.",
       "saveFailed": "Ihre ausgewählte Zeit konnte nicht gespeichert werden",
-      "chooseOccurrences": "Zu welcher Zeit nehmen Sie teil?",
-      "chooseOccurrencesDescription": "Wählen Sie jede Veranstaltung, an der Sie teilnehmen möchten."
+      "chooseOccurrences": "Für welche Termine sollen wir dich benachrichtigen?",
+      "chooseOccurrencesDescription": "Wähle alle Termine, für die du eine Erinnerung und Updates möchtest."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "NEU",
     "updated": "AKTUALISIERT",
-    "goingCount": "{{count}} nimmt teil",
-    "goingCount_one": "{{count}} nimmt teil",
-    "goingCount_other": "{{count}} nehmen teil",
-    "andOthersCount": "und {{count}} andere",
-    "andOthersCount_other": "und {{count}} andere",
+    "goingCount": "{{count}} interessiert",
+    "goingCount_one": "{{count}} interessiert",
+    "goingCount_other": "{{count}} interessiert",
     "hostedBy": "Veranstaltet von",
     "aboutEvent": "Über die Veranstaltung",
     "fetchingDetails": "Details werden abgerufen...",
-    "sourceLabel": "Quelle:",
-    "youreIn": "Du bist dabei",
+    "sourceUrl": "Quell-URL",
+    "youreIn": "Erledigt!",
     "startingIn": "Beginnt in",
-    "cancelGoingPrompt": "Kannst du nicht mehr teilnehmen? Informiere den Gastgeber, indem du",
-    "cancelGoing": "dich als nicht teilnehmend markierst.",
     "viewFullImage": "Vollständiges Veranstaltungsbild anzeigen",
     "fullImageDescription": "Vergrößerter Veranstaltungsposter für {{title}}",
     "moreDatesCount": "+{{count}} Datum",
@@ -137,10 +129,18 @@
     "moreEvents": "Weitere Veranstaltungen",
     "submitEvent": "Ereignis hinzufügen",
     "allEvents": "Alle Ereignisse",
-    "going": "Ich nehme teil",
+    "going": "Abonniert",
+    "notifyMe": {
+      "action": "Benachrichtige mich",
+      "description": "Erhalte vor Beginn eine Erinnerung und eine E-Mail, falls sich etwas ändert.",
+      "otherDates": "Für die anderen Termine brauchst du kein Ticket. Erhalte vorher jeweils eine Erinnerung und eine E-Mail, falls sich etwas ändert.",
+      "onTitle": "Wir benachrichtigen dich",
+      "onDescription": "Wir schicken dir vor Beginn eine Erinnerung per E-Mail und sagen dir Bescheid, falls sich etwas ändert.",
+      "offPrompt": "Keine Updates mehr nötig?",
+      "off": "Benachrichtige mich ausschalten."
+    },
     "upcomingEventCount_one": "bevorstehende Veranstaltung",
     "clickCount_one": "{{count}} Klick",
-    "andOthersCount_one": "und {{count}} andere",
     "moreDatesCount_one": "+{{count}} Datum",
     "views": {
       "label": "Veranstaltungsansicht",
@@ -169,8 +169,8 @@
       "networking": "Networking-Gelegenheiten"
     },
     "savedEvents": {
-      "save": "Veranstaltung speichern",
-      "unsave": "Aus Gespeicherten entfernen",
+      "save": "Speichern",
+      "saved": "Gespeichert",
       "saveFailed": "Diese Veranstaltung konnte nicht gespeichert werden"
     }
   }

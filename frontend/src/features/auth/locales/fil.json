@@ -50,10 +50,6 @@
       "appliedHealthSciences": "Aplikadong Agham Pangkalusugan"
     },
     "stepProgress": "Hakbang {{step}} ng {{total}}",
-    "safetyTitle": "Maligayang pagdating sa iyong tahanan ng mga kaganapan sa campus.",
-    "safetyDescription": "Tutulungan ka naming tuklasin kung ano ang nangyayari sa paligid ng iyong paaralan at kumonekta sa mga komunidad na naaayon sa iyong mga interes.",
-    "safetyGoingEvents": "I-mark ang mga kaganapang pupuntahan mo, subaybayan ang mga takdang petsa, at mabilis na i-filter ayon sa mga bagay na mahalaga sa iyo.",
-    "safetySafeguards": "Ang mga panseguridad sa komunidad at kaligtasan ay tumutulong panatilihing mataas ang kalidad at mapagkakatiwalaan ang mga kaganapan.",
     "doneTitle": "Handa ka na!",
     "doneDescription": "Handa na ang iyong personalisadong feed sa campus. Panahon na upang tuklasin kung ano ang nangyayari sa paligid mo.",
     "doneButton": "Tuklasin natin",

@@ -162,9 +162,9 @@
       "title": "Política de datos",
       "intro": "Esta política explica qué información personal recopila Wat2Do, por qué, con quién la compartimos, cuánto tiempo la conservamos y qué opciones tienes. Abarca wat2do.io y cada sitio de universidad que contiene (como uwaterloo.wat2do.io), los correos que enviamos y las cuentas de Instagram que manejamos para cada universidad. Si tienes alguna pregunta, escríbenos a <email>{{email}}</email>.",
       "summary": {
-        "collect": "Recopilamos lo que nos das (tu correo, tu universidad, tu facultad y tus intereses), lo que haces en Wat2Do (eventos a los que vas o que guardas, boletos, organizaciones que sigues) y algunos datos técnicos, como una forma codificada de tu dirección IP.",
+        "collect": "Recopilamos lo que nos das (tu correo, tu universidad, tu facultad y tus intereses), lo que haces en Wat2Do (eventos que guardas o en los que activas Notificarme, boletos, organizaciones que sigues) y algunos datos técnicos, como una forma codificada de tu dirección IP.",
         "noSale": "No vendemos tu información personal y no mostramos anuncios.",
-        "share": "Cuando marcas que vas a un evento, otros visitantes ven tu nombre, la inicial de tu apellido y tu foto, y las organizaciones ven tu nombre y tu correo cuando tienes un boleto para su evento. Empresas como Amazon Web Services, Cloudflare y Google operan partes de Wat2Do por nosotros, algunas de ellas fuera de Canadá.",
+        "share": "Las organizaciones ven tu nombre y tu correo cuando tienes un boleto para su evento. Nadie más ve en qué eventos activas Notificarme. Empresas como Amazon Web Services, Cloudflare y Google operan partes de Wat2Do por nosotros, algunas de ellas fuera de Canadá.",
         "analytics": "Usamos Google Analytics para contar visitas, y quitamos los códigos y las direcciones de correo de las direcciones de página que recibe.",
         "public": "También usamos información pública: eventos de organizaciones tomados de publicaciones públicas de Instagram, y los correos de contacto que las organizaciones publican en internet.",
         "choices": "Puedes desactivar nuestros correos en cualquier momento, cambiar tu perfil en Configuración, y pedirnos que te mostremos, corrijamos o eliminemos tu información.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Lo que haces en Wat2Do.",
-              "text": "Los eventos que marcas con \"Asistiré\" o que guardas, las posiciones que guardas, las organizaciones que sigues, los boletos que obtienes, cuándo una organización registra tu entrada y las solicitudes de reembolso que envías."
+              "text": "Los eventos que guardas o en los que activas Notificarme, las posiciones que guardas, las organizaciones que sigues, los boletos que obtienes, cuándo una organización registra tu entrada y las solicitudes de reembolso que envías."
             },
             "submissions": {
               "term": "Lo que nos envías.",
@@ -250,8 +250,8 @@
           "p1": "Usamos la información personal solo para estos fines:",
           "purposes": {
             "account": "Para gestionar tu cuenta, iniciar tu sesión y mantenerla iniciada.",
-            "show": "Para mostrarte lo que hay en tu universidad, y los eventos que guardaste, a los que vas o para los que tienes boletos.",
-            "emails": "Para enviarte los correos que tú controlas: el correo matutino de eventos, los recordatorios antes de los eventos a los que vas y las alertas cuando alguno de ellos cambia. También enviamos correos que necesitas, como códigos de inicio de sesión, boletos y nuestras decisiones sobre lo que nos envías.",
+            "show": "Para mostrarte lo que hay en tu universidad, y los eventos que guardaste, en los que activaste Notificarme o para los que tienes boletos.",
+            "emails": "Para enviarte los correos que tú controlas: el correo matutino de eventos, los recordatorios antes de los eventos en los que activaste Notificarme y las alertas cuando alguno de ellos cambia. También enviamos correos que necesitas, como códigos de inicio de sesión, boletos y nuestras decisiones sobre lo que nos envías.",
             "tickets": "Para emitir boletos y permitir que las organizaciones registren tu entrada.",
             "payouts": "Para pagar a los promotores y a las organizaciones de nuestros programas de pagos, y para conservar los registros que exige la ley.",
             "safety": "Para mantener Wat2Do seguro: limitar abusos, detectar cuentas, clics y escaneos falsos, e investigar problemas.",
@@ -273,8 +273,8 @@
           "title": "Quién la ve y con quién la compartimos",
           "p1": "Parte de lo que haces en Wat2Do es visible para otras personas:",
           "visible": {
-            "going": "Cuando marcas que vas a un evento, las personas que lo ven pueden ver tu nombre, la inicial de tu apellido y tu foto entre las personas que van.",
-            "tickets": "Cuando tienes un boleto, la organización a cargo del evento ve tu nombre (o el inicio de tu correo), tu correo, el código de tu boleto, cuándo se registró tu entrada y cualquier solicitud de reembolso. Si una organización activa los boletos para un evento al que dijiste que irías, te emitimos un boleto y la organización ve los mismos datos.",
+            "notifyMe": "Nadie más ve en qué eventos activas Notificarme. Un evento solo muestra cuántas personas lo hicieron.",
+            "tickets": "Cuando tienes un boleto, la organización a cargo del evento ve tu nombre (o el inicio de tu correo), tu correo, el código de tu boleto, cuándo se registró tu entrada y cualquier solicitud de reembolso.",
             "teams": "Las personas que administran la misma organización ven los nombres, correos y fotos de las demás.",
             "submissions": "Los eventos, puestos y organizaciones que publicamos a partir de lo que nos envías son públicos, pero tu correo no."
           },
@@ -366,7 +366,7 @@
               "text": "los códigos vencen después de {{codeMinutes}}, y una sesión termina {{sessionDays}} después de la última vez que la usas."
             },
             "activity": {
-              "term": "Eventos marcados con \"Asistiré\", eventos y posiciones guardados, organizaciones que sigues y boletos:",
+              "term": "Notificarme, eventos y posiciones guardados, organizaciones que sigues y boletos:",
               "text": "hasta que los quites o elimines tu cuenta."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "Desactivar el correo matutino, los recordatorios y las alertas de cambios en Configuración, o con el enlace para cancelar la suscripción que viene en cualquiera de ellos. Los códigos de inicio de sesión y los boletos siguen llegando, porque los necesitas.",
             "profile": "Cambiar tu foto, universidad, facultad, intereses e idioma en Configuración.",
-            "activity": "Quitar cuando quieras los eventos a los que vas o que guardaste, y las organizaciones que sigues.",
+            "activity": "Desactivar Notificarme, quitar eventos guardados y dejar de seguir organizaciones cuando quieras.",
             "analytics": "Bloquear las cookies de Google Analytics en tu navegador."
           },
           "p2": "También puedes pedirnos que:",

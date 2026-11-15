@@ -1,7 +1,7 @@
-import type { EventFormData, EventFormOccurrence } from "@/shared/types";
+import type { EventFormData, EventFormOccurrence, EventFormTickets } from "@/shared/types";
 
 import { toLocalDateTimeInput } from "@/shared/utils/date";
-import { isVirtualLocation } from "@/shared/utils/event";
+import { NO_EVENT_TICKETS, isVirtualLocation } from "@/shared/utils/event";
 
 /** A venue still to be announced has nothing to put on a map. */
 const UNANNOUNCED_VENUE = /\b(?:tba|tbd)\b|to be (?:announced|determined|confirmed)|after registration/i;
@@ -39,6 +39,7 @@ function normalizeOccurrences(
       id: typeof item.id === "string" ? item.id : undefined,
       dtstart_local: typeof item.dtstart_local === "string" ? item.dtstart_local : "",
       dtend_local: typeof item.dtend_local === "string" ? item.dtend_local : "",
+      tickets: true,
     }))
     .filter((item) => item.dtstart_local);
   return occurrences.length > 0 ? occurrences : fallback;
@@ -54,6 +55,8 @@ interface EventInputFallbacks {
    * the separate image-preview state still looks right.
    */
   source_image_url: string | null;
+  /** A flyer says nothing about the club's tickets. */
+  tickets: EventFormTickets;
 }
 
 /**
@@ -83,6 +86,7 @@ export function mapEventInputToFormData(
     source_url: (parsed.source_url as string) || null,
     source_image_url:
       (parsed.source_image_url as string) || fallbackDefaults.source_image_url,
+    tickets: fallbackDefaults.tickets,
   };
 }
 
@@ -94,7 +98,7 @@ export function getEventFormDefaults(timeZone: string): EventFormData {
     club_id: null,
     title: "",
     description: "",
-    occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour, timeZone), dtend_local: "" }],
+    occurrences: [{ dtstart_local: toLocalDateTimeInput(nextHour, timeZone), dtend_local: "", tickets: true }],
     location: "",
     map_location: "",
     category: "",
@@ -103,5 +107,6 @@ export function getEventFormDefaults(timeZone: string): EventFormData {
     registration: false,
     source_url: null,
     source_image_url: null,
+    tickets: NO_EVENT_TICKETS,
   };
 }

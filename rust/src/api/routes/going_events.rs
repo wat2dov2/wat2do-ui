@@ -1,5 +1,5 @@
-//! `/going-events`: a user's Going selections and the public who's-going
-//! list (`routers/going_events.py`).
+//! `/going-events`: the dates a user turned Notify me on for, which get
+//! them reminders and change alerts.
 
 use axum::Json;
 use axum::extract::{FromRequestParts, Request, State};
@@ -9,8 +9,7 @@ use crate::api::AppState;
 use crate::api::auth::DbUser;
 use crate::api::body::{Body, Extra, json_first, merge_issues};
 use crate::api::errors::ApiError;
-use crate::api::events::{going, requests, store, writes};
-use crate::api::messages::EVENT_NOT_FOUND;
+use crate::api::events::{going, requests, writes};
 use crate::api::validation::{PathParams, Validator};
 
 #[utoipa::path(
@@ -32,27 +31,6 @@ pub async fn list_going_events(
         }
         Err(other) => Err(other),
     }
-}
-
-#[utoipa::path(
-    get,
-    path = "/going-events/{event_id}/attendees",
-    tag = "going-events",
-    operation_id = "list_event_attendees_going_events__event_id__attendees_get",
-    summary = "List Event Attendees"
-)]
-pub async fn list_event_attendees(
-    State(state): State<AppState>,
-    path: PathParams,
-) -> Result<Response, ApiError> {
-    let mut check = Validator::default();
-    let id = check.path(&path, "event_id").unbounded_int();
-    check.finish()?;
-    let id = writes::int4(id)?;
-    if store::event_by_id(&state.db, id).await?.is_none() {
-        return Err(ApiError::not_found(EVENT_NOT_FOUND));
-    }
-    Ok(Json(going::attendees(&state.db, id).await?).into_response())
 }
 
 #[utoipa::path(

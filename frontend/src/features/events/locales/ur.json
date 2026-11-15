@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "بھرتی: {{positions}}",
-    "minimumGoing": "کم از کم شرکاء",
+    "minimumGoing": "کم از کم دلچسپی رکھنے والے",
     "eventTitle": "ایونٹ کا عنوان",
     "loadFailed": "ایونٹس لوڈ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     "deleteFailed": "ایونٹ حذف کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "اپ ڈیٹ کر دیا گیا ہے۔",
     "noResults": "کوئی نتائج نہیں ملے۔",
     "signInToView": "اپنے ایونٹس دیکھنے کے لیے سائن ان کریں",
-    "signInToViewDesc": "ایونٹس کو مارک کریں جن میں آپ جانے والے ہیں اور سب کو ایک جگہ دیکھیں۔",
     "signIn": "سائن ان کریں",
     "upcoming": "آنے والے",
-    "emptyEventsDesc": "ایونٹس کو مارک کریں جن میں آپ جانے والے ہیں اور یہ یہاں نظر آئیں گے۔ کسی بھی ایونٹ پر جانے والے بٹن پر ٹیپ کریں۔",
     "noUpcomingEvents": "کوئی آنے والا ایونٹ نہیں",
     "upcomingEventCount": "آنے والا ایونٹ",
     "upcomingEventCount_other": "آنے والے ایونٹس",
@@ -83,12 +81,10 @@
       "submitFailed": "رپورٹ جمع نہیں ہو سکی"
     },
     "goingEvents": {
-      "timeUnavailable": "یہ ایونٹ شروع ہو چکا ہے یا منسوخ ہو گیا ہے، اس لیے آپ شرکت درج نہیں کر سکتے۔",
-      "markFailed": "اس تقریب کو اپنی شرکت کے طور پر نشان زد نہیں کیا جا سکا",
-      "unmarkFailed": "اس تقریب سے شرکت کا نشان نہیں ہٹایا جا سکا",
+      "timeUnavailable": "یہ ایونٹ شروع ہو چکا ہے یا منسوخ ہو گیا ہے، اس لیے \"مجھے مطلع کریں\" دستیاب نہیں ہے۔",
       "saveFailed": "آپ کے منتخب کردہ وقت کو محفوظ نہیں کیا جا سکا",
-      "chooseOccurrences": "آپ کس وقت جا رہے ہیں؟",
-      "chooseOccurrencesDescription": "ہر موقع منتخب کریں جس میں آپ شرکت کرنے کا ارادہ رکھتے ہیں۔"
+      "chooseOccurrences": "ہم آپ کو کن تاریخوں کے بارے میں مطلع کریں؟",
+      "chooseOccurrencesDescription": "ہر وہ تاریخ منتخب کریں جس کے لیے آپ یاد دہانی اور اپ ڈیٹس چاہتے ہیں۔"
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -115,19 +111,15 @@
     },
     "new": "نیا",
     "updated": "اپڈیٹ شدہ",
-    "goingCount": "{{count}} شریک",
-    "goingCount_one": "{{count}} شریک",
-    "goingCount_other": "{{count}} شریک",
-    "andOthersCount": "اور {{count}} دیگر",
-    "andOthersCount_other": "اور {{count}} دوسرے",
+    "goingCount": "{{count}} دلچسپی رکھنے والے",
+    "goingCount_one": "{{count}} دلچسپی رکھنے والا",
+    "goingCount_other": "{{count}} دلچسپی رکھنے والے",
     "hostedBy": "میزبان",
     "aboutEvent": "ایونٹ کے بارے میں",
     "fetchingDetails": "تفصیلات حاصل کی جارہی ہیں۔۔۔",
-    "sourceLabel": "ماخذ:",
-    "youreIn": "آپ شامل ہیں",
+    "sourceUrl": "ماخذ URL",
+    "youreIn": "آپ شامل ہیں!",
     "startingIn": "شروع ہونے میں",
-    "cancelGoingPrompt": "اب شرکت نہیں کر سکتے؟ میزبان کو مطلع کرنے کے لیے",
-    "cancelGoing": "اپنی شرکت کا نشان ہٹائیں۔",
     "viewFullImage": "ایونٹ کی مکمل تصویر دیکھیں",
     "fullImageDescription": "{{title}} کا بڑا کیا گیا ایونٹ پوسٹر",
     "moreDatesCount": "+{{count}} تاریخ",
@@ -137,10 +129,18 @@
     "moreEvents": "مزید ایونٹس",
     "submitEvent": "ایونٹ شامل کریں",
     "allEvents": "تمام ایونٹس",
-    "going": "شریک ہوں",
+    "going": "سبسکرائبڈ",
+    "notifyMe": {
+      "action": "مجھے مطلع کریں",
+      "description": "شروع ہونے سے پہلے یاد دہانی پائیں، اور کچھ بدلے تو ای میل۔",
+      "otherDates": "باقی تاریخوں کے لیے ٹکٹ کی ضرورت نہیں۔ ان سے پہلے یاد دہانی پائیں، اور کچھ بدلے تو ای میل۔",
+      "onTitle": "آپ کو مطلع کیا جائے گا",
+      "onDescription": "ہم شروع ہونے سے پہلے آپ کو یاد دہانی کی ای میل بھیجیں گے، اور کچھ بدلا تو آپ کو بتائیں گے۔",
+      "offPrompt": "اپ ڈیٹس نہیں چاہییں؟",
+      "off": "\"مجھے مطلع کریں\" بند کریں۔"
+    },
     "upcomingEventCount_one": "آنے والا ایونٹ",
     "clickCount_one": "{{count}} کلک",
-    "andOthersCount_one": "اور {{count}} دیگر",
     "moreDatesCount_one": "+{{count}} تاریخ",
     "views": {
       "label": "تقریبات کا منظر",
@@ -169,8 +169,8 @@
       "networking": "نیٹ ورکنگ کے مواقع"
     },
     "savedEvents": {
-      "save": "ایونٹ محفوظ کریں",
-      "unsave": "محفوظ کردہ سے ہٹائیں",
+      "save": "محفوظ کریں",
+      "saved": "محفوظ شدہ",
       "saveFailed": "یہ ایونٹ محفوظ نہیں ہو سکا"
     }
   }

@@ -1,9 +1,9 @@
-"""Going-event change notification fanout.
+"""Notify me change alert fanout.
 
 A database trigger records each event as it was before its first material
 change (``event_change_alerts``). Once an event has been quiet for
 ``controlbox.event_change_alerts.quiet_minutes``, ``send_due_alerts`` compares
-that record with the event as it is now and sends everyone who was going one
+that record with the event as it is now and sends everyone who had Notify me on one
 email covering every change in the burst.
 """
 
@@ -66,7 +66,7 @@ def send_due_alerts(now: datetime | None = None) -> int:
         try:
             sent += _send_alert(row["event_id"], row["snapshot"])
         except Exception:
-            log.warning("Going alert failed for event id=%s", row["event_id"], exc_info=True)
+            log.warning("Change alert failed for event id=%s", row["event_id"], exc_info=True)
             continue
         get_sb().table(EVENT_CHANGE_ALERTS).delete().eq("event_id", row["event_id"]).eq(
             "changed_at", row["changed_at"]
@@ -107,7 +107,7 @@ def enqueue_event_change(
     diff: dict[str, dict[str, Any]],
     recipient_ids: list[UUID],
 ) -> int:
-    """Fanout an event_change alert to everyone going to the event.
+    """Fanout an event_change alert to everyone with Notify me on for the event.
 
     Returns the number of emails actually sent (after prefs + dedup).
     No-op on empty diff. Safe to call on missing events.

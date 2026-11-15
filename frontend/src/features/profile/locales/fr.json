@@ -4,10 +4,10 @@
     "events": {
       "saved": "Événements enregistrés",
       "savedEmpty": "Les événements que vous enregistrez apparaissent ici.",
-      "past": "Événements auxquels vous êtes allé",
-      "pastEmpty": "Les événements auxquels vous êtes allé apparaissent ici.",
-      "upcoming": "Événements auxquels vous allez",
-      "upcomingEmpty": "Les événements auxquels vous allez apparaissent ici.",
+      "past": "Vos événements passés",
+      "pastEmpty": "Les événements pour lesquels vous avez activé Me notifier, ou pour lesquels vous aviez des billets, apparaissent ici une fois terminés.",
+      "upcoming": "Vos événements à venir",
+      "upcomingEmpty": "Les événements pour lesquels vous activez Me notifier, ou pour lesquels vous obtenez des billets, apparaissent ici.",
       "ticket": "Billet"
     },
     "clubs": {

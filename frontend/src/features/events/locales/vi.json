@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Tuyển dụng: {{positions}}",
-    "minimumGoing": "Số người tối thiểu",
+    "minimumGoing": "Số người quan tâm tối thiểu",
     "eventTitle": "Tiêu đề sự kiện",
     "loadFailed": "Không tải được sự kiện. Vui lòng thử lại.",
     "deleteFailed": "Xóa sự kiện thất bại. Vui lòng thử lại.",
@@ -36,10 +36,8 @@
     "eventUpdatedDesc": "đã được cập nhật.",
     "noResults": "Không tìm thấy kết quả nào.",
     "signInToView": "Đăng nhập để xem các sự kiện của bạn",
-    "signInToViewDesc": "Đánh dấu các sự kiện bạn sẽ tham dự và xem tất cả chúng ở một nơi.",
     "signIn": "Đăng nhập",
     "upcoming": "Sắp tới",
-    "emptyEventsDesc": "Đánh dấu các sự kiện bạn sẽ tham dự và chúng sẽ xuất hiện ở đây. Nhấn nút tham dự trên bất kỳ sự kiện nào.",
     "noUpcomingEvents": "Không có sự kiện sắp tới nào",
     "upcomingEventCount": "sự kiện sắp tới",
     "upcomingEventCount_other": "các sự kiện sắp tới",
@@ -82,12 +80,10 @@
       "submitFailed": "Không thể gửi báo cáo"
     },
     "goingEvents": {
-      "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên bạn không thể xác nhận tham gia.",
-      "markFailed": "Không thể đánh dấu sự kiện này là sẽ tham gia",
-      "unmarkFailed": "Không thể bỏ đánh dấu sự kiện này là sẽ tham gia",
+      "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên không thể dùng \"Nhắc tôi\".",
       "saveFailed": "Không thể lưu thời gian bạn đã chọn",
-      "chooseOccurrences": "Bạn sẽ đi vào thời gian nào?",
-      "chooseOccurrencesDescription": "Chọn tất cả các lần bạn dự định tham dự."
+      "chooseOccurrences": "Bạn muốn được nhắc vào những ngày nào?",
+      "chooseOccurrencesDescription": "Chọn tất cả các ngày bạn muốn nhận lời nhắc và cập nhật."
     },
     "calendar": {
       "googleCalendar": "Google Calendar",
@@ -114,18 +110,14 @@
     },
     "new": "MỚI",
     "updated": "ĐÃ CẬP NHẬT",
-    "goingCount": "{{count}} người sẽ tham gia",
-    "goingCount_other": "{{count}} người sẽ tham gia",
-    "andOthersCount": "và {{count}} người khác",
-    "andOthersCount_other": "và {{count}} người khác",
+    "goingCount": "{{count}} người quan tâm",
+    "goingCount_other": "{{count}} người quan tâm",
     "hostedBy": "Được tổ chức bởi",
     "aboutEvent": "Về sự kiện",
     "fetchingDetails": "Đang lấy chi tiết...",
-    "sourceLabel": "Nguồn:",
-    "youreIn": "Bạn đã tham gia",
+    "sourceUrl": "URL nguồn",
+    "youreIn": "Bạn đã có chỗ!",
     "startingIn": "Bắt đầu trong",
-    "cancelGoingPrompt": "Không còn có thể tham dự? Thông báo cho người tổ chức bằng cách",
-    "cancelGoing": "đánh dấu bạn không đi.",
     "viewFullImage": "Xem hình ảnh sự kiện đầy đủ",
     "fullImageDescription": "Áp phích sự kiện phóng to cho {{title}}",
     "moreDatesCount": "+{{count}} ngày",
@@ -135,7 +127,16 @@
     "moreEvents": "Thêm sự kiện",
     "submitEvent": "Thêm sự kiện",
     "allEvents": "Tất cả các sự kiện",
-    "going": "Sẽ tham gia",
+    "going": "Đã đăng ký",
+    "notifyMe": {
+      "action": "Nhắc tôi",
+      "description": "Nhận lời nhắc trước khi bắt đầu và email nếu có gì thay đổi.",
+      "otherDates": "Các ngày khác không cần vé. Nhận lời nhắc trước các ngày đó và email nếu có gì thay đổi.",
+      "onTitle": "Bạn sẽ được thông báo",
+      "onDescription": "Chúng tôi sẽ gửi email nhắc bạn trước khi bắt đầu và báo cho bạn nếu có gì thay đổi.",
+      "offPrompt": "Không cần cập nhật?",
+      "off": "Tắt \"Nhắc tôi\"."
+    },
     "views": {
       "label": "Chế độ xem sự kiện",
       "grid": "Lưới",
@@ -161,8 +162,8 @@
       "networking": "Cơ hội kết nối"
     },
     "savedEvents": {
-      "save": "Lưu sự kiện",
-      "unsave": "Bỏ lưu",
+      "save": "Lưu",
+      "saved": "Đã lưu",
       "saveFailed": "Không thể lưu sự kiện này"
     }
   }

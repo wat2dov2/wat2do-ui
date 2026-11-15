@@ -114,7 +114,7 @@ def test_event_change_email_reads_each_change_in_local_time():
     )
 
     assert text.splitlines()[2:7] == [
-        "You're going to this event. Here's what changed:",
+        "You turned on Notify me for this event. Here's what changed:",
         "",
         "- Location: RCH 208 -> DC 1301",
         "- Mon, Nov 2: 1 PM - 4 PM -> 3 PM - 5 PM",

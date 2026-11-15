@@ -7,12 +7,20 @@ import {
   takeFreeTicket,
 } from "../src/features/tickets/api/tickets.api";
 import {
+  eventTicketingUpdate,
+  eventTicketsErrors,
+  ticketCapacity,
+  ticketPriceCents,
+} from "../src/features/tickets/lib/eventTicketsForm";
+import {
   formatTicketCode,
   refundRequestState,
   ticketCodeFrom,
 } from "../src/features/tickets/lib/ticketFormat";
 import { api } from "../src/shared/services/apiClient";
+import type { Event, EventFormData } from "../src/shared/types";
 import { formatCents } from "../src/shared/utils/currency";
+import { NO_EVENT_TICKETS } from "../src/shared/utils/event";
 
 const CODE = "7KQ2MZ4PABCDEFGHIJKLMNOP";
 
@@ -100,12 +108,12 @@ test.describe("what the ticket requests send", () => {
     });
   });
 
-  test("free tickets are a price of zero, and settings always say whether they are paused", async () => {
-    await configureEventTicketing(42, { price_cents: 0, capacity: null, paused: false });
+  test("free tickets are a price of zero, and settings always say whether they are paused and which dates", async () => {
+    await configureEventTicketing(42, { price_cents: 0, capacity: null, paused: false, event_date_ids: ["date-1"] });
     expect(sent[0]).toEqual({
       method: "PUT",
       path: "/events/42/ticketing",
-      data: { price_cents: 0, capacity: null, paused: false },
+      data: { price_cents: 0, capacity: null, paused: false, event_date_ids: ["date-1"] },
     });
   });
 
@@ -120,5 +128,60 @@ test.describe("what the ticket requests send", () => {
       },
       { method: "POST", path: `/tickets/${CODE}/refund-request`, data: { note: null } },
     ]);
+  });
+});
+
+test.describe("tickets in the event's form", () => {
+  const form = (overrides: Partial<EventFormData> = {}): EventFormData => ({
+    timeZone: "America/Toronto",
+    club_id: 7,
+    title: "Gala",
+    description: "",
+    occurrences: [
+      { id: "date-1", dtstart_local: "2026-12-01T19:00", dtend_local: "", tickets: true },
+      { dtstart_local: "2026-12-08T19:00", dtend_local: "", tickets: true },
+      { id: "date-3", dtstart_local: "2026-12-15T19:00", dtend_local: "", tickets: false },
+    ],
+    location: "SLC",
+    map_location: "",
+    category: "",
+    price: 0,
+    food: [],
+    registration: false,
+    tickets: { enabled: true, price: "", capacity: "", paused: false },
+    ...overrides,
+  });
+
+  test("an empty price is free and an empty limit is no limit", () => {
+    expect(ticketPriceCents("")).toBe(0);
+    expect(ticketPriceCents("12,50")).toBe(1250);
+    expect(ticketPriceCents("-3")).toBeNull();
+    expect(ticketCapacity("")).toBeNull();
+    expect(ticketCapacity("40")).toBe(40);
+    expect(ticketCapacity("0")).toBeUndefined();
+    expect(ticketCapacity("2.5")).toBeUndefined();
+  });
+
+  test("tickets need a date, a sensible price and limit, and nothing while they are off", () => {
+    expect(eventTicketsErrors(form())).toEqual({});
+    const noDates = form({
+      occurrences: form().occurrences.map((occurrence) => ({ ...occurrence, tickets: false })),
+      tickets: { enabled: true, price: "abc", capacity: "-1", paused: false },
+    });
+    expect(eventTicketsErrors(noDates)).toEqual({ price: true, capacity: true, dates: true });
+    expect(eventTicketsErrors({ ...noDates, tickets: NO_EVENT_TICKETS })).toEqual({});
+  });
+
+  test("the saved event's ticked dates are sent by id, a new one matched by when it starts", () => {
+    const saved = {
+      id: 42,
+      occurrences: [
+        { id: "date-1", dtstart_utc: "2026-12-02T00:00:00Z" },
+        { id: "date-2", dtstart_utc: "2026-12-09T00:00:00Z" },
+        { id: "date-3", dtstart_utc: "2026-12-16T00:00:00Z" },
+      ],
+    } as unknown as Event;
+    expect(eventTicketingUpdate(saved, form({ tickets: { enabled: true, price: "15", capacity: "80", paused: true } })))
+      .toEqual({ price_cents: 1500, capacity: 80, paused: true, event_date_ids: ["date-1", "date-2"] });
   });
 });

@@ -587,13 +587,6 @@ pub struct MapGeocoding {
     pub building_codes: HashMap<String, IndexMap<String, String>>,
 }
 
-/// `controlbox/public_attendance.json`, every field.
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct PublicAttendance {
-    pub maximum_display_names: usize,
-}
-
 /// `controlbox/interaction_ingestion.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -832,12 +825,6 @@ pub static NOTIFICATION_DEFAULTS: LazyLock<NotificationDefaults> = LazyLock::new
         include_str!("../../backend/controlbox/notification_defaults.json"),
     )
 });
-pub static PUBLIC_ATTENDANCE: LazyLock<PublicAttendance> = LazyLock::new(|| {
-    parse(
-        "public_attendance",
-        include_str!("../../backend/controlbox/public_attendance.json"),
-    )
-});
 pub static INTERACTION_INGESTION: LazyLock<InteractionIngestion> = LazyLock::new(|| {
     parse(
         "interaction_ingestion",
@@ -981,7 +968,6 @@ mod tests {
         assert!(!SCRAPING.instagram_web_app_id.is_empty());
         assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
-        assert!(PUBLIC_ATTENDANCE.maximum_display_names > 0);
         assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
         assert_eq!(INSTAGRAM_LIGHTPANDA.sha256.len(), 64);
     }

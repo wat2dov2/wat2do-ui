@@ -91,7 +91,7 @@
   transition-timing-function: var(--ease-in-out-ui), linear(0, 1200 45%, 1);
 }
 
-/* One pulse to confirm something worked: a copied link, a followed club, an event you're going to. */
+/* One pulse to confirm something worked: a copied link, a followed club, an event you turn Notify me on for. */
 @keyframes success-pulse {
   0% { scale: 1; }
   40% { scale: 1.08; }

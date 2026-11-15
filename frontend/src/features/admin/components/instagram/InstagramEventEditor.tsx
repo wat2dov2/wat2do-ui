@@ -2,6 +2,7 @@ import { useCallback, useMemo, type MutableRefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { fetchEventById } from "@/features/events/api/events.api";
+import { useEventTicketing } from "@/features/tickets";
 import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -12,7 +13,7 @@ interface InstagramEventEditorProps {
   eventId: number;
   active: boolean;
   saveRef: MutableRefObject<(() => Promise<boolean>) | null>;
-  onUpdate: (eventId: number, data: EventFormData) => Promise<void>;
+  onUpdate: (eventId: number, data: EventFormData) => Promise<Event>;
   onPreviewEventChange: (eventId: number, event: Event) => void;
 }
 
@@ -27,10 +28,12 @@ export function InstagramEventEditor({
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
     refetchOnWindowFocus: false,
   });
+  // The form holds the event's tickets too, so it waits for them.
+  const { data: ticketing, isPending: ticketingPending } = useEventTicketing(eventId);
   const timeZone = getSchoolTimezone(event?.school);
-  const initialData = useMemo(() => event
-    ? eventToFormData({ ...event, category: getEventCategory(event) }, timeZone)
-    : null, [event, timeZone]);
+  const initialData = useMemo(() => event && !ticketingPending
+    ? eventToFormData({ ...event, category: getEventCategory(event) }, timeZone, ticketing ?? null)
+    : null, [event, timeZone, ticketing, ticketingPending]);
   const updatePreview = useCallback((preview: Event) => {
     onPreviewEventChange(eventId, preview);
   }, [eventId, onPreviewEventChange]);

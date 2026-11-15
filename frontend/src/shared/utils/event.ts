@@ -1,4 +1,5 @@
-import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
+import type { ApiEventTicketingResponse } from "@/shared/generated";
+import type { Event, EventFormData, EventFormOccurrence, EventFormTickets } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import { getRecencyBadge, toLocalDateTimeInput } from "@/shared/utils/date";
 import type { TFunction } from "i18next";
@@ -55,25 +56,55 @@ export function isNetworkingEvent(event: Pick<Event, "employers_on_campus" | "ca
   return event.employers_on_campus === true || event.category === "Business";
 }
 
-function eventOccurrencesToFormOccurrences(event: Event, timeZone: string): EventFormOccurrence[] {
+function eventOccurrencesToFormOccurrences(
+  event: Event,
+  timeZone: string,
+  ticketing: ApiEventTicketingResponse | null,
+): EventFormOccurrence[] {
+  const ticketed = new Set(ticketing?.dates.map((date) => date.event_date_id));
   return (event.occurrences ?? []).map((occurrence) => ({
     id: occurrence.id,
     original: { dtstart_utc: occurrence.dtstart_utc, dtend_utc: occurrence.dtend_utc },
     dtstart_local: toLocalDateTimeInput(occurrence.dtstart_utc, timeZone),
     dtend_local: occurrence.dtend_utc ? toLocalDateTimeInput(occurrence.dtend_utc, timeZone) : "",
+    // Turning tickets on offers every date until the club unticks one.
+    tickets: ticketing ? ticketed.has(occurrence.id) : true,
   }));
 }
 
+/** No tickets: what a new event's form starts with. */
+export const NO_EVENT_TICKETS: EventFormTickets = {
+  enabled: false,
+  price: "",
+  capacity: "",
+  paused: false,
+};
+
+function eventTicketsToForm(ticketing: ApiEventTicketingResponse | null): EventFormTickets {
+  if (!ticketing) return NO_EVENT_TICKETS;
+  return {
+    enabled: true,
+    price: ticketing.price_cents > 0 ? (ticketing.price_cents / 100).toFixed(2) : "",
+    capacity: ticketing.capacity ? String(ticketing.capacity) : "",
+    paused: ticketing.paused,
+  };
+}
+
 /**
- * Convert Event to EventFormData for edit mode.
+ * Convert Event to EventFormData for edit mode, with its tickets when it has
+ * them (`ticketing` is null without).
  */
-export function eventToFormData(event: Event, timeZone: string): EventFormData {
+export function eventToFormData(
+  event: Event,
+  timeZone: string,
+  ticketing: ApiEventTicketingResponse | null,
+): EventFormData {
   return {
     timeZone,
     club_id: event.club_id ?? null,
     title: event.title,
     description: event.description || "",
-    occurrences: eventOccurrencesToFormOccurrences(event, timeZone),
+    occurrences: eventOccurrencesToFormOccurrences(event, timeZone, ticketing),
     location: event.location ?? "",
     map_location: event.map_location ?? "",
     category: getEventCategory(event),
@@ -81,6 +112,7 @@ export function eventToFormData(event: Event, timeZone: string): EventFormData {
     food: event.food || [],
     registration: event.registration ?? false,
     source_image_url: event.source_image_url ?? null,
+    tickets: eventTicketsToForm(ticketing),
   };
 }
 

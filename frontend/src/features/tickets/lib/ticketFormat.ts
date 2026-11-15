@@ -48,7 +48,7 @@ export function refundRequestState(
 export type TicketDate = ApiEventTicketingResponse["dates"][number];
 export type TicketUnavailable = "cancelled" | "paused" | "soldOut" | "closed" | "notYet";
 
-/** Why nobody can get a ticket (or RSVP) right now, or null when they can. */
+/** Why nobody can get a ticket right now, or null when they can. */
 export function ticketUnavailableReason(
   event: Pick<Event, "cancelled">,
   ticketing: ApiEventTicketingResponse,

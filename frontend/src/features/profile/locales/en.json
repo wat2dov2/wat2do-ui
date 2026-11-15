@@ -4,10 +4,10 @@
     "events": {
       "saved": "Events saved",
       "savedEmpty": "Events you save show up here.",
-      "past": "Events you've gone to",
-      "pastEmpty": "Events you went to show up here.",
-      "upcoming": "Events you're going to",
-      "upcomingEmpty": "Events you're going to show up here.",
+      "past": "Your past events",
+      "pastEmpty": "Events you turned on Notify me for, or had tickets to, show up here once they're over.",
+      "upcoming": "Your upcoming events",
+      "upcomingEmpty": "Events you turn on Notify me for, or get tickets to, show up here.",
       "ticket": "Ticket"
     },
     "clubs": {

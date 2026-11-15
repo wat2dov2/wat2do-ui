@@ -4,8 +4,6 @@
     "description": "Show a ticket's QR code at the door.",
     "upcoming": "Upcoming",
     "past": "Past",
-    "manage": "Tickets",
-    "setUp": "Set up tickets",
     "empty": {
       "title": "No tickets yet",
       "description": "When you get a ticket to an event, it shows up here.",
@@ -27,6 +25,8 @@
       "left": "{{count}} left",
       "left_other": "{{count}} left",
       "quantity": "How many tickets",
+      "get": "Get tickets",
+      "anotherDate": "Get tickets for another date",
       "buy": "Get tickets · {{total}}",
       "continueToPayment": "Continue to payment",
       "payNote": "Secure payment through Stripe. {{club}} gets your name and email for check-in.",
@@ -42,17 +42,6 @@
         "soldOut": "No tickets are left.",
         "closed": "Tickets are no longer available.",
         "notYet": "Tickets aren't available yet."
-      }
-    },
-    "rsvp": {
-      "rsvp": "RSVP",
-      "anotherDate": "RSVP for another date",
-      "unavailable": {
-        "cancelled": "This event was cancelled.",
-        "paused": "RSVPs are paused for now.",
-        "soldOut": "No spots are left.",
-        "closed": "RSVPs are closed.",
-        "notYet": "RSVPs aren't open yet."
       }
     },
     "pass": {
@@ -82,12 +71,12 @@
       }
     },
     "return": {
-      "prompt": "Can't make it? Cancel your RSVP",
-      "title": "Cancel your RSVP?",
-      "description": "Someone else can take your spot. If spots are left later, you can RSVP again.",
-      "keep": "Keep my spot",
-      "confirm": "Cancel RSVP",
-      "done": "RSVP cancelled"
+      "prompt": "Can't make it? Give your ticket back",
+      "title": "Give your ticket back?",
+      "description": "Someone else can take your spot. If tickets are left later, you can get one again.",
+      "keep": "Keep my ticket",
+      "confirm": "Give it back",
+      "done": "Ticket given back"
     },
     "order": {
       "confirming": "Confirming your payment",
@@ -105,14 +94,11 @@
     "desk": {
       "title": "Tickets",
       "notFound": "This event doesn't exist anymore",
-      "setupTitle": "Tickets for this event",
-      "setupDescription": "Everyone gets a ticket with a QR code, and you scan it at the door to check them in.",
-      "settingsTitle": "Ticket settings",
-      "settingsDescription": "Change how many tickets there are, or pause them for a while.",
-      "free": "Free",
-      "freeHint": "One ticket per person for each date.",
-      "paid": "Paid",
-      "paidHint": "People pay through Stripe, and the money goes to your club.",
+      "noTickets": "This event has no tickets",
+      "noTicketsDescription": "Turn them on when you edit the event.",
+      "setupDescription": "Everyone gets a ticket with a QR code, and you scan it at the door. Getting a ticket also turns on Notify me for that date.",
+      "dates": "Dates with tickets",
+      "datesRequired": "Pick at least one date.",
       "price": "Ticket price ({{currency}})",
       "priceLocked": "The price can't change once someone has a ticket.",
       "priceRange": "Enter a price between {{minimum}} and {{maximum}}.",
@@ -121,21 +107,15 @@
       "capacityRange": "Enter a number from 1 to {{maximum}}, or leave it empty for no limit.",
       "pause": "Pause tickets",
       "pauseHint": "Nobody new can get a ticket until you turn this off.",
+      "turnOffLocked": "People have tickets, so they stay on. Pause them to stop new ones.",
       "fees": "Stripe keeps about 2.9% + 30¢ of each order. Your club gets the rest.",
-      "goingNote": "Everyone who already said they're going gets a ticket by email.",
       "payoutNoteSetup": "Each eligible check-in earns your club {{rate}}. Turning on tickets means your club accepts the <terms>Club Payout Terms</terms>.",
       "payoutNote": "Each eligible check-in earns your club {{rate}}, under the <terms>Club Payout Terms</terms>.",
       "payoutsNeeded": "Set up payouts first, so the money has somewhere to go.",
       "setUpPayouts": "Set up payouts",
-      "turnOnFree": "Turn on free tickets",
-      "startSelling": "Start selling",
-      "freeStarted": "Free tickets are on",
-      "sellingStarted": "Tickets are on sale",
-      "save": "Save changes",
-      "saved": "Ticket settings saved",
-      "turnOff": "Turn tickets off",
-      "turnedOff": "This event no longer has tickets",
       "openScanner": "Scan tickets",
+      "openDesk": "Door list and scanner",
+      "notSaved": "The event is saved, but its tickets aren't",
       "attendees": "Door list",
       "attendeesEmpty": "Nobody has a ticket yet",
       "search": "Search by name, email or code",

@@ -5,15 +5,18 @@ export const DoorScanner = lazy(() =>
   import("./components/DoorScanner").then((module) => ({ default: module.DoorScanner })),
 );
 export { EventTicketCard } from "./components/EventTicketCard";
+export { EventTicketsFieldSet, useTicketsClub } from "./components/EventTicketsFieldSet";
 export { HeldTicket } from "./components/HeldTicket";
 export { TicketDatePicker } from "./components/TicketDatePicker";
 export { TicketDeskStats } from "./components/TicketDeskStats";
 export { TicketDoorList } from "./components/TicketDoorList";
-export { TicketSettingsCard, type TicketPayouts } from "./components/TicketSettingsCard";
+export { eventTicketsErrors } from "./lib/eventTicketsForm";
 export {
+  useClubPayouts,
   useEventTicketing,
-  useFreeTicketRsvp,
+  useFreeTicket,
   useMyTickets,
+  useSaveEventTickets,
   useTicketDesk,
   useTicketRefunds,
 } from "./hooks/useTickets";

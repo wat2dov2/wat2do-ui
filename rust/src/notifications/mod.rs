@@ -28,7 +28,7 @@ use crate::time_zones::Tz;
 /// Counts for one dispatch, logged and used for the job's exit status.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Stats {
-    /// Users who could get the morning email, or Going selections due a reminder.
+    /// Users who could get the morning email, or Notify me selections due a reminder.
     pub considered: usize,
     pub prepared: usize,
     pub sent: usize,

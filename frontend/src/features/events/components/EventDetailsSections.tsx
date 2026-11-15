@@ -1,10 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type Ref } from "react";
 import { useEventView } from "@/features/events/hooks/useEventStats";
-import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
-import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import {
@@ -19,6 +16,7 @@ import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, Utens
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { DateTile, IconTile } from "@/shared/ui/tile";
+import { Link } from "@/shared/ui/link";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import {
@@ -44,11 +42,9 @@ import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
 import { eventTitleSvg } from "@/features/events/lib/titleSvg";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeLink } from "@/features/clubs";
-import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { SaveEventButton, SaveEventButtonPlaceholder } from "@/features/events/components/SaveEventButton";
-import { fetchEventAttendees } from "@/features/events/api/events.api";
 import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
@@ -56,16 +52,14 @@ import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { ClubManagerView, SessionView } from "@/features/auth/components/SessionView";
 import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
-import { controlBox } from "@/shared/config/controlBox";
 import { translateFoods } from "@/shared/utils/foodTranslation";
-import { queryKeys } from "@/shared/lib/queryKeys";
-import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
+import { ROUTES } from "@/shared/constants/routes";
 import {
   EventTicketCard,
   HeldTicket,
   TicketDatePicker,
   useEventTicketing,
-  useFreeTicketRsvp,
+  useFreeTicket,
 } from "@/features/tickets";
 import type { ApiEventTicketingResponse } from "@/shared/generated";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
@@ -203,7 +197,12 @@ function ticketedEventId(event: Event): number | null {
   return event.registration && event.id > 0 ? event.id : null;
 }
 
-/** How someone gets in: an RSVP for free tickets, buying for paid ones, otherwise Going. */
+/**
+ * The event's main action. With tickets on, Get tickets (free in a tap, paid
+ * through Stripe), which also turns on Notify me for that date; its dates
+ * without tickets still offer Notify me. Otherwise Notify me: a reminder
+ * before it starts and an email when it changes.
+ */
 function EventAdmissionCard({
   event,
   school,
@@ -216,19 +215,30 @@ function EventAdmissionCard({
   if (ticketedId != null && isPending) {
     return <Skeleton className="h-40 w-full rounded-xl" />;
   }
-  if (!ticketing) return <EventRegistrationCard event={event} school={school} />;
-  return ticketing.price_cents === 0 ? (
-    <EventRsvpCard event={event} school={school} ticketing={ticketing} />
-  ) : (
-    <EventTicketCard event={event} ticketing={ticketing} />
+  if (!ticketing) return <EventNotifyMeCard event={event} school={school} />;
+  const ticketed = new Set(ticketing.dates.map((date) => date.event_date_id));
+  const otherDates = (event.occurrences ?? [])
+    .map((occurrence) => occurrence.id)
+    .filter((id) => !ticketed.has(id));
+  return (
+    <Stack gap={6}>
+      {ticketing.price_cents === 0 ? (
+        <EventFreeTicketCard event={event} school={school} ticketing={ticketing} />
+      ) : (
+        <EventTicketCard event={event} ticketing={ticketing} />
+      )}
+      {otherDates.length > 0 ? (
+        <EventNotifyMeCard event={event} school={school} dates={otherDates} />
+      ) : null}
+    </Stack>
   );
 }
 
 /**
- * Free tickets work like Going: one RSVP tap (or the email sign-in that leads
- * to it), and the RSVP comes with a QR code the club scans at the door.
+ * Free tickets: one tap (or the email sign-in that leads to it), and the
+ * ticket comes with a QR code the club scans at the door.
  */
-function EventRsvpCard({
+function EventFreeTicketCard({
   event,
   school,
   ticketing,
@@ -238,52 +248,53 @@ function EventRsvpCard({
   ticketing: ApiEventTicketingResponse;
 }) {
   const { t } = useTranslation();
-  const rsvp = useFreeTicketRsvp(event, ticketing);
+  const free = useFreeTicket(event, ticketing);
   const now = useCurrentTime(event.occurrences);
-  // "RSVP for another date" stays open until that RSVP lands.
+  // "Get tickets for another date" stays open until that ticket lands.
   const [addingAt, setAddingAt] = useState<number | null>(null);
-  const adding = addingAt === rsvp.held.length;
-  const unavailableText = rsvp.unavailable
-    ? t(`tickets.rsvp.unavailable.${rsvp.unavailable}`)
+  const adding = addingAt === free.held.length;
+  const unavailableText = free.unavailable
+    ? t(`tickets.card.unavailable.${free.unavailable}`)
     : undefined;
   const datePicker = (
     <TicketDatePicker
       event={event}
-      dates={rsvp.openDates}
-      selectedDateId={rsvp.selectedDateId}
-      onSelect={rsvp.selectDate}
+      dates={free.openDates}
+      selectedDateId={free.selectedDateId}
+      onSelect={free.selectDate}
     />
   );
 
-  if (rsvp.held.length) {
-    const nextStartMs = rsvp.held
+  if (free.held.length) {
+    const nextStartMs = free.held
       .map((ticket) => new Date(ticket.dtstart_utc).getTime())
       .filter((startMs) => now !== null && startMs > now)
       .sort((a, b) => a - b)[0];
     const countdown =
       now !== null && nextStartMs !== undefined ? formatCountdown(nextStartMs, now) : null;
-    const another = rsvp.unavailable ? null : adding ? (
+    const another = free.unavailable ? null : adding ? (
       <Stack gap={3}>
         {datePicker}
-        <LoadingButton type="button" isLoading={rsvp.isPending} onClick={rsvp.rsvp}>
-          {t("tickets.rsvp.rsvp")}
+        <LoadingButton type="button" isLoading={free.isPending} onClick={free.take}>
+          {t("tickets.card.get")}
         </LoadingButton>
       </Stack>
     ) : (
-      <Button
-        type="button"
-        variant="link"
-        size="inline"
-        className="self-start"
-        onClick={() => setAddingAt(rsvp.held.length)}
-      >
-        {t("tickets.rsvp.anotherDate")}
-      </Button>
+      <Stack align="start">
+        <Button
+          type="button"
+          variant="link"
+          size="inline"
+          onClick={() => setAddingAt(free.held.length)}
+        >
+          {t("tickets.card.anotherDate")}
+        </Button>
+      </Stack>
     );
     return (
-      <EventYoureInCard event={event} countdown={countdown} footer={another}>
+      <EventYoureInCard title={t("events.youreIn")} event={event} countdown={countdown} footer={another}>
         <CardDescription>{t("tickets.card.showAtDoor")}</CardDescription>
-        {rsvp.held.map((ticket) => (
+        {free.held.map((ticket) => (
           <HeldTicket key={ticket.code} ticket={ticket} event={event} />
         ))}
       </EventYoureInCard>
@@ -293,13 +304,13 @@ function EventRsvpCard({
   return (
     <EventRegistrationPrompt
       school={event.school ?? school}
-      label={t("tickets.rsvp.rsvp")}
-      unavailable={rsvp.unavailable !== null}
+      label={t("tickets.card.get")}
+      unavailable={free.unavailable !== null}
       unavailableReason={unavailableText}
-      isPending={rsvp.isPending}
-      onRegister={rsvp.rsvp}
+      isPending={free.isPending}
+      onRegister={free.take}
     >
-      {rsvp.unavailable ? (
+      {free.unavailable ? (
         <CardDescription>{unavailableText}</CardDescription>
       ) : (
         <>
@@ -314,15 +325,18 @@ function EventRsvpCard({
 }
 
 /**
- * The card once someone is in: a countdown, what they bring (their picture, or
- * the QR code an RSVP comes with), add to calendar and share, then the way out.
+ * The card once someone is in, or has Notify me on: a countdown, what they
+ * bring (the QR code a ticket comes with), add to calendar and share, then
+ * the way out.
  */
 function EventYoureInCard({
+  title,
   event,
   countdown,
   children,
   footer,
 }: {
+  title: string;
   event: Event;
   countdown: string | null;
   children?: ReactNode;
@@ -333,7 +347,7 @@ function EventYoureInCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("events.youreIn")}</CardTitle>
+        <CardTitle>{title}</CardTitle>
         {countdown ? (
           <CardAction>
             <Badge variant="secondary" size="lg">
@@ -369,75 +383,83 @@ function EventYoureInCard({
   );
 }
 
-/** Registration card: Register toggle (login-gated) plus calendar download. */
-function EventRegistrationCard({
+/**
+ * Notify me: a reminder before the event and an email when it changes. Only
+ * the person themselves sees that they turned it on. With `dates`, it covers
+ * only those dates (an event's dates without tickets).
+ */
+function EventNotifyMeCard({
   event,
   school,
+  dates,
 }: {
   event: Event;
   school: string | null | undefined;
+  dates?: readonly string[];
 }) {
   const { t } = useTranslation();
-  const { profileCompleted, userAvatarUrl } = useAuthState();
-  const going = useGoingEventSelection(event, school);
+  const { profileCompleted } = useAuthState();
+  const notify = useGoingEventSelection(event, school, dates);
   const { getSchoolTimezone } = useSchoolDirectory();
-  const now = going.currentTimeMs;
+  const now = notify.currentTimeMs;
   const [pickerOpen, setPickerOpen] = useState(false);
-  const isGoingActive = profileCompleted && going.isActive;
-  const disabledReason = going.isTimeUnavailable
+  const isOn = profileCompleted && notify.isActive;
+  const disabledReason = notify.isTimeUnavailable
     ? t("events.goingEvents.timeUnavailable")
     : undefined;
 
-  const nextSelectedOccurrence = going.selectableOccurrences.find((occurrence) =>
-    going.selectedSelectableIds.includes(occurrence.id),
+  const nextSelectedOccurrence = notify.selectableOccurrences.find((occurrence) =>
+    notify.selectedSelectableIds.includes(occurrence.id),
   );
   const countdown =
     now !== null && nextSelectedOccurrence
       ? formatCountdown(new Date(nextSelectedOccurrence.dtstart_utc).getTime(), now)
       : null;
 
-  const startRegistration = async () => {
-    if (!going.canRegisterNow()) return;
-    if (going.selectableOccurrences.length > 1) {
+  const turnOn = async () => {
+    if (!notify.canRegisterNow()) return;
+    if (notify.selectableOccurrences.length > 1) {
       setPickerOpen(true);
       return;
     }
 
-    const occurrence = going.selectableOccurrences[0];
+    const occurrence = notify.selectableOccurrences[0];
     if (!occurrence) {
       return;
     }
 
     try {
-      await going.saveSelection([occurrence.id]);
+      await notify.saveSelection([occurrence.id]);
     } catch {
       // The going-events hook owns the user-facing failure toast.
     }
   };
 
-  if (isGoingActive && !pickerOpen) {
+  // Beside tickets, the dates without them offer Notify me only while one is still to come.
+  if (dates && !isOn && notify.isTimeUnavailable) return null;
+
+  if (isOn && !pickerOpen) {
     return (
       <EventYoureInCard
+        title={t("events.notifyMe.onTitle")}
         event={event}
         countdown={countdown}
         footer={
           <CardDescription>
-            {t("events.cancelGoingPrompt")}{" "}
+            {t("events.notifyMe.offPrompt")}{" "}
             <Button
               type="button"
               variant="link"
               size="inline"
-              disabled={going.isPending}
-              onClick={() => void going.saveSelection([])}
+              disabled={notify.isPending}
+              onClick={() => void notify.saveSelection([])}
             >
-              {t("events.cancelGoing")}
+              {t("events.notifyMe.off")}
             </Button>
           </CardDescription>
         }
       >
-        {userAvatarUrl ? (
-          <LazyImage src={userAvatarUrl} alt="" width={48} height={48} className="size-12" fallback={null} />
-        ) : null}
+        <CardDescription>{t("events.notifyMe.onDescription")}</CardDescription>
       </EventYoureInCard>
     );
   }
@@ -448,13 +470,13 @@ function EventRegistrationCard({
         <CardContent>
           <GoingOccurrencePickerContent
             timeZone={getSchoolTimezone(event.school)}
-            key={`${event.id}:${going.selectedSelectableIds.join(",")}`}
-            occurrences={going.selectableOccurrences}
-            selectedIds={going.selectedSelectableIds}
-            isPending={going.isPending}
+            key={`${event.id}:${notify.selectedSelectableIds.join(",")}`}
+            occurrences={notify.selectableOccurrences}
+            selectedIds={notify.selectedSelectableIds}
+            isPending={notify.isPending}
             onCancel={() => setPickerOpen(false)}
             onConfirm={async (occurrenceIds) => {
-              await going.saveSelection(occurrenceIds);
+              await notify.saveSelection(occurrenceIds);
               setPickerOpen(false);
             }}
           />
@@ -466,18 +488,22 @@ function EventRegistrationCard({
   return (
     <EventRegistrationPrompt
       school={event.school ?? school}
-      unavailable={going.selectableOccurrences.length === 0}
+      unavailable={notify.selectableOccurrences.length === 0}
       unavailableReason={disabledReason}
-      isPending={going.isPending}
-      onRegister={startRegistration}
-    />
+      isPending={notify.isPending}
+      onRegister={turnOn}
+    >
+      <CardDescription>
+        {t(dates ? "events.notifyMe.otherDates" : "events.notifyMe.description")}
+      </CardDescription>
+    </EventRegistrationPrompt>
   );
 }
 
 /**
- * The Going card before anyone registers: the visitor's account with a Going
- * button, or the email sign-in that leads to it. The event's loading state
- * shows this same card, so it keeps its size when the event arrives.
+ * The main action before it is taken: the visitor's account with a Notify me
+ * (or Get tickets) button, or the email sign-in that leads to it. The event's
+ * loading state shows this same card, so it keeps its size when the event arrives.
  */
 export function EventRegistrationPrompt({
   school,
@@ -489,17 +515,17 @@ export function EventRegistrationPrompt({
   children,
 }: {
   school: string | null | undefined;
-  /** The button's words: Going, or RSVP for an event with free tickets. */
+  /** The button's words: Notify me, or Get tickets for an event with free tickets. */
   label?: string;
   unavailable: boolean;
   unavailableReason?: string;
   isPending: boolean;
   onRegister: () => void | Promise<void>;
-  /** Shown under the account, e.g. which date an RSVP is for. */
+  /** Shown under the account, e.g. which date a ticket is for. */
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const action = label ?? t("events.going");
+  const action = label ?? t("events.notifyMe.action");
   const { userEmail, userFullName, userAvatarUrl } = useAuthState();
   // Until the page wakes up, who is signed in is not known: the signed-in look holds their lines' places.
   const sessionKnown = useSessionKnown();
@@ -563,7 +589,7 @@ export function EventRegistrationPrompt({
   );
 }
 
-/** "About Event" heading, divider, description, and source link when present. */
+/** "About Event" heading, divider and description. */
 function EventAboutSection({
   event,
   isFetchingDetails,
@@ -572,24 +598,28 @@ function EventAboutSection({
   isFetchingDetails: boolean;
 }) {
   const { t } = useTranslation();
-  const sourceHref = event.source_url ? sanitizeHref(event.source_url) : undefined;
   return (
     <Section variant="divided" title={t("events.aboutEvent")}>
       <p className="whitespace-pre-line text-sm text-muted-foreground">
         {event.description ||
           t(isFetchingDetails ? "events.fetchingDetails" : "common.noDescription")}
       </p>
-      {sourceHref && (
-        <a
-          href={sourceHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-fit max-w-full items-center gap-1.5 text-sm text-primary hover:underline"
-        >
-          <span className="shrink-0">{t("events.sourceLabel")}</span>
-          <span className="truncate">{event.source_url}</span>
-        </a>
-      )}
+    </Section>
+  );
+}
+
+/** "Source URL" heading and divider, as About Event has, over the link the event was announced at. */
+function EventSourceSection({ event }: { event: Event }) {
+  const { t } = useTranslation();
+  const sourceHref = event.source_url ? sanitizeHref(event.source_url) : undefined;
+  if (!sourceHref) return null;
+  return (
+    <Section variant="divided" title={t("events.sourceUrl")}>
+      <p className="truncate text-sm">
+        <Link href={sourceHref} target="_blank" rel="noopener noreferrer">
+          {event.source_url}
+        </Link>
+      </p>
     </Section>
   );
 }
@@ -603,34 +633,6 @@ function EventMapSection({
   school: string | null | undefined;
 }) {
   return <EventLocationMap location={event.map_location} school={event.school ?? school} />;
-}
-
-/** Shared live attendance summary for the drawer and event page. */
-function EventAttendeesSection({ eventId }: { eventId: number }) {
-  const { t } = useTranslation();
-  const { data: attendees } = useQuery({
-    queryKey: queryKeys.events.attendees(eventId),
-    queryFn: () => fetchEventAttendees(eventId),
-    staleTime: controlBox.clientCache.liveEventDataStaleMs,
-  });
-  if (!attendees || attendees.going_count <= 0) return null;
-
-  const profiles = attendees.attendees.slice(0, publicAttendance.maximum_display_names);
-  const overflowCount = profiles.length === publicAttendance.maximum_display_names
-    ? Math.max(0, attendees.going_count - profiles.length)
-    : 0;
-  return (
-    <Section variant="divided" title={t("events.goingCount", { count: attendees.going_count })}>
-      <AvatarStack
-        avatars={profiles.map((attendee) => ({
-          name: attendee.name || t("events.going"),
-          src: attendee.avatar_url,
-        }))}
-        overflowCount={overflowCount}
-        overflowLabel={t("events.andOthersCount", { count: overflowCount })}
-      />
-    </Section>
-  );
 }
 
 /**
@@ -651,12 +653,6 @@ export function EventActionsPlaceholder({ clubId }: {
         <Calendar className="size-4" />
         {t("common.addToCalendar")}
       </Button>
-      <ClubManagerView clubId={clubId} admins={false}>
-        <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
-          <Ticket className="size-4" />
-          {t("tickets.manage")}
-        </Button>
-      </ClubManagerView>
       <ClubManagerView clubId={clubId}>
         <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
           <Edit className="size-4" />
@@ -738,17 +734,6 @@ export function EventActions({
           {t("common.addToCalendar")}
         </Button>
       </EventCalendarDownloadMenu>
-      {/* Tickets are run from the hosting club's own panel, so only its members see them, admins included. */}
-      {event.club_id != null ? (
-        <ClubManagerView clubId={event.club_id} admins={false}>
-          <Button type="button" variant="outline" size="sm" asChild>
-            <NextLink href={clubPanelEventTicketsPath(event.id)}>
-              <Ticket className="size-4" />
-              {t("tickets.manage")}
-            </NextLink>
-          </Button>
-        </ClubManagerView>
-      ) : null}
       {/* Admins and the hosting club's own members can edit and delete it; the server checks the same. */}
       <ClubManagerView clubId={event.club_id}>
         <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
@@ -808,7 +793,7 @@ export function EventActions({
 /**
  * Full event details layout shared by the drawer and the /events/[id] page:
  * single column on mobile, poster + hosts sidebar next to details on md+.
- * Mobile stacking order: poster, title, hosts/going, then event details.
+ * Mobile stacking order: poster, title, hosts, then event details.
  */
 export function EventDetailsBody({
   event,
@@ -871,6 +856,8 @@ export function EventDetailsBody({
         <Stack gap={6} className="order-4" data-skeleton-key="event-about">
           <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
+          <EventSourceSection event={event} />
+
           <EventMapSection event={event} school={school} />
         </Stack>
       </div>
@@ -889,7 +876,6 @@ export function EventDetailsBody({
             />
         </Section>
 
-        <EventAttendeesSection eventId={event.id} />
       </Stack>
     </div>
   );

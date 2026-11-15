@@ -4,8 +4,6 @@
     "description": "Zeig den QR-Code eines Tickets am Einlass.",
     "upcoming": "Bevorstehend",
     "past": "Vergangen",
-    "manage": "Tickets",
-    "setUp": "Tickets einrichten",
     "empty": {
       "title": "Noch keine Tickets",
       "description": "Wenn du ein Ticket für eine Veranstaltung bekommst, erscheint es hier.",
@@ -28,6 +26,8 @@
       "left_other": "Noch {{count}} übrig",
       "left_one": "Noch {{count}} übrig",
       "quantity": "Anzahl Tickets",
+      "get": "Tickets holen",
+      "anotherDate": "Tickets für einen anderen Termin holen",
       "buy": "Tickets kaufen · {{total}}",
       "continueToPayment": "Weiter zur Zahlung",
       "payNote": "Sichere Zahlung über Stripe. {{club}} erhält deinen Namen und deine E-Mail-Adresse für den Einlass.",
@@ -44,17 +44,6 @@
         "soldOut": "Es sind keine Tickets mehr übrig.",
         "closed": "Tickets sind nicht mehr verfügbar.",
         "notYet": "Tickets sind noch nicht verfügbar."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Zusagen",
-      "anotherDate": "Für einen anderen Termin zusagen",
-      "unavailable": {
-        "cancelled": "Diese Veranstaltung wurde abgesagt.",
-        "paused": "Zusagen sind gerade pausiert.",
-        "soldOut": "Es sind keine Plätze mehr frei.",
-        "closed": "Zusagen sind nicht mehr möglich.",
-        "notYet": "Zusagen sind noch nicht möglich."
       }
     },
     "pass": {
@@ -84,12 +73,12 @@
       }
     },
     "return": {
-      "prompt": "Klappt es doch nicht? Sag ab",
-      "title": "Absagen?",
-      "description": "Dann kann jemand anderes deinen Platz bekommen. Wenn später noch Plätze frei sind, kannst du wieder zusagen.",
-      "keep": "Platz behalten",
-      "confirm": "Absagen",
-      "done": "Abgesagt"
+      "prompt": "Klappt es doch nicht? Gib dein Ticket zurück",
+      "title": "Ticket zurückgeben?",
+      "description": "Dann kann jemand anderes deinen Platz bekommen. Wenn später noch Tickets übrig sind, kannst du dir wieder eins holen.",
+      "keep": "Ticket behalten",
+      "confirm": "Zurückgeben",
+      "done": "Ticket zurückgegeben"
     },
     "order": {
       "confirming": "Deine Zahlung wird bestätigt",
@@ -108,14 +97,11 @@
     "desk": {
       "title": "Tickets",
       "notFound": "Diese Veranstaltung gibt es nicht mehr",
-      "setupTitle": "Tickets für diese Veranstaltung",
-      "setupDescription": "Alle bekommen ein Ticket mit QR-Code, und du scannst es am Einlass, um sie einzulassen.",
-      "settingsTitle": "Ticketeinstellungen",
-      "settingsDescription": "Ändere die Anzahl der Tickets oder pausiere sie eine Weile.",
-      "free": "Kostenlos",
-      "freeHint": "Ein Ticket pro Person und Termin.",
-      "paid": "Kostenpflichtig",
-      "paidHint": "Die Leute zahlen über Stripe, und das Geld geht an deine Organisation.",
+      "noTickets": "Diese Veranstaltung hat keine Tickets",
+      "noTicketsDescription": "Schalte sie ein, wenn du die Veranstaltung bearbeitest.",
+      "setupDescription": "Alle bekommen ein Ticket mit QR-Code, und du scannst es am Einlass. Wer ein Ticket holt, hat für diesen Termin auch Benachrichtige mich eingeschaltet.",
+      "dates": "Termine mit Tickets",
+      "datesRequired": "Wähle mindestens einen Termin.",
       "price": "Ticketpreis ({{currency}})",
       "priceLocked": "Der Preis lässt sich nicht mehr ändern, sobald jemand ein Ticket hat.",
       "priceRange": "Gib einen Preis zwischen {{minimum}} und {{maximum}} ein.",
@@ -124,21 +110,15 @@
       "capacityRange": "Gib eine Zahl von 1 bis {{maximum}} ein oder lass das Feld leer, wenn es kein Limit geben soll.",
       "pause": "Tickets pausieren",
       "pauseHint": "Bis du das wieder ausschaltest, kann sich niemand mehr ein Ticket holen.",
+      "turnOffLocked": "Es haben schon Leute Tickets, daher bleiben sie aktiv. Pausiere sie, um keine neuen mehr auszugeben.",
       "fees": "Stripe behält etwa 2,9 % + 30 Cent pro Bestellung ein. Den Rest bekommt deine Organisation.",
-      "goingNote": "Alle, die schon zugesagt haben, bekommen ein Ticket per E-Mail.",
       "payoutNoteSetup": "Jeder berechtigte Check-in bringt deiner Organisation {{rate}}. Wenn du Tickets aktivierst, akzeptiert deine Organisation die <terms>Auszahlungsbedingungen für Organisationen</terms>.",
       "payoutNote": "Jeder berechtigte Check-in bringt deiner Organisation {{rate}}, gemäß den <terms>Auszahlungsbedingungen für Organisationen</terms>.",
       "payoutsNeeded": "Richte zuerst Auszahlungen ein, damit das Geld irgendwo ankommen kann.",
       "setUpPayouts": "Auszahlungen einrichten",
-      "turnOnFree": "Kostenlose Tickets aktivieren",
-      "startSelling": "Verkauf starten",
-      "freeStarted": "Kostenlose Tickets sind aktiviert",
-      "sellingStarted": "Der Ticketverkauf läuft",
-      "save": "Änderungen speichern",
-      "saved": "Ticketeinstellungen gespeichert",
-      "turnOff": "Tickets deaktivieren",
-      "turnedOff": "Diese Veranstaltung hat keine Tickets mehr",
       "openScanner": "Tickets scannen",
+      "openDesk": "Gästeliste und Scanner",
+      "notSaved": "Die Veranstaltung ist gespeichert, ihre Tickets aber nicht",
       "attendees": "Gästeliste",
       "attendeesEmpty": "Noch hat niemand ein Ticket",
       "search": "Nach Name, E-Mail oder Code suchen",

@@ -50,10 +50,6 @@
       "appliedHealthSciences": "Stosowane nauki zdrowotne"
     },
     "stepProgress": "Krok {{step}} z {{total}}",
-    "safetyTitle": "Witamy w Twoim domowym panelu wydarzeń na kampusie.",
-    "safetyDescription": "Pomagamy Ci odkrywać, co dzieje się wokół Twojej szkoły, i łączyć się ze społecznościami, które odpowiadają Twoim zainteresowaniom.",
-    "safetyGoingEvents": "Oznacz wydarzenia, w których będziesz uczestniczyć, śledź terminy i szybko filtruj to, co jest dla Ciebie ważne.",
-    "safetySafeguards": "Społeczność i zabezpieczenia bezpieczeństwa pomagają utrzymać wydarzenia na wysokim poziomie i godne zaufania.",
     "doneTitle": "Wszystko gotowe!",
     "doneDescription": "Twój spersonalizowany kanał kampusowy jest gotowy. Czas odkrywać, co dzieje się wokół Ciebie.",
     "doneButton": "Zacznijmy eksplorację",

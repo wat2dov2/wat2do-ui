@@ -152,7 +152,7 @@ export function InstagramCarouselDrawer({
 
   const handleUpdateEvent = useCallback(
     async (eventId: number, data: EventFormData) => {
-      await updateEventAPI(eventId, data);
+      const event = await updateEventAPI(eventId, data);
       // The batch carries its slides' event data, so an edited slide is stale
       // there too until the run is refetched.
       await Promise.all([
@@ -160,6 +160,7 @@ export function InstagramCarouselDrawer({
         queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.all }),
       ]);
       // The form reports the event it saved; this drawer reports the run.
+      return event;
     },
     [queryClient],
   );

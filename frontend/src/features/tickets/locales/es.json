@@ -4,8 +4,6 @@
     "description": "Muestra el código QR de un boleto en la entrada.",
     "upcoming": "Próximos",
     "past": "Pasados",
-    "manage": "Boletos",
-    "setUp": "Configurar boletos",
     "empty": {
       "title": "Aún no tienes boletos",
       "description": "Cuando consigas un boleto para un evento, aparecerá aquí.",
@@ -29,6 +27,8 @@
       "left_one": "Queda {{count}}",
       "left_many": "Quedan {{count}}",
       "quantity": "Cantidad de boletos",
+      "get": "Conseguir boletos",
+      "anotherDate": "Conseguir boletos para otra fecha",
       "buy": "Comprar boletos · {{total}}",
       "continueToPayment": "Continuar al pago",
       "payNote": "Pago seguro con Stripe. {{club}} recibe tu nombre y tu correo para registrar tu entrada.",
@@ -46,17 +46,6 @@
         "soldOut": "Ya no quedan boletos.",
         "closed": "Los boletos ya no están disponibles.",
         "notYet": "Los boletos todavía no están disponibles."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Confirmar asistencia",
-      "anotherDate": "Confirmar asistencia para otra fecha",
-      "unavailable": {
-        "cancelled": "Este evento fue cancelado.",
-        "paused": "Las confirmaciones están en pausa por ahora.",
-        "soldOut": "Ya no quedan lugares.",
-        "closed": "Las confirmaciones están cerradas.",
-        "notYet": "Las confirmaciones aún no están abiertas."
       }
     },
     "pass": {
@@ -86,12 +75,12 @@
       }
     },
     "return": {
-      "prompt": "¿Ya no puedes ir? Cancela tu asistencia",
-      "title": "¿Cancelar tu asistencia?",
-      "description": "Otra persona podrá ocupar tu lugar. Si después quedan lugares, puedes volver a confirmar.",
-      "keep": "Mantener mi lugar",
-      "confirm": "Cancelar asistencia",
-      "done": "Asistencia cancelada"
+      "prompt": "¿Ya no puedes ir? Devuelve tu boleto",
+      "title": "¿Devolver tu boleto?",
+      "description": "Otra persona podrá ocupar tu lugar. Si después quedan boletos, puedes conseguir uno otra vez.",
+      "keep": "Conservar mi boleto",
+      "confirm": "Devolverlo",
+      "done": "Boleto devuelto"
     },
     "order": {
       "confirming": "Confirmando tu pago",
@@ -111,14 +100,11 @@
     "desk": {
       "title": "Boletos",
       "notFound": "Este evento ya no existe",
-      "setupTitle": "Boletos para este evento",
-      "setupDescription": "Cada persona recibe un boleto con código QR, y lo escaneas en la puerta para registrar su entrada.",
-      "settingsTitle": "Configuración de boletos",
-      "settingsDescription": "Cambia cuántos boletos hay o ponlos en pausa un tiempo.",
-      "free": "Gratis",
-      "freeHint": "Un boleto por persona para cada fecha.",
-      "paid": "De pago",
-      "paidHint": "La gente paga a través de Stripe y el dinero va a tu organización.",
+      "noTickets": "Este evento no tiene boletos",
+      "noTicketsDescription": "Actívalos al editar el evento.",
+      "setupDescription": "Cada persona recibe un boleto con código QR, y lo escaneas en la puerta. Al conseguir un boleto también se activa Notificarme para esa fecha.",
+      "dates": "Fechas con boletos",
+      "datesRequired": "Elige al menos una fecha.",
       "price": "Precio del boleto ({{currency}})",
       "priceLocked": "El precio ya no se puede cambiar cuando alguien tiene un boleto.",
       "priceRange": "Escribe un precio entre {{minimum}} y {{maximum}}.",
@@ -127,21 +113,15 @@
       "capacityRange": "Escribe un número del 1 al {{maximum}}, o déjalo vacío para no poner límite.",
       "pause": "Pausar boletos",
       "pauseHint": "Nadie más podrá conseguir un boleto hasta que desactives esta opción.",
+      "turnOffLocked": "Hay personas con boletos, así que siguen activos. Ponlos en pausa para que nadie más consiga uno.",
       "fees": "Stripe se queda con cerca del 2.9% + 30 centavos de cada pedido. Tu organización recibe el resto.",
-      "goingNote": "Todas las personas que ya dijeron que van a ir reciben un boleto por correo.",
       "payoutNoteSetup": "Cada registro de entrada válido le da a tu organización {{rate}}. Al activar los boletos, tu organización acepta los <terms>Términos de pago a organizaciones</terms>.",
       "payoutNote": "Cada registro de entrada válido le da a tu organización {{rate}}, según los <terms>Términos de pago a organizaciones</terms>.",
       "payoutsNeeded": "Primero configura los cobros, para que el dinero tenga a dónde llegar.",
       "setUpPayouts": "Configurar cobros",
-      "turnOnFree": "Activar boletos gratis",
-      "startSelling": "Empezar a vender",
-      "freeStarted": "Los boletos gratis están activados",
-      "sellingStarted": "Los boletos están a la venta",
-      "save": "Guardar cambios",
-      "saved": "Configuración de boletos guardada",
-      "turnOff": "Desactivar boletos",
-      "turnedOff": "Este evento ya no tiene boletos",
       "openScanner": "Escanear boletos",
+      "openDesk": "Lista de entrada y escáner",
+      "notSaved": "El evento se guardó, pero sus boletos no",
       "attendees": "Lista de asistentes",
       "attendeesEmpty": "Nadie tiene boleto todavía",
       "search": "Buscar por nombre, correo o código",

@@ -4,8 +4,6 @@
     "description": "入场时出示门票上的二维码。",
     "upcoming": "即将到来",
     "past": "已结束",
-    "manage": "门票",
-    "setUp": "设置门票",
     "empty": {
       "title": "还没有门票",
       "description": "获得活动门票后，门票会显示在这里。",
@@ -27,6 +25,8 @@
       "left": "剩余 {{count}} 张",
       "left_other": "剩余 {{count}} 张",
       "quantity": "门票数量",
+      "get": "领取门票",
+      "anotherDate": "领取其他日期的门票",
       "buy": "购买门票 · {{total}}",
       "continueToPayment": "继续付款",
       "payNote": "通过 Stripe 安全付款。{{club}} 会获得你的姓名和邮箱，用于签到。",
@@ -42,17 +42,6 @@
         "soldOut": "门票已经没有剩余了。",
         "closed": "门票已不再开放。",
         "notYet": "门票尚未开放。"
-      }
-    },
-    "rsvp": {
-      "rsvp": "报名参加",
-      "anotherDate": "报名其他日期",
-      "unavailable": {
-        "cancelled": "该活动已取消。",
-        "paused": "报名暂时暂停。",
-        "soldOut": "名额已满。",
-        "closed": "报名已截止。",
-        "notYet": "报名尚未开始。"
       }
     },
     "pass": {
@@ -82,12 +71,12 @@
       }
     },
     "return": {
-      "prompt": "无法参加？取消报名",
-      "title": "取消报名？",
-      "description": "其他人可以获得你的名额。如果之后还有名额，你可以再次报名。",
-      "keep": "保留名额",
-      "confirm": "取消报名",
-      "done": "已取消报名"
+      "prompt": "去不了？退还门票",
+      "title": "退还门票？",
+      "description": "其他人可以拿到你的名额。如果之后还有剩余门票，你可以再领取一张。",
+      "keep": "保留我的门票",
+      "confirm": "退还",
+      "done": "门票已退还"
     },
     "order": {
       "confirming": "正在确认你的付款",
@@ -105,14 +94,11 @@
     "desk": {
       "title": "门票",
       "notFound": "该活动已不存在",
-      "setupTitle": "本活动的门票",
-      "setupDescription": "每个人都会获得一张带二维码的门票，你在入口扫码即可为他们签到。",
-      "settingsTitle": "门票设置",
-      "settingsDescription": "修改门票数量，或暂时停止发放。",
-      "free": "免费",
-      "freeHint": "每人每个日期限领一张。",
-      "paid": "付费",
-      "paidHint": "大家通过 Stripe 付款，款项会转给你的组织。",
+      "noTickets": "此活动没有门票",
+      "noTicketsDescription": "编辑活动时即可开启门票。",
+      "setupDescription": "每个人都会获得一张带二维码的门票，你在入口扫码即可。领取门票也会为该日期开启“提醒我”。",
+      "dates": "有门票的日期",
+      "datesRequired": "请至少选择一个日期。",
       "price": "票价 ({{currency}})",
       "priceLocked": "一旦有人持有门票，就不能再更改价格。",
       "priceRange": "输入 {{minimum}} 至 {{maximum}} 之间的票价。",
@@ -121,21 +107,15 @@
       "capacityRange": "请输入 1 至 {{maximum}} 之间的数字，或留空表示不限数量。",
       "pause": "暂停发放门票",
       "pauseHint": "在你关闭此选项之前，不会再有新的人获得门票。",
+      "turnOffLocked": "已经有人持有门票，所以门票无法关闭。暂停即可停止发放新门票。",
       "fees": "Stripe 会从每笔订单中收取约 2.9% + 30¢ 的手续费，其余款项归你的组织。",
-      "goingNote": "所有已表示会参加的人都会通过邮件收到门票。",
       "payoutNoteSetup": "每次符合条件的签到可为你的组织赚取 {{rate}}。开启门票即表示你的组织接受<terms>组织付款条款</terms>。",
       "payoutNote": "每次符合条件的签到可为你的组织赚取 {{rate}}，依据<terms>组织付款条款</terms>。",
       "payoutsNeeded": "请先设置收款，这样款项才有地方转入。",
       "setUpPayouts": "设置收款",
-      "turnOnFree": "开启免费门票",
-      "startSelling": "开始售票",
-      "freeStarted": "免费门票已开启",
-      "sellingStarted": "门票已开售",
-      "save": "保存更改",
-      "saved": "门票设置已保存",
-      "turnOff": "关闭门票",
-      "turnedOff": "此活动已不再提供门票",
       "openScanner": "扫描门票",
+      "openDesk": "入场名单和扫码",
+      "notSaved": "活动已保存，但门票设置未保存",
       "attendees": "入场名单",
       "attendeesEmpty": "还没有人持有门票",
       "search": "按姓名、邮箱或票码搜索",

@@ -1,6 +1,5 @@
 {
   "common": {
-    "going": "Sẽ tham gia",
     "cancel": "Hủy",
     "confirm": "Xác nhận",
     "saving": "Đang lưu...",
@@ -55,7 +54,7 @@
     "of": "của",
     "share": "Chia sẻ",
     "export": "Xuất",
-    "addToCalendar": "Thêm vào Lịch",
+    "addToCalendar": "Thêm vào lịch",
     "report": "Báo cáo",
     "download": "Tải xuống",
     "done": "Xong",
@@ -172,7 +171,7 @@
     "max": "Tối đa",
     "today": "Hôm nay",
     "forYou": "Dành cho bạn",
-    "going": "Sẽ tham gia",
+    "going": "Đã đăng ký",
     "dateRange": "Khoảng ngày",
     "dayOfWeek": "Ngày trong tuần",
     "registration": "Yêu cầu đăng ký",
@@ -201,7 +200,7 @@
     "showPersonalizedEvents": "Hiển Thị Sự Kiện Cá Nhân Hóa",
     "openFilters": "Mở Bộ Lọc",
     "createNewEvent": "Gửi sự kiện",
-    "goingEvents": "Sự kiện sẽ tham gia",
+    "goingEvents": "Sự kiện đã đăng ký",
     "notificationPreferences": "Tùy chọn thông báo",
     "themeAppearance": "Chủ Đề & Giao Diện",
     "helpSupport": "Trợ Giúp & Hỗ Trợ",
@@ -396,7 +395,7 @@
       },
       "account": {
         "title": "Đăng nhập để dùng thêm tính năng",
-        "desc": "Tài khoản giúp bạn lưu sự kiện, đánh dấu những sự kiện bạn sẽ tham gia, nhận nhắc nhở và dùng công cụ quản lý câu lạc bộ."
+        "desc": "Tài khoản giúp bạn lưu sự kiện, bật \"Nhắc tôi\" để nhận lời nhắc và cập nhật, và dùng công cụ quản lý câu lạc bộ."
       }
     },
     "help": {
@@ -556,7 +555,7 @@
       "items": {
         "free": {
           "question": "Wat2Do có miễn phí không?",
-          "answer": "Có. Wat2Do miễn phí cho sinh viên, và bạn có thể xem mọi sự kiện mà không cần tài khoản. Đăng nhập để đánh dấu sự kiện \"Sẽ tham gia\" và nhận lời nhắc."
+          "answer": "Có. Wat2Do miễn phí cho sinh viên, và bạn có thể xem mọi sự kiện mà không cần tài khoản. Đăng nhập để bật \"Nhắc tôi\" và nhận lời nhắc."
         },
         "clubs": {
           "question": "Tổ chức của mình có cần đăng ký không?",

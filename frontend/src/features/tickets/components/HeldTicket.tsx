@@ -18,7 +18,7 @@ const TicketQr = lazy(() =>
   import("@/features/tickets/components/TicketQr").then((module) => ({ default: module.TicketQr })),
 );
 
-/** A free ticket (an RSVP) the viewer holds: its QR code for the door, its date, and the way out. */
+/** A free ticket the viewer holds: its QR code for the door, its date, and the way out. */
 export function HeldTicket({ ticket, event }: { ticket: ApiTicketResponse; event: Event }) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();

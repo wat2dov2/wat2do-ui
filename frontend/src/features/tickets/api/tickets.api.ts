@@ -1,4 +1,5 @@
 import type {
+  ApiClubPayoutStatus,
   ApiEventTicketDeskResponse,
   ApiEventTicketingResponse,
   ApiEventTicketingUpdate,
@@ -25,6 +26,11 @@ export function configureEventTicketing(
 
 export function stopEventTicketing(eventId: number): Promise<void> {
   return api.delete<void>(`/events/${eventId}/ticketing`);
+}
+
+/** Whether the club can sell tickets, and what Stripe still needs from it. */
+export function fetchClubPayouts(clubId: number): Promise<ApiClubPayoutStatus> {
+  return api.get<ApiClubPayoutStatus>(`/clubs/${clubId}/payouts`);
 }
 
 /** Take the event's free ticket to one date; taking it again returns the same ticket. */

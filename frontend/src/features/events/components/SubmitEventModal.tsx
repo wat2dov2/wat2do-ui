@@ -42,10 +42,7 @@ interface SubmitEventFlowProps extends SubmitEventSharedProps {
   /** Inactive embedded forms retain drafts without handling clipboard input. */
   active?: boolean;
   initialData?: EventFormData;
-  onUpdate?: (
-    eventId: number,
-    event: EventFormData,
-  ) => void | Promise<void>;
+  onUpdate?: (eventId: number, event: EventFormData) => Promise<Event>;
   isEditMode?: boolean;
   embedded?: boolean;
   showHeading?: boolean;
@@ -69,10 +66,7 @@ interface SubmitEventModalProps extends SubmitEventSharedProps {
   isOpen: boolean;
   initialData?: EventFormData;
   loadEventForEdit?: (eventId: number) => Promise<EventFormData>;
-  onUpdate?: (
-    eventId: number,
-    event: EventFormData,
-  ) => void | Promise<void>;
+  onUpdate?: (eventId: number, event: EventFormData) => Promise<Event>;
 }
 
 type SubmitEventStep =
@@ -156,6 +150,7 @@ export function SubmitEventFlow({
   const { isSubmitting, handleSubmit: submitEvent } = useSubmitEvent({
     isEditMode,
     editEventId,
+    hadTickets: Boolean(initialData?.tickets.enabled),
     onSubmit,
     onUpdate,
     onClose,
@@ -206,7 +201,6 @@ export function SubmitEventFlow({
         onClose={onClose ?? NOOP}
         isEditMode={isEditMode}
         isSubmissionOnly={submitResult?.createdEventId == null}
-        createdEventId={submitResult?.createdEventId ?? null}
         formData={eventForm.formData}
         event={submittedPreview}
       />
@@ -231,6 +225,7 @@ export function SubmitEventFlow({
     >
       <EventFormStep
         isEditMode={isEditMode}
+        editEventId={isEditMode ? editEventId : undefined}
         canCreateEvents={canCreateEvents}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}

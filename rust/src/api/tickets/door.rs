@@ -167,9 +167,14 @@ pub async fn desk(
         checked_in: admitted.values().sum(),
         refunded: tickets.len() as i64 - valid,
         revenue_cents,
+        // The dates with tickets, and any date a ticket was given for before
+        // its club took tickets off it.
         dates: event
             .occurrences
             .iter()
+            .filter(|occurrence| {
+                row.dates.contains(&occurrence.id) || issued.contains_key(&occurrence.id)
+            })
             .map(|occurrence| TicketDateCounts {
                 event_date_id: occurrence.id,
                 dtstart_utc: occurrence.dtstart_utc,

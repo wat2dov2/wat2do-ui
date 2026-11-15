@@ -4,8 +4,6 @@
     "description": "Mostre o código QR de um ingresso na entrada.",
     "upcoming": "Próximos",
     "past": "Passados",
-    "manage": "Ingressos",
-    "setUp": "Configurar ingressos",
     "empty": {
       "title": "Nenhum ingresso ainda",
       "description": "Quando você garantir um ingresso para um evento, ele aparece aqui.",
@@ -29,6 +27,8 @@
       "left_one": "Resta {{count}}",
       "left_many": "Restam {{count}}",
       "quantity": "Quantos ingressos",
+      "get": "Garantir ingressos",
+      "anotherDate": "Garantir ingressos para outra data",
       "buy": "Comprar ingressos · {{total}}",
       "continueToPayment": "Continuar para o pagamento",
       "payNote": "Pagamento seguro pela Stripe. {{club}} recebe seu nome e e-mail para o check-in.",
@@ -46,17 +46,6 @@
         "soldOut": "Não há mais ingressos.",
         "closed": "Os ingressos não estão mais disponíveis.",
         "notYet": "Os ingressos ainda não estão disponíveis."
-      }
-    },
-    "rsvp": {
-      "rsvp": "Confirmar presença",
-      "anotherDate": "Confirmar presença em outra data",
-      "unavailable": {
-        "cancelled": "Este evento foi cancelado.",
-        "paused": "As confirmações estão pausadas por enquanto.",
-        "soldOut": "Não há mais vagas.",
-        "closed": "As confirmações estão encerradas.",
-        "notYet": "As confirmações ainda não abriram."
       }
     },
     "pass": {
@@ -86,12 +75,12 @@
       }
     },
     "return": {
-      "prompt": "Não vai mais poder ir? Cancele sua presença",
-      "title": "Cancelar sua presença?",
-      "description": "Outra pessoa poderá ficar com sua vaga. Se sobrarem vagas depois, você pode confirmar de novo.",
-      "keep": "Manter minha vaga",
-      "confirm": "Cancelar presença",
-      "done": "Presença cancelada"
+      "prompt": "Não vai mais poder ir? Devolva seu ingresso",
+      "title": "Devolver seu ingresso?",
+      "description": "Outra pessoa poderá ficar com sua vaga. Se sobrarem ingressos depois, você pode garantir um de novo.",
+      "keep": "Manter meu ingresso",
+      "confirm": "Devolver",
+      "done": "Ingresso devolvido"
     },
     "order": {
       "confirming": "Confirmando seu pagamento",
@@ -111,14 +100,11 @@
     "desk": {
       "title": "Ingressos",
       "notFound": "Este evento não existe mais",
-      "setupTitle": "Ingressos para este evento",
-      "setupDescription": "Cada pessoa recebe um ingresso com código QR, e você lê esse código na entrada para fazer o check-in.",
-      "settingsTitle": "Configurações de ingressos",
-      "settingsDescription": "Altere a quantidade de ingressos ou pause-os por um tempo.",
-      "free": "Gratuito",
-      "freeHint": "Um ingresso por pessoa para cada data.",
-      "paid": "Pago",
-      "paidHint": "As pessoas pagam pela Stripe, e o dinheiro vai para a sua organização.",
+      "noTickets": "Este evento não tem ingressos",
+      "noTicketsDescription": "Ative-os ao editar o evento.",
+      "setupDescription": "Cada pessoa recebe um ingresso com código QR, e você lê esse código na entrada. Garantir um ingresso também ativa Me avise para aquela data.",
+      "dates": "Datas com ingressos",
+      "datesRequired": "Escolha pelo menos uma data.",
       "price": "Preço do ingresso ({{currency}})",
       "priceLocked": "O preço não pode mudar depois que alguém já tem um ingresso.",
       "priceRange": "Digite um preço entre {{minimum}} e {{maximum}}.",
@@ -127,21 +113,15 @@
       "capacityRange": "Digite um número de 1 a {{maximum}} ou deixe em branco para não ter limite.",
       "pause": "Pausar ingressos",
       "pauseHint": "Ninguém mais consegue garantir ingresso até você desativar isso.",
+      "turnOffLocked": "Já tem gente com ingresso, então eles continuam ativos. Pause-os para impedir novos.",
       "fees": "A Stripe fica com cerca de 2,9% + 30 centavos de cada pedido. O resto vai para a sua organização.",
-      "goingNote": "Todo mundo que já disse que vai recebe um ingresso por e-mail.",
       "payoutNoteSetup": "Cada check-in elegível rende {{rate}} à sua organização. Ao ativar os ingressos, sua organização aceita os <terms>Termos de pagamento a organizações</terms>.",
       "payoutNote": "Cada check-in elegível rende {{rate}} à sua organização, conforme os <terms>Termos de pagamento a organizações</terms>.",
       "payoutsNeeded": "Configure os repasses primeiro, para que o dinheiro tenha para onde ir.",
       "setUpPayouts": "Configurar repasses",
-      "turnOnFree": "Ativar ingressos gratuitos",
-      "startSelling": "Começar a vender",
-      "freeStarted": "Os ingressos gratuitos estão ativos",
-      "sellingStarted": "Os ingressos estão à venda",
-      "save": "Salvar alterações",
-      "saved": "Configurações de ingressos salvas",
-      "turnOff": "Desativar ingressos",
-      "turnedOff": "Este evento não tem mais ingressos",
       "openScanner": "Ler ingressos",
+      "openDesk": "Lista de entrada e leitor",
+      "notSaved": "O evento foi salvo, mas os ingressos não",
       "attendees": "Lista de participantes",
       "attendeesEmpty": "Ninguém tem ingresso ainda",
       "search": "Buscar por nome, e-mail ou código",
