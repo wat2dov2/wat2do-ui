@@ -848,6 +848,46 @@ test.describe("Navigation progress", () => {
   });
 });
 
+test.describe("Page scroll on navigation", () => {
+  const scrollRoot = (page: Page) => page.locator(".main-content-grid");
+  /** Scrolls the main content far down, with room to stay there on any page. */
+  const scrollDown = (page: Page) => scrollRoot(page).evaluate((root) => {
+    if (!root.querySelector("[data-testid='scroll-spacer']")) {
+      const spacer = document.createElement("div");
+      spacer.dataset.testid = "scroll-spacer";
+      spacer.style.height = "4000px";
+      root.append(spacer);
+    }
+    root.scrollTop = 1500;
+    return root.scrollTop;
+  });
+
+  test("a link to another page opens it at the top, and back keeps the position", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE);
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
+    expect(await scrollDown(page)).toBeGreaterThan(0);
+
+    await page.getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("link", { name: "Clubs", exact: true }).click();
+    await expect(page).toHaveURL(/\/clubs$/);
+    await expect.poll(() => scrollRoot(page).evaluate((root) => root.scrollTop)).toBe(0);
+
+    expect(await scrollDown(page)).toBeGreaterThan(0);
+    await page.goBack();
+    await expect(page.getByRole("button", { name: "Event: Tech Career Fair", exact: true })).toBeVisible();
+    expect(await scrollRoot(page).evaluate((root) => root.scrollTop)).toBeGreaterThan(0);
+  });
+
+  test("a section link on the same page scrolls to its section", async ({ page }) => {
+    await page.goto(`${BASE}/data-policy`);
+    const contents = page.getByRole("navigation", { name: "On this page" });
+    await contents.getByRole("link").last().click();
+    await expect(page).toHaveURL(/\/data-policy#.+$/);
+    await expect.poll(() => scrollRoot(page).evaluate((root) => root.scrollTop)).toBeGreaterThan(0);
+  });
+});
+
 // ── Workflow 1: Auth Page ─────────────────────────────────────────────
 
 test.describe("Auth Page", () => {
