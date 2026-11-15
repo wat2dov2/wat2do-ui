@@ -4677,6 +4677,24 @@ test.describe("Clubs Page", () => {
     await expect(page.locator("[data-club-id]")).toHaveCount(3);
   });
 
+  test("checks claimed clubs and lets members of one ask to join its team", async ({ page, next }) => {
+    const claimed = { ...MOCK_CLUBS[0], status: "approved", verified: true };
+    await mockApi(page, next, url => apiPath(url) === "/clubs", () => ({
+      json: { items: [claimed, MOCK_CLUBS[1], MOCK_CLUBS[2]], total: 3, page: 1, page_size: 20, total_pages: 1 },
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/1", () => ({ json: claimed }));
+    await page.goto(`${BASE}/clubs`);
+    await expect(page.locator('[data-club-id="1"] [data-slot="club-verified"]')).toBeVisible();
+    await expect(page.locator('[data-club-id="2"] [data-slot="club-verified"]')).toHaveCount(0);
+
+    await page.goto(`${BASE}/clubs/1`);
+    await expect(page.locator('[data-slot="page-header-title"] [data-slot="club-verified"]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "Claim club", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "I'm a member", exact: true }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Join the club's team", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send request", exact: true })).toBeVisible();
+  });
+
   test("keeps club listing controls fixed while scrolling on mobile", async ({ page, next }) => {
     const items = Array.from({ length: 30 }, (_, index) => ({
       ...MOCK_CLUBS[index % MOCK_CLUBS.length],

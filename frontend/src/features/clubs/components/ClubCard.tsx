@@ -6,6 +6,7 @@ import { IconSwap } from "@/shared/ui/icon-swap";
 import { cn } from "@/shared/lib/utils";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Button } from "@/shared/ui/button";
+import { ClubVerifiedCheck } from "@/features/clubs/components/ClubVerifiedCheck";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
@@ -154,6 +155,7 @@ function ClubCardComponent({
           <NextLink href={clubPagePath(club.id)} className="outline-none">
             {club.club_name}
           </NextLink>
+          {club.verified ? <>{" "}<ClubVerifiedCheck clubName={club.club_name} size="title" /></> : null}
         </h3>
         {showHandle ? (
           <p data-slot="club-card-handle" className={CLUB_CARD_CLASSES.handle}>

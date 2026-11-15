@@ -23,6 +23,7 @@ export function normalizeClub(
     school: raw.school ?? "",
     event_count: raw.event_count ?? 0,
     position_count: raw.position_count ?? 0,
+    verified: raw.verified ?? false,
   };
 }
 

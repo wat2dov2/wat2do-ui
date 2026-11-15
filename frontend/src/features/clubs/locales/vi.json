@@ -76,6 +76,19 @@
       "invalidTitle": "Liên kết nhận quản lý này không dùng được",
       "invalidDescription": "Có thể liên kết bị gõ sai, hoặc một người trong nhóm bạn đã nhận quản lý câu lạc bộ. Hãy nhờ họ thêm bạn trong bảng quản lý câu lạc bộ.",
       "browseEvents": "Xem sự kiện"
+    },
+    "memberRequest": {
+      "open": "Tôi là thành viên",
+      "title": "Tham gia đội ngũ câu lạc bộ",
+      "description": "{{club}} đã có mặt trên Wat2Do. Hãy cho chúng tôi biết vai trò của bạn và quản trị viên sẽ thêm bạn vào đội ngũ.",
+      "role": "Vai trò của bạn trong câu lạc bộ",
+      "rolePlaceholder": "VD: Phó chủ nhiệm sự kiện, Trưởng nhóm marketing, Thành viên",
+      "roleRequired": "Vui lòng nhập vai trò của bạn.",
+      "proofDescription": "Tải lên ảnh chụp màn hình hoặc bản quay màn hình cho thấy bạn thuộc câu lạc bộ (ví dụ: danh sách thành viên hoặc nhóm chat có bạn).",
+      "submit": "Gửi yêu cầu",
+      "submitted": "Đã gửi yêu cầu",
+      "submittedDesc": "Quản trị viên sẽ xem xét yêu cầu tham gia \"{{name}}\" của bạn và thêm bạn vào đội ngũ.",
+      "failed": "Không thể gửi yêu cầu. Có thể bạn đã gửi yêu cầu cho câu lạc bộ này rồi."
     }
   },
   "inviteLanding": {

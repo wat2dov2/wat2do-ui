@@ -79,6 +79,19 @@
       "invalidTitle": "Dieser Beanspruchungslink funktioniert nicht",
       "invalidDescription": "Vielleicht ist er falsch geschrieben, oder jemand aus deinem Team hat den Club schon beansprucht. Bitte diese Person, dich im Club-Panel hinzuzufügen.",
       "browseEvents": "Veranstaltungen ansehen"
+    },
+    "memberRequest": {
+      "open": "Ich bin Mitglied",
+      "title": "Dem Team der Organisation beitreten",
+      "description": "{{club}} ist schon auf Wat2Do. Nenne uns deine Rolle, dann fügt dich ein Admin zum Team hinzu.",
+      "role": "Deine Rolle in der Organisation",
+      "rolePlaceholder": "z. B. Leitung Veranstaltungen, Marketing, Mitglied",
+      "roleRequired": "Deine Rolle ist erforderlich.",
+      "proofDescription": "Lade einen Screenshot oder eine Bildschirmaufnahme hoch, die zeigt, dass du dazugehörst (z. B. die Mitgliederliste oder ein Gruppenchat, in dem du bist).",
+      "submit": "Anfrage senden",
+      "submitted": "Anfrage gesendet",
+      "submittedDesc": "Ein Admin prüft deine Anfrage, \"{{name}}\" beizutreten, und fügt dich zum Team hinzu.",
+      "failed": "Deine Anfrage konnte nicht gesendet werden. Vielleicht hast du für diese Organisation schon eine gesendet."
     }
   },
   "inviteLanding": {

@@ -76,6 +76,19 @@
       "invalidTitle": "이 소유권 링크는 사용할 수 없습니다",
       "invalidDescription": "링크가 잘못 입력되었거나 팀의 다른 사람이 이미 동아리 소유권을 받았을 수 있습니다. 그 사람에게 동아리 패널에서 추가해 달라고 요청하세요.",
       "browseEvents": "이벤트 둘러보기"
+    },
+    "memberRequest": {
+      "open": "저는 멤버예요",
+      "title": "동아리 팀에 합류하기",
+      "description": "{{club}}은(는) 이미 Wat2Do에 있어요. 역할을 알려 주시면 관리자가 팀에 추가해 드려요.",
+      "role": "동아리에서의 역할",
+      "rolePlaceholder": "예: 이벤트 부회장, 마케팅 담당, 멤버",
+      "roleRequired": "역할을 입력해 주세요.",
+      "proofDescription": "동아리 소속임을 보여 주는 스크린샷이나 화면 녹화를 업로드하세요 (예: 멤버 명단이나 본인이 포함된 단체 채팅방).",
+      "submit": "요청 보내기",
+      "submitted": "요청을 보냈어요",
+      "submittedDesc": "관리자가 \"{{name}}\" 가입 요청을 확인한 뒤 팀에 추가해 드려요.",
+      "failed": "요청을 보내지 못했어요. 이 동아리에 이미 요청을 보냈을 수 있어요."
     }
   },
   "inviteLanding": {

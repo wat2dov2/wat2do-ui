@@ -82,6 +82,19 @@
       "invalidTitle": "Este link de reivindicação não funciona",
       "invalidDescription": "Ele pode estar digitado errado, ou alguém da sua equipe já reivindicou o clube. Peça para essa pessoa adicionar você pelo painel do clube.",
       "browseEvents": "Ver eventos"
+    },
+    "memberRequest": {
+      "open": "Sou membro",
+      "title": "Entrar na equipe da organização",
+      "description": "{{club}} já está na Wat2Do. Conte qual é o seu cargo e um administrador vai adicionar você à equipe.",
+      "role": "Seu cargo na organização",
+      "rolePlaceholder": "ex.: VP de Eventos, Líder de marketing, Membro",
+      "roleRequired": "O cargo é obrigatório.",
+      "proofDescription": "Envie uma captura ou gravação de tela que mostre que você faz parte da organização (ex.: a lista de membros ou um grupo em que você está).",
+      "submit": "Enviar pedido",
+      "submitted": "Pedido enviado",
+      "submittedDesc": "Um administrador vai analisar seu pedido para entrar em \"{{name}}\" e adicionar você à equipe.",
+      "failed": "Não foi possível enviar seu pedido. Talvez você já tenha enviado um para esta organização."
     }
   },
   "inviteLanding": {

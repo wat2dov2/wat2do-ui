@@ -30,7 +30,6 @@ const FOOTER_LINK_GROUPS = [
       { labelKey: "footer.promote", href: ROUTES.PROMOTE },
       { labelKey: "footer.supportLocal", href: ROUTES.SUPPORT_LOCAL },
       { labelKey: "footer.dataPolicy", href: ROUTES.DATA_POLICY },
-      { labelKey: "footer.clubPayoutTerms", href: ROUTES.CLUB_PAYOUT_TERMS },
     ],
   },
 ] as const;

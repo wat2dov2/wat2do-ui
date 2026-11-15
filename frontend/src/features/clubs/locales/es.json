@@ -82,6 +82,19 @@
       "invalidTitle": "Este enlace de reclamo no funciona",
       "invalidDescription": "Puede que esté mal escrito o que alguien de tu equipo ya haya reclamado el club. Pídele que te agregue desde el panel del club.",
       "browseEvents": "Ver eventos"
+    },
+    "memberRequest": {
+      "open": "Soy miembro",
+      "title": "Únete al equipo de la organización",
+      "description": "{{club}} ya está en Wat2Do. Cuéntanos tu rol y un administrador te agregará a su equipo.",
+      "role": "Tu rol en la organización",
+      "rolePlaceholder": "p. ej., VP de Eventos, Líder de marketing, Miembro",
+      "roleRequired": "Tu rol es obligatorio.",
+      "proofDescription": "Sube una captura o una grabación de pantalla que muestre que formas parte de la organización (p. ej., su lista de miembros o un chat grupal donde aparezcas).",
+      "submit": "Enviar solicitud",
+      "submitted": "Solicitud enviada",
+      "submittedDesc": "Un administrador revisará tu solicitud para unirte a \"{{name}}\" y te agregará a su equipo.",
+      "failed": "No se pudo enviar tu solicitud. Puede que ya hayas enviado una para esta organización."
     }
   },
   "inviteLanding": {

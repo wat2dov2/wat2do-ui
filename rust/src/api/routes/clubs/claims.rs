@@ -35,6 +35,8 @@ use crate::db::read_with_retry;
 /// none: an existing owner is never replaced.
 const CLAIM_OWNER_SQL: &str =
     "UPDATE public.clubs SET created_by = $2 WHERE id = $1 AND created_by IS NULL";
+/// Whether the embedded club `c` is claimed (`ClubResponse::verified`).
+const CLAIMED: &str = crate::api::events::store::claimed_club!("c");
 const ALREADY_MANAGED: &str = "You already manage this club";
 const CLAIM_NOT_FOUND: &str = "Claim not found";
 const CLAIM_STATUS_PATTERN: &str = "^(approved|rejected)$";
@@ -144,12 +146,14 @@ pub async fn list_claims(
     check.finish()?;
     let filters = AdminFilters::new("claims", search, school, status);
     // The club and the claimant come embedded as stored, like `clubs(*)` and
-    // `users(*)`: no owner email, event count or generated avatar.
+    // `users(*)`: no owner email, event count or generated avatar, only
+    // whether the club is already claimed.
     let sql = admin_page_sql(
         filters.resource,
         &format!(
             "SELECT entries.position, {CLAIM_COLUMNS}, \
-             (SELECT to_jsonb(c) || jsonb_build_object('school', NULLIF(s.slug, '')) \
+             (SELECT to_jsonb(c) || jsonb_build_object('school', NULLIF(s.slug, ''), \
+                     'verified', {CLAIMED}) \
               FROM public.clubs c LEFT JOIN public.schools s ON s.id = c.school_id \
               WHERE c.id = cc.club_id) AS clubs, \
              (SELECT to_jsonb(u) FROM public.users u WHERE u.id = cc.user_id) AS users \

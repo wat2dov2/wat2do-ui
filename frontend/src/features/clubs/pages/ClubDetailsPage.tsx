@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus } from "lucide-react";
+import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus, UserCheck } from "lucide-react";
 import { IconSwap } from "@/shared/ui/icon-swap";
 import { cn } from "@/shared/lib/utils";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
@@ -16,6 +16,7 @@ import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
+import { ClubVerifiedCheck } from "@/features/clubs/components/ClubVerifiedCheck";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
 import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
@@ -92,6 +93,7 @@ function ClubDetailsContent({
                   avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
                 />
                 {club.club_name}
+                {club.verified ? <ClubVerifiedCheck clubName={club.club_name} size="heading" /> : null}
               </span>
             }
             description={schoolName}
@@ -125,11 +127,12 @@ function ClubDetailsContent({
                     <Button
                       type="button"
                       variant="outline"
-                      // The claim form is open to everyone; it asks for sign-in when it is sent.
+                      // The form is open to everyone; it asks for sign-in when it is sent. A club
+                      // someone already runs takes requests to join its team instead of claims.
                       onClick={() => setShowClaimModal(true)}
                     >
-                      <BadgeCheck />
-                      {t("clubs.claimClub")}
+                      {club.verified ? <UserCheck /> : <BadgeCheck />}
+                      {club.verified ? t("clubs.memberRequest.open") : t("clubs.claimClub")}
                     </Button>
                   </>
                 )}

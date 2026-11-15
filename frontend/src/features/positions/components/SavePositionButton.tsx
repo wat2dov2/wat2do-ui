@@ -43,7 +43,7 @@ export function SavePositionButton({ positionId }: { positionId: number }) {
 export function SavePositionBadge({ positionId }: { positionId: number }) {
   const save = useSavePosition(positionId);
   return (
-    <Badge asChild variant={save.isSaved ? "default" : "secondary"} size="md">
+    <Badge asChild variant={save.isSaved ? "default" : "secondary"} size="lg">
       <button
         type="button"
         aria-pressed={save.isSaved}

@@ -26,6 +26,36 @@ import { api } from "@/shared/services/apiClient";
 import { useRequireSignIn } from "@/features/auth/hooks/useSignInGate";
 import { useClaimProof } from "@/features/clubs/hooks/useClaimProof";
 
+/**
+ * The words of each request. A club nobody runs yet is claimed by its owner or
+ * an executive; a club someone already runs takes requests to join its team.
+ * Either way an admin checks the request, and approving it adds the sender to
+ * the club's team (an approved claim on an unowned club also makes them its owner).
+ */
+const CLAIM_COPY = {
+  title: "clubs.claimOwnership",
+  role: "clubs.executiveRole",
+  rolePlaceholder: "clubs.executiveRolePlaceholder",
+  roleRequired: "clubs.roleRequired",
+  proofDescription: "clubs.proofDescription",
+  submit: "clubs.submitClaim",
+  submitted: "clubs.claimSubmitted",
+  submittedDesc: "clubs.claimSubmittedDesc",
+  failed: "clubs.claimFailed",
+} as const;
+
+const MEMBER_COPY = {
+  title: "clubs.memberRequest.title",
+  role: "clubs.memberRequest.role",
+  rolePlaceholder: "clubs.memberRequest.rolePlaceholder",
+  roleRequired: "clubs.memberRequest.roleRequired",
+  proofDescription: "clubs.memberRequest.proofDescription",
+  submit: "clubs.memberRequest.submit",
+  submitted: "clubs.memberRequest.submitted",
+  submittedDesc: "clubs.memberRequest.submittedDesc",
+  failed: "clubs.memberRequest.failed",
+} as const;
+
 interface ClaimClubModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,6 +69,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
   const { clear: clearProof } = proof;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const requireSignIn = useRequireSignIn();
+  const copy = club.verified ? MEMBER_COPY : CLAIM_COPY;
 
   // Reset form when modal state changes
   useEffect(() => {
@@ -53,7 +84,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
     if (!role.trim()) {
       toast({
         title: t("common.error"),
-        description: t("clubs.roleRequired"),
+        description: t(copy.roleRequired),
         variant: "destructive",
       });
       return;
@@ -71,8 +102,8 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
       });
 
       toast({
-        title: t("clubs.claimSubmitted"),
-        description: t("clubs.claimSubmittedDesc", { name: club.club_name }),
+        title: t(copy.submitted),
+        description: t(copy.submittedDesc, { name: club.club_name }),
         variant: "success",
       });
       onClose();
@@ -80,7 +111,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
       console.error("Failed to submit claim:", err);
       toast({
         title: t("common.error"),
-        description: t("clubs.claimFailed"),
+        description: t(copy.failed),
         variant: "destructive",
       });
     } finally {
@@ -92,9 +123,13 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("clubs.claimOwnership")}</DialogTitle>
+          <DialogTitle>{t(copy.title)}</DialogTitle>
           <DialogDescription>
-            {t("clubs.claimOwnershipDesc")} <strong>{club.club_name}</strong>.
+            {club.verified ? (
+              t("clubs.memberRequest.description", { club: club.club_name })
+            ) : (
+              <>{t("clubs.claimOwnershipDesc")} <strong>{club.club_name}</strong>.</>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -102,12 +137,12 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
           <FieldGroup className="py-2">
             <Field>
               <FieldLabel htmlFor="exec-role">
-                {t("clubs.executiveRole")} <span className="text-destructive">*</span>
+                {t(copy.role)} <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
                 id="exec-role"
                 type="text"
-                placeholder={t("clubs.executiveRolePlaceholder")}
+                placeholder={t(copy.rolePlaceholder)}
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 disabled={isSubmitting}
@@ -128,7 +163,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
                 error={proof.error}
               />
               <FieldDescription>
-                {t("clubs.proofDescription")}
+                {t(copy.proofDescription)}
               </FieldDescription>
             </div>
 
@@ -143,7 +178,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
                 isLoading={isSubmitting}
                 loadingText={t("common.submitting")}
               >
-                {t("clubs.submitClaim")}
+                {t(copy.submit)}
               </LoadingButton>
             </DialogFooter>
           </FieldGroup>
