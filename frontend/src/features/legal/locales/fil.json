@@ -266,6 +266,7 @@
         "emails": {
           "title": "Mga email",
           "p1": "Dalawang uri ng email ang ipinapadala namin. Laging dumarating ang mga email na kailangan mo, gaya ng mga sign-in code, tiket, mga desisyon sa mga isinumite mo at mga sagot sa iyo. Naka-on na pagka-sign up mo ang mga notification email tungkol sa mga kaganapan (ang pang-umagang email, mga paalala at mga alerto sa pagbabago), at puwede mong i-off ang bawat isa sa Settings o gamit ang unsubscribe link sa email mismo. Humihinto kami sa loob ng 10 business day, at kadalasan ay agad-agad.",
+          "inbox": "Nagtatago rin kami ng maikling kopya ng mga email na ito, at ng mga email tungkol sa mga ticket, isinumite, at imbitasyon sa organisasyon mo, sa iyong Mga Abiso sa Wat2Do (sa likod ng icon ng kampana), at binubura namin ang bawat kopya pagkalipas ng {{inboxDays}}.",
           "p2": "Nag-e-email din kami sa mga organisasyon sa mga address na inilalathala nila, tungkol sa sarili nilang Wat2Do page. Puwedeng hilingin ng isang organisasyon na tumigil kami anumang oras."
         },
         "sharing": {

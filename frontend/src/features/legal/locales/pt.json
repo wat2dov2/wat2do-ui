@@ -266,6 +266,7 @@
         "emails": {
           "title": "E-mails",
           "p1": "Enviamos dois tipos de e-mail. Os e-mails de que você precisa, como códigos de login, ingressos, decisões sobre o que você enviou e respostas a você, sempre chegam. Os e-mails de notificação sobre eventos (o e-mail matinal, os lembretes e os alertas de alteração) vêm ativados quando você se cadastra, e você pode desativar cada um deles em Configurações ou pelo link de cancelamento de inscrição que vem nele. Paramos de enviá-los em até 10 dias úteis, e geralmente na hora.",
+          "inbox": "Também guardamos uma cópia curta desses e-mails, e dos e-mails sobre seus ingressos, seus envios e convites para organizações, nas suas notificações no Wat2Do (no ícone do sino), e apagamos cada cópia depois de {{inboxDays}}.",
           "p2": "Também enviamos e-mails para as organizações, nos endereços que elas publicam, sobre a própria página delas no Wat2Do. Uma organização pode nos pedir para parar a qualquer momento."
         },
         "sharing": {

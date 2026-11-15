@@ -1,6 +1,7 @@
 import authentication from "../../../../../backend/controlbox/authentication.json" with { type: "json" };
 import clubPayouts from "../../../../../backend/controlbox/club_payouts.json" with { type: "json" };
 import legal from "../../../../../backend/controlbox/legal.json" with { type: "json" };
+import notificationInbox from "../../../../../backend/controlbox/notification_inbox.json" with { type: "json" };
 import ticketing from "../../../../../backend/controlbox/ticketing.json" with { type: "json" };
 import { formatCalendarDate, formatDuration, formatList } from "@/features/legal/lib/format";
 import { formatCents } from "@/shared/utils/currency";
@@ -38,12 +39,13 @@ export function clubPayoutTermsValues(language: string, schoolNames: string[]): 
 /** The payout schools' slugs, for the page to name. */
 export const CLUB_PAYOUT_SCHOOLS: readonly string[] = clubPayouts.schools;
 
-/** The data policy's contact, date and sign-in timings, written out in `language`. */
+/** The data policy's contact, date, sign-in timings and inbox retention, written out in `language`. */
 export function dataPolicyValues(language: string): LegalValues {
   return {
     email: legal.contact_email,
     effectiveDate: formatCalendarDate(legal.data_policy_effective_date, language),
     sessionDays: formatDuration(authentication.session_cookie_days, "day", language),
     codeMinutes: formatDuration(authentication.verification_token_minutes, "minute", language),
+    inboxDays: formatDuration(notificationInbox.retention_days, "day", language),
   };
 }

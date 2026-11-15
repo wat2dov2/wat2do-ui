@@ -266,6 +266,7 @@
         "emails": {
           "title": "Email",
           "p1": "Inviamo due tipi di email. Le email di cui hai bisogno, come i codici di accesso, i biglietti, le decisioni sulle tue proposte e le nostre risposte, arrivano sempre. Le email di notifica sugli eventi (l'email mattutina, i promemoria e gli avvisi di modifica) sono attive quando ti registri, e puoi disattivarle una per una in Impostazioni o con il link di annullamento dell'iscrizione che contengono. Smettiamo di inviarle entro 10 giorni lavorativi, e di solito subito.",
+          "inbox": "Conserviamo anche una breve copia di queste email, e delle email sui tuoi biglietti, sulle tue proposte e sugli inviti alle organizzazioni, nelle tue notifiche su Wat2Do (dietro l'icona della campanella), ed eliminiamo ogni copia dopo {{inboxDays}}.",
           "p2": "Scriviamo anche alle organizzazioni, agli indirizzi che pubblicano, riguardo alla loro pagina Wat2Do. Un'organizzazione può chiederci di smettere in qualsiasi momento."
         },
         "sharing": {

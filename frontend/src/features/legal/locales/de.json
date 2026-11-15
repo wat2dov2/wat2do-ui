@@ -266,6 +266,7 @@
         "emails": {
           "title": "E-Mails",
           "p1": "Wir senden zwei Arten von E-Mails. E-Mails, die du brauchst, etwa Anmeldecodes, Tickets, Entscheidungen zu deinen Einreichungen und Antworten an dich, kommen immer an. Benachrichtigungs-E-Mails zu Veranstaltungen (die Morgen-E-Mail, Erinnerungen und Änderungsbenachrichtigungen) sind ab der Registrierung eingeschaltet, und du kannst jede davon in den Einstellungen oder über den Abmeldelink darin abschalten. Wir stellen den Versand innerhalb von 10 Geschäftstagen ein, meist sofort.",
+          "inbox": "Außerdem speichern wir eine kurze Kopie dieser E-Mails und der E-Mails zu deinen Tickets, Einreichungen und Einladungen zu Organisationen in deinen Benachrichtigungen auf Wat2Do (hinter dem Glockensymbol) und löschen jede Kopie nach {{inboxDays}}.",
           "p2": "Außerdem schreiben wir Organisationen zu ihrer eigenen Wat2Do-Seite an die E-Mail-Adressen, die sie veröffentlichen. Eine Organisation kann uns jederzeit bitten, damit aufzuhören."
         },
         "sharing": {

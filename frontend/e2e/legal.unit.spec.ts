@@ -50,5 +50,6 @@ test("the data policy names its sign-in timings with their units", () => {
   const values = dataPolicyValues("en");
   expect(values.sessionDays).toBe("30 days");
   expect(values.codeMinutes).toBe("15 minutes");
+  expect(values.inboxDays).toBe("90 days");
   expect(values.email).toContain("@");
 });

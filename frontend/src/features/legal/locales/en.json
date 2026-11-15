@@ -266,6 +266,7 @@
         "emails": {
           "title": "Emails",
           "p1": "We send two kinds of email. Emails you need, such as sign-in codes, tickets, decisions on your submissions and replies to you, always arrive. Notification emails about events (the morning email, reminders and change alerts) are on when you sign up, and you can turn each one off in Settings or with the unsubscribe link in it. We stop within 10 business days, and usually right away.",
+          "inbox": "We also keep a short copy of these emails, and of emails about your tickets, submissions and club invitations, in your notifications on Wat2Do (behind the bell icon), and delete each copy after {{inboxDays}}.",
           "p2": "We also email clubs at the addresses they publish, about their own Wat2Do page. A club can ask us to stop at any time."
         },
         "sharing": {

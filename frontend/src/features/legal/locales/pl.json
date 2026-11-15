@@ -266,6 +266,7 @@
         "emails": {
           "title": "E-maile",
           "p1": "Wysyłamy dwa rodzaje e-maili. E-maile, których potrzebujesz, na przykład kody logowania, bilety, decyzje dotyczące tego, co nam przesyłasz, i odpowiedzi na Twoje wiadomości, przychodzą zawsze. Powiadomienia e-mail o wydarzeniach (poranny e-mail, przypomnienia i alerty o zmianach) są włączone od chwili rejestracji, a każde z nich możesz wyłączyć w Ustawieniach lub za pomocą linku do wypisania się, który się w nim znajduje. Przestajemy je wysyłać w ciągu 10 dni roboczych, a zwykle od razu.",
+          "inbox": "Krótką kopię tych e-maili oraz e-maili o Twoich biletach, zgłoszeniach i zaproszeniach do organizacji przechowujemy też w Twoich powiadomieniach w Wat2Do (pod ikoną dzwonka) i usuwamy każdą kopię, gdy minie {{inboxDays}}.",
           "p2": "Piszemy też do organizacji na adresy, które publikują, w sprawie ich własnej strony w Wat2Do. Organizacja może w każdej chwili poprosić nas, żebyśmy przestali."
         },
         "sharing": {

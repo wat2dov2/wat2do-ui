@@ -266,6 +266,7 @@
         "emails": {
           "title": "Email",
           "p1": "Chúng tôi gửi hai loại email. Các email bạn cần, chẳng hạn mã đăng nhập, vé, quyết định về nội dung bạn gửi và thư trả lời bạn, luôn được gửi đến. Các email thông báo về sự kiện (email buổi sáng, nhắc nhở sự kiện và cảnh báo thay đổi sự kiện) được bật khi bạn đăng ký, và bạn có thể tắt từng loại trong Cài đặt hoặc bằng liên kết hủy đăng ký trong email đó. Chúng tôi ngừng gửi trong vòng 10 ngày làm việc, và thường là ngay lập tức.",
+          "inbox": "Chúng tôi cũng lưu một bản sao ngắn của các email này, cùng các email về vé, nội dung bạn gửi và lời mời tham gia tổ chức, trong mục thông báo của bạn trên Wat2Do (biểu tượng chuông), và xóa mỗi bản sao sau {{inboxDays}}.",
           "p2": "Chúng tôi cũng gửi email cho các tổ chức theo địa chỉ mà họ công bố, về trang Wat2Do của chính họ. Một tổ chức có thể yêu cầu chúng tôi ngừng gửi bất cứ lúc nào."
         },
         "sharing": {

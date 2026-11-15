@@ -266,6 +266,7 @@
         "emails": {
           "title": "Correos",
           "p1": "Enviamos dos tipos de correo. Los correos que necesitas, como los códigos de inicio de sesión, los boletos, las decisiones sobre lo que nos envías y nuestras respuestas, siempre llegan. Los correos de notificación sobre eventos (el correo matutino, los recordatorios y las alertas de cambios) están activados cuando te registras, y puedes desactivar cada uno en Configuración o con el enlace para cancelar la suscripción que incluye. Dejamos de enviarlos en un plazo de 10 días hábiles, y normalmente de inmediato.",
+          "inbox": "También guardamos una copia breve de estos correos, y de los correos sobre tus boletos, tus envíos y tus invitaciones a organizaciones, en tus notificaciones de Wat2Do (detrás del ícono de la campana), y borramos cada copia después de {{inboxDays}}.",
           "p2": "También les escribimos a las organizaciones, a los correos que publican, sobre su propia página de Wat2Do. Una organización puede pedirnos en cualquier momento que dejemos de hacerlo."
         },
         "sharing": {

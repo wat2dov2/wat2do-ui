@@ -266,6 +266,7 @@
         "emails": {
           "title": "E-mails",
           "p1": "Nous envoyons deux types d'e-mails. Les e-mails dont vous avez besoin, comme les codes de connexion, les billets, les décisions sur vos soumissions et nos réponses à vos messages, arrivent toujours. Les e-mails de notification sur les événements (l'e-mail du matin, les rappels et les alertes de modification) sont activés lorsque vous vous inscrivez, et vous pouvez désactiver chacun d'eux dans Paramètres ou avec le lien de désabonnement qu'il contient. Nous cessons de les envoyer dans un délai de 10 jours ouvrables, et généralement tout de suite.",
+          "inbox": "Nous gardons aussi une courte copie de ces e-mails, et des e-mails concernant vos billets, vos soumissions et vos invitations à des organisations, dans vos notifications sur Wat2Do (derrière l'icône de cloche), et nous supprimons chaque copie après {{inboxDays}}.",
           "p2": "Nous écrivons aussi aux organisations, aux adresses qu'elles publient, au sujet de leur propre page Wat2Do. Une organisation peut nous demander d'arrêter à tout moment."
         },
         "sharing": {
