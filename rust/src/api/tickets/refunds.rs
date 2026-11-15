@@ -66,10 +66,9 @@ pub async fn refund_ticket(
             state.settings,
             &event,
             &order.buyer_email,
-            1,
+            emails::Refunded::Ticket { code: &ticket.code },
             i64::from(order.unit_amount_cents),
             &order.currency,
-            false,
         );
     }
     let refunded = store::ticket_by_id(&state.db, ticket_id)
@@ -260,10 +259,11 @@ pub async fn refund_cancelled_order(
             state.settings,
             event,
             &order.buyer_email,
-            refunded as usize,
+            emails::Refunded::Cancelled {
+                count: refunded as usize,
+            },
             i64::from(order.unit_amount_cents) * refunded as i64,
             &order.currency,
-            true,
         );
     }
     Ok(refunded as i64)

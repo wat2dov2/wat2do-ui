@@ -2183,6 +2183,29 @@ test.describe("Events Page", () => {
     await expect(latest).toContainText(/1 minute ago/i);
   });
 
+  test("a link to the new events opens the list with only the new filter on", async ({ page, next }) => {
+    const startsAt = new Date(Date.now() + 3_600_000).toISOString();
+    const event = (id: number, title: string, addedAt: string) => ({
+      id, title, club: "Cooking Club", club_id: 1, location: "SLC", price: 0, category: "Arts & Culture",
+      school: "uwaterloo", added_at: addedAt, food: [], registration: false,
+      occurrences: [{ id: `occurrence-${id}`, event_id: id, dtstart_utc: startsAt, dtend_utc: null }],
+    });
+    const items = [
+      event(9101, "Fresh pottery night", new Date().toISOString()),
+      event(9102, "Older chess night", new Date(Date.now() - 3 * 86_400_000).toISOString()),
+    ];
+    await mockApi(page, next, url => apiPath(url) === "/events" ||
+      (apiPath(url) === "/discovery" && url.searchParams.get("resource") === "events"),
+    async () => ({ json: { items, total: 2, page: 1, page_size: 2, total_pages: 1 } }));
+    await page.goto(`${BASE}/events?new=1`);
+    const filters = page.getByTestId("event-quick-filter-scroll");
+    await expect(filters.getByRole("button", { name: "New", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator('article[data-event-id="9101"]')).toBeVisible();
+    await expect(page.locator('article[data-event-id="9102"]')).toHaveCount(0);
+    // The marker leaves the address, so a reload is an ordinary visit.
+    await expect(page).toHaveURL(/\/events$/);
+  });
+
   test("UTSG mobile filtering and navigation preserve the campus feed", async ({ page, next }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const title = "UTSG campus event";

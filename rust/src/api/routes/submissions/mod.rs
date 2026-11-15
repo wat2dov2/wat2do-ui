@@ -542,10 +542,14 @@ async fn review(
         .as_str()
         .unwrap_or_default()
         .to_owned();
-    let path = created.map_or_else(
-        || "/events".to_owned(),
-        |event_id| format!("/events/{event_id}"),
-    );
+    // Only an approval publishes the event; nothing shows a rejected submission.
+    let pages = emails::DecisionPages {
+        approved: created.map_or_else(
+            || "/events".to_owned(),
+            |event_id| format!("/events/{event_id}"),
+        ),
+        rejected: None,
+    };
     emails::send_review_decision(
         db,
         Reviewed::Event,
@@ -553,7 +557,7 @@ async fn review(
         status,
         existing.metadata.submitted_by_email.as_deref(),
         existing.metadata.school.as_deref(),
-        &path,
+        &pages,
         reason,
     )
     .await;

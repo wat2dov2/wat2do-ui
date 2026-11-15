@@ -100,7 +100,9 @@ pub struct Notice {
     pub kind: NotificationKind,
     pub event_id: Option<i64>,
     pub details: NotificationDetails,
-    /// The page its email links to, on the right school's site.
+    /// The exact page it is about, on the right school's site: the event, the
+    /// ticket or order, the club panel's ticket desk, the published listing, or
+    /// the morning email's new events (`rendering::new_events_url`).
     pub link: Option<String>,
 }
 
@@ -175,7 +177,7 @@ pub struct Notification {
     pub id: Uuid,
     pub kind: NotificationKind,
     pub details: NotificationDetails,
-    /// Where it leads, the page its email linked to.
+    /// Where it leads, as stored when it was recorded.
     pub link: Option<String>,
     pub created_at: DateTime<Utc>,
     pub read: bool,

@@ -40,6 +40,12 @@ export const QP = {
   /** Overrides the initial page/mode on first load */
   PAGE_MODE: "pageMode",
 
-  /** Settings page tab selection */
+  /** Tab selection: the profile's settings tab, or a club page's Positions tab */
   TAB: "tab",
+
+  /**
+   * Opens the events page on its newly added events, at the list (`/events?new=1`,
+   * where the morning email's notification leads: Rust `rendering::new_events_url`)
+   */
+  NEW_EVENTS: "new",
 } as const;

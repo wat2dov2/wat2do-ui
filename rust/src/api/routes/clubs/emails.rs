@@ -35,6 +35,13 @@ impl Reviewed {
     }
 }
 
+/// The path of the club panel's `page` (`/club-panel`, `/club-panel/events/42`)
+/// for one club. It names the club (the frontend's `CLUB_PANEL_CLUB_PARAM`), so
+/// the panel opens that club even for someone who manages several.
+pub fn club_panel_path(page: &str, club_id: i64) -> String {
+    format!("{page}?club={club_id}")
+}
+
 /// `build_review_decision_email`.
 pub fn review_decision(
     kind: Reviewed,
@@ -116,6 +123,16 @@ pub fn review_decision(
     }
 }
 
+/// Where a review decision leads, as paths on the school's site.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionPages {
+    /// What was approved, live: the approval email's button and notification.
+    pub approved: String,
+    /// A page that shows a rejection and what to do next, if one does; the
+    /// rejection email has no button, so only its notification leads there.
+    pub rejected: Option<String>,
+}
+
 /// `send_review_decision`: email an approval or rejection when there is a
 /// recipient, and repeat it in their inbox. Delivery failures are logged,
 /// never raised, so they cannot undo the review.
@@ -127,7 +144,7 @@ pub async fn send_review_decision(
     status: &str,
     recipient: Option<&str>,
     school: Option<&str>,
-    path: &str,
+    pages: &DecisionPages,
     rejection_reason: Option<&str>,
 ) {
     let Some(recipient) = recipient.filter(|recipient| !recipient.is_empty()) else {
@@ -142,26 +159,42 @@ pub async fn send_review_decision(
     let approved = status == "approved";
     let sent = match school_url(school) {
         Ok(base) => {
-            let url = format!("{base}{path}");
+            let url = format!("{base}{}", pages.approved);
             let message = review_decision(kind, title, approved, recipient, &url, reason);
-            let notice = Notice {
-                kind: NotificationKind::ReviewDecision,
-                event_id: None,
-                details: NotificationDetails {
-                    name: Some(title.to_owned()),
-                    reviewed: Some(kind.noun().to_owned()),
-                    approved: Some(approved),
-                    ..NotificationDetails::default()
-                },
-                // A rejection's email has no button, so its notification leads nowhere.
-                link: approved.then_some(url),
-            };
+            let notice = decision_notice(kind, title, approved, &base, pages);
             send_then_record(db, &message, recipient, &notice).await
         }
         Err(error) => Err(format!("{error:#}")),
     };
     if let Err(error) = sent {
         tracing::error!("Background email dispatch failed for a {kind:?} review decision: {error}");
+    }
+}
+
+/// The inbox's copy of a review decision, leading to the decision's page on
+/// the school's site `base`, if it has one.
+fn decision_notice(
+    kind: Reviewed,
+    title: &str,
+    approved: bool,
+    base: &str,
+    pages: &DecisionPages,
+) -> Notice {
+    let page = if approved {
+        Some(&pages.approved)
+    } else {
+        pages.rejected.as_ref()
+    };
+    Notice {
+        kind: NotificationKind::ReviewDecision,
+        event_id: None,
+        details: NotificationDetails {
+            name: Some(title.to_owned()),
+            reviewed: Some(kind.noun().to_owned()),
+            approved: Some(approved),
+            ..NotificationDetails::default()
+        },
+        link: page.map(|path| format!("{base}{path}")),
     }
 }
 
@@ -371,6 +404,35 @@ mod tests {
         );
         assert!(refused.body_text.contains("could not verify your role"));
         assert!(refused.body_text.contains("Reason: Proof is blurry"));
+    }
+
+    #[test]
+    fn a_decision_notification_leads_to_its_page_when_it_has_one() {
+        let claim = DecisionPages {
+            approved: club_panel_path("/club-panel", 7),
+            rejected: Some("/clubs/7".to_owned()),
+        };
+        let base = "https://uwo.wat2do.io";
+        let link = |kind, approved, pages: &DecisionPages| {
+            decision_notice(kind, "Tea Club", approved, base, pages).link
+        };
+        assert_eq!(
+            link(Reviewed::Claim, true, &claim).as_deref(),
+            Some("https://uwo.wat2do.io/club-panel?club=7")
+        );
+        assert_eq!(
+            link(Reviewed::Claim, false, &claim).as_deref(),
+            Some("https://uwo.wat2do.io/clubs/7")
+        );
+        let event = DecisionPages {
+            approved: "/events/42".to_owned(),
+            rejected: None,
+        };
+        assert_eq!(
+            link(Reviewed::Event, true, &event).as_deref(),
+            Some("https://uwo.wat2do.io/events/42")
+        );
+        assert_eq!(link(Reviewed::Event, false, &event), None);
     }
 
     #[test]

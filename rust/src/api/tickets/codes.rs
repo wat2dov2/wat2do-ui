@@ -38,6 +38,11 @@ pub fn ticket_url(school_frontend_url: &str, code: &str) -> String {
     format!("{school_frontend_url}/tickets/{code}")
 }
 
+/// The page of one paid order's tickets, where Stripe returns its buyer.
+pub fn order_url(school_frontend_url: &str, order_id: uuid::Uuid) -> String {
+    format!("{school_frontend_url}/tickets/orders/{order_id}")
+}
+
 /// A PNG of the QR code for `url`, black on white.
 pub fn qr_png(url: &str) -> Result<Vec<u8>> {
     let code = QrCode::with_error_correction_level(url.as_bytes(), EcLevel::M)?;

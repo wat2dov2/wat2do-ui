@@ -6,6 +6,7 @@ import { EventHighlightSections } from "@/features/events/components/EventHighli
 import { DEFAULT_EVENT_VIEW, type EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
+import { useNewEventsLink } from "@/features/events/hooks/useNewEventsLink";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
@@ -28,6 +29,7 @@ export function EventsPageContainer({
   initialSchool,
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
+  useNewEventsLink();
 
   const { t } = useTranslation();
 

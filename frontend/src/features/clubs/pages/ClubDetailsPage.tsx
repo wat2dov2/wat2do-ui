@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus } from "lucide-react";
@@ -19,6 +20,7 @@ import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadg
 import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
+import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -55,6 +57,8 @@ function ClubDetailsContent({
 }: ClubDetailsContentProps) {
   const { t } = useTranslation();
   const { clubs } = useAuthState();
+  // A link to the club's positions (`?tab=positions`, an approved position's notification) opens on them.
+  const openTab = useSearchParams().get(QP.TAB) === "positions" ? "positions" : "events";
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedClubsStore(
     (state) => state.toggleSaveClub,
@@ -191,7 +195,7 @@ function ClubDetailsContent({
 
           <Separator />
 
-          <Tabs defaultValue="events">
+          <Tabs defaultValue={openTab}>
             <TabsList data-skeleton-key="club-tabs" aria-label={t("clubs.activityTabsLabel")}>
               <TabsTrigger value="events">{t("navigation.events")}</TabsTrigger>
               <TabsTrigger value="positions">

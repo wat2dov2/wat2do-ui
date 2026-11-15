@@ -9,6 +9,7 @@ use sqlx::PgPool;
 use super::codes;
 use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::school_timezone;
+use crate::api::routes::clubs::emails::club_panel_path;
 use crate::email::layout::{self, BORDER, FONT, FOREGROUND, MUTED_FOREGROUND, escape};
 use crate::email::{EmailMessage, InlineImage, send_in_background_then};
 use crate::notifications::email_images::event_hero_image;
@@ -22,6 +23,14 @@ use crate::time_zones::Tz;
 pub struct Payment<'a> {
     pub unit_amount_cents: i32,
     pub currency: &'a str,
+}
+
+/// The paid order a tickets email confirms.
+#[derive(Debug, Clone)]
+pub struct PaidOrder {
+    pub id: uuid::Uuid,
+    pub unit_amount_cents: i32,
+    pub currency: String,
 }
 
 /// "$1,234.50 CAD".
@@ -66,15 +75,15 @@ pub fn send_tickets(
     occurrence: Occurrence,
     recipient: String,
     codes: Vec<String>,
-    payment: Option<(i32, String)>,
+    order: Option<PaidOrder>,
     idempotency_key: String,
 ) {
     tokio::spawn(async move {
         let tz = zone(&db, &event).await;
         let hero = event_hero_image(event.source_image_url.as_deref()).await;
-        let payment = payment.as_ref().map(|(cents, currency)| Payment {
-            unit_amount_cents: *cents,
-            currency,
+        let payment = order.as_ref().map(|order| Payment {
+            unit_amount_cents: order.unit_amount_cents,
+            currency: &order.currency,
         });
         match tickets_message(
             settings,
@@ -88,7 +97,12 @@ pub fn send_tickets(
         ) {
             Ok(mut message) => {
                 message.idempotency_key = Some(idempotency_key);
-                let notice = tickets_notice(settings, &event, &codes);
+                let notice = tickets_notice(
+                    settings,
+                    &event,
+                    &codes,
+                    order.as_ref().map(|order| order.id),
+                );
                 send_in_background_then(message, move || async move {
                     inbox::record_for_emails(&db, &[recipient], &notice).await;
                 });
@@ -98,12 +112,19 @@ pub fn send_tickets(
     });
 }
 
-/// The inbox's copy of a tickets email, leading to the one ticket or to all of them.
-fn tickets_notice(settings: &Settings, event: &Event, codes: &[String]) -> Notice {
+/// The inbox's copy of a tickets email, leading to the one ticket, or to the
+/// order that holds them all.
+fn tickets_notice(
+    settings: &Settings,
+    event: &Event,
+    codes: &[String],
+    order: Option<uuid::Uuid>,
+) -> Notice {
     let site = site(settings, event);
-    let link = match codes {
-        [code] => codes::ticket_url(&site, code),
-        _ => format!("{site}/tickets"),
+    let link = match (codes, order) {
+        ([code], _) => codes::ticket_url(&site, code),
+        (_, Some(order)) => codes::order_url(&site, order),
+        (_, None) => format!("{site}/tickets"),
     };
     let mut notice = Notice::about_event(NotificationKind::Tickets, event.id, &event.title, link);
     notice.details.tickets = i64::try_from(codes.len()).ok();
@@ -268,6 +289,15 @@ fn ticket_card(index: usize, count: usize, content_id: &str, link: &str) -> Stri
     )
 }
 
+/// Why tickets were refunded.
+#[derive(Debug, Clone, Copy)]
+pub enum Refunded<'a> {
+    /// The club refunded one ticket, the one with this code.
+    Ticket { code: &'a str },
+    /// The event was cancelled, which refunded this many of an order's tickets.
+    Cancelled { count: usize },
+}
+
 /// Money on its way back: one refunded ticket, or every ticket of a cancelled event.
 #[allow(clippy::too_many_arguments)]
 pub fn send_refund_notice(
@@ -275,13 +305,16 @@ pub fn send_refund_notice(
     settings: &Settings,
     event: &Event,
     recipient: &str,
-    count: usize,
+    refunded: Refunded<'_>,
     amount_cents: i64,
     currency: &str,
-    cancelled: bool,
 ) {
     let host = event.club.clone().unwrap_or_else(|| "The club".to_owned());
     let amount = format_money(amount_cents, currency);
+    let (count, cancelled) = match refunded {
+        Refunded::Ticket { .. } => (1, false),
+        Refunded::Cancelled { count } => (count, true),
+    };
     let tickets = if count == 1 {
         "ticket".to_owned()
     } else {
@@ -296,7 +329,17 @@ pub fn send_refund_notice(
     } else {
         format!("{host} refunded your {tickets} for {}.", event.title)
     };
-    let event_url = format!("{}/events/{}", site(settings, event), event.id);
+    // One refunded ticket leads to that ticket; a cancellation, to the event.
+    let (link, action) = match refunded {
+        Refunded::Ticket { code } => (
+            codes::ticket_url(&site(settings, event), code),
+            "View your ticket",
+        ),
+        Refunded::Cancelled { .. } => (
+            format!("{}/events/{}", site(settings, event), event.id),
+            "View event",
+        ),
+    };
     let content = format!(
         "{}{}{}",
         layout::paragraph(&escape(&lead), false),
@@ -308,13 +351,13 @@ pub fn send_refund_notice(
             ),
             true,
         ),
-        layout::button(&event_url, "View event"),
+        layout::button(&link, action),
     );
     let notice = Notice::about_event(
         NotificationKind::TicketRefunded,
         event.id,
         &event.title,
-        event_url,
+        link,
     );
     let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
     let message = EmailMessage {
@@ -362,7 +405,13 @@ pub fn send_refund_request(
     }
     let host = event.club.clone().unwrap_or_else(|| "your club".to_owned());
     let amount = format_money(amount_cents, currency);
-    let desk = format!("{}/club-panel/events/{}", site(settings, event), event.id);
+    // The event's ticket desk, opened on its club.
+    let page = format!("/club-panel/events/{}", event.id);
+    let page = match event.club_id {
+        Some(club_id) => club_panel_path(&page, club_id),
+        None => page,
+    };
+    let desk = format!("{}{page}", site(settings, event));
     let lead = format!(
         "{holder_name} asked {host} for a refund of one {amount} ticket to {}.",
         event.title
@@ -463,6 +512,29 @@ mod tests {
         assert_eq!(format_money(1500, "cad"), "$15.00 CAD");
         assert_eq!(format_money(123_456_789, "usd"), "$1,234,567.89 USD");
         assert_eq!(format_money(5, "cad"), "$0.05 CAD");
+    }
+
+    #[test]
+    fn a_tickets_notification_opens_its_ticket_or_its_order() {
+        let settings = test_settings(&[("FRONTEND_URL", "https://wat2do.io")]);
+        let event = event();
+        let one = tickets_notice(&settings, &event, &["A".repeat(24)], None);
+        assert_eq!(
+            one.link.as_deref(),
+            Some("https://uwaterloo.wat2do.io/tickets/AAAAAAAAAAAAAAAAAAAAAAAA")
+        );
+        let order = uuid::Uuid::from_u128(7);
+        let many = tickets_notice(
+            &settings,
+            &event,
+            &["A".repeat(24), "B".repeat(24)],
+            Some(order),
+        );
+        assert_eq!(
+            many.link.as_deref(),
+            Some("https://uwaterloo.wat2do.io/tickets/orders/00000000-0000-0000-0000-000000000007")
+        );
+        assert_eq!(many.details.tickets, Some(2));
     }
 
     #[test]

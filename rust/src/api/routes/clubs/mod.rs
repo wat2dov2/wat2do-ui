@@ -1101,7 +1101,11 @@ pub async fn review_club(
             &club.status,
             recipient.as_deref(),
             club.school.as_deref(),
-            &format!("/clubs/{}", club.id),
+            // The club's page shows a rejection too.
+            &emails::DecisionPages {
+                approved: format!("/clubs/{}", club.id),
+                rejected: Some(format!("/clubs/{}", club.id)),
+            },
             reason.as_deref(),
         )
         .await;
