@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/app/SiteFooter";
 import { TopNav } from "@/app/TopNav";
+import { useScrollTopOnNavigate } from "@/app/hooks/useScrollTopOnNavigate";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
 import { PageFrame } from "@/shared/layout";
 
@@ -9,6 +10,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  useScrollTopOnNavigate();
+
   return (
     <div className="group/app flex h-dvh flex-col overflow-hidden">
       <TopNav />
