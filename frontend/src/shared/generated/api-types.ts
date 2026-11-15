@@ -1526,7 +1526,7 @@ export interface paths {
         put?: never;
         /**
          * Mark My Notifications Read
-         * @description Mark every notification the user has as read.
+         * @description Mark read the user's notifications among those their list showed; any that arrived since stay unread.
          */
         post: operations["mark_my_notifications_read_notifications_read_post"];
         delete?: never;
@@ -3893,6 +3893,10 @@ export interface components {
         NotificationPreferencesListResponse: {
             /** Preferences */
             preferences: components["schemas"]["NotificationPreferenceResponse"][];
+        };
+        /** @description The notifications a visitor's open list showed, to mark read. */
+        NotificationReadRequest: {
+            notification_ids: string[];
         };
         /** @description One notification as the bell's list shows it. */
         NotificationResponse: {
@@ -8320,7 +8324,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationReadRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {
@@ -8328,6 +8336,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

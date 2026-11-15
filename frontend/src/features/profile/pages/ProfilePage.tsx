@@ -7,10 +7,11 @@ import { FollowedClubsSection } from "@/features/profile/components/FollowedClub
 import { ProfileEventSection } from "@/features/profile/components/ProfileEventSection";
 import { ProfileTeamActions } from "@/features/profile/components/ProfileTeamActions";
 import { SubmissionsSection } from "@/features/profile/components/SubmissionsSection";
+import { useFollowedClubs } from "@/features/profile/hooks/useFollowedClubs";
 import { useProfileEvents } from "@/features/profile/hooks/useProfileEvents";
 import { SettingsTabs } from "@/features/settings";
 import { QP } from "@/shared/constants/queryParams";
-import { ROUTES } from "@/shared/constants/routes";
+import { PROFILE_SETTINGS_SECTION_ID, ROUTES } from "@/shared/constants/routes";
 import { Container, Section, Stack } from "@/shared/layout";
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { Button } from "@/shared/ui/button";
@@ -24,7 +25,8 @@ export function ProfilePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const events = useProfileEvents();
-  useSettingsInView(!events.isPending);
+  const followed = useFollowedClubs();
+  useSettingsInView(!events.isPending && !followed.isPending);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -59,9 +61,9 @@ export function ProfilePage() {
           rows={events.upcoming}
           isPending={events.isPending}
         />
-        <FollowedClubsSection />
+        <FollowedClubsSection clubs={followed.clubs} isPending={followed.isPending} />
         <SubmissionsSection />
-        <Section id={SETTINGS_SECTION_ID} title={t("profile.settings")}>
+        <Section id={PROFILE_SETTINGS_SECTION_ID} title={t("profile.settings")}>
           <SettingsTabs />
         </Section>
         <Stack direction="horizontal">
@@ -75,13 +77,10 @@ export function ProfilePage() {
   );
 }
 
-/** The settings section, which an email's "Manage email preferences" link opens on. */
-const SETTINGS_SECTION_ID = "settings";
-
 /**
  * A link to one settings tab (`/profile?tab=notifications`) opens the profile
- * on its settings: once the lists above them have loaded, so they no longer
- * move, the settings scroll into view.
+ * on its settings: once every list above them has loaded, followed clubs
+ * included, so nothing moves them again, the settings scroll into view.
  */
 function useSettingsInView(listsLoaded: boolean) {
   const searchParams = useSearchParams();
@@ -91,6 +90,6 @@ function useSettingsInView(listsLoaded: boolean) {
   useEffect(() => {
     if (!openedOnSettings || !listsLoaded || scrolled.current) return;
     scrolled.current = true;
-    document.getElementById(SETTINGS_SECTION_ID)?.scrollIntoView({ block: "start" });
+    document.getElementById(PROFILE_SETTINGS_SECTION_ID)?.scrollIntoView({ block: "start" });
   }, [listsLoaded, openedOnSettings]);
 }

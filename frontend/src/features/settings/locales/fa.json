@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "مدیریت ترجیحات و تنظیمات حساب کاربری شما",
     "unsavedChanges": "تغییرات ذخیره نشده",
     "unsavedChangesDescription": "تغییرات تنظیمات خود را ذخیره یا لغو کنید.",
     "saveSuccess": "تنظیمات شما ذخیره شد.",

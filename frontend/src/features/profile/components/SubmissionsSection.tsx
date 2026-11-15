@@ -5,7 +5,7 @@ import { ROUTES } from "@/shared/constants/routes";
 import { Section, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 
-// Event and position forms open to everyone and ask for sign-in themselves, before they submit.
+// Every form is open to everyone: events and positions can be sent without an account, and the club form asks the visitor to sign in only when they send it. The footer links them too, for visitors who are not signed in.
 const SUBMIT_ITEMS = [
   { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket },
   { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users },

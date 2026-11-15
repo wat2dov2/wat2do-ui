@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "Gestiona las preferencias y configuraciones de tu cuenta",
     "unsavedChanges": "Cambios no guardados",
     "unsavedChangesDescription": "Guarde o cancele los cambios de configuración.",
     "saveSuccess": "Sus configuraciones se guardaron.",

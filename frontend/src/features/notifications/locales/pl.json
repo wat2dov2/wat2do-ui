@@ -2,7 +2,11 @@
   "notifications": {
     "title": "Powiadomienia",
     "open": "Powiadomienia",
-    "openUnread": "Powiadomienia, nowe: {{unread}}",
+    "openUnread": "Powiadomienia, nowe: {{count}}",
+    "openUnread_one": "Powiadomienia, nowe: {{count}}",
+    "openUnread_few": "Powiadomienia, nowe: {{count}}",
+    "openUnread_many": "Powiadomienia, nowe: {{count}}",
+    "openUnread_other": "Powiadomienia, nowe: {{count}}",
     "unread": "Nowe:",
     "loading": "Wczytywanie powiadomień",
     "loadFailed": "Nie udało się wczytać powiadomień.",
@@ -15,7 +19,7 @@
       },
       "event_reminder": {
         "title": "Przypomnienie: {{name}}",
-        "text": "Zaczyna się mniej więcej godzinę po tym przypomnieniu."
+        "text": "Czas od tego przypomnienia do początku: {{duration}}."
       },
       "event_change": {
         "title": "Zmiana: {{name}}",
@@ -55,7 +59,7 @@
           "claim": "Nie zatwierdzono Twojej prośby dotyczącej {{name}}",
           "event": "Nie zatwierdzono Twojego wydarzenia {{name}}",
           "position": "Nie zatwierdzono Twojego stanowiska {{name}}",
-          "text": "W naszym e-mailu znajdziesz powód."
+          "text": "Odpowiedz na nasz e-mail, jeśli masz pytania."
         }
       },
       "club_invitation": {

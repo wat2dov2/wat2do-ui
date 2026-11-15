@@ -55,11 +55,12 @@ export function useEventTicketing(eventId: number | null | undefined) {
 }
 
 export function useMyTickets() {
-  const { isAuthenticated, userId } = useAuthState();
+  const { userId } = useAuthState();
   return useQuery({
     queryKey: queryKeys.tickets.mine(userId),
     queryFn: fetchMyTickets,
-    enabled: isAuthenticated,
+    // Keyed by whose tickets they are, so off until that is known.
+    enabled: Boolean(userId),
   });
 }
 

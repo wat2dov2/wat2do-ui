@@ -156,16 +156,27 @@ pub async fn send_review_decision(
                 // A rejection's email has no button, so its notification leads nowhere.
                 link: approved.then_some(url),
             };
-            inbox::record_for_emails(db, &[recipient.to_owned()], &notice).await;
-            email::send(&message)
-                .await
-                .map_err(|error| error.to_string())
+            send_then_record(db, &message, recipient, &notice).await
         }
         Err(error) => Err(format!("{error:#}")),
     };
     if let Err(error) = sent {
         tracing::error!("Background email dispatch failed for a {kind:?} review decision: {error}");
     }
+}
+
+/// Send `message`, and only once SES has it, repeat it in the recipient's inbox.
+async fn send_then_record(
+    db: &PgPool,
+    message: &EmailMessage,
+    recipient: &str,
+    notice: &Notice,
+) -> Result<(), String> {
+    email::send(message)
+        .await
+        .map_err(|error| error.to_string())?;
+    inbox::record_for_emails(db, &[recipient.to_owned()], notice).await;
+    Ok(())
 }
 
 fn school_url(school: Option<&str>) -> anyhow::Result<String> {
@@ -221,10 +232,7 @@ pub async fn send_invitation(
                 },
                 link: Some(url),
             };
-            inbox::record_for_emails(db, &[recipient.to_owned()], &notice).await;
-            email::send(&message)
-                .await
-                .map_err(|error| error.to_string())
+            send_then_record(db, &message, recipient, &notice).await
         }
         Err(error) => Err(format!("{error:#}")),
     };

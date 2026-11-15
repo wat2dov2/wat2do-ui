@@ -10,7 +10,7 @@ use super::codes;
 use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::school_timezone;
 use crate::email::layout::{self, BORDER, FONT, FOREGROUND, MUTED_FOREGROUND, escape};
-use crate::email::{EmailMessage, InlineImage, send_in_background};
+use crate::email::{EmailMessage, InlineImage, send_in_background_then};
 use crate::notifications::email_images::event_hero_image;
 use crate::notifications::inbox::{self, Notice, NotificationKind};
 use crate::notifications::rendering::{detail_row, occurrence_times};
@@ -88,13 +88,10 @@ pub fn send_tickets(
         ) {
             Ok(mut message) => {
                 message.idempotency_key = Some(idempotency_key);
-                send_in_background(message);
-                inbox::record_for_emails(
-                    &db,
-                    &[recipient],
-                    &tickets_notice(settings, &event, &codes),
-                )
-                .await;
+                let notice = tickets_notice(settings, &event, &codes);
+                send_in_background_then(message, move || async move {
+                    inbox::record_for_emails(&db, &[recipient], &notice).await;
+                });
             }
             Err(error) => tracing::error!("Could not build the tickets email: {error:#}"),
         }
@@ -313,8 +310,15 @@ pub fn send_refund_notice(
         ),
         layout::button(&event_url, "View event"),
     );
-    send_in_background(EmailMessage {
-        to: vec![recipient.to_owned()],
+    let notice = Notice::about_event(
+        NotificationKind::TicketRefunded,
+        event.id,
+        &event.title,
+        event_url,
+    );
+    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
+    let message = EmailMessage {
+        to: emails.clone(),
         subject: if cancelled {
             format!("{} was cancelled: you've been refunded", event.title)
         } else {
@@ -334,17 +338,10 @@ pub fn send_refund_notice(
         ),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
+    };
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &emails, &notice).await;
     });
-    inbox::record_for_emails_in_background(
-        db,
-        vec![recipient.to_owned()],
-        Notice::about_event(
-            NotificationKind::TicketRefunded,
-            event.id,
-            &event.title,
-            event_url,
-        ),
-    );
 }
 
 /// Tells everyone on the club's team that a holder wants their money back.
@@ -388,7 +385,7 @@ pub fn send_refund_request(
     }
     text.push(String::new());
     text.push(format!("Refund or decline it from the ticket desk: {desk}"));
-    send_in_background(EmailMessage {
+    let message = EmailMessage {
         to: recipients.clone(),
         subject: format!("Refund request: {}", event.title),
         body_html: layout::shell("Refund request", &content, &[]),
@@ -396,17 +393,17 @@ pub fn send_refund_request(
         idempotency_key: Some(format!("ticket-refund-request:{ticket_id}")),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
-    });
-    inbox::record_for_emails_in_background(
-        db,
-        recipients,
-        Notice::about_event(
-            NotificationKind::RefundRequested,
-            event.id,
-            &event.title,
-            desk,
-        ),
+    };
+    let notice = Notice::about_event(
+        NotificationKind::RefundRequested,
+        event.id,
+        &event.title,
+        desk,
     );
+    let db = db.clone();
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &recipients, &notice).await;
+    });
 }
 
 /// Tells the holder the club said no, so nobody waits on an answer that never comes.
@@ -423,7 +420,7 @@ pub fn send_refund_declined(
         "{host} declined your refund request for {}. Your ticket still works.",
         event.title
     );
-    send_in_background(EmailMessage {
+    let message = EmailMessage {
         to: vec![recipient.to_owned()],
         subject: format!("Your refund request for {}", event.title),
         body_html: layout::shell(
@@ -439,17 +436,17 @@ pub fn send_refund_declined(
         idempotency_key: Some(format!("ticket-refund-declined:{code}")),
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
-    });
-    inbox::record_for_emails_in_background(
-        db,
-        vec![recipient.to_owned()],
-        Notice::about_event(
-            NotificationKind::RefundDeclined,
-            event.id,
-            &event.title,
-            link,
-        ),
+    };
+    let notice = Notice::about_event(
+        NotificationKind::RefundDeclined,
+        event.id,
+        &event.title,
+        link,
     );
+    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
+    send_in_background_then(message, move || async move {
+        inbox::record_for_emails(&db, &emails, &notice).await;
+    });
 }
 
 #[cfg(test)]

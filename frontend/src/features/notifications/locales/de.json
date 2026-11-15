@@ -2,7 +2,9 @@
   "notifications": {
     "title": "Benachrichtigungen",
     "open": "Benachrichtigungen",
-    "openUnread": "Benachrichtigungen, {{unread}} neu",
+    "openUnread": "Benachrichtigungen, {{count}} neu",
+    "openUnread_one": "Benachrichtigungen, {{count}} neu",
+    "openUnread_other": "Benachrichtigungen, {{count}} neu",
     "unread": "Neu:",
     "loading": "Deine Benachrichtigungen werden geladen",
     "loadFailed": "Deine Benachrichtigungen konnten nicht geladen werden.",
@@ -15,7 +17,7 @@
       },
       "event_reminder": {
         "title": "Erinnerung: {{name}}",
-        "text": "Sie beginnt etwa eine Stunde nach dieser Erinnerung."
+        "text": "Sie beginnt etwa {{duration}} nach dieser Erinnerung."
       },
       "event_change": {
         "title": "{{name}} wurde geändert",
@@ -55,7 +57,7 @@
           "claim": "Dein Antrag für {{name}} wurde nicht genehmigt",
           "event": "Deine Veranstaltung {{name}} wurde nicht genehmigt",
           "position": "Deine Position {{name}} wurde nicht genehmigt",
-          "text": "Unsere E-Mail an dich nennt den Grund."
+          "text": "Antworte auf unsere E-Mail, wenn du Fragen hast."
         }
       },
       "club_invitation": {

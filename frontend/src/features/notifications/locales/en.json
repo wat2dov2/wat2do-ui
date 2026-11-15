@@ -2,7 +2,8 @@
   "notifications": {
     "title": "Notifications",
     "open": "Notifications",
-    "openUnread": "Notifications, {{unread}} new",
+    "openUnread": "Notifications, {{count}} new",
+    "openUnread_other": "Notifications, {{count}} new",
     "unread": "New:",
     "loading": "Loading your notifications",
     "loadFailed": "Couldn't load your notifications.",
@@ -15,7 +16,7 @@
       },
       "event_reminder": {
         "title": "Reminder: {{name}}",
-        "text": "It starts about an hour after this reminder."
+        "text": "It starts about {{duration}} after this reminder."
       },
       "event_change": {
         "title": "{{name}} changed",
@@ -55,7 +56,7 @@
           "claim": "Your claim for {{name}} wasn't approved",
           "event": "Your event {{name}} wasn't approved",
           "position": "Your position {{name}} wasn't approved",
-          "text": "Our email to you says why."
+          "text": "Reply to our email if you have any questions."
         }
       },
       "club_invitation": {

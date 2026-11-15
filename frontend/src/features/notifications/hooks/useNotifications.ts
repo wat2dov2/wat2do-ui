@@ -10,13 +10,17 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 
 const REFRESH_MS = notificationInbox.refresh_seconds * 1000;
 
-/** The signed-in user's inbox, checked again every `refresh_seconds` and on return to the tab. */
+/**
+ * The signed-in user's inbox, checked again every `refresh_seconds` and on
+ * return to the tab. Keyed by whose inbox it is, so it stays off until that
+ * is known.
+ */
 export function useNotifications() {
-  const { isAuthenticated, userId } = useAuthState();
+  const { userId } = useAuthState();
   return useQuery({
     queryKey: queryKeys.notifications.inbox(userId ?? ""),
     queryFn: fetchNotifications,
-    enabled: isAuthenticated,
+    enabled: Boolean(userId),
     staleTime: REFRESH_MS,
     refetchInterval: REFRESH_MS,
     refetchOnWindowFocus: true,
@@ -24,9 +28,9 @@ export function useNotifications() {
 }
 
 /**
- * Marks the inbox read when the visitor opens it. The count clears at once;
- * the notifications keep their unread look until the list closes and the
- * inbox is read again, so the visitor can still tell what is new.
+ * Marks read the notifications an open list showed, and only those. The count
+ * drops at once; they keep their unread look until the list closes and the
+ * inbox is read again, so the visitor can still tell what was new.
  */
 export function useMarkNotificationsRead() {
   const queryClient = useQueryClient();
@@ -34,13 +38,19 @@ export function useMarkNotificationsRead() {
   const queryKey = queryKeys.notifications.inbox(userId ?? "");
   return useMutation({
     mutationFn: markNotificationsRead,
-    onMutate: async () => {
+    onMutate: async (ids: string[]) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<ApiNotificationInboxResponse>(queryKey);
-      if (previous) queryClient.setQueryData(queryKey, { ...previous, unread_count: 0 });
+      if (previous) {
+        const marked = new Set(ids);
+        const stillUnread = previous.notifications.filter(
+          (notification) => !notification.read && !marked.has(notification.id),
+        ).length;
+        queryClient.setQueryData(queryKey, { ...previous, unread_count: stillUnread });
+      }
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, _ids, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
     },
   });

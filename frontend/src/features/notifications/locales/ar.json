@@ -2,7 +2,13 @@
   "notifications": {
     "title": "الإشعارات",
     "open": "الإشعارات",
-    "openUnread": "الإشعارات، {{unread}} جديدة",
+    "openUnread": "الإشعارات الجديدة: {{count}}",
+    "openUnread_zero": "الإشعارات الجديدة: {{count}}",
+    "openUnread_one": "الإشعارات الجديدة: {{count}}",
+    "openUnread_two": "الإشعارات الجديدة: {{count}}",
+    "openUnread_few": "الإشعارات الجديدة: {{count}}",
+    "openUnread_many": "الإشعارات الجديدة: {{count}}",
+    "openUnread_other": "الإشعارات الجديدة: {{count}}",
     "unread": "جديد:",
     "loading": "جارٍ تحميل إشعاراتك",
     "loadFailed": "تعذر تحميل إشعاراتك.",
@@ -15,7 +21,7 @@
       },
       "event_reminder": {
         "title": "تذكير: {{name}}",
-        "text": "تبدأ بعد نحو ساعة من هذا التذكير."
+        "text": "تبدأ بعد نحو {{duration}} من هذا التذكير."
       },
       "event_change": {
         "title": "تغيّرت {{name}}",
@@ -55,7 +61,7 @@
           "claim": "لم تتم الموافقة على طلبك لإدارة {{name}}",
           "event": "لم تتم الموافقة على فعاليتك {{name}}",
           "position": "لم تتم الموافقة على منصبك {{name}}",
-          "text": "يوضح بريدنا الإلكتروني السبب."
+          "text": "إذا كانت لديك أسئلة، فرُدّ على رسالتنا الإلكترونية."
         }
       },
       "club_invitation": {

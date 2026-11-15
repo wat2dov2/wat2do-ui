@@ -23,6 +23,10 @@ NOTIFICATION_DEFAULT_ENABLED: dict[str, bool] = {
     NOTIFICATION_TYPE_EVENT_CHANGE: controlbox.notification_defaults.event_change,
 }
 
+# An event change alert that cancelled its event, as its inbox notification's
+# kind (public.user_notifications); the change kind is NOTIFICATION_TYPE_EVENT_CHANGE.
+INBOX_KIND_EVENT_CANCELLED: Final = "event_cancelled"
+
 NOTIFICATION_STATUS_PENDING: Final = "pending"
 NOTIFICATION_STATUS_SENT: Final = "sent"
 NOTIFICATION_STATUS_FAILED: Final = "failed"

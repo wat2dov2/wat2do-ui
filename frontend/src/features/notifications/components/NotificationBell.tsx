@@ -1,5 +1,7 @@
+import { useState } from "react";
 import NextLink from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
+import eventReminder from "../../../../../backend/controlbox/event_reminder.json" with { type: "json" };
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import {
@@ -47,9 +49,22 @@ const KIND_ICONS: Record<ApiNotificationKind, LucideIcon> = {
 
 const REVIEWED = ["club", "claim", "event", "position"] as const;
 
+/** How long before an event its reminder goes out, in the reader's language ("1 hour"). */
+function reminderLeadTime(locale: string): string {
+  const minutes = eventReminder.lead_minutes;
+  const [value, unit] = minutes % 60 === 0 ? [minutes / 60, "hour"] : [minutes, "minute"];
+  return new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(value);
+}
+
 /** A notification's words, in the reader's language, from its kind and details. */
-function notificationCopy(t: TFunction, { kind, details }: ApiNotificationResponse) {
+function notificationCopy(t: TFunction, locale: string, { kind, details }: ApiNotificationResponse) {
   const name = details.name ?? "";
+  if (kind === "event_reminder") {
+    return {
+      title: t("notifications.kinds.event_reminder.title", { name }),
+      text: t("notifications.kinds.event_reminder.text", { duration: reminderLeadTime(locale) }),
+    };
+  }
   if (kind === "tickets") {
     const title = (details.tickets ?? 1) > 1 ? "titleMany" : "title";
     return { title: t(`notifications.kinds.tickets.${title}`, { name }), text: t("notifications.kinds.tickets.text") };
@@ -65,9 +80,16 @@ function notificationCopy(t: TFunction, { kind, details }: ApiNotificationRespon
   return { title: t(`notifications.kinds.${kind}.title`, { name }), text: t(`notifications.kinds.${kind}.text`) };
 }
 
-function NotificationRow({ notification }: { notification: ApiNotificationResponse }) {
+function NotificationRow({
+  notification,
+  onOpen,
+}: {
+  notification: ApiNotificationResponse;
+  /** Following a notification's link closes the list. */
+  onOpen: () => void;
+}) {
   const { t, i18n } = useTranslation();
-  const copy = notificationCopy(t, notification);
+  const copy = notificationCopy(t, i18n.language, notification);
   const Icon =
     notification.kind === "review_decision" && !notification.details.approved
       ? CircleX
@@ -95,7 +117,9 @@ function NotificationRow({ notification }: { notification: ApiNotificationRespon
   const variant = notification.read ? "default" : "muted";
   return notification.link ? (
     <Item variant={variant} size="sm" asChild>
-      <NextLink href={notification.link}>{content}</NextLink>
+      <NextLink href={notification.link} onClick={onOpen}>
+        {content}
+      </NextLink>
     </Item>
   ) : (
     <Item variant={variant} size="sm">
@@ -106,7 +130,8 @@ function NotificationRow({ notification }: { notification: ApiNotificationRespon
 
 /**
  * The bell in the top bar: how many notifications are new, and a list of the
- * newest, one for every email the visitor was sent. Opening it marks them read.
+ * newest, one for every email the visitor was sent. Opening it reads the inbox
+ * afresh and marks read only what that list shows.
  */
 export function NotificationBell() {
   const { t } = useTranslation();
@@ -114,27 +139,36 @@ export function NotificationBell() {
   const { userId } = useAuthState();
   const inbox = useNotifications();
   const markRead = useMarkNotificationsRead();
+  const [open, setOpen] = useState(false);
   const unread = inbox.data?.unread_count ?? 0;
   const notifications = inbox.data?.notifications ?? [];
 
-  const handleOpenChange = (open: boolean) => {
-    if (open && unread > 0) markRead.mutate();
-    // Read again on closing, so the list shows what was read.
-    if (!open && markRead.isSuccess) {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.inbox(userId ?? "") });
-      markRead.reset();
+  const handleOpenChange = async (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      // Read again on closing, so the list shows what was read.
+      if (markRead.isSuccess || markRead.isPending) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.inbox(userId ?? "") });
+        markRead.reset();
+      }
+      return;
     }
+    const { data } = await inbox.refetch();
+    const shownUnread = (data?.notifications ?? [])
+      .filter((notification) => !notification.read)
+      .map((notification) => notification.id);
+    if (shownUnread.length > 0) markRead.mutate(shownUnread);
   };
 
   return (
-    <Popover onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={(nextOpen) => void handleOpenChange(nextOpen)}>
       <PopoverTrigger asChild>
         {/* The count sits on the bell's corner, so it never moves the bar. */}
         <Button
           variant="outline"
           size="icon-sm"
           className="relative"
-          aria-label={unread > 0 ? t("notifications.openUnread", { unread }) : t("notifications.open")}
+          aria-label={unread > 0 ? t("notifications.openUnread", { count: unread }) : t("notifications.open")}
         >
           <Bell />
           {unread > 0 ? (
@@ -158,7 +192,11 @@ export function NotificationBell() {
           ) : (
             <Stack gap={1}>
               {notifications.map((notification) => (
-                <NotificationRow key={notification.id} notification={notification} />
+                <NotificationRow
+                  key={notification.id}
+                  notification={notification}
+                  onOpen={() => void handleOpenChange(false)}
+                />
               ))}
             </Stack>
           )}

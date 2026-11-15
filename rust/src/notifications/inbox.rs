@@ -20,7 +20,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::constants::{
-    NOTIFICATION_TYPE_EVENT_CHANGE, NOTIFICATION_TYPE_EVENT_REMINDER,
+    INBOX_KIND_EVENT_CANCELLED, NOTIFICATION_TYPE_EVENT_CHANGE, NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_MORNING_EMAIL,
 };
 use crate::controlbox::NOTIFICATION_INBOX;
@@ -62,7 +62,7 @@ impl NotificationKind {
             Self::MorningEmail => NOTIFICATION_TYPE_MORNING_EMAIL,
             Self::EventReminder => NOTIFICATION_TYPE_EVENT_REMINDER,
             Self::EventChange => NOTIFICATION_TYPE_EVENT_CHANGE,
-            Self::EventCancelled => "event_cancelled",
+            Self::EventCancelled => INBOX_KIND_EVENT_CANCELLED,
             Self::Tickets => "tickets",
             Self::TicketRefunded => "ticket_refunded",
             Self::RefundRequested => "refund_requested",
@@ -169,12 +169,6 @@ pub async fn record_for_emails(db: &PgPool, emails: &[String], notice: &Notice) 
     }
 }
 
-/// [`record_for_emails`] after the response, beside an email sent in the background.
-pub fn record_for_emails_in_background(db: &PgPool, emails: Vec<String>, notice: Notice) {
-    let db = db.clone();
-    tokio::spawn(async move { record_for_emails(&db, &emails, &notice).await });
-}
-
 /// One notification in a user's inbox.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Notification {
@@ -187,7 +181,8 @@ pub struct Notification {
     pub read: bool,
 }
 
-/// A user's newest notifications, and how many of them are still unread.
+/// A user's newest notifications, and how many of those are still unread:
+/// the count only ever names notifications the list shows.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Inbox {
     pub unread_count: i64,
@@ -220,17 +215,6 @@ pub async fn inbox(db: &PgPool, user_id: Uuid) -> Result<Inbox, sqlx::Error> {
         .fetch_all(db)
     })
     .await?;
-    let unread_count: i64 = read_with_retry(|| {
-        sqlx::query_scalar(
-            "SELECT count(*) FROM public.user_notifications \
-             WHERE user_id = $1 AND read_at IS NULL \
-               AND created_at >= now() - make_interval(days => $2)",
-        )
-        .bind(user_id)
-        .bind(NOTIFICATION_INBOX.retention_days)
-        .fetch_one(db)
-    })
-    .await?;
     let notifications = rows
         .into_iter()
         .filter_map(|(id, kind, details, link, created_at, read_at)| {
@@ -243,20 +227,26 @@ pub async fn inbox(db: &PgPool, user_id: Uuid) -> Result<Inbox, sqlx::Error> {
                 read: read_at.is_some(),
             })
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let unread_count = notifications
+        .iter()
+        .filter(|notification| !notification.read)
+        .count();
     Ok(Inbox {
-        unread_count,
+        unread_count: i64::try_from(unread_count).unwrap_or(i64::MAX),
         notifications,
     })
 }
 
-/// Mark every notification the user has as read.
-pub async fn mark_read(db: &PgPool, user_id: Uuid) -> Result<(), sqlx::Error> {
+/// Mark read the user's notifications among `ids`, the ones their list showed,
+/// so one that arrived after the list was read stays unread.
+pub async fn mark_read(db: &PgPool, user_id: Uuid, ids: &[Uuid]) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE public.user_notifications SET read_at = now() \
-         WHERE user_id = $1 AND read_at IS NULL",
+         WHERE user_id = $1 AND id = ANY($2) AND read_at IS NULL",
     )
     .bind(user_id)
+    .bind(ids)
     .execute(db)
     .await?;
     Ok(())
@@ -378,14 +368,32 @@ mod database_tests {
                 .all(|notification| !notification.read)
         );
 
-        mark_read(&db, id).await.unwrap();
+        // Only what the list showed is read: one that arrived since stays unread.
+        let shown: Vec<Uuid> = unread
+            .notifications
+            .iter()
+            .map(|notification| notification.id)
+            .collect();
+        record(&db, id, &morning()).await.unwrap();
+        mark_read(&db, id, &shown).await.unwrap();
         let read = inbox(&db, id).await.unwrap();
-        assert_eq!(read.unread_count, 0);
+        assert_eq!(read.unread_count, 1);
+        assert_eq!(read.notifications.len(), 3);
         assert!(
-            read.notifications
+            !read.notifications[0].read,
+            "the newest arrived after the list"
+        );
+        assert!(
+            read.notifications[1..]
                 .iter()
                 .all(|notification| notification.read)
         );
+        // Nobody marks another user's notifications read.
+        let (stranger, _) = reader(&db).await;
+        mark_read(&db, stranger, &[read.notifications[0].id])
+            .await
+            .unwrap();
+        assert_eq!(inbox(&db, id).await.unwrap().unread_count, 1);
     }
 
     #[tokio::test]

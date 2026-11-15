@@ -2,7 +2,10 @@
   "notifications": {
     "title": "Notificações",
     "open": "Notificações",
-    "openUnread": "Notificações, {{unread}} novas",
+    "openUnread": "Notificações, {{count}} nova",
+    "openUnread_one": "Notificações, {{count}} nova",
+    "openUnread_many": "Notificações, {{count}} novas",
+    "openUnread_other": "Notificações, {{count}} novas",
     "unread": "Novo:",
     "loading": "Carregando suas notificações",
     "loadFailed": "Não foi possível carregar suas notificações.",
@@ -15,7 +18,7 @@
       },
       "event_reminder": {
         "title": "Lembrete: {{name}}",
-        "text": "Começa cerca de uma hora depois deste lembrete."
+        "text": "Começa cerca de {{duration}} depois deste lembrete."
       },
       "event_change": {
         "title": "{{name}} mudou",
@@ -55,7 +58,7 @@
           "claim": "Seu pedido para {{name}} não foi aprovado",
           "event": "Seu evento {{name}} não foi aprovado",
           "position": "Sua posição {{name}} não foi aprovada",
-          "text": "Nosso e-mail explica o motivo."
+          "text": "Responda ao nosso e-mail se tiver dúvidas."
         }
       },
       "club_invitation": {

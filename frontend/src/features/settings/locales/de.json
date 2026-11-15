@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "Verwalten Sie Ihre Kontoeinstellungen und Präferenzen",
     "unsavedChanges": "Ungespeicherte Änderungen",
     "unsavedChangesDescription": "Speichern oder abbrechen Ihrer Einstellungenänderungen.",
     "saveSuccess": "Ihre Einstellungen wurden gespeichert.",

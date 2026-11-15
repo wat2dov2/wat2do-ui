@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "Quản lý các tùy chọn và cài đặt tài khoản của bạn",
     "unsavedChanges": "Các thay đổi chưa được lưu",
     "unsavedChangesDescription": "Lưu hoặc hủy các thay đổi cài đặt của bạn.",
     "saveSuccess": "Cài đặt của bạn đã được lưu.",

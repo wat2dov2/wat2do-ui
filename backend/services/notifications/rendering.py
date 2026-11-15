@@ -38,10 +38,14 @@ def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
     return date_label, f"{hour}{minute} {am_pm}"
 
 
+def is_cancellation(diff: dict) -> bool:
+    """Whether an event change cancelled its event."""
+    return diff.get("cancelled", {}).get("new") is True
+
+
 def event_change_subject(event: dict, diff: dict) -> str:
     title = event.get("title") or "an event you're going to"
-    cancelled = diff.get("cancelled", {}).get("new") is True
-    return f"{'Cancelled' if cancelled else 'Changed'}: {title}"
+    return f"{'Cancelled' if is_cancellation(diff) else 'Changed'}: {title}"
 
 
 def render_event_change_text(

@@ -191,6 +191,17 @@ pub static SENT_IN_BACKGROUND: std::sync::Mutex<Vec<EmailMessage>> =
 /// response, logging (never raising) a failure. A graceful shutdown waits
 /// for it ([`drain_background`]).
 pub fn send_in_background(message: EmailMessage) {
+    send_in_background_then(message, || async {});
+}
+
+/// [`send_in_background`], then `then` once SES has the message (an inbox
+/// notification repeating it). A failed send skips `then`, and a graceful
+/// shutdown waits for both.
+pub fn send_in_background_then<F, Fut>(message: EmailMessage, then: F)
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = ()> + Send + 'static,
+{
     #[cfg(test)]
     SENT_IN_BACKGROUND
         .lock()
@@ -199,11 +210,12 @@ pub fn send_in_background(message: EmailMessage) {
     let pending = PendingSend::start();
     tokio::spawn(async move {
         let _pending = pending;
-        if let Err(error) = send(&message).await {
-            tracing::error!(
+        match send(&message).await {
+            Ok(()) => then().await,
+            Err(error) => tracing::error!(
                 "Background email dispatch failed for subject={:?}: {error}",
                 message.subject
-            );
+            ),
         }
     });
 }

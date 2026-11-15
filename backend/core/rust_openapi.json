@@ -5275,11 +5275,31 @@
           "notifications"
         ],
         "summary": "Mark My Notifications Read",
-        "description": "Mark every notification the user has as read.",
+        "description": "Mark read the user's notifications among those their list showed; any that arrived since stay unread.",
         "operationId": "mark_my_notifications_read_notifications_read_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationReadRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -12976,6 +12996,24 @@
         ],
         "title": "NotificationPreferencesListResponse",
         "description": "Every notification type's resolved enabled state for the user.\n\nIncludes types for which the user has no row; the\n``enabled`` value is the resolved default in that case. Clients\nrender one toggle per entry."
+      },
+      "NotificationReadRequest": {
+        "type": "object",
+        "description": "The notifications a visitor's open list showed, to mark read.",
+        "required": [
+          "notification_ids"
+        ],
+        "properties": {
+          "notification_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100,
+            "minItems": 1
+          }
+        }
       },
       "NotificationResponse": {
         "type": "object",

@@ -2,7 +2,8 @@
   "notifications": {
     "title": "Thông báo",
     "open": "Thông báo",
-    "openUnread": "Thông báo, {{unread}} mới",
+    "openUnread": "Thông báo, {{count}} mới",
+    "openUnread_other": "Thông báo, {{count}} mới",
     "unread": "Mới:",
     "loading": "Đang tải thông báo",
     "loadFailed": "Không thể tải thông báo của bạn.",
@@ -15,7 +16,7 @@
       },
       "event_reminder": {
         "title": "Nhắc nhở: {{name}}",
-        "text": "Sự kiện bắt đầu khoảng một giờ sau lời nhắc này."
+        "text": "Sự kiện bắt đầu khoảng {{duration}} sau lời nhắc này."
       },
       "event_change": {
         "title": "{{name}} đã thay đổi",
@@ -55,7 +56,7 @@
           "claim": "Yêu cầu nhận quản lý {{name}} của bạn chưa được duyệt",
           "event": "Sự kiện {{name}} của bạn chưa được duyệt",
           "position": "Vị trí {{name}} của bạn chưa được duyệt",
-          "text": "Email chúng tôi gửi bạn có nêu lý do."
+          "text": "Nếu có thắc mắc, hãy trả lời email của chúng tôi."
         }
       },
       "club_invitation": {

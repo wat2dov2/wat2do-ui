@@ -17,6 +17,10 @@ const FOOTER_LINK_GROUPS = [
       { labelKey: "navigation.events", href: ROUTES.EVENTS },
       { labelKey: "navigation.clubs", href: ROUTES.CLUBS },
       { labelKey: "navigation.positions", href: ROUTES.POSITIONS },
+      // The submission forms are open to everyone, signed in or not.
+      { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT },
+      { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT },
+      { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE },
     ],
   },
   {

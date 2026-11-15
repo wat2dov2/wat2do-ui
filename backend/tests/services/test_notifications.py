@@ -9,6 +9,7 @@ from botocore.exceptions import ClientError, ReadTimeoutError  # type: ignore[im
 
 from core.config import settings
 from core.constants import (
+    INBOX_KIND_EVENT_CANCELLED,
     NOTIFICATION_TYPE_EVENT_CHANGE,
     NOTIFICATION_TYPE_MORNING_EMAIL,
 )
@@ -180,7 +181,7 @@ def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
     ("diff", "kind"),
     [
         ({"location": {"old": "SLC", "new": "DC"}}, NOTIFICATION_TYPE_EVENT_CHANGE),
-        ({"cancelled": {"old": False, "new": True}}, inbox.INBOX_KIND_EVENT_CANCELLED),
+        ({"cancelled": {"old": False, "new": True}}, INBOX_KIND_EVENT_CANCELLED),
     ],
 )
 def test_a_sent_event_change_email_lands_in_the_inbox(monkeypatch, diff, kind):
@@ -303,6 +304,26 @@ def test_claimed_delivery_retries_timeouts_and_throttling_then_marks_sent(monkey
     assert send.call_count == 3
     mark_sent.assert_called_once_with("row-1")
     mark_failed.assert_not_called()
+
+
+def test_a_sent_email_whose_record_fails_is_not_a_failed_send(monkeypatch, caplog):
+    mark_sent = MagicMock(side_effect=RuntimeError("database down"))
+    mark_failed = MagicMock()
+    monkeypatch.setattr(delivery_log, "_mark_log_sent", mark_sent)
+    monkeypatch.setattr(delivery_log, "_mark_log_failed", mark_failed)
+    monkeypatch.setattr(delivery_log, "_RECORD_PAUSE_SECONDS", 0)
+    monkeypatch.setattr(delivery_log.email_service, "send", MagicMock())
+
+    assert delivery_log.deliver_claimed_email(
+        row_id="row-1",
+        message=MagicMock(),
+        provider_attempts=3,
+        log_context="notification=event_change",
+    )
+    # SES has the email: the row stays pending, never failed, so it is not sent again.
+    assert mark_sent.call_count == delivery_log._RECORD_ATTEMPTS
+    mark_failed.assert_not_called()
+    assert "was sent but not recorded as sent" in caplog.text
 
 
 def test_claimed_delivery_does_not_retry_terminal_provider_error(monkeypatch):

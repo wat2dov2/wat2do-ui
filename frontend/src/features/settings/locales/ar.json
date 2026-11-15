@@ -1,6 +1,5 @@
 {
   "settings": {
-    "description": "إدارة تفضيلات وإعدادات حسابك",
     "unsavedChanges": "تغييرات غير محفوظة",
     "unsavedChangesDescription": "احفظ أو ألغ تغييرات الإعدادات الخاصة بك.",
     "saveSuccess": "تم حفظ إعداداتك.",

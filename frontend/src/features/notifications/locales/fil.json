@@ -2,7 +2,9 @@
   "notifications": {
     "title": "Mga Abiso",
     "open": "Mga Abiso",
-    "openUnread": "Mga Abiso, {{unread}} bago",
+    "openUnread": "Mga Abiso, {{count}} bago",
+    "openUnread_one": "Mga Abiso, {{count}} bago",
+    "openUnread_other": "Mga Abiso, {{count}} bago",
     "unread": "Bago:",
     "loading": "Nilo-load ang iyong mga abiso",
     "loadFailed": "Hindi ma-load ang iyong mga abiso.",
@@ -15,7 +17,7 @@
       },
       "event_reminder": {
         "title": "Paalala: {{name}}",
-        "text": "Magsisimula ito mga isang oras pagkatapos ng paalalang ito."
+        "text": "Magsisimula ito mga {{duration}} pagkatapos ng paalalang ito."
       },
       "event_change": {
         "title": "Nagbago ang {{name}}",
@@ -55,7 +57,7 @@
           "claim": "Hindi naaprubahan ang iyong claim para sa {{name}}",
           "event": "Hindi naaprubahan ang iyong kaganapang {{name}}",
           "position": "Hindi naaprubahan ang iyong posisyong {{name}}",
-          "text": "Nakasaad sa aming email kung bakit."
+          "text": "Sumagot sa aming email kung may mga tanong ka."
         }
       },
       "club_invitation": {

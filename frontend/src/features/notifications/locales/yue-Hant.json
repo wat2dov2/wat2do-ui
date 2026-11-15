@@ -2,7 +2,8 @@
   "notifications": {
     "title": "通知",
     "open": "通知",
-    "openUnread": "通知，{{unread}} 個新通知",
+    "openUnread": "通知，{{count}} 個新通知",
+    "openUnread_other": "通知，{{count}} 個新通知",
     "unread": "新：",
     "loading": "載入緊你嘅通知",
     "loadFailed": "無法載入你嘅通知。",
@@ -15,7 +16,7 @@
       },
       "event_reminder": {
         "title": "提醒：{{name}}",
-        "text": "活動喺呢個提醒發出之後大約一個鐘開始。"
+        "text": "活動喺呢個提醒發出之後大約 {{duration}} 開始。"
       },
       "event_change": {
         "title": "{{name}} 有改動",
@@ -55,7 +56,7 @@
           "claim": "你對 {{name}} 嘅認領未獲批核",
           "event": "你嘅活動 {{name}} 未獲批核",
           "position": "你嘅職位 {{name}} 未獲批核",
-          "text": "我哋寄俾你嘅電郵有講原因。"
+          "text": "有問題可以回覆我哋嘅電郵。"
         }
       },
       "club_invitation": {

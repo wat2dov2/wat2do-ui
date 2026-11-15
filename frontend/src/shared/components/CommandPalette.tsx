@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Plus, X, User, Bell, Heart, LogIn, Palette, HelpCircle } from "lucide-react";
 import {
   CommandDialog,
@@ -11,7 +11,12 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/shared/ui/command";
-import { settingsTabPath, SETTINGS_TABS, ROUTES } from "@/shared/constants/routes";
+import {
+  PROFILE_SETTINGS_SECTION_ID,
+  settingsTabPath,
+  SETTINGS_TABS,
+  ROUTES,
+} from "@/shared/constants/routes";
 import { focusSearchInput } from "@/shared/utils/searchInput";
 
 interface CommandPaletteProps {
@@ -31,6 +36,16 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Settings live on the profile page; already there, its settings scroll into view.
+  const openSettingsTab = (tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS]) => {
+    router.push(settingsTabPath(tab));
+    if (pathname === ROUTES.PROFILE) {
+      document.getElementById(PROFILE_SETTINGS_SECTION_ID)?.scrollIntoView({ block: "start" });
+    }
+    onOpenChange(false);
+  };
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onOpenChange} title={t("commands.commandPalette")} description={t("commands.commandPaletteDescription")}>
@@ -120,10 +135,7 @@ export function CommandPalette({
 
         <CommandGroup heading={t("commands.personalSettings")}>
           <CommandItem
-            onSelect={() => {
-              router.push(settingsTabPath(SETTINGS_TABS.PROFILE));
-              onOpenChange(false);
-            }}
+            onSelect={() => openSettingsTab(SETTINGS_TABS.PROFILE)}
           >
             <User className="mr-2 size-4" />
             <span>
@@ -133,19 +145,13 @@ export function CommandPalette({
             </span>
           </CommandItem>
           <CommandItem
-            onSelect={() => {
-              router.push(settingsTabPath(SETTINGS_TABS.NOTIFICATIONS));
-              onOpenChange(false);
-            }}
+            onSelect={() => openSettingsTab(SETTINGS_TABS.NOTIFICATIONS)}
           >
             <Bell className="mr-2 size-4" />
             <span>{t("commands.notificationPreferences")}</span>
           </CommandItem>
           <CommandItem
-            onSelect={() => {
-              router.push(settingsTabPath(SETTINGS_TABS.APPEARANCE));
-              onOpenChange(false);
-            }}
+            onSelect={() => openSettingsTab(SETTINGS_TABS.APPEARANCE)}
           >
             <Palette className="mr-2 size-4" />
             <span>{t("commands.themeAppearance")}</span>

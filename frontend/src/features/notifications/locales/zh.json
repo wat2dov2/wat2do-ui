@@ -2,7 +2,8 @@
   "notifications": {
     "title": "通知",
     "open": "通知",
-    "openUnread": "通知，{{unread}} 条新通知",
+    "openUnread": "通知，{{count}} 条新通知",
+    "openUnread_other": "通知，{{count}} 条新通知",
     "unread": "新：",
     "loading": "正在加载通知",
     "loadFailed": "无法加载你的通知。",
@@ -15,7 +16,7 @@
       },
       "event_reminder": {
         "title": "提醒：{{name}}",
-        "text": "活动将在本提醒发出约一小时后开始。"
+        "text": "活动将在本提醒发出约 {{duration}} 后开始。"
       },
       "event_change": {
         "title": "{{name}} 有变动",
@@ -55,7 +56,7 @@
           "claim": "你对 {{name}} 的认领未通过审核",
           "event": "你的活动 {{name}} 未通过审核",
           "position": "你的职位 {{name}} 未通过审核",
-          "text": "我们发给你的邮件中说明了原因。"
+          "text": "如有疑问，请回复我们的邮件。"
         }
       },
       "club_invitation": {

@@ -36,6 +36,8 @@ CREATE INDEX IF NOT EXISTS user_notifications_event_idx
     ON public.user_notifications (event_id);
 
 ALTER TABLE public.user_notifications ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.user_notifications FROM PUBLIC;
+GRANT ALL ON public.user_notifications TO service_role;
 
 COMMENT ON TABLE public.user_notifications IS
     'One row per notification email sent to a user, shown in their inbox under the top bar''s bell.';

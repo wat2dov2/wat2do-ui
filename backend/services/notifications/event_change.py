@@ -16,7 +16,7 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
+from core.constants import INBOX_KIND_EVENT_CANCELLED, NOTIFICATION_TYPE_EVENT_CHANGE
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import EVENT_CHANGE_ALERTS, TICKETS, USERS
@@ -34,6 +34,7 @@ from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     event_change_subject,
     event_url,
+    is_cancellation,
     render_event_change_html,
     render_event_change_text,
 )
@@ -158,7 +159,7 @@ def enqueue_event_change(
 
 def _offers_refund(diff: dict[str, dict[str, Any]]) -> bool:
     """A new time or place can leave a ticket holder unable to go; a cancellation refunds itself."""
-    if diff.get("cancelled", {}).get("new") is True:
+    if is_cancellation(diff):
         return False
     return "location" in diff or "occurrences" in diff
 
@@ -227,10 +228,11 @@ def _send_event_change(
         log_context=f"notification=event_change user={user_id} event={event_summary['id']}",
     )
     if sent:
-        cancelled = diff.get("cancelled", {}).get("new") is True
         inbox.record(
             user_id=user_id,
-            kind=inbox.INBOX_KIND_EVENT_CANCELLED if cancelled else NOTIFICATION_TYPE_EVENT_CHANGE,
+            kind=INBOX_KIND_EVENT_CANCELLED
+            if is_cancellation(diff)
+            else NOTIFICATION_TYPE_EVENT_CHANGE,
             event_id=int(event_summary["id"]),
             details={"name": event_summary["title"]},
             link=event_url(event_summary, school_frontend_url(event_summary.get("school"))),

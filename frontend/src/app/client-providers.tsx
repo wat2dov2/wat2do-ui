@@ -105,6 +105,9 @@ export function ClientProviders({
       queryClient.removeQueries({ queryKey: queryKeys.user.all });
       queryClient.removeQueries({ queryKey: queryKeys.admin.all });
       queryClient.removeQueries({ queryKey: queryKeys.goingEvents.all });
+      queryClient.removeQueries({ queryKey: queryKeys.savedEvents.all });
+      queryClient.removeQueries({ queryKey: queryKeys.notifications.all });
+      queryClient.removeQueries({ queryKey: queryKeys.tickets.all });
       queryClient.removeQueries({
         queryKey: queryKeys.notificationPreferences.all,
       });

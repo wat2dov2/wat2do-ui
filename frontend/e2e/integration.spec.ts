@@ -5555,12 +5555,18 @@ test.describe("Navigation", () => {
     expect(toggle!.x).toBeLessThan(bellBox!.x);
     expect(bellBox!.x).toBeLessThan(avatarBox!.x);
 
-    // The bell lists the visitor's notifications and clears its count once opened.
+    // The bell reads the inbox afresh, marks read only the notifications it shows, and clears its count.
+    const markedRead = page.waitForRequest((request) =>
+      request.method() === "POST" && new URL(request.url()).pathname.endsWith("/notifications/read"));
     await bell.click();
     const inbox = page.getByRole("dialog", { name: "Notifications" });
     await expect(inbox.getByText("Reminder: Tech Career Fair", { exact: false })).toBeVisible();
+    expect((await markedRead).postDataJSON()).toEqual({ notification_ids: ["00000000-0000-0000-0000-000000000001"] });
     await expect(topNavigation.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
-    await page.keyboard.press("Escape");
+    // Following a notification closes the list.
+    await inbox.getByRole("link").first().click();
+    await expect(inbox).toHaveCount(0);
+    await expect(page).toHaveURL(/\/events\/1$/);
 
     // The avatar opens the profile, which holds the club panel and Admin for those who run them.
     await page.goto(`${BASE}/events`);

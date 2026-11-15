@@ -177,6 +177,9 @@ export const SETTINGS_TABS = {
   PROMOTER: "promoter",
 } as const;
 
+/** The profile page's settings section, which a settings link scrolls into view. */
+export const PROFILE_SETTINGS_SECTION_ID = "settings";
+
 /** The profile page opened on its settings, with a specific tab selected. */
 export function settingsTabPath(
   tab: (typeof SETTINGS_TABS)[keyof typeof SETTINGS_TABS],

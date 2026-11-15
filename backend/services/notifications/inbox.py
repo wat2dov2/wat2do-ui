@@ -15,10 +15,6 @@ from core.database import get_sb
 
 log = logging.getLogger(__name__)
 
-# The kinds recorded here (``user_notifications_kind_check``); the event change
-# kind is ``core.constants.NOTIFICATION_TYPE_EVENT_CHANGE``.
-INBOX_KIND_EVENT_CANCELLED = "event_cancelled"
-
 
 def record(
     *,
