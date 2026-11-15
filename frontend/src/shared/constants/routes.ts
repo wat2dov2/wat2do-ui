@@ -33,6 +33,8 @@ export const ROUTES = {
   POSITION_SUBMIT: "/positions/submit",
   PROMOTE: "/promote",
   POSTERS: "/posters",
+  /** A poster's QR code: records the scan, then opens the poster's destination. */
+  QR: "/qr",
 
   // Admin
   ADMIN: "/admin",
@@ -158,7 +160,7 @@ export function getRouteDocumentTitle(pathname: string): string {
     return buildDocumentTitle("Tickets");
   }
 
-  if (normalizedPathname.startsWith("/qr/")) {
+  if (normalizedPathname.startsWith(`${ROUTES.QR}/`)) {
     return buildDocumentTitle("QR Redirect");
   }
 

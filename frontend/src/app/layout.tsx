@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
+import { GoogleAnalytics } from "@/app/GoogleAnalytics";
 import { SiteBanner } from "@/app/SiteBanner";
 import {
   getRequestHostnameSchoolStatus,
@@ -158,29 +158,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <AppShell hostnameSchoolStatus={hostnameSchoolStatus}>{children}</AppShell>
         </ClientProviders>
         {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? (
-          <GoogleAnalyticsAfterLoad measurementId={googleAnalytics.measurement_id} />
+          <GoogleAnalytics measurementId={googleAnalytics.measurement_id} />
         ) : null}
       </body>
     </html>
-  );
-}
-
-/**
- * Google Analytics (177 KB) loads in idle time after the page's load event, so it
- * never competes with the site's own code for a phone's bandwidth or CPU. Single
- * page navigations are still counted by GA4's history-change page views.
- */
-function GoogleAnalyticsAfterLoad({ measurementId }: { measurementId: string }) {
-  return (
-    <>
-      <Script
-        id="ga-loader"
-        src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`}
-        strategy="lazyOnload"
-      />
-      <Script id="ga-init" strategy="lazyOnload">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',${JSON.stringify(measurementId)});`}
-      </Script>
-    </>
   );
 }
