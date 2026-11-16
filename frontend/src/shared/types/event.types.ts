@@ -67,8 +67,6 @@ export interface EventFormTickets {
   enabled: boolean;
   /** In the order they go on sale. */
   releases: EventFormTicketRelease[];
-  /** Nobody new gets a ticket while paused. */
-  paused: boolean;
 }
 
 // Event creation/edit form data (matches EventFormData from SubmitEventModal).

@@ -54,7 +54,7 @@ const form: EventFormData = {
   timeZone: "America/Toronto", club_id: 9, title: "Updated event", description: "Details",
   occurrences: [{ dtstart_local: "2026-10-01T12:00", dtend_local: "2026-10-01T13:00", tickets: true }],
   location: "Campus", map_location: "Campus", category: "Arts & Culture", price: 0, food: [], registration: false,
-  tickets: { enabled: false, releases: [], paused: false },
+  tickets: { enabled: false, releases: [] },
 };
 
 test.beforeEach(() => {

@@ -1,5 +1,6 @@
-import { useId, type ComponentProps, type ReactNode } from "react";
+import { useId, type ChangeEvent, type ComponentProps, type ReactNode } from "react";
 import { Input } from "@/shared/ui/input";
+import { SuggestionInput, type InputSuggestions } from "@/shared/ui/suggestion-input";
 import { Textarea } from "@/shared/ui/textarea";
 import {
   Select,
@@ -40,6 +41,8 @@ interface FormInputProps extends BaseFormFieldProps {
   min?: string | number;
   prefix?: string;
   inputClassName?: string;
+  /** A dropdown of matches for what is typed, picked with a click or the keyboard. */
+  suggestions?: InputSuggestions;
 }
 
 interface FormSelectProps extends BaseFormFieldProps {
@@ -83,40 +86,42 @@ export function FormInput({
   prefix,
   className,
   inputClassName,
+  suggestions,
 }: FormInputProps) {
   const hasError = touched && error;
   const instanceId = useId();
   const id = `field-${name}-${instanceId}`;
 
-  const inputElement = (
-    <Input
-      id={id}
-      disabled={disabled}
-      type={type}
-      format={format}
-      inputMode={inputMode}
-      required={required}
-      value={value}
-      onChange={(e) => {
-        if (type === "number") {
-          const newValue = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
-          onChange(newValue);
-        } else {
-          onChange(e.target.value);
-        }
-      }}
-      onBlur={onBlur}
-      placeholder={placeholder}
-      step={step}
-      min={min}
-      aria-invalid={hasError ? true : undefined}
-      className={cn(
-        "w-full",
-        prefix && "pl-7",
-        inputClassName
-      )}
-    />
-  );
+  const inputProps = {
+    id,
+    disabled,
+    type,
+    format,
+    inputMode,
+    required,
+    value,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      if (type === "number") {
+        const newValue = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
+        onChange(newValue);
+      } else {
+        onChange(e.target.value);
+      }
+    },
+    onBlur,
+    placeholder,
+    step,
+    min,
+    "aria-invalid": hasError ? true : undefined,
+    className: cn(
+      "w-full",
+      prefix && "pl-7",
+      inputClassName
+    ),
+  };
+  const inputElement = suggestions
+    ? <SuggestionInput {...inputProps} suggestions={suggestions} />
+    : <Input {...inputProps} />;
 
   return (
     <Field className={className}>

@@ -10,6 +10,33 @@ export function resolveClubByInstagramHandle(clubs: Club[], value: string): Club
   return matches.length === 1 ? matches[0] : undefined;
 }
 
+/**
+ * The clubs with an Instagram handle that match what was typed in a handle
+ * field, best first: handles that start with it, then names with a word that
+ * starts with it, then handles and names that contain it anywhere.
+ */
+export function suggestClubsByHandle(clubs: Club[], typed: string, limit: number): Club[] {
+  const text = typed.trim().replace(/^@+/, "").toLowerCase();
+  if (!text) return [];
+  // A pasted profile link matches by its handle.
+  const handleText = normalizeInstagramHandle(typed).toLowerCase() || text;
+  const rank = (handle: string, name: string) => {
+    if (handle.startsWith(handleText)) return 0;
+    if (name.startsWith(text) || name.includes(` ${text}`)) return 1;
+    if (handle.includes(handleText)) return 2;
+    return name.includes(text) ? 3 : null;
+  };
+  return clubs
+    .flatMap((club) => {
+      const handle = normalizeInstagramHandle(club.ig).toLowerCase();
+      const order = handle ? rank(handle, club.club_name.toLowerCase()) : null;
+      return order === null ? [] : [{ club, handle, order }];
+    })
+    .sort((a, b) => a.order - b.order || a.handle.localeCompare(b.handle))
+    .slice(0, limit)
+    .map(({ club }) => club);
+}
+
 export function normalizeClub(
   raw: ApiClubResponse,
 ): Club {

@@ -53,8 +53,7 @@ interface EventTicketsFieldSetProps {
 /**
  * The event's tickets in its own form: one switch, and once it is on, which
  * dates have tickets, the releases they go on sale in (each with when, how
- * many per date and a price, empty for free) and pausing. Only the club's
- * team sees it.
+ * many per date and a price, empty for free). Only the club's team sees it.
  */
 export function EventTicketsFieldSet({
   eventId,
@@ -65,7 +64,6 @@ export function EventTicketsFieldSet({
 }: EventTicketsFieldSetProps) {
   const { t, i18n } = useTranslation();
   const switchId = useId();
-  const pauseId = useId();
   const club = useTicketsClub(formData.club_id);
   const payouts = useClubPayouts(club?.id);
   const saved = useEventTicketing(eventId);
@@ -78,7 +76,7 @@ export function EventTicketsFieldSet({
   const errors = showErrors ? eventTicketsErrors(formData) : {};
   const savedTickets = saved.data ?? null;
   const issuedEver = (desk.data?.issued ?? 0) + (desk.data?.refunded ?? 0);
-  // People holding tickets keep them: pausing replaces turning them off.
+  // People holding tickets keep them, so tickets cannot be turned off.
   const held = savedTickets !== null && issuedEver > 0;
   const paidAvailable = Boolean(payouts.data?.paid_tickets_enabled);
   const canCharge = Boolean(payouts.data?.charges_enabled);
@@ -260,30 +258,15 @@ export function EventTicketsFieldSet({
               ) : null}
               {paidReleases ? <FieldDescription>{t("tickets.desk.fees")}</FieldDescription> : null}
 
-              {savedTickets ? (
-                <>
-                  <Field orientation="horizontal">
-                    <Stack gap={1}>
-                      <FieldLabel htmlFor={pauseId}>{t("tickets.desk.pause")}</FieldLabel>
-                      <FieldDescription>{t("tickets.desk.pauseHint")}</FieldDescription>
-                    </Stack>
-                    <Switch
-                      id={pauseId}
-                      checked={tickets.paused}
-                      onCheckedChange={(paused) => update({ paused })}
-                    />
-                  </Field>
-                  {eventId != null ? (
-                    <Stack align="start">
-                      <Button variant="outline" size="sm" asChild>
-                        <NextLink href={clubPanelEventTicketsPath(eventId)} onClick={clearEditingEvent}>
-                          <QrCode className="size-4" />
-                          {t("tickets.desk.openDesk")}
-                        </NextLink>
-                      </Button>
-                    </Stack>
-                  ) : null}
-                </>
+              {savedTickets && eventId != null ? (
+                <Stack align="start">
+                  <Button variant="outline" size="sm" asChild>
+                    <NextLink href={clubPanelEventTicketsPath(eventId)} onClick={clearEditingEvent}>
+                      <QrCode className="size-4" />
+                      {t("tickets.desk.openDesk")}
+                    </NextLink>
+                  </Button>
+                </Stack>
               ) : null}
             </>
           ) : null}

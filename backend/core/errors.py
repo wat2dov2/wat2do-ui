@@ -155,9 +155,7 @@ TICKETS_CLOSED = "Tickets for this date are no longer available"
 TICKETS_SOLD_OUT = "There aren't enough tickets left for this date"
 TICKET_DATE_NOT_FOUND = "That date isn't part of this event"
 TICKETS_NOT_FOR_DATE = "This date doesn't have tickets"
-TICKET_DATE_HAS_TICKETS = (
-    "People have tickets to a date you took tickets off. Pause tickets instead."
-)
+TICKET_DATE_HAS_TICKETS = "People have tickets to a date you took tickets off."
 TICKETED_EVENT_CANCELLED = "This event was cancelled"
 TICKET_QUANTITY_TOO_HIGH = "That's more tickets than one order allows"
 TICKET_PRICE_OUT_OF_RANGE = "Enter a ticket price within the allowed range"
@@ -171,12 +169,10 @@ TICKET_RELEASES_SAME_TIME = "Two releases can't go on sale at the same time"
 TICKET_RELEASES_MIXED_PRICES = "Make every release free, or give every release a price"
 TICKET_RELEASE_UNLIMITED_NOT_LAST = "Only the last release can have no limit"
 TICKET_RELEASE_NOT_FOUND = "That release isn't part of this event"
-TICKET_RELEASE_HAS_TICKETS = (
-    "People have tickets from a release you removed. Keep it, or pause tickets instead."
-)
+TICKET_RELEASE_HAS_TICKETS = "People have tickets from a release you removed, so keep it."
 TICKETS_NOT_ON_SALE = "Tickets for this date aren't on sale yet"
 TICKETS_OWN_EVENT = "You run this event, so you can't get tickets to it"
-TICKETS_ALREADY_TAKEN = "People already have tickets for this event. Pause tickets instead."
+TICKETS_ALREADY_TAKEN = "People already have tickets for this event."
 TICKET_REFUNDS_NEED_CANCELLATION = "Cancel the event first to refund every ticket"
 EVENT_HAS_PAID_TICKETS = (
     "This event has sold tickets. Cancel it instead, and every buyer is refunded."

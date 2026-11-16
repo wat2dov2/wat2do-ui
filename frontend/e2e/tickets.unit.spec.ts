@@ -161,12 +161,11 @@ test.describe("tickets in the event's form", () => {
         { id: "release-1", on_sale_local: "2026-11-10T09:00", quantity: "50", price: "5" },
         { on_sale_local: "2026-11-15T09:00", quantity: "", price: "8" },
       ],
-      paused: false,
     },
     ...overrides,
   });
   const withReleases = (releases: EventFormData["tickets"]["releases"]) =>
-    form({ tickets: { enabled: true, releases, paused: false } });
+    form({ tickets: { enabled: true, releases } });
 
   test("an empty price is free and an empty number of tickets is no limit", () => {
     expect(ticketPriceCents("")).toBe(0);
@@ -198,7 +197,7 @@ test.describe("tickets in the event's form", () => {
     expect(eventTicketsErrors({ ...noDates, tickets: NO_EVENT_TICKETS })).toEqual({});
   });
 
-  test("the saved event's releases and ticked dates are sent, a new date matched by when it starts", () => {
+  test("the saved event's releases and ticked dates are sent, never paused, a new date matched by when it starts", () => {
     const saved = {
       id: 42,
       occurrences: [
@@ -207,12 +206,12 @@ test.describe("tickets in the event's form", () => {
         { id: "date-3", dtstart_utc: "2026-12-16T00:00:00Z" },
       ],
     } as unknown as Event;
-    expect(eventTicketingUpdate(saved, form({ tickets: { ...form().tickets, paused: true } }))).toEqual({
+    expect(eventTicketingUpdate(saved, form())).toEqual({
       releases: [
         { id: "release-1", on_sale_at: "2026-11-10T14:00:00.000Z", quantity: 50, price_cents: 500 },
         { id: null, on_sale_at: "2026-11-15T14:00:00.000Z", quantity: null, price_cents: 800 },
       ],
-      paused: true,
+      paused: false,
       event_date_ids: ["date-1", "date-2"],
     });
   });
