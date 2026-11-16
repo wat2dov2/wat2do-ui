@@ -28,6 +28,7 @@ use tokio::time::Instant;
 use super::club_logos::{ClubLogos, is_blocked};
 use super::fetch::{FetchBlocked, fetch_post};
 use super::items::{self, Item, Stage};
+use super::quiet_schools::{self, QuietSchools};
 use super::stop::Stop;
 use super::{agent, changes, notify, state_directory};
 use crate::claude::{Limited, remove_leftovers};
@@ -64,6 +65,7 @@ enum Lane {
     Fetch,
     Process,
     ClubLogos,
+    QuietSchools,
 }
 
 struct Processor {
@@ -77,6 +79,7 @@ struct Processor {
     agents_paused_until: Mutex<Option<Instant>>,
     agent_failures_in_a_row: AtomicU64,
     club_logos: Mutex<ClubLogos>,
+    quiet_schools: Mutex<QuietSchools>,
 }
 
 impl Processor {
@@ -89,6 +92,7 @@ impl Processor {
             Lane::Fetch => self.fetch_next().await,
             Lane::Process => self.process_next().await,
             Lane::ClubLogos => self.fill_club_logo_next().await,
+            Lane::QuietSchools => self.read_quiet_school_next().await,
         }
     }
 
@@ -182,6 +186,49 @@ impl Processor {
         self.stopping
             .sleep(Duration::from_secs_f64(
                 INGESTION.club_logo_read_delay_seconds,
+            ))
+            .await;
+        Ok(true)
+    }
+
+    /// Read one followed club of a school Instagram has stopped notifying us about, and
+    /// queue its recent posts (`quiet_schools`); refused reads pause with post fetches.
+    async fn read_quiet_school_next(&self) -> Result<bool> {
+        if self.paused(&self.fetch_paused_until).await {
+            return Ok(false);
+        }
+        let next = self
+            .quiet_schools
+            .lock()
+            .await
+            .take_next(&self.pool)
+            .await?;
+        let Some((handle, school)) = next else {
+            return Ok(false);
+        };
+        match quiet_schools::read_handle(&self.pool, &handle, &school).await {
+            Ok(queued) => {
+                self.count("quiet_school_read").await;
+                if queued > 0 {
+                    tracing::info!(%handle, %school, queued, "Queued posts from a quiet school's club");
+                    for _ in 0..queued {
+                        self.count("quiet_school_post").await;
+                    }
+                    self.wake.notify();
+                }
+            }
+            Err(error) => {
+                if let Some(blocked) = is_blocked(&error) {
+                    self.pause_fetches(blocked).await;
+                    return Ok(false);
+                }
+                return Err(error);
+            }
+        }
+        // Background work like the club logos: space the reads out behind the post fetches.
+        self.stopping
+            .sleep(Duration::from_secs_f64(
+                INGESTION.quiet_school_read_delay_seconds,
             ))
             .await;
         Ok(true)
@@ -382,6 +429,7 @@ pub async fn process_queue(
         agents_paused_until: Mutex::default(),
         agent_failures_in_a_row: AtomicU64::default(),
         club_logos: Mutex::new(ClubLogos::new(directory.join("club_logos.json"))),
+        quiet_schools: Mutex::new(QuietSchools::new(directory.join("quiet_schools.json"))),
     });
 
     let lanes = |lane: Lane, count: usize| {
@@ -407,6 +455,7 @@ pub async fn process_queue(
         let mut tasks = lanes(Lane::Fetch, INGESTION.fetch_lanes);
         tasks.extend(lanes(Lane::Process, INGESTION.parallel_agents));
         tasks.extend(lanes(Lane::ClubLogos, 1));
+        tasks.extend(lanes(Lane::QuietSchools, INGESTION.quiet_school_lanes));
         for task in tasks {
             task.await?;
         }

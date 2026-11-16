@@ -1045,6 +1045,19 @@ class IngestionControl(_ControlModel):
     # Lightpanda, relative to the home folder; it renders club profiles logged out.
     profile_renderer: str = Field(min_length=1, max_length=200)
     profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
+    # Instagram does not push every school its posts every day. A school with no post or
+    # digest notification for this long has its active followed clubs' profiles rendered
+    # logged out (this many at a time, spaced out), each again only after the reread hours, and
+    # their posts from the last few days are queued (rust/src/ingestion/quiet_schools.rs).
+    quiet_school_hours: int = Field(ge=1, le=168)
+    quiet_school_lanes: int = Field(ge=0, le=8)
+    quiet_school_read_delay_seconds: float = Field(ge=0, le=600, allow_inf_nan=False)
+    quiet_school_reread_hours: int = Field(ge=1, le=168)
+    quiet_school_post_days: int = Field(ge=1, le=14)
+    # Only clubs with an event added within the active days, or followed within the new
+    # follow days (too new to have events), are read.
+    quiet_school_active_days: int = Field(ge=1, le=730)
+    quiet_school_new_follow_days: int = Field(ge=1, le=365)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # The API server draws the title of every featured event to come (title_svgs.rs), this
     # many at a time, up to this many drawings an event until one is kept, then again after
