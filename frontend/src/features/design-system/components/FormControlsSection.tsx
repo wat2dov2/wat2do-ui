@@ -18,13 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 export function FormControlsSection() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [registrationRequired, setRegistrationRequired] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [activeTab, setActiveTab] = useState("events");
   const [selectedDate, setSelectedDate] = useState("");
@@ -99,16 +100,21 @@ export function FormControlsSection() {
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Switch">
-          <Field orientation="horizontal">
-            <Switch
+          <Stack gap={4}>
+            <SwitchField
               id="design-system-switch"
+              label="Registration required"
+              checked={registrationRequired}
+              onCheckedChange={setRegistrationRequired}
+            />
+            <SwitchField
+              id="design-system-switch-described"
+              label="Morning email"
+              description="A short list of today's events, sent each morning. The label and description wrap while the switch stays at the end of the row."
               checked={notificationsEnabled}
               onCheckedChange={setNotificationsEnabled}
             />
-            <FieldLabel htmlFor="design-system-switch">
-              {notificationsEnabled ? "Notifications on" : "Notifications off"}
-            </FieldLabel>
-          </Field>
+          </Stack>
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Tabs">

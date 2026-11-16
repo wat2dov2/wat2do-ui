@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { UserProfile } from "@/features/auth";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { Separator } from "@/shared/ui/separator";
 import {
   Select,
@@ -81,23 +81,18 @@ export function ProfileTab({
             </Select>}
           </div>
           <Separator />
-          <div className="space-y-2">
-            <Label className="text-base font-medium">
-              {t("settings.profile.firstYearStudent")}
-            </Label>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("modals.profile.firstYearQuestion")}
-              </p>
-              {isLoading ? <Skeleton className="h-6 w-11 rounded-full" /> : <Switch
-                checked={profile.isFirstYear}
-                disabled={controlsDisabled}
-                onCheckedChange={(checked) =>
-                  onProfileChange({ isFirstYear: checked })
-                }
-              />}
-            </div>
-          </div>
+          <SwitchField
+            id="first-year"
+            size="lg"
+            label={t("settings.profile.firstYearStudent")}
+            description={t("modals.profile.firstYearQuestion")}
+            loading={isLoading}
+            checked={profile.isFirstYear}
+            disabled={controlsDisabled}
+            onCheckedChange={(checked) =>
+              onProfileChange({ isFirstYear: checked })
+            }
+          />
           <Separator />
           <div className="space-y-2">
             <Label className="text-base font-medium">

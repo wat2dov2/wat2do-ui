@@ -335,6 +335,10 @@ Inputs should feel light and useful:
 - Muted placeholder text.
 - Clear focus ring.
 
+A switch with a label is always a `SwitchField` (`frontend/src/shared/ui/switch-field.tsx`).
+The label and any description sit on the start side and the switch sits at the far end of the row, never right beside the text.
+The text wraps while the switch keeps its size, and the switch lines up with the label when a description follows it.
+
 For onboarding, prefer buttons, pills, cards, and toggles over long forms.
 Ask for typed input only when it creates immediate value.
 
