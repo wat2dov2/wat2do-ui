@@ -23,7 +23,7 @@ export function OnboardingDemoProgress({ currentStep }: OnboardingDemoProgressPr
           <div key={segment.id} className="flex-1 flex flex-col gap-1.5 min-w-0">
             <div
               className={cn(
-                "h-1 rounded-full transition-colors duration-300",
+                "h-1 rounded-full transition-colors duration-200",
                 isComplete || isActive ? "bg-primary" : "bg-muted"
               )}
               aria-hidden

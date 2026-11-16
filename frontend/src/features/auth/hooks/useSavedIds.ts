@@ -63,7 +63,6 @@ export function useSavedIdToggle(kind: SavedKind, id: number, failedMessage: str
 
   return {
     isSaved,
-    isPending: mutation.isPending,
     toggle: () => mutation.mutate({ save: !isSaved, userId: getUserId() }),
   };
 }

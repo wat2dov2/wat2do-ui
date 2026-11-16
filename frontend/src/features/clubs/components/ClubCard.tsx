@@ -16,6 +16,7 @@ import { translateCategory } from "@/shared/utils/event";
 import {
   useCardMouseDownActivate,
   useMobileClickActivation,
+  useTurnOnPop,
 } from "@/shared/hooks";
 import {
   getClubCountBadges,
@@ -93,7 +94,11 @@ function ClubCardComponent({
     [runMouseDownActivate, preferClickPress],
   );
 
-  const toggleFollow = () => signedInAction(() => toggleSaveClub(club.id));
+  const followPop = useTurnOnPop(isSaved);
+  const toggleFollow = () => signedInAction(() => {
+    followPop.press();
+    toggleSaveClub(club.id);
+  });
 
   // Card controls keep their own presses: the card opens on mouse down, so they stop it there too.
   const stopCardActivation = {
@@ -118,7 +123,7 @@ function ClubCardComponent({
           handleCardActivate();
         }
       }}
-      className={cn(CLUB_CARD_CLASSES.card, "cursor-pointer transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]")}
+      className={cn(CLUB_CARD_CLASSES.card, "press-feedback cursor-pointer hover:border-border-hover")}
     >
 
       <div className={CLUB_CARD_CLASSES.top} data-skeleton-key="card-top">
@@ -143,7 +148,7 @@ function ClubCardComponent({
               onClick={toggleFollow}
               aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
             >
-              <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(isSaved && "animate-success-pulse")} />} />
+              <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(followPop.pop && "animate-success-pulse")} />} />
               {isSaved ? t("clubs.following") : t("clubs.follow")}
             </Button>
           )}

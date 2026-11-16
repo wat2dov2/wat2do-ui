@@ -44,7 +44,7 @@ function PositionCardComponent({
           onPositionClick(position);
         }
       }}
-      className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl transition-shadow duration-300 hover:shadow-lg"
+      className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl press-feedback"
     >
       <PositionCardImage position={position} variant="card" priority={imagePriority} />
       <EventCardContentFrame>

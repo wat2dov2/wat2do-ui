@@ -18,7 +18,7 @@ export function IconSwap({
   alternate: ReactNode
 }) {
   const layer =
-    "col-start-1 row-start-1 transition-[opacity,scale,filter] duration-200 ease-[var(--ease-out-ui)] motion-reduce:transition-none"
+    "col-start-1 row-start-1 transition-[opacity,scale,filter] duration-200 ease-out motion-reduce:transition-none"
   const hidden = "scale-50 opacity-0 blur-[2px]"
 
   return (

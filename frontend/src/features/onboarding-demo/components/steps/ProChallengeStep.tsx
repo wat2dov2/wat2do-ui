@@ -40,7 +40,7 @@ export function ProChallengeStep({ flow }: ProChallengeStepProps) {
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-[width] duration-300"
               style={{ width: `${Math.min((progress / total) * 100, 100)}%` }}
               role="progressbar"
               aria-valuenow={progress}

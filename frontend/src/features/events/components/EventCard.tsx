@@ -157,8 +157,7 @@ function EventCardComponent({
         "flex w-full flex-col rounded-xl",
         // Grid cards fill their cell so a row shares one height; a preview card
         // stands alone and sits at its natural height.
-        interactive && "h-full group cursor-pointer transition-shadow duration-300",
-        interactive && "hover:shadow-lg",
+        interactive && "press-feedback h-full group cursor-pointer",
         className,
       )}
     >

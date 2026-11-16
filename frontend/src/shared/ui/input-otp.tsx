@@ -3,6 +3,9 @@ import { OTPInput, OTPInputContext } from "input-otp"
 
 import { cn } from "@/shared/lib/utils"
 
+/** A pasted code keeps working when the email spaced or hyphenated it ("123 456", "123-456"). */
+const pasteCode = (text: string) => text.replace(/[\s-]/g, "")
+
 function InputOTP({
   className,
   containerClassName,
@@ -13,6 +16,7 @@ function InputOTP({
   return (
     <OTPInput
       data-slot="input-otp"
+      pasteTransformer={pasteCode}
       containerClassName={cn(
         "flex items-center gap-2 has-disabled:opacity-50",
         containerClassName

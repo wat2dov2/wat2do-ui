@@ -19,7 +19,7 @@ export function OnboardingYearStep({
         type="button"
         onMouseDown={() => onChange(true)}
         className={cn(
-          "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
+          "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-[color,background-color,border-color,scale] duration-200",
           "hover:border-primary hover:bg-surface-hover hover:scale-[1.02]",
           isFirstYear === true
             ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
@@ -27,7 +27,7 @@ export function OnboardingYearStep({
         )}
       >
         <div className={cn(
-          "size-12 rounded-full flex items-center justify-center transition-colors duration-300",
+          "size-12 rounded-full flex items-center justify-center transition-colors duration-200",
           isFirstYear === true ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
         )}>
           <GraduationCap className="size-6" />
@@ -46,7 +46,7 @@ export function OnboardingYearStep({
         type="button"
         onMouseDown={() => onChange(false)}
         className={cn(
-          "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-all duration-300",
+          "flex-1 flex flex-col items-center gap-3 p-6 rounded-2xl border text-center transition-[color,background-color,border-color,scale] duration-200",
           "hover:border-primary hover:bg-surface-hover hover:scale-[1.02]",
           isFirstYear === false
             ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary"
@@ -54,7 +54,7 @@ export function OnboardingYearStep({
         )}
       >
         <div className={cn(
-          "size-12 rounded-full flex items-center justify-center transition-colors duration-300",
+          "size-12 rounded-full flex items-center justify-center transition-colors duration-200",
           isFirstYear === false ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
         )}>
           <BookOpen className="size-6" />

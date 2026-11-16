@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Bookmark } from "lucide-react";
 import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { useSavedPositionToggle } from "@/features/positions/hooks/useSavedPositions";
+import { useTurnOnPop } from "@/shared/hooks";
+import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 
@@ -10,10 +12,15 @@ function useSavePosition(positionId: number) {
   const { t } = useTranslation();
   const signedIn = useSignedInAction();
   const saved = useSavedPositionToggle(positionId);
+  const pop = useTurnOnPop(saved.isSaved);
   return {
-    ...saved,
+    isSaved: saved.isSaved,
     label: saved.isSaved ? t("positions.saved.saved") : t("positions.saved.save"),
-    onToggle: () => signedIn(saved.toggle),
+    iconClassName: cn(saved.isSaved && "fill-current", pop.pop && "animate-success-pulse"),
+    onToggle: () => signedIn(() => {
+      pop.press();
+      saved.toggle();
+    }),
   };
 }
 
@@ -26,10 +33,9 @@ export function SavePositionButton({ positionId }: { positionId: number }) {
       variant="outline"
       selected={save.isSaved}
       selectionIndicator="none"
-      disabled={save.isPending}
       onClick={save.onToggle}
     >
-      <Bookmark className={save.isSaved ? "fill-current" : undefined} />
+      <Bookmark className={save.iconClassName} />
       {save.label}
     </Button>
   );
@@ -38,7 +44,7 @@ export function SavePositionButton({ positionId }: { positionId: number }) {
 /**
  * The same toggle as an icon badge in a position card's corner, where a
  * phone's narrow card has no room for its word. It saves without opening the
- * card the press lands on.
+ * card the press lands on, and takes a fingertip-sized press around the badge.
  */
 export function SavePositionBadge({ positionId }: { positionId: number }) {
   const save = useSavePosition(positionId);
@@ -48,7 +54,7 @@ export function SavePositionBadge({ positionId }: { positionId: number }) {
         type="button"
         aria-pressed={save.isSaved}
         aria-label={save.label}
-        disabled={save.isPending}
+        className="relative hit-area"
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
@@ -56,7 +62,7 @@ export function SavePositionBadge({ positionId }: { positionId: number }) {
         }}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        <Bookmark className={save.isSaved ? "fill-current" : undefined} />
+        <Bookmark className={save.iconClassName} />
       </button>
     </Badge>
   );
