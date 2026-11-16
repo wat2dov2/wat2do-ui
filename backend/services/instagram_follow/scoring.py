@@ -142,7 +142,9 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
                 "{{lists_university_events}}",
                 "yes" if school in controlbox.ingestion.university_event_schools else "no",
             )
-            .replace("{{confusable_schools}}", CONTROL.confusable_schools.get(school, "none known")),
+            .replace(
+                "{{confusable_schools}}", CONTROL.confusable_schools.get(school, "none known")
+            ),
             workdir=workdir,
             model=CONTROL.model,
             tools=("Read",),
