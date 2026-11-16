@@ -5,9 +5,11 @@ out because the Mac's ingestion reads share the IP, and stored so the admin sees
 same posts the scorer judged. Claude scores a school's accounts a batch at a time.
 A sign of throttling stops the run; the rest are scored next time.
 
-The scorer is told the school's full name and city, so a same-named school elsewhere
-(the University of York in England for York University in Toronto) or another campus
-of the same university is never taken for it.
+The scorer is told the school's full name and city and the schools that share its name,
+abbreviation or city (``confusable_schools``), so a same-named school elsewhere (the
+University of Washington for the University of Waterloo, both "UW") or another campus of
+the same university is never taken for it, and a shared abbreviation alone never
+approves an account.
 
 Each score decides the account right away: only approve verdicts are approved, and a
 review of a profile that could not be read when the school's club directory lists it
@@ -135,10 +137,12 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             json.dumps([_packet(row) for row in batch], ensure_ascii=False)
         )
         answer = run_agent(
-            PROMPT.replace("{{school}}", _school(school)).replace(
+            PROMPT.replace("{{school}}", _school(school))
+            .replace(
                 "{{lists_university_events}}",
                 "yes" if school in controlbox.ingestion.university_event_schools else "no",
-            ),
+            )
+            .replace("{{confusable_schools}}", CONTROL.confusable_schools.get(school, "none known")),
             workdir=workdir,
             model=CONTROL.model,
             tools=("Read",),
