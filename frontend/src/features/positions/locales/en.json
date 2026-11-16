@@ -54,8 +54,8 @@
       "save": "Save",
       "saved": "Saved",
       "saveFailed": "Couldn't save this position",
-      "emptyTitle": "No saved positions",
       "emptyDescription": "Positions you save show up here."
-    }
+    },
+    "allPositions": "All positions"
   }
 }

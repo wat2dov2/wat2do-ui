@@ -2740,6 +2740,28 @@
         }
       }
     },
+    "/users/me/submissions": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List My Submissions",
+        "description": "The events, positions and clubs the user submitted for review, newest first.",
+        "operationId": "list_my_submissions_users_me_submissions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySubmissionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/uploads/event-image": {
       "post": {
         "tags": [
@@ -12854,6 +12876,34 @@
           }
         }
       },
+      "MySubmissionsResponse": {
+        "type": "object",
+        "required": [
+          "events",
+          "positions",
+          "clubs"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmittedEvent"
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmittedPosition"
+            }
+          },
+          "clubs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmittedClub"
+            }
+          }
+        }
+      },
       "NotificationDetails": {
         "type": "object",
         "description": "What a notification's words need; each kind fills only its own.",
@@ -16598,6 +16648,15 @@
         ],
         "title": "SubmissionResponse"
       },
+      "SubmissionStatus": {
+        "type": "string",
+        "description": "Where a submission stands in review.",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ]
+      },
       "SubmissionUpdate": {
         "properties": {
           "status": {
@@ -16628,6 +16687,160 @@
           "status"
         ],
         "title": "SubmissionUpdate"
+      },
+      "SubmittedClub": {
+        "type": "object",
+        "description": "A club the user submitted.",
+        "required": [
+          "id",
+          "club_name",
+          "status",
+          "submitted_at",
+          "school",
+          "logo_url"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "club_name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubmissionStatus"
+          },
+          "submitted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "logo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "SubmittedEvent": {
+        "type": "object",
+        "description": "An event the user submitted.",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "submitted_at",
+          "school",
+          "source_image_url",
+          "club_logo_url",
+          "event_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubmissionStatus"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The school slug whose site lists it."
+          },
+          "source_image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "club_logo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "event_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The event its approval published, while that event exists."
+          }
+        }
+      },
+      "SubmittedPosition": {
+        "type": "object",
+        "description": "A position the user submitted.",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "submitted_at",
+          "school",
+          "source_image_url",
+          "club_logo_url",
+          "club_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubmissionStatus"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "club_logo_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "club_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The club it is for, whose page lists it once approved."
+          }
+        }
       },
       "TicketAttendee": {
         "type": "object",

@@ -8,6 +8,7 @@
 //! publish it twice), and the frontend refresh and the submitter's email
 //! follow the commit.
 
+pub mod mine;
 pub mod positions;
 
 use std::sync::LazyLock;
@@ -155,11 +156,12 @@ fn insert_sql() -> String {
 const LOCK_SQL: &str =
     "SELECT status::text FROM public.event_submissions WHERE id = $1::uuid FOR UPDATE";
 
-/// The decision (a reason only replaces the stored one when given).
+/// The decision (a reason only replaces the stored one when given), with
+/// the event an approval published.
 fn update_sql() -> String {
     format!(
         "UPDATE public.event_submissions es SET status = $2, reviewed_at = $3, \
-             rejection_reason = COALESCE($4, es.rejection_reason) \
+             rejection_reason = COALESCE($4, es.rejection_reason), event_id = $5 \
          WHERE es.id = $1::uuid RETURNING {}",
         event_columns(false)
     )
@@ -530,6 +532,7 @@ async fn review(
         .bind(status)
         .bind(Utc::now())
         .bind(reason)
+        .bind(created)
         .fetch_optional(&mut *transaction)
         .await?;
     let Some(row) = row else { return Ok(None) };

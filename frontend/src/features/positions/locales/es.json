@@ -56,8 +56,8 @@
       "save": "Guardar",
       "saved": "Guardado",
       "saveFailed": "No se pudo guardar esta posición",
-      "emptyTitle": "No hay posiciones guardadas",
       "emptyDescription": "Las posiciones que guardes aparecen aquí."
-    }
+    },
+    "allPositions": "Todas las posiciones"
   }
 }

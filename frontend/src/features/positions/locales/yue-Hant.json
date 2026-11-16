@@ -54,8 +54,8 @@
       "save": "收藏",
       "saved": "已收藏",
       "saveFailed": "無法收藏呢個職位",
-      "emptyTitle": "未有收藏嘅職位",
       "emptyDescription": "你收藏嘅職位會喺度顯示。"
-    }
+    },
+    "allPositions": "所有職位"
   }
 }

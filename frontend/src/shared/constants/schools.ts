@@ -119,6 +119,15 @@ export function isSchoolSiteHostname(hostname: string): boolean {
 }
 
 /**
+ * Where a page of `school`'s site is linked from `currentSchool`'s: the bare
+ * path on the same site, the full address on another school's.
+ */
+export function schoolPageHref(school: string | null | undefined, path: string, currentSchool: string): string {
+  if (!school || resolveSchool(school) === resolveSchool(currentSchool)) return path;
+  return `${getSchoolOrigin(school)}${path}`;
+}
+
+/**
  * Absolute origin serving a school, derived from the current location so it
  * works across production subdomains and `*.wat2do.localhost` dev hosts alike.
  */

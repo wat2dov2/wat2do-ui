@@ -5,21 +5,36 @@
       "saved": "Sự kiện đã lưu",
       "savedEmpty": "Các sự kiện bạn lưu sẽ hiện ở đây.",
       "past": "Sự kiện đã qua của bạn",
-      "pastEmpty": "Các sự kiện bạn đã bật \"Nhắc tôi\" hoặc đã có vé sẽ hiện ở đây sau khi kết thúc.",
-      "upcoming": "Sự kiện sắp tới của bạn",
-      "upcomingEmpty": "Các sự kiện bạn bật \"Nhắc tôi\" hoặc nhận vé sẽ hiện ở đây.",
-      "ticket": "Vé"
+      "pastEmpty": "Các sự kiện bạn đã chọn \"Sẽ đi\" hoặc đã có vé sẽ hiện ở đây sau khi kết thúc.",
+      "upcoming": "Sẽ đi",
+      "upcomingEmpty": "Các sự kiện bạn chọn \"Sẽ đi\" hoặc nhận vé sẽ hiện ở đây.",
+      "ticket": "Vé",
+      "submitted": "Sự kiện bạn đã gửi",
+      "submittedEmpty": "Các sự kiện bạn gửi sẽ hiện ở đây trong lúc chúng mình duyệt, và mở được khi đã đăng."
     },
     "clubs": {
-      "empty": "Các tổ chức bạn theo dõi sẽ hiện ở đây."
+      "following": "Tổ chức bạn theo dõi",
+      "empty": "Các tổ chức bạn theo dõi sẽ hiện ở đây.",
+      "member": "Tổ chức bạn là thành viên",
+      "memberEmpty": "Các tổ chức mà bạn ở trong đội ngũ sẽ hiện ở đây. Chạm vào một tổ chức để mở bảng quản lý của nó.",
+      "submitted": "Tổ chức bạn đã gửi",
+      "submittedEmpty": "Các tổ chức bạn gửi sẽ hiện ở đây trong lúc chúng mình duyệt."
     },
     "submissions": {
-      "description": "Thêm một sự kiện, vị trí hoặc tổ chức. Chúng tôi xem xét từng nội dung trước khi đăng."
+      "status": {
+        "pending": "Đang duyệt",
+        "approved": "Đã duyệt",
+        "rejected": "Không được duyệt"
+      },
+      "statusOn": "{{status}} · Gửi ngày {{date}}"
     },
     "showAll": "Xem tất cả ({{count}})",
     "showFewer": "Thu gọn",
-    "tabs": {
-      "submissions": "Nội dung đã gửi"
+    "positions": {
+      "saved": "Vị trí đã lưu",
+      "deadline": "Ứng tuyển trước {{date}}",
+      "submitted": "Vị trí bạn đã gửi",
+      "submittedEmpty": "Các vị trí bạn gửi sẽ hiện ở đây trong lúc chúng mình duyệt."
     }
   }
 }

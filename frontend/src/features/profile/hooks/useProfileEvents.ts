@@ -24,18 +24,23 @@ export interface ProfileEventRow {
   /** The visitor's ticket for this date, when they hold one. */
   ticketCode: string | null;
   /** The event's poster, or its club's logo when it has none. */
-  image: ProfileEventImage | null;
+  image: ProfileRowImage | null;
 }
 
-export interface ProfileEventImage {
+/** A profile row's image: a poster, or its club's logo when it has none. */
+export interface ProfileRowImage {
   src: string;
   kind: "poster" | "logo";
 }
 
-function eventImage(event: Event | undefined): ProfileEventImage | null {
-  if (event?.source_image_url) return { src: event.source_image_url, kind: "poster" };
-  if (event?.club_logo_url) return { src: event.club_logo_url, kind: "logo" };
+export function rowImage(poster: string | null | undefined, logo: string | null | undefined): ProfileRowImage | null {
+  if (poster) return { src: poster, kind: "poster" };
+  if (logo) return { src: logo, kind: "logo" };
   return null;
+}
+
+function eventImage(event: Event | undefined): ProfileRowImage | null {
+  return rowImage(event?.source_image_url, event?.club_logo_url);
 }
 
 function eventRow(event: Event, occurrence: NonNullable<Event["occurrences"]>[number], ticketCode: string | null): ProfileEventRow {
@@ -59,7 +64,7 @@ function endsAt(row: ProfileEventRow): number {
 
 /**
  * The visitor's events for their profile: the ones they saved, and every date
- * they turned Notify me on for or held a ticket for, split into the ones still
+ * they marked Going or held a ticket for, split into the ones still
  * to come (soonest first) and the past ones (latest first).
  */
 export function useProfileEvents() {
@@ -106,7 +111,7 @@ export function useProfileEvents() {
         attending.set(occurrence.id, eventRow(event, occurrence, ticketFor.get(occurrence.id) ?? null));
       }
     }
-    // A ticket counts as an event of theirs, even without Notify me on.
+    // A ticket counts as an event of theirs, even without Going marked.
     for (const ticket of validTickets) {
       if (attending.has(ticket.event_date_id)) continue;
       attending.set(ticket.event_date_id, {

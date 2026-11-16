@@ -54,8 +54,8 @@
       "save": "Lưu",
       "saved": "Đã lưu",
       "saveFailed": "Không thể lưu vị trí này",
-      "emptyTitle": "Chưa có vị trí đã lưu",
       "emptyDescription": "Các vị trí bạn lưu sẽ hiện ở đây."
-    }
+    },
+    "allPositions": "Tất cả vị trí"
   }
 }

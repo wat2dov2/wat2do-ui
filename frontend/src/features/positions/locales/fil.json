@@ -55,8 +55,8 @@
       "save": "I-save",
       "saved": "Naka-save",
       "saveFailed": "Hindi ma-save ang posisyong ito",
-      "emptyTitle": "Walang naka-save na posisyon",
       "emptyDescription": "Dito lalabas ang mga posisyong ise-save mo."
-    }
+    },
+    "allPositions": "Lahat ng posisyon"
   }
 }

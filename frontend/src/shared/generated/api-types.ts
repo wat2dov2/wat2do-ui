@@ -787,6 +787,26 @@ export interface paths {
         patch: operations["update_submission_submissions__submission_id__patch"];
         trace?: never;
     };
+    "/users/me/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List My Submissions
+         * @description The events, positions and clubs the user submitted for review, newest first.
+         */
+        get: operations["list_my_submissions_users_me_submissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/uploads/event-image": {
         parameters: {
             query?: never;
@@ -3825,6 +3845,11 @@ export interface components {
         MessageResponse: {
             message: string;
         };
+        MySubmissionsResponse: {
+            events: components["schemas"]["SubmittedEvent"][];
+            positions: components["schemas"]["SubmittedPosition"][];
+            clubs: components["schemas"]["SubmittedClub"][];
+        };
         /** @description What a notification's words need; each kind fills only its own. */
         NotificationDetails: {
             /** @description The event's title, or the club's name. */
@@ -4934,6 +4959,11 @@ export interface components {
             /** Club Name */
             club_name?: string | null;
         };
+        /**
+         * @description Where a submission stands in review.
+         * @enum {string}
+         */
+        SubmissionStatus: "pending" | "approved" | "rejected";
         /** SubmissionUpdate */
         SubmissionUpdate: {
             /**
@@ -4943,6 +4973,50 @@ export interface components {
             status: "pending" | "approved" | "rejected";
             /** Rejection Reason */
             rejection_reason?: string | null;
+        };
+        /** @description A club the user submitted. */
+        SubmittedClub: {
+            /** Format: int32 */
+            id: number;
+            club_name: string;
+            status: components["schemas"]["SubmissionStatus"];
+            /** Format: date-time */
+            submitted_at: string | null;
+            school: string | null;
+            logo_url: string | null;
+        };
+        /** @description An event the user submitted. */
+        SubmittedEvent: {
+            id: string;
+            title: string;
+            status: components["schemas"]["SubmissionStatus"];
+            /** Format: date-time */
+            submitted_at: string;
+            /** @description The school slug whose site lists it. */
+            school: string | null;
+            source_image_url: string | null;
+            club_logo_url: string | null;
+            /**
+             * Format: int32
+             * @description The event its approval published, while that event exists.
+             */
+            event_id: number | null;
+        };
+        /** @description A position the user submitted. */
+        SubmittedPosition: {
+            id: string;
+            title: string;
+            status: components["schemas"]["SubmissionStatus"];
+            /** Format: date-time */
+            submitted_at: string;
+            school: string | null;
+            source_image_url: string | null;
+            club_logo_url: string | null;
+            /**
+             * Format: int32
+             * @description The club it is for, whose page lists it once approved.
+             */
+            club_id: number | null;
         };
         /** @description One ticket on a club's door list. */
         TicketAttendee: {
@@ -6827,6 +6901,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_submissions_users_me_submissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySubmissionsResponse"];
                 };
             };
         };

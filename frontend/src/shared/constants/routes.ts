@@ -76,6 +76,11 @@ export function clubPagePath(clubId: number): string {
   return `${ROUTES.CLUBS}/${clubId}`;
 }
 
+/** A club's page opened on its Positions tab, where its approved positions are listed. */
+export function clubPositionsPath(clubId: number): string {
+  return `${clubPagePath(clubId)}?${QP.TAB}=positions`;
+}
+
 /** One ticket's page: its holder's QR code, and check-in for the club's team. */
 export function ticketPath(code: string): string {
   return `${ROUTES.TICKETS}/${code}`;
@@ -178,7 +183,6 @@ export const PROFILE_TABS = {
   EVENTS: "events",
   CLUBS: "clubs",
   POSITIONS: "positions",
-  SUBMISSIONS: "submissions",
   SETTINGS: "settings",
 } as const;
 

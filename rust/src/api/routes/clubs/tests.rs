@@ -95,6 +95,7 @@ async fn signed_in_routes_need_a_token() {
         (Method::GET, "/users/me"),
         (Method::PATCH, "/users/me"),
         (Method::PATCH, "/users/me/profile"),
+        (Method::GET, "/users/me/submissions"),
         (Method::PUT, "/users/me/promoter-enrollment"),
         (Method::GET, "/users/"),
         (Method::GET, "/users/x"),

@@ -161,6 +161,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),
     Endpoint("/users/me", "/users/me", True),
+    Endpoint("/users/me/submissions", "/users/me/submissions", True),
     Endpoint("/webhooks/automate/logs", "/webhooks/automate/logs?limit=20", True),
 )
 

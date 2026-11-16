@@ -81,7 +81,11 @@ export function usePositionSubmission() {
       const sourceImageUrl = image.imageFile ? await uploadEventImageUnsigned(image.imageFile) : image.imagePreview || null;
       const submission = await submitPosition({ ...state.data, source_image_url: sourceImageUrl, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) });
       const published = submission.status === "approved";
-      await queryClient.invalidateQueries({ queryKey: published ? queryKeys.positions.all : queryKeys.positionSubmissions.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: published ? queryKeys.positions.all : queryKeys.positionSubmissions.all }),
+        // It shows on the profile, under the positions they submitted.
+        queryClient.invalidateQueries({ queryKey: queryKeys.mySubmissions.all }),
+      ]);
       dispatch({ type: "state", value: { submitted: true, published } });
     } catch (error) {
       dispatch({ type: "state", value: { error: getApiErrorMessage(error) } });

@@ -56,8 +56,8 @@
       "save": "Enregistrer",
       "saved": "Enregistré",
       "saveFailed": "Impossible d'enregistrer ce poste",
-      "emptyTitle": "Aucun poste enregistré",
       "emptyDescription": "Les postes que vous enregistrez apparaissent ici."
-    }
+    },
+    "allPositions": "Tous les postes"
   }
 }

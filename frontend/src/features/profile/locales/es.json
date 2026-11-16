@@ -5,21 +5,36 @@
       "saved": "Eventos guardados",
       "savedEmpty": "Los eventos que guardes aparecen aquí.",
       "past": "Tus eventos pasados",
-      "pastEmpty": "Los eventos en los que activaste Notificarme, o para los que tenías boletos, aparecen aquí cuando terminan.",
-      "upcoming": "Tus próximos eventos",
-      "upcomingEmpty": "Los eventos en los que activas Notificarme, o para los que consigues boletos, aparecen aquí.",
-      "ticket": "Boleto"
+      "pastEmpty": "Los eventos que marcaste con Voy, o para los que tenías boletos, aparecen aquí cuando terminan.",
+      "upcoming": "Voy",
+      "upcomingEmpty": "Los eventos que marcas con Voy, o para los que consigues boletos, aparecen aquí.",
+      "ticket": "Boleto",
+      "submitted": "Eventos que enviaste",
+      "submittedEmpty": "Los eventos que envíes aparecen aquí mientras los revisamos, y se abren cuando ya están publicados."
     },
     "clubs": {
-      "empty": "Las organizaciones que sigues aparecen aquí."
+      "following": "Organizaciones que sigues",
+      "empty": "Las organizaciones que sigues aparecen aquí.",
+      "member": "Organizaciones de las que eres miembro",
+      "memberEmpty": "Aquí aparecen las organizaciones de cuyo equipo formas parte. Toca una para abrir su panel.",
+      "submitted": "Organizaciones que enviaste",
+      "submittedEmpty": "Las organizaciones que envíes aparecen aquí mientras las revisamos."
     },
     "submissions": {
-      "description": "Agrega un evento, una posición o una organización. Revisamos cada uno antes de publicarlo."
+      "status": {
+        "pending": "En revisión",
+        "approved": "Aprobado",
+        "rejected": "No aprobado"
+      },
+      "statusOn": "{{status}} · Enviado el {{date}}"
     },
     "showAll": "Ver todo ({{count}})",
     "showFewer": "Ver menos",
-    "tabs": {
-      "submissions": "Envíos"
+    "positions": {
+      "saved": "Posiciones guardadas",
+      "deadline": "Postúlate antes del {{date}}",
+      "submitted": "Posiciones que enviaste",
+      "submittedEmpty": "Las posiciones que envíes aparecen aquí mientras las revisamos."
     }
   }
 }

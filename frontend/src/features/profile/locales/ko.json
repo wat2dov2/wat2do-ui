@@ -5,21 +5,36 @@
       "saved": "저장한 이벤트",
       "savedEmpty": "저장한 이벤트가 여기에 표시됩니다.",
       "past": "지난 이벤트",
-      "pastEmpty": "'알림 받기'를 켰거나 티켓이 있던 이벤트는 끝난 뒤 여기에 표시됩니다.",
-      "upcoming": "다가오는 이벤트",
-      "upcomingEmpty": "'알림 받기'를 켜거나 티켓을 받은 이벤트가 여기에 표시됩니다.",
-      "ticket": "티켓"
+      "pastEmpty": "'참석'을 눌렀거나 티켓이 있던 이벤트는 끝난 뒤 여기에 표시됩니다.",
+      "upcoming": "참석",
+      "upcomingEmpty": "'참석'을 누르거나 티켓을 받은 이벤트가 여기에 표시됩니다.",
+      "ticket": "티켓",
+      "submitted": "제출한 이벤트",
+      "submittedEmpty": "제출한 이벤트는 검토하는 동안 여기에 표시되고, 게시되면 열어 볼 수 있습니다."
     },
     "clubs": {
-      "empty": "팔로우하는 조직이 여기에 표시됩니다."
+      "following": "팔로우하는 조직",
+      "empty": "팔로우하는 조직이 여기에 표시됩니다.",
+      "member": "내가 속한 조직",
+      "memberEmpty": "내가 팀에 속한 조직이 여기에 표시됩니다. 조직을 누르면 조직 패널이 열립니다.",
+      "submitted": "제출한 조직",
+      "submittedEmpty": "제출한 조직은 검토하는 동안 여기에 표시됩니다."
     },
     "submissions": {
-      "description": "이벤트, 직책 또는 조직을 추가하세요. 게시 전에 모두 검토합니다."
+      "status": {
+        "pending": "검토 중",
+        "approved": "승인됨",
+        "rejected": "승인되지 않음"
+      },
+      "statusOn": "{{status}} · {{date}} 제출"
     },
     "showAll": "모두 보기 ({{count}})",
     "showFewer": "간단히 보기",
-    "tabs": {
-      "submissions": "제출"
+    "positions": {
+      "saved": "저장한 직책",
+      "deadline": "{{date}}까지 지원",
+      "submitted": "제출한 직책",
+      "submittedEmpty": "제출한 직책은 검토하는 동안 여기에 표시됩니다."
     }
   }
 }

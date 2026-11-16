@@ -5,21 +5,36 @@
       "saved": "Zapisane wydarzenia",
       "savedEmpty": "Tutaj pojawią się wydarzenia, które zapiszesz.",
       "past": "Twoje minione wydarzenia",
-      "pastEmpty": "Wydarzenia, dla których włączyłeś Powiadom mnie lub na które miałeś bilety, pojawią się tutaj po ich zakończeniu.",
-      "upcoming": "Twoje nadchodzące wydarzenia",
-      "upcomingEmpty": "Tutaj pojawią się wydarzenia, dla których włączysz Powiadom mnie lub na które zdobędziesz bilety.",
-      "ticket": "Bilet"
+      "pastEmpty": "Wydarzenia, przy których zaznaczyłeś Idę lub na które miałeś bilety, pojawią się tutaj po ich zakończeniu.",
+      "upcoming": "Idę",
+      "upcomingEmpty": "Tutaj pojawią się wydarzenia, przy których zaznaczysz Idę lub na które zdobędziesz bilety.",
+      "ticket": "Bilet",
+      "submitted": "Wydarzenia, które zgłosiłeś",
+      "submittedEmpty": "Tutaj pojawią się wydarzenia, które zgłosisz, gdy je sprawdzamy. Po publikacji możesz je otworzyć."
     },
     "clubs": {
-      "empty": "Tutaj pojawią się organizacje, które obserwujesz."
+      "following": "Organizacje, które obserwujesz",
+      "empty": "Tutaj pojawią się organizacje, które obserwujesz.",
+      "member": "Organizacje, do których należysz",
+      "memberEmpty": "Tutaj pojawią się organizacje, w których zespole jesteś. Dotknij jednej, aby otworzyć jej panel.",
+      "submitted": "Organizacje, które zgłosiłeś",
+      "submittedEmpty": "Tutaj pojawią się organizacje, które zgłosisz, gdy je sprawdzamy."
     },
     "submissions": {
-      "description": "Dodaj wydarzenie, stanowisko lub organizację. Sprawdzamy każde zgłoszenie przed publikacją."
+      "status": {
+        "pending": "W trakcie weryfikacji",
+        "approved": "Zatwierdzone",
+        "rejected": "Niezatwierdzone"
+      },
+      "statusOn": "{{status}} · Zgłoszono {{date}}"
     },
     "showAll": "Pokaż wszystkie ({{count}})",
     "showFewer": "Pokaż mniej",
-    "tabs": {
-      "submissions": "Zgłoszenia"
+    "positions": {
+      "saved": "Zapisane stanowiska",
+      "deadline": "Aplikuj do {{date}}",
+      "submitted": "Stanowiska, które zgłosiłeś",
+      "submittedEmpty": "Tutaj pojawią się stanowiska, które zgłosisz, gdy je sprawdzamy."
     }
   }
 }

@@ -57,8 +57,8 @@
       "save": "Zapisz",
       "saved": "Zapisano",
       "saveFailed": "Nie udało się zapisać tego stanowiska",
-      "emptyTitle": "Brak zapisanych stanowisk",
       "emptyDescription": "Tutaj pojawią się stanowiska, które zapiszesz."
-    }
+    },
+    "allPositions": "Wszystkie stanowiska"
   }
 }

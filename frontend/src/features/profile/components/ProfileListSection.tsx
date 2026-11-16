@@ -1,10 +1,10 @@
 import { Fragment, useState, type ReactNode } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import type { LucideIcon } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 import { Section } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia } from "@/shared/ui/item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemLink, ItemMedia, ItemTitle } from "@/shared/ui/item";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import { IconTile } from "@/shared/ui/tile";
 
@@ -20,12 +20,8 @@ export interface ProfileListEmpty {
 }
 
 interface ProfileListSectionProps<Row> {
-  /**
-   * A list that shares its tab with others has a title, and shows its first
-   * few rows until the visitor asks for all of them; a tab's only list shows
-   * every row under the tab's own name.
-   */
-  title?: string;
+  /** Its heading; it shows its first few rows until the visitor asks for all of them. */
+  title: string;
   rows: Row[];
   isPending: boolean;
   empty: ProfileListEmpty;
@@ -40,14 +36,13 @@ interface ProfileListSectionProps<Row> {
 export function ProfileListSection<Row>({ title, rows, isPending, empty, rowKey, renderRow }: ProfileListSectionProps<Row>) {
   const { t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
-  const previewed = Boolean(title) && !showAll;
-  const visible = previewed ? rows.slice(0, PREVIEW_ROWS) : rows;
+  const visible = showAll ? rows : rows.slice(0, PREVIEW_ROWS);
 
   return (
     <Section
       title={title}
       actions={
-        title && rows.length > PREVIEW_ROWS ? (
+        rows.length > PREVIEW_ROWS ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => setShowAll((value) => !value)}>
             {showAll ? t("profile.showFewer") : t("profile.showAll", { count: rows.length })}
           </Button>
@@ -76,6 +71,51 @@ export function ProfileListSection<Row>({ title, rows, isPending, empty, rowKey,
         )}
       </ItemGroup>
     </Section>
+  );
+}
+
+/** What a row opens: a page (on this site or another school's), or something on this one, such as a drawer. */
+export type ProfileRowTarget = { href: string } | { onOpen: () => void };
+
+interface ProfileRowProps {
+  /** Its image tile. */
+  media: ReactNode;
+  title: string;
+  description?: ReactNode;
+  /** Null for a row that opens nothing, such as a submission still in review. */
+  target: ProfileRowTarget | null;
+  /** Its own controls, which keep their clicks; a row without any shows a chevron when it opens something. */
+  actions?: ReactNode;
+}
+
+/** One row of a profile list: a click anywhere on it opens its target. */
+export function ProfileRow({ media, title, description, target, actions }: ProfileRowProps) {
+  return (
+    <Item size="sm">
+      <ItemMedia>{media}</ItemMedia>
+      <ItemContent>
+        <ItemTitle>
+          {target === null ? (
+            title
+          ) : "href" in target ? (
+            <ItemLink asChild>
+              <NextLink href={target.href}>{title}</NextLink>
+            </ItemLink>
+          ) : (
+            <ItemLink type="button" onClick={target.onOpen}>
+              {title}
+            </ItemLink>
+          )}
+        </ItemTitle>
+        {description ? <ItemDescription>{description}</ItemDescription> : null}
+      </ItemContent>
+      {actions ? (
+        <ItemActions>{actions}</ItemActions>
+      ) : target ? (
+        // Under the row's link, unlike its actions, so a click on it opens the row.
+        <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+      ) : null}
+    </Item>
   );
 }
 
