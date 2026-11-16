@@ -120,6 +120,14 @@ pub fn profile_renderer() -> std::path::PathBuf {
 /// public profile page is rendered logged out by Lightpanda, which fills in the
 /// same `og:title` and `og:image` tags a browser sees. No cookie is involved.
 pub async fn fetch_profile(handle: &str) -> Result<Profile, FetchBlocked> {
+    let Some(html) = render_profile(handle).await else {
+        return Ok(Profile::default());
+    };
+    rendered_profile(&html, handle)
+}
+
+/// The public profile page as Lightpanda renders it logged out, or None when it did not.
+async fn render_profile(handle: &str) -> Option<String> {
     let render = tokio::process::Command::new(profile_renderer())
         .args(["fetch", "--dump", "html", "--wait-until", "networkidle"])
         .arg(format!("https://www.instagram.com/{handle}/"))
@@ -128,13 +136,55 @@ pub async fn fetch_profile(handle: &str) -> Result<Profile, FetchBlocked> {
         .kill_on_drop(true)
         .output();
     let timeout = Duration::from_secs_f64(INGESTION.profile_render_timeout_seconds);
-    let html = match tokio::time::timeout(timeout, render).await {
+    match tokio::time::timeout(timeout, render).await {
         Ok(Ok(output)) if output.status.success() => {
-            String::from_utf8_lossy(&output.stdout).into_owned()
+            Some(String::from_utf8_lossy(&output.stdout).into_owned())
         }
-        _ => return Ok(Profile::default()),
+        _ => None,
+    }
+}
+
+/// A post in a profile's grid: its URL and, when its picture says, the day it was posted.
+#[derive(Debug, PartialEq)]
+pub struct GridPost {
+    pub url: String,
+    pub posted_on: Option<chrono::NaiveDate>,
+}
+
+/// `fetch_profile_posts`: the newest posts in a profile's grid, read logged out (none
+/// when the handle is gone, private or did not render); blocked at Instagram's login wall.
+pub async fn fetch_profile_posts(handle: &str) -> Result<Vec<GridPost>, FetchBlocked> {
+    let Some(html) = render_profile(handle).await else {
+        return Ok(Vec::new());
     };
-    rendered_profile(&html, handle)
+    // The same check fetch_profile makes: a page without profile tags is a wall.
+    rendered_profile(&html, handle)?;
+    Ok(grid_posts(&html))
+}
+
+static GRID_POST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?s)href="/(?:[A-Za-z0-9._]+/)?(?:p|reel|tv)/([A-Za-z0-9_-]+)/"[^>]*>(.*?)</a>"#)
+        .expect("valid regex")
+});
+static POSTED_ON: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"alt="[^"]*? on ([A-Z][a-z]+ \d{1,2}, \d{4})"#).expect("valid regex")
+});
+
+/// The grid's posts in page order (pinned first, then newest first), each dated by its
+/// picture's alt text ("Photo by NAME on November 14, 2026."); reels often have none.
+fn grid_posts(html: &str) -> Vec<GridPost> {
+    let mut posts: Vec<GridPost> = Vec::new();
+    for captures in GRID_POST.captures_iter(html) {
+        let url = format!("https://www.instagram.com/p/{}/", &captures[1]);
+        if posts.iter().any(|post| post.url == url) {
+            continue;
+        }
+        let posted_on = POSTED_ON
+            .captures(&captures[2])
+            .and_then(|date| chrono::NaiveDate::parse_from_str(&date[1], "%B %d, %Y").ok());
+        posts.push(GridPost { url, posted_on });
+    }
+    posts
 }
 
 static OG_TAG: LazyLock<Regex> = LazyLock::new(|| {
@@ -340,6 +390,29 @@ fn project(media: &Map<String, Value>, shortcode: &str) -> Option<Value> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_rendered_grid_gives_each_post_once_with_its_day() {
+        let html = concat!(
+            r#"<a class="x" href="/tmsu/p/AAA111/" role="link"><div><img alt="Photo by TMSU on November 14, 2026. May be an image of text." src="x"></div></a>"#,
+            r#"<a href="/reel/BBB_22/" role="link"><div><img alt="" src="y"></div></a>"#,
+            r#"<a href="/tmsu/p/AAA111/" role="link">again</a>"#,
+            r#"<a href="/explore/tags/tmu/">tag</a>"#,
+        );
+        assert_eq!(
+            grid_posts(html),
+            [
+                GridPost {
+                    url: "https://www.instagram.com/p/AAA111/".to_owned(),
+                    posted_on: chrono::NaiveDate::from_ymd_opt(2026, 11, 14),
+                },
+                GridPost {
+                    url: "https://www.instagram.com/p/BBB_22/".to_owned(),
+                    posted_on: None,
+                },
+            ]
+        );
+    }
+
     use super::*;
 
     #[test]
