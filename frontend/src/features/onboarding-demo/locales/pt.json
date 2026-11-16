@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 selecionados - é preciso pelo menos 2 para continuar",
       "reactionGroup": "Reação para {{title}}",
       "reactions": {
-        "interested": "Me avise",
+        "interested": "Vou",
         "maybe": "Talvez",
         "notForMe": "Não é para mim"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "Nós criamos sua primeira semana de Wat2Do",
-      "descriptionWithPicks": "Seus eventos inscritos, as organizações que combinam com você e as melhores noites estão prontos.",
+      "descriptionWithPicks": "Os eventos aos quais você vai, as organizações que combinam com você e as melhores noites estão prontos.",
       "descriptionWithoutPicks": "Fizemos um feed inicial em vez disso. Você pode ajustá-lo enquanto navega.",
       "tonight": "Hoje à noite",
       "tonightWithPick": "1 evento que vale a pena conferir",
@@ -84,9 +84,9 @@
       "description": "Aproveite a descoberta personalizada do campus por 14 dias. Nenhum pagamento necessário.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Radar do campus desbloqueado",
-      "visualDescription": "Alertas personalizados, eventos inscritos e seu plano semanal - tudo em um só lugar.",
+      "visualDescription": "Alertas personalizados, eventos aos quais você vai e seu plano semanal - tudo em um só lugar.",
       "benefits": {
-        "save": "Toque em Me avise nos eventos",
+        "save": "Toque em Vou nos eventos",
         "follow": "Seguir clubes",
         "alerts": "Receber alertas de correspondência imediata",
         "calendar": "Sincronizar eventos com seu calendário",
@@ -96,15 +96,15 @@
     },
     "challenge": {
       "title": "Continue usando o Pro usando Wat2Do esta semana",
-      "description": "Toque em Me avise em 3 eventos esta semana para estender o Pro por 7 dias.",
+      "description": "Toque em Vou em 3 eventos esta semana para estender o Pro por 7 dias.",
       "label": "Desafio Explorador do Campus",
       "progress": "{{count}} / {{total}} eventos",
       "reward": "Recompensa: +7 dias de Pro",
       "progressAria": "Progresso do desafio",
-      "markedInterested": "{{count}} eventos marcados para receber avisos durante a integração",
-      "markedInterested_one": "{{count}} evento marcado para receber avisos durante a integração",
-      "markedInterested_other": "{{count}} eventos marcados para receber avisos durante a integração",
-      "markedInterested_many": "{{count}} eventos marcados para receber avisos durante a integração"
+      "markedInterested": "{{count}} eventos marcados com Vou durante a integração",
+      "markedInterested_one": "{{count}} evento marcado com Vou durante a integração",
+      "markedInterested_other": "{{count}} eventos marcados com Vou durante a integração",
+      "markedInterested_many": "{{count}} eventos marcados com Vou durante a integração"
     },
     "home": {
       "badge": "Demonstração concluída",
@@ -112,7 +112,7 @@
       "description": "Esta é uma prévia da sua página inicial personalizada - nenhum dado foi salvo.",
       "recommended": "Recomendado para você",
       "proTrialBadge": "Teste do Pro - 14 dias",
-      "saved": "Inscrito esta semana",
+      "saved": "Você vai esta semana",
       "freeFood": "Comida grátis perto de você",
       "freeFoodPreview": "Noite de pizza no SLC Grande Salão - Qui 18:00",
       "trialEnds": "O teste termina em 14 dias",

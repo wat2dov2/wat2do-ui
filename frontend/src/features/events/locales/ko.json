@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "모집 중: {{positions}}",
-    "minimumGoing": "최소 알림 받는 인원",
+    "minimumGoing": "최소 참석 인원",
     "eventTitle": "이벤트 제목",
     "loadFailed": "이벤트를 불러오지 못했습니다. 다시 시도해 주세요.",
     "deleteFailed": "이벤트 삭제에 실패했습니다. 다시 시도해 주세요.",
@@ -81,9 +81,9 @@
       "submitFailed": "신고를 제출할 수 없습니다"
     },
     "goingEvents": {
-      "timeUnavailable": "이 행사는 이미 시작되었거나 취소되어 '알림 받기'를 사용할 수 없습니다.",
+      "timeUnavailable": "이 행사는 이미 시작되었거나 취소되어 '참석'을 표시할 수 없습니다.",
       "saveFailed": "선택한 시간을 저장할 수 없습니다",
-      "chooseOccurrences": "어떤 날짜의 알림을 받으시겠어요?",
+      "chooseOccurrences": "어떤 날짜에 참석하시겠어요?",
       "chooseOccurrencesDescription": "알림과 업데이트를 받을 날짜를 모두 선택하세요."
     },
     "calendar": {
@@ -111,8 +111,8 @@
     },
     "new": "신규",
     "updated": "업데이트됨",
-    "goingCount": "{{count}}명 알림 받음",
-    "goingCount_other": "{{count}}명 알림 받음",
+    "goingCount": "{{count}}명 참석",
+    "goingCount_other": "{{count}}명 참석",
     "hostedBy": "주최: ",
     "aboutEvent": "이벤트 정보",
     "fetchingDetails": "세부 정보 가져오는 중...",
@@ -128,15 +128,15 @@
     "moreEvents": "더 많은 이벤트",
     "submitEvent": "이벤트 추가",
     "allEvents": "모든 이벤트",
-    "going": "구독 중",
+    "going": "참석",
     "notifyMe": {
-      "action": "알림 받기",
+      "action": "참석",
       "description": "시작 전에 알림을 받고, 변경 사항이 있으면 이메일을 받아요.",
       "otherDates": "다른 날짜는 티켓이 필요 없어요. 시작 전에 알림을 받고, 변경 사항이 있으면 이메일을 받아요.",
-      "onTitle": "알림을 보내 드릴게요",
+      "onTitle": "참석 예정이에요",
       "onDescription": "시작 전에 이메일로 알려 드리고, 변경 사항이 있으면 바로 알려 드릴게요.",
-      "offPrompt": "업데이트가 필요 없으신가요?",
-      "off": "'알림 받기' 끄기."
+      "offPrompt": "못 가시나요?",
+      "off": "불참으로 표시하기."
     },
     "views": {
       "label": "행사 보기",

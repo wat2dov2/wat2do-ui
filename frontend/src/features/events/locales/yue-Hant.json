@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "招聘：{{positions}}",
-    "minimumGoing": "最少收到通知人數",
+    "minimumGoing": "最少會去人數",
     "eventTitle": "活動標題",
     "loadFailed": "無法加載活動。請再試一次。",
     "deleteFailed": "無法刪除活動。請再試一次。",
@@ -81,9 +81,9 @@
       "submitFailed": "無法提交舉報"
     },
     "goingEvents": {
-      "timeUnavailable": "呢個活動已經開始或者取消咗，所以用唔到「提醒我」。",
+      "timeUnavailable": "呢個活動已經開始或者取消咗，所以標記唔到「會去」。",
       "saveFailed": "無法儲存你選擇的時間",
-      "chooseOccurrences": "想我哋喺邊幾日提醒你？",
+      "chooseOccurrences": "你會去邊幾日？",
       "chooseOccurrencesDescription": "揀晒所有你想收提醒同更新嘅日子。"
     },
     "calendar": {
@@ -111,8 +111,8 @@
     },
     "new": "最新",
     "updated": "已更新",
-    "goingCount": "{{count}} 人會收到通知",
-    "goingCount_other": "{{count}} 人會收到通知",
+    "goingCount": "{{count}} 人會去",
+    "goingCount_other": "{{count}} 人會去",
     "hostedBy": "主辦者",
     "aboutEvent": "活動資訊",
     "fetchingDetails": "正在獲取詳情…",
@@ -128,15 +128,15 @@
     "moreEvents": "更多活動",
     "submitEvent": "新增活動",
     "allEvents": "所有活動",
-    "going": "已訂閱",
+    "going": "會去",
     "notifyMe": {
-      "action": "提醒我",
+      "action": "會去",
       "description": "開始之前提醒你，有任何改動就電郵通知你。",
       "otherDates": "其他日子唔使門票。開始之前會提醒你，有任何改動就電郵通知你。",
-      "onTitle": "你會收到通知",
+      "onTitle": "你會去",
       "onDescription": "我哋會喺開始之前電郵提醒你，有任何改動都會話你知。",
-      "offPrompt": "唔使更新？",
-      "off": "關閉「提醒我」。"
+      "offPrompt": "去唔到？",
+      "off": "標記為唔去。"
     },
     "views": {
       "label": "活動檢視",

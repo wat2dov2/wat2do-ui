@@ -162,9 +162,9 @@
       "title": "Chính sách dữ liệu",
       "intro": "Chính sách này giải thích Wat2Do thu thập những thông tin cá nhân nào, vì sao, chúng tôi chia sẻ thông tin với ai, lưu giữ trong bao lâu và bạn có những lựa chọn gì. Chính sách áp dụng cho wat2do.io và mọi trang của từng trường trên đó (chẳng hạn uwaterloo.wat2do.io), các email chúng tôi gửi và các tài khoản Instagram chúng tôi vận hành cho từng trường. Nếu bạn có thắc mắc, hãy gửi email cho chúng tôi tại <email>{{email}}</email>.",
       "summary": {
-        "collect": "Chúng tôi thu thập những gì bạn cung cấp (email, trường, khoa và sở thích của bạn), những gì bạn làm trên Wat2Do (sự kiện bạn đã lưu hoặc bật \"Nhắc tôi\", vé, tổ chức bạn theo dõi) và một số chi tiết kỹ thuật, chẳng hạn một dạng đã xáo trộn của địa chỉ IP của bạn.",
+        "collect": "Chúng tôi thu thập những gì bạn cung cấp (email, trường, khoa và sở thích của bạn), những gì bạn làm trên Wat2Do (sự kiện bạn đã lưu hoặc đánh dấu \"Sẽ đi\", vé, tổ chức bạn theo dõi) và một số chi tiết kỹ thuật, chẳng hạn một dạng đã xáo trộn của địa chỉ IP của bạn.",
         "noSale": "Chúng tôi không bán thông tin cá nhân của bạn, và không hiển thị quảng cáo.",
-        "share": "Các tổ chức thấy tên và địa chỉ email của bạn khi bạn có vé tham dự sự kiện của họ. Không ai khác biết bạn đã bật \"Nhắc tôi\" cho những sự kiện nào. Các công ty như Amazon Web Services, Cloudflare và Google vận hành một số phần của Wat2Do cho chúng tôi, trong đó có công ty ở ngoài Canada.",
+        "share": "Các tổ chức thấy tên và địa chỉ email của bạn khi bạn có vé tham dự sự kiện của họ. Không ai khác biết bạn đã đánh dấu \"Sẽ đi\" cho những sự kiện nào. Các công ty như Amazon Web Services, Cloudflare và Google vận hành một số phần của Wat2Do cho chúng tôi, trong đó có công ty ở ngoài Canada.",
         "analytics": "Chúng tôi dùng Google Analytics để đếm lượt truy cập, và loại bỏ mã cũng như địa chỉ email khỏi các địa chỉ trang mà Google Analytics nhận được.",
         "public": "Chúng tôi cũng sử dụng thông tin công khai: sự kiện của các tổ chức từ những bài đăng Instagram công khai, và email liên hệ mà các tổ chức công bố trên mạng.",
         "choices": "Bạn có thể tắt email của chúng tôi bất cứ lúc nào, thay đổi hồ sơ trong Cài đặt, và yêu cầu chúng tôi cho bạn xem, sửa hoặc xóa thông tin của bạn.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Hoạt động của bạn trên Wat2Do.",
-              "text": "Sự kiện bạn đã lưu hoặc bật \"Nhắc tôi\", vị trí bạn đã lưu, tổ chức bạn theo dõi, vé bạn nhận, thời điểm một tổ chức check-in cho bạn và các yêu cầu hoàn tiền bạn gửi."
+              "text": "Sự kiện bạn đã lưu hoặc đánh dấu \"Sẽ đi\", vị trí bạn đã lưu, tổ chức bạn theo dõi, vé bạn nhận, thời điểm một tổ chức check-in cho bạn và các yêu cầu hoàn tiền bạn gửi."
             },
             "submissions": {
               "term": "Nội dung bạn gửi cho chúng tôi.",
@@ -250,8 +250,8 @@
           "p1": "Chúng tôi chỉ sử dụng thông tin cá nhân cho các mục đích sau:",
           "purposes": {
             "account": "Để vận hành tài khoản của bạn, giúp bạn đăng nhập và duy trì trạng thái đăng nhập.",
-            "show": "Để cho bạn biết những gì đang diễn ra ở trường bạn, cùng các sự kiện bạn đã lưu, đã bật \"Nhắc tôi\" hoặc đã có vé.",
-            "emails": "Để gửi các email mà bạn kiểm soát: email buổi sáng về các sự kiện, nhắc nhở trước các sự kiện bạn đã bật \"Nhắc tôi\" và cảnh báo khi một trong các sự kiện đó thay đổi. Chúng tôi cũng gửi các email bạn cần, chẳng hạn mã đăng nhập, vé và quyết định của chúng tôi về nội dung bạn gửi.",
+            "show": "Để cho bạn biết những gì đang diễn ra ở trường bạn, cùng các sự kiện bạn đã lưu, đã đánh dấu \"Sẽ đi\" hoặc đã có vé.",
+            "emails": "Để gửi các email mà bạn kiểm soát: email buổi sáng về các sự kiện, nhắc nhở trước các sự kiện bạn đã đánh dấu \"Sẽ đi\" và cảnh báo khi một trong các sự kiện đó thay đổi. Chúng tôi cũng gửi các email bạn cần, chẳng hạn mã đăng nhập, vé và quyết định của chúng tôi về nội dung bạn gửi.",
             "tickets": "Để phát hành vé và cho phép các tổ chức check-in cho bạn.",
             "payouts": "Để chi trả cho người quảng bá và các tổ chức tham gia chương trình chi trả của chúng tôi, và để lưu giữ hồ sơ theo yêu cầu của pháp luật.",
             "safety": "Để giữ an toàn cho Wat2Do: hạn chế lạm dụng, phát hiện tài khoản, lượt nhấp và lượt quét giả mạo, và điều tra các sự cố.",
@@ -273,7 +273,7 @@
           "title": "Ai thấy thông tin, và chúng tôi chia sẻ với ai",
           "p1": "Một số hoạt động của bạn trên Wat2Do được người khác nhìn thấy:",
           "visible": {
-            "notifyMe": "Không ai khác biết bạn đã bật \"Nhắc tôi\" cho những sự kiện nào. Mỗi sự kiện chỉ hiển thị số người đã bật.",
+            "notifyMe": "Không ai khác biết bạn đã đánh dấu \"Sẽ đi\" cho những sự kiện nào. Mỗi sự kiện chỉ hiển thị số người đã đánh dấu.",
             "tickets": "Khi bạn có vé, tổ chức điều hành sự kiện sẽ thấy tên của bạn (hoặc phần đầu địa chỉ email của bạn), địa chỉ email, mã vé, thời điểm bạn được check-in và mọi yêu cầu hoàn tiền.",
             "teams": "Những người cùng quản lý một tổ chức thấy tên, địa chỉ email và ảnh của nhau.",
             "submissions": "Sự kiện, vị trí đang tuyển và tổ chức mà chúng tôi đăng từ nội dung bạn gửi đều được công khai, nhưng địa chỉ email của bạn thì không."
@@ -366,7 +366,7 @@
               "text": "mã hết hạn sau {{codeMinutes}}, và một phiên kết thúc {{sessionDays}} sau lần cuối bạn sử dụng phiên đó."
             },
             "activity": {
-              "term": "\"Nhắc tôi\", sự kiện và vị trí đã lưu, lượt theo dõi và vé:",
+              "term": "\"Sẽ đi\", sự kiện và vị trí đã lưu, lượt theo dõi và vé:",
               "text": "cho đến khi bạn gỡ bỏ chúng hoặc xóa tài khoản."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "Tắt email buổi sáng, nhắc nhở sự kiện và cảnh báo thay đổi sự kiện trong Cài đặt, hoặc bằng liên kết hủy đăng ký trong bất kỳ email nào trong số đó. Mã đăng nhập và vé vẫn sẽ được gửi đến, vì bạn cần chúng.",
             "profile": "Thay đổi ảnh, trường, khoa, sở thích và ngôn ngữ của bạn trong Cài đặt.",
-            "activity": "Tắt \"Nhắc tôi\", gỡ sự kiện đã lưu và bỏ theo dõi tổ chức bất cứ khi nào bạn muốn.",
+            "activity": "Bỏ đánh dấu \"Sẽ đi\", gỡ sự kiện đã lưu và bỏ theo dõi tổ chức bất cứ khi nào bạn muốn.",
             "analytics": "Chặn cookie của Google Analytics trong trình duyệt."
           },
           "p2": "Bạn cũng có thể yêu cầu chúng tôi:",

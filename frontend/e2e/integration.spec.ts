@@ -3226,7 +3226,7 @@ test.describe("Events Page", () => {
         "you@uwaterloo.ca",
       );
       await expect(
-        authForm.getByRole("button", { name: "Notify me", exact: true }),
+        authForm.getByRole("button", { name: "Going", exact: true }),
       ).toBeDisabled();
     };
 
@@ -3241,7 +3241,7 @@ test.describe("Events Page", () => {
 
     const authForm = page.getByTestId("event-registration-auth");
     const registerButton = authForm.getByRole("button", {
-      name: "Notify me",
+      name: "Going",
       exact: true,
     });
     await authForm.getByLabel("Email address").fill(TEST_EMAIL);
@@ -3255,7 +3255,7 @@ test.describe("Events Page", () => {
     await expect.poll(() => registrationBody).toEqual({
       occurrence_ids: ["occurrence-1"],
     });
-    await expect(page.getByText("You'll be notified")).toBeVisible();
+    await expect(page.getByText("You're going")).toBeVisible();
   });
 
   test("newly added event details retain their New indicator", async ({ page, next }) => {
@@ -3335,7 +3335,7 @@ test.describe("Events Page", () => {
           if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
           const host = surface === "drawer" ? page.getByRole("dialog", { name: "Workshop in progress" }) : page;
           if (!authenticated) await host.getByTestId("event-registration-auth").getByLabel("Email address").fill(TEST_EMAIL);
-          const goingButton = host.getByRole("button", { name: "Notify me", exact: true });
+          const goingButton = host.getByRole("button", { name: "Going", exact: true });
           await expect(goingButton).toBeDisabled();
           const tooltipTarget = host.locator('[data-slot="disabled-button-trigger"]');
           await tooltipTarget.hover();
@@ -3457,7 +3457,7 @@ test.describe("Events Page", () => {
       });
       await page.goto(`${BASE}/events/1`);
       await page.clock.pauseAt(now);
-      const goingButton = page.getByRole("button", { name: "Notify me", exact: true });
+      const goingButton = page.getByRole("button", { name: "Going", exact: true });
       await expect(goingButton).toBeEnabled();
       await page.clock.runFor(1500);
       await expect(goingButton).toBeDisabled();
@@ -3470,7 +3470,7 @@ test.describe("Events Page", () => {
       await page.clock.resume();
       await goingButton.click();
       await expect.poll(() => submittedOccurrenceIds).toEqual(["future-session"]);
-      await expect(page.getByText("You'll be notified", { exact: true })).toBeVisible();
+      await expect(page.getByText("You're going", { exact: true })).toBeVisible();
     });
   }
 
@@ -3515,18 +3515,18 @@ test.describe("Events Page", () => {
       await page.clock.pauseAt(now);
       const authForm = page.getByTestId("event-registration-auth");
       await authForm.getByLabel("Email address").fill(TEST_EMAIL);
-      await authForm.getByRole("button", { name: "Notify me", exact: true }).click();
+      await authForm.getByRole("button", { name: "Going", exact: true }).click();
       await authForm.getByLabel("Verification code").fill("123456");
       await expect.poll(() => verificationStarted).toBe(true);
       await page.clock.runFor(1500);
       finishVerification();
       await page.clock.resume();
       await expect(authForm).toBeHidden();
-      await expect(page.getByRole("button", { name: "Notify me", exact: true })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
       await page.locator('[data-slot="disabled-button-trigger"]').hover();
       await expect(page.getByRole("tooltip")).toContainText("This event has already started or was cancelled");
       await expect(page.getByText("Which dates should we notify you about?", { exact: true })).toHaveCount(0);
-      await expect(page.getByText("You'll be notified", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("You're going", { exact: true })).toHaveCount(0);
       expect(goingWrites).toBe(0);
     } finally {
       finishVerification();
@@ -3550,10 +3550,10 @@ test.describe("Events Page", () => {
       return { json: { status: "not_going", event_id: 1, occurrence_ids: [], going_count: 0 } };
     });
     await page.goto(`${BASE}/events/1`);
-    await expect(page.getByText("You'll be notified", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Turn off Notify me.", exact: true }).click();
+    await expect(page.getByText("You're going", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Mark yourself not going.", exact: true }).click();
     await expect.poll(() => cancelled).toBe(true);
-    await expect(page.getByRole("button", { name: "Notify me", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
   });
 
   test("uses recurring-event controls above the event drawer", async ({ page, next }) => {
@@ -3651,7 +3651,7 @@ test.describe("Events Page", () => {
     await expect(tooltip).toBeVisible();
     await page.keyboard.press("Escape");
 
-    await drawer.getByRole("button", { name: "Notify me", exact: true }).click();
+    await drawer.getByRole("button", { name: "Going", exact: true }).click();
 
     await expect(drawer.getByText("Which dates should we notify you about?", { exact: true })).toBeVisible();
     await expect(drawer.locator('input[type="checkbox"]')).toHaveCount(0);
@@ -3768,7 +3768,7 @@ test.describe("Events Page", () => {
     const laterCard = page.locator('article[data-event-id="3"]:visible');
     await expect(todayCard).toBeVisible();
     await expect(todayCard).not.toContainText(/\b0 clicks?\b/);
-    await expect(todayCard).not.toContainText(/\b0 notified\b/);
+    await expect(todayCard).not.toContainText(/\b0 going\b/);
     await expect(todayCard.locator('[data-slot="event-card-date"]')).toHaveText("Today");
     await expect(tomorrowCard.locator('[data-slot="event-card-date"]')).toHaveText("Tomorrow");
 
@@ -3896,13 +3896,13 @@ test.describe("Events Page", () => {
     expect(eventId).toBeGreaterThan(0);
 
     await card.click();
-    await page.getByRole("dialog").getByRole("button", { name: "Notify me", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
     await expect.poll(() => goingCount).toBe(1);
     await page.keyboard.press("Escape");
-    await expect(card).toContainText("1 click · 1 notified");
-    await expect(card.getByText("1 click · 1 notified", { exact: true })).toHaveCSS("font-size", "11px");
+    await expect(card).toContainText("1 click · 1 going");
+    await expect(card.getByText("1 click · 1 going", { exact: true })).toHaveCSS("font-size", "11px");
     const poster = card.locator('[data-slot="event-card-image"]');
-    const goingBadge = poster.getByText("Subscribed", { exact: true });
+    const goingBadge = poster.getByText("Going", { exact: true });
     await expect(goingBadge).toBeVisible();
     const posterBox = await poster.boundingBox();
     const badgeBox = await goingBadge.boundingBox();
@@ -3914,7 +3914,7 @@ test.describe("Events Page", () => {
 
     await page.reload();
     const refreshedCard = page.locator(`article[data-event-id="${eventId}"]:visible`).first();
-    await expect(refreshedCard).toContainText("1 click · 1 notified");
+    await expect(refreshedCard).toContainText("1 click · 1 going");
   });
 
   test("cuts out and drag-scrolls overflowing quick filters", async ({ page }) => {
@@ -3973,7 +3973,7 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const cards = page.locator("article[data-event-id]");
-    await expect(cards.first()).toContainText("1 notified");
+    await expect(cards.first()).toContainText("1 going");
     while (await cards.count() < items.length) {
       const previousCount = await cards.count();
       await page.getByTestId("event-list-sentinel").scrollIntoViewIfNeeded();
@@ -3982,8 +3982,8 @@ test.describe("Events Page", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     const loadedFeedRequests = feedRequests;
     const loadedStatsRequests = statsRequests;
-    await page.getByRole("button", { name: ">0 notified", exact: true }).click();
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum notified" });
+    await page.getByRole("button", { name: ">0 going", exact: true }).click();
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
     await minimumGoing.fill("1");
     await expect(page.getByRole("list", { name: `${items.length / 2} events found`, exact: true })).toBeVisible();
     await expect(cards).toHaveCount(batchSize);
@@ -4056,37 +4056,37 @@ test.describe("Events Page", () => {
     });
     await page.goto(BASE);
     const card = page.getByRole("button", { name: "Event: Tech Career Fair", exact: true });
-    const minimumGoing = page.getByRole("textbox", { name: "Minimum notified" });
+    const minimumGoing = page.getByRole("textbox", { name: "Minimum going" });
     await expect(card).toBeVisible();
     await expect(minimumGoing).toHaveCount(0);
-    await page.getByRole("button", { name: ">0 notified", exact: true }).hover();
+    await page.getByRole("button", { name: ">0 going", exact: true }).hover();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.down();
     await expect(minimumGoing).toHaveCount(0);
     await page.mouse.up();
     await expect(minimumGoing).toBeVisible();
-    await expect(page.getByText("Minimum notified", { exact: true })).toBeVisible();
+    await expect(page.getByText("Minimum going", { exact: true })).toBeVisible();
     await expect(minimumGoing).toHaveValue("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 notified", exact: true }).focus();
+    await page.getByRole("button", { name: ">0 going", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(minimumGoing).toBeVisible();
     await minimumGoing.hover();
     await minimumGoing.fill("3");
-    await expect(page.getByRole("button", { name: ">3 notified", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
     await minimumGoing.press("Backspace");
     await expect(minimumGoing).toHaveValue("");
-    await expect(page.getByRole("button", { name: ">0 notified", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">0 going", exact: true })).toBeVisible();
     await minimumGoing.fill("03");
     await expect(minimumGoing).toHaveValue("03");
     await minimumGoing.fill("-1");
-    await expect(page.getByRole("button", { name: ">3 notified", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: ">3 going", exact: true })).toBeVisible();
     await expect(card).toBeVisible();
     await minimumGoing.fill("4");
     await expect(card).toHaveCount(0);
     await minimumGoing.fill("0");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: ">0 notified", exact: true }).click();
+    await page.getByRole("button", { name: ">0 going", exact: true }).click();
     await expect(minimumGoing).toHaveValue("0");
     await expect(card).toBeVisible();
   });
@@ -4158,7 +4158,7 @@ test.describe("Events Page", () => {
     const triggers = [
       filters.getByRole("button", { name: "Any price", exact: true }),
       filters.getByRole("combobox", { name: "Event date", exact: true }),
-      filters.getByRole("button", { name: ">0 notified", exact: true }),
+      filters.getByRole("button", { name: ">0 going", exact: true }),
     ];
     for (const trigger of triggers) {
       await expect(trigger).toBeEnabled();
@@ -4842,21 +4842,21 @@ for (const surface of ["drawer", "page"]) {
     const content = surface === "drawer" ? page.getByRole("dialog") : page.locator("body");
     await expect(content.locator('[data-slot="event-host-links"]')).toHaveCount(0);
     await expect(content.locator('[data-slot="club-badge"]').last().locator("img")).toHaveAttribute("src", avatar);
-    await content.getByRole("button", { name: "Notify me", exact: true }).click();
+    await content.getByRole("button", { name: "Going", exact: true }).click();
     // The card changes while the write is still blocked.
-    await expect(content.getByRole("button", { name: "Turn off Notify me.", exact: true })).toBeVisible();
+    await expect(content.getByRole("button", { name: "Mark yourself not going.", exact: true })).toBeVisible();
     releaseGoing();
-    await expect(content.getByText("You'll be notified", { exact: true })).toBeVisible();
+    await expect(content.getByText("You're going", { exact: true })).toBeVisible();
     await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
-    const cancel = content.getByRole("button", { name: "Turn off Notify me.", exact: true });
+    const cancel = content.getByRole("button", { name: "Mark yourself not going.", exact: true });
     await expect(cancel).toHaveCSS("text-decoration-line", "underline");
     await cancel.click();
-    await expect(content.getByRole("button", { name: "Notify me", exact: true })).toBeVisible();
+    await expect(content.getByRole("button", { name: "Going", exact: true })).toBeVisible();
   });
 }
 
 for (const [detail, message] of [
-  ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so Notify me isn't available."],
+  ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so Going isn't available."],
   ["Unexpected storage failure", "Couldn't save your selected time"],
 ]) {
   test(`Notify me rejection toast: ${detail}`, async ({ page, next }) => {
@@ -4873,7 +4873,7 @@ for (const [detail, message] of [
     }));
     await page.goto(BASE);
     await page.locator('article[data-event-id="1"]:visible').click();
-    await page.getByRole("dialog").getByRole("button", { name: "Notify me", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: message })).toBeVisible();
   });
 }

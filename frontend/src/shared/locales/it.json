@@ -177,7 +177,7 @@
     "max": "Max",
     "today": "Oggi",
     "forYou": "Per Te",
-    "going": "Iscritto",
+    "going": "Ci vado",
     "dateRange": "Intervallo di date",
     "dayOfWeek": "Giorno della settimana",
     "registration": "Richiede registrazione",
@@ -206,7 +206,7 @@
     "showPersonalizedEvents": "Mostra eventi personalizzati",
     "openFilters": "Apri filtri",
     "createNewEvent": "Invia evento",
-    "goingEvents": "Eventi a cui sei iscritto",
+    "goingEvents": "Eventi a cui vado",
     "notificationPreferences": "Preferenze di Notifica",
     "themeAppearance": "Tema e aspetto",
     "helpSupport": "Aiuto e supporto",
@@ -406,7 +406,7 @@
       },
       "account": {
         "title": "Accedi per avere di più",
-        "desc": "Un account ti permette di salvare eventi, attivare Avvisami per ricevere promemoria e aggiornamenti, e usare gli strumenti per gestire un'organizzazione."
+        "desc": "Un account ti permette di salvare eventi, segnare quelli a cui vai per ricevere promemoria e aggiornamenti, e usare gli strumenti per gestire un'organizzazione."
       }
     },
     "help": {
@@ -578,7 +578,7 @@
       "items": {
         "free": {
           "question": "Wat2Do è gratis?",
-          "answer": "Sì. Wat2Do è gratis per gli studenti e puoi sfogliare tutti gli eventi senza un account. Accedi per attivare Avvisami e ricevere promemoria."
+          "answer": "Sì. Wat2Do è gratis per gli studenti e puoi sfogliare tutti gli eventi senza un account. Accedi per segnare gli eventi con Ci vado e ricevere promemoria."
         },
         "clubs": {
           "question": "Il mio club deve iscriversi?",

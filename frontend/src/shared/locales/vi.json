@@ -171,7 +171,7 @@
     "max": "Tối đa",
     "today": "Hôm nay",
     "forYou": "Dành cho bạn",
-    "going": "Đã đăng ký",
+    "going": "Sẽ đi",
     "dateRange": "Khoảng ngày",
     "dayOfWeek": "Ngày trong tuần",
     "registration": "Yêu cầu đăng ký",
@@ -200,7 +200,7 @@
     "showPersonalizedEvents": "Hiển Thị Sự Kiện Cá Nhân Hóa",
     "openFilters": "Mở Bộ Lọc",
     "createNewEvent": "Gửi sự kiện",
-    "goingEvents": "Sự kiện đã đăng ký",
+    "goingEvents": "Sự kiện sẽ đi",
     "notificationPreferences": "Tùy chọn thông báo",
     "themeAppearance": "Chủ Đề & Giao Diện",
     "helpSupport": "Trợ Giúp & Hỗ Trợ",
@@ -398,7 +398,7 @@
       },
       "account": {
         "title": "Đăng nhập để dùng thêm tính năng",
-        "desc": "Tài khoản giúp bạn lưu sự kiện, bật \"Nhắc tôi\" để nhận lời nhắc và cập nhật, và dùng công cụ quản lý câu lạc bộ."
+        "desc": "Tài khoản giúp bạn lưu sự kiện, đánh dấu những sự kiện bạn sẽ đi để nhận lời nhắc và cập nhật, và dùng công cụ quản lý câu lạc bộ."
       }
     },
     "help": {
@@ -558,7 +558,7 @@
       "items": {
         "free": {
           "question": "Wat2Do có miễn phí không?",
-          "answer": "Có. Wat2Do miễn phí cho sinh viên, và bạn có thể xem mọi sự kiện mà không cần tài khoản. Đăng nhập để bật \"Nhắc tôi\" và nhận lời nhắc."
+          "answer": "Có. Wat2Do miễn phí cho sinh viên, và bạn có thể xem mọi sự kiện mà không cần tài khoản. Đăng nhập để đánh dấu \"Sẽ đi\" cho sự kiện và nhận lời nhắc."
         },
         "clubs": {
           "question": "Tổ chức của mình có cần đăng ký không?",

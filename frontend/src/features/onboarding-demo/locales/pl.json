@@ -51,7 +51,7 @@
       "pickedStatus": "Wybrano {{count}}/3 - potrzebujesz co najmniej 2, aby kontynuować",
       "reactionGroup": "Reakcja na {{title}}",
       "reactions": {
-        "interested": "Powiadom mnie",
+        "interested": "Idę",
         "maybe": "Może",
         "notForMe": "Nie dla mnie"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "Stworzyliśmy Twój pierwszy Wat2Do tydzień",
-      "descriptionWithPicks": "Twoje subskrybowane wydarzenia, pasujące organizacje i najlepsze noce na wyjście są gotowe.",
+      "descriptionWithPicks": "Wydarzenia, na które idziesz, pasujące organizacje i najlepsze noce na wyjście są gotowe.",
       "descriptionWithoutPicks": "Zamiast tego przygotowaliśmy startowy kanał. Możesz go dostosować podczas przeglądania.",
       "tonight": "Dziś wieczorem",
       "tonightWithPick": "1 wydarzenie warte sprawdzenia",
@@ -84,9 +84,9 @@
       "description": "Ciesz się spersonalizowanym odkrywaniem kampusu przez 14 dni. Płatność nie jest wymagana.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Radar kampusu odblokowany",
-      "visualDescription": "Spersonalizowane powiadomienia, subskrybowane wydarzenia i Twój tygodniowy plan - wszystko w jednym miejscu.",
+      "visualDescription": "Spersonalizowane powiadomienia, wydarzenia, na które idziesz, i Twój tygodniowy plan - wszystko w jednym miejscu.",
       "benefits": {
-        "save": "Klikaj Powiadom mnie przy wydarzeniach",
+        "save": "Klikaj Idę przy wydarzeniach",
         "follow": "Śledź kluby",
         "alerts": "Otrzymuj natychmiastowe powiadomienia o dopasowaniach",
         "calendar": "Synchronizuj wydarzenia z kalendarzem",
@@ -96,16 +96,16 @@
     },
     "challenge": {
       "title": "Utrzymaj Pro, używając Wat2Do w tym tygodniu",
-      "description": "Kliknij Powiadom mnie przy 3 wydarzeniach w tym tygodniu, aby przedłużyć Pro o 7 dni.",
+      "description": "Kliknij Idę przy 3 wydarzeniach w tym tygodniu, aby przedłużyć Pro o 7 dni.",
       "label": "Wyzwanie Campus Explorer",
       "progress": "{{count}} / {{total}} wydarzeń",
       "reward": "Nagroda: +7 dni Pro",
       "progressAria": "Postęp wyzwania",
-      "markedInterested": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
-      "markedInterested_one": "{{count}} wydarzenie oznaczone do powiadomień podczas wdrażania",
-      "markedInterested_other": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
-      "markedInterested_few": "{{count}} wydarzenia oznaczone do powiadomień podczas wdrażania",
-      "markedInterested_many": "{{count}} wydarzeń oznaczonych do powiadomień podczas wdrażania"
+      "markedInterested": "{{count}} wydarzenia oznaczone jako Idę podczas wdrażania",
+      "markedInterested_one": "{{count}} wydarzenie oznaczone jako Idę podczas wdrażania",
+      "markedInterested_other": "{{count}} wydarzenia oznaczone jako Idę podczas wdrażania",
+      "markedInterested_few": "{{count}} wydarzenia oznaczone jako Idę podczas wdrażania",
+      "markedInterested_many": "{{count}} wydarzeń oznaczonych jako Idę podczas wdrażania"
     },
     "home": {
       "badge": "Demo zakończone",
@@ -113,7 +113,7 @@
       "description": "To jest podgląd Twojej spersonalizowanej strony głównej - żadne dane nie zostały zapisane.",
       "recommended": "Polecane dla Ciebie",
       "proTrialBadge": "Wersja próbna Pro - 14 dni",
-      "saved": "Subskrybowane w tym tygodniu",
+      "saved": "Idziesz w tym tygodniu",
       "freeFood": "Darmowe jedzenie w pobliżu",
       "freeFoodPreview": "Wieczór pizzy w SLC Great Hall - Czwartek 18:00",
       "trialEnds": "Okres próbny kończy się za 14 dni",

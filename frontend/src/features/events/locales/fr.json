@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Recrutement : {{positions}}",
-    "minimumGoing": "Minimum de personnes notifiées",
+    "minimumGoing": "Participants minimum",
     "eventTitle": "Titre de l'événement",
     "loadFailed": "Échec du chargement des événements. Veuillez réessayer.",
     "deleteFailed": "Échec de la suppression de l'événement. Veuillez réessayer.",
@@ -83,9 +83,9 @@
       "submitFailed": "Impossible de soumettre le signalement"
     },
     "goingEvents": {
-      "timeUnavailable": "Cet événement a déjà commencé ou a été annulé, donc Me notifier n'est pas disponible.",
+      "timeUnavailable": "Cet événement a déjà commencé ou a été annulé, donc J'y vais n'est pas disponible.",
       "saveFailed": "Impossible d'enregistrer l'heure que vous avez sélectionnée",
-      "chooseOccurrences": "Pour quelles dates voulez-vous être notifié ?",
+      "chooseOccurrences": "À quelles dates y allez-vous ?",
       "chooseOccurrencesDescription": "Choisissez chaque date pour laquelle vous voulez un rappel et des mises à jour."
     },
     "calendar": {
@@ -113,9 +113,9 @@
     },
     "new": "NOUVEAU",
     "updated": "MIS À JOUR",
-    "goingCount": "{{count}} notifiés",
-    "goingCount_one": "{{count}} notifié",
-    "goingCount_other": "{{count}} notifiés",
+    "goingCount": "{{count}} participants",
+    "goingCount_one": "{{count}} participant",
+    "goingCount_other": "{{count}} participants",
     "hostedBy": "Organisé par",
     "aboutEvent": "À propos de l'événement",
     "fetchingDetails": "Récupération des détails...",
@@ -131,21 +131,21 @@
     "moreEvents": "Plus d’événements",
     "submitEvent": "Ajouter un événement",
     "allEvents": "Tous les événements",
-    "going": "Abonné",
+    "going": "J'y vais",
     "notifyMe": {
-      "action": "Me notifier",
+      "action": "J'y vais",
       "description": "Recevez un rappel avant le début, et un e-mail en cas de changement.",
       "otherDates": "Les autres dates ne nécessitent pas de billet. Recevez un rappel avant chacune, et un e-mail en cas de changement.",
-      "onTitle": "Vous serez notifié",
+      "onTitle": "Vous y allez",
       "onDescription": "Nous vous enverrons un rappel par e-mail avant le début, et nous vous préviendrons en cas de changement.",
-      "offPrompt": "Plus besoin de mises à jour ?",
-      "off": "Désactiver Me notifier."
+      "offPrompt": "Vous ne pouvez pas venir ?",
+      "off": "Indiquer que vous n'y allez pas."
     },
     "upcomingEventCount_one": "événement à venir",
     "upcomingEventCount_many": "événements à venir",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clics",
-    "goingCount_many": "{{count}} notifiés",
+    "goingCount_many": "{{count}} participants",
     "moreDatesCount_one": "+{{count}} date",
     "moreDatesCount_many": "+{{count}} dates",
     "views": {

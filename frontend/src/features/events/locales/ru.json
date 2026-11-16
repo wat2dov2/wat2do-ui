@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Открытые позиции: {{positions}}",
-    "minimumGoing": "Минимум получающих напоминание",
+    "minimumGoing": "Минимум участников",
     "eventTitle": "Название события",
     "loadFailed": "Не удалось загрузить события. Пожалуйста, попробуйте еще раз.",
     "deleteFailed": "Не удалось удалить событие. Пожалуйста, попробуйте еще раз.",
@@ -84,9 +84,9 @@
       "submitFailed": "Не удалось отправить жалобу"
     },
     "goingEvents": {
-      "timeUnavailable": "Мероприятие уже началось или было отменено, поэтому «Напомнить мне» недоступно.",
+      "timeUnavailable": "Мероприятие уже началось или было отменено, поэтому отметить «Пойду» нельзя.",
       "saveFailed": "Не удалось сохранить выбранное время",
-      "chooseOccurrences": "О каких датах вам напомнить?",
+      "chooseOccurrences": "В какие даты вы пойдёте?",
       "chooseOccurrencesDescription": "Выберите все даты, о которых хотите получать напоминания и новости."
     },
     "calendar": {
@@ -114,9 +114,9 @@
     },
     "new": "НОВОЕ",
     "updated": "ОБНОВЛЕНО",
-    "goingCount": "Получат напоминание: {{count}}",
-    "goingCount_one": "Получат напоминание: {{count}}",
-    "goingCount_other": "Получат напоминание: {{count}}",
+    "goingCount": "{{count}} участников",
+    "goingCount_one": "{{count}} участник",
+    "goingCount_other": "{{count}} участника",
     "hostedBy": "Организатор",
     "aboutEvent": "О событии",
     "fetchingDetails": "Загрузка информации...",
@@ -132,15 +132,15 @@
     "moreEvents": "Больше событий",
     "submitEvent": "Добавить событие",
     "allEvents": "Все события",
-    "going": "Вы подписаны",
+    "going": "Пойду",
     "notifyMe": {
-      "action": "Напомнить мне",
+      "action": "Пойду",
       "description": "Получите напоминание перед началом и письмо, если что-то изменится.",
       "otherDates": "На другие даты билет не нужен. Получите напоминание перед ними и письмо, если что-то изменится.",
-      "onTitle": "Мы вам напомним",
+      "onTitle": "Вы пойдёте",
       "onDescription": "Мы пришлём напоминание на почту перед началом и сообщим, если что-то изменится.",
-      "offPrompt": "Не нужны новости?",
-      "off": "Выключить «Напомнить мне»."
+      "offPrompt": "Не получится прийти?",
+      "off": "Отметить, что не пойдёте."
     },
     "upcomingEventCount_one": "предстоящее событие",
     "upcomingEventCount_few": "предстоящих события",
@@ -148,8 +148,8 @@
     "clickCount_one": "{{count}} клик",
     "clickCount_few": "{{count}} клика",
     "clickCount_many": "{{count}} кликов",
-    "goingCount_few": "Получат напоминание: {{count}}",
-    "goingCount_many": "Получат напоминание: {{count}}",
+    "goingCount_few": "{{count}} участника",
+    "goingCount_many": "{{count}} участников",
     "moreDatesCount_one": "+{{count}} дата",
     "moreDatesCount_few": "+{{count}} даты",
     "moreDatesCount_many": "+{{count}} дат",

@@ -174,7 +174,7 @@
     "max": "Max",
     "today": "Heute",
     "forYou": "Für Sie",
-    "going": "Abonniert",
+    "going": "Dabei",
     "dateRange": "Datumsbereich",
     "dayOfWeek": "Wochentag",
     "registration": "Erfordert Registrierung",
@@ -203,7 +203,7 @@
     "showPersonalizedEvents": "Personalisierte Veranstaltungen anzeigen",
     "openFilters": "Filter öffnen",
     "createNewEvent": "Veranstaltung einreichen",
-    "goingEvents": "Abonnierte Veranstaltungen",
+    "goingEvents": "Veranstaltungen, bei denen ich dabei bin",
     "notificationPreferences": "Benachrichtigungseinstellungen",
     "themeAppearance": "Thema & Erscheinungsbild",
     "helpSupport": "Hilfe & Support",
@@ -402,7 +402,7 @@
       },
       "account": {
         "title": "Melde dich an für mehr",
-        "desc": "Mit einem Konto kannst du Veranstaltungen speichern, Benachrichtige mich für Erinnerungen und Updates einschalten und die Tools zur Verwaltung einer Organisation nutzen."
+        "desc": "Mit einem Konto kannst du Veranstaltungen speichern, die markieren, bei denen du dabei bist, um Erinnerungen und Updates zu bekommen, und die Tools zur Verwaltung einer Organisation nutzen."
       }
     },
     "help": {
@@ -568,7 +568,7 @@
       "items": {
         "free": {
           "question": "Ist Wat2Do kostenlos?",
-          "answer": "Ja. Wat2Do ist für Studierende kostenlos, und du kannst alle Veranstaltungen ohne Konto ansehen. Melde dich an, um Benachrichtige mich einzuschalten und Erinnerungen zu bekommen."
+          "answer": "Ja. Wat2Do ist für Studierende kostenlos, und du kannst alle Veranstaltungen ohne Konto ansehen. Melde dich an, um Veranstaltungen als Dabei zu markieren und Erinnerungen zu bekommen."
         },
         "clubs": {
           "question": "Muss sich mein Club anmelden?",

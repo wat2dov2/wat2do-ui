@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 choisis - au moins 2 nécessaires pour continuer",
       "reactionGroup": "Réaction pour {{title}}",
       "reactions": {
-        "interested": "Me notifier",
+        "interested": "J'y vais",
         "maybe": "Peut-être",
         "notForMe": "Pas pour moi"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "Nous avons créé votre première Wat2Do semaine",
-      "descriptionWithPicks": "Vos événements abonnés, les organisations qui vous correspondent et les meilleures soirées sont prêts.",
+      "descriptionWithPicks": "Les événements où vous allez, les organisations qui vous correspondent et les meilleures soirées sont prêts.",
       "descriptionWithoutPicks": "Nous avons plutôt créé un fil d'actualités de démarrage. Vous pouvez l'ajuster au fur et à mesure que vous naviguez.",
       "tonight": "Ce soir",
       "tonightWithPick": "1 événement à ne pas manquer",
@@ -84,9 +84,9 @@
       "description": "Profitez d'une découverte personnalisée du campus pendant 14 jours. Aucun paiement nécessaire.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Radar du campus débloqué",
-      "visualDescription": "Alertes personnalisées, événements abonnés et votre plan de la semaine - tout au même endroit.",
+      "visualDescription": "Alertes personnalisées, événements où vous allez et votre plan de la semaine - tout au même endroit.",
       "benefits": {
-        "save": "Touchez Me notifier sur les événements",
+        "save": "Touchez J'y vais sur les événements",
         "follow": "Suivre des clubs",
         "alerts": "Recevoir des alertes de correspondance instantanée",
         "calendar": "Synchroniser les événements avec votre calendrier",
@@ -96,15 +96,15 @@
     },
     "challenge": {
       "title": "Maintenez Pro actif en utilisant Wat2Do cette semaine",
-      "description": "Touchez Me notifier sur 3 événements cette semaine pour prolonger Pro de 7 jours.",
+      "description": "Touchez J'y vais sur 3 événements cette semaine pour prolonger Pro de 7 jours.",
       "label": "Défi Explorateur du Campus",
       "progress": "{{count}} / {{total}} événements",
       "reward": "Récompense : +7 jours de Pro",
       "progressAria": "Progression du défi",
-      "markedInterested": "{{count}} événements marqués pour être notifié pendant l'intégration",
-      "markedInterested_one": "{{count}} événement marqué pour être notifié pendant l'intégration",
-      "markedInterested_other": "{{count}} événements marqués pour être notifié pendant l'intégration",
-      "markedInterested_many": "{{count}} événements marqués pour être notifié pendant l'intégration"
+      "markedInterested": "{{count}} événements marqués J'y vais pendant l'intégration",
+      "markedInterested_one": "{{count}} événement marqué J'y vais pendant l'intégration",
+      "markedInterested_other": "{{count}} événements marqués J'y vais pendant l'intégration",
+      "markedInterested_many": "{{count}} événements marqués J'y vais pendant l'intégration"
     },
     "home": {
       "badge": "Démo terminée",
@@ -112,7 +112,7 @@
       "description": "Ceci est un aperçu de votre accueil personnalisé - aucune donnée n'a été enregistrée.",
       "recommended": "Recommandé pour vous",
       "proTrialBadge": "Essai Pro - 14 jours",
-      "saved": "Abonné cette semaine",
+      "saved": "J'y vais cette semaine",
       "freeFood": "Nourriture gratuite près de chez vous",
       "freeFoodPreview": "Soirée pizza à SLC Grande Salle - Jeu 18h00",
       "trialEnds": "L'essai se termine dans 14 jours",

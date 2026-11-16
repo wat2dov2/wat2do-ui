@@ -171,7 +171,7 @@
     "max": "최대",
     "today": "오늘",
     "forYou": "추천",
-    "going": "구독 중",
+    "going": "참석",
     "dateRange": "날짜 범위",
     "dayOfWeek": "요일",
     "registration": "등록 필요",
@@ -200,7 +200,7 @@
     "showPersonalizedEvents": "맞춤 이벤트 보기",
     "openFilters": "필터 열기",
     "createNewEvent": "이벤트 제출",
-    "goingEvents": "구독 중인 이벤트",
+    "goingEvents": "참석 예정 이벤트",
     "notificationPreferences": "알림 설정",
     "themeAppearance": "테마 및 외형",
     "helpSupport": "도움말 및 지원",
@@ -398,7 +398,7 @@
       },
       "account": {
         "title": "로그인하면 더 많은 기능",
-        "desc": "계정이 있으면 이벤트를 저장하고, '알림 받기'를 켜서 알림과 업데이트를 받고, 동아리 운영 도구를 쓸 수 있어요."
+        "desc": "계정이 있으면 이벤트를 저장하고, 참석할 이벤트를 표시해 알림과 업데이트를 받고, 동아리 운영 도구를 쓸 수 있어요."
       }
     },
     "help": {
@@ -558,7 +558,7 @@
       "items": {
         "free": {
           "question": "Wat2Do는 무료인가요?",
-          "answer": "네. Wat2Do는 학생에게 무료이고, 계정 없이도 모든 이벤트를 둘러볼 수 있어요. 로그인하면 '알림 받기'를 켜고 알림을 받을 수 있어요."
+          "answer": "네. Wat2Do는 학생에게 무료이고, 계정 없이도 모든 이벤트를 둘러볼 수 있어요. 로그인하면 이벤트에 '참석'을 표시하고 알림을 받을 수 있어요."
         },
         "clubs": {
           "question": "우리 조직도 가입해야 하나요?",

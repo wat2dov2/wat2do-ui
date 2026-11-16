@@ -177,7 +177,7 @@
     "max": "Máx",
     "today": "Hoje",
     "forYou": "Para você",
-    "going": "Inscrito",
+    "going": "Vou",
     "dateRange": "Período",
     "dayOfWeek": "Dia da semana",
     "registration": "Exige registro",
@@ -206,7 +206,7 @@
     "showPersonalizedEvents": "Mostrar Eventos Personalizados",
     "openFilters": "Abrir Filtros",
     "createNewEvent": "Enviar Evento",
-    "goingEvents": "Eventos inscritos",
+    "goingEvents": "Eventos que eu vou",
     "notificationPreferences": "Preferências de Notificação",
     "themeAppearance": "Tema & Aparência",
     "helpSupport": "Ajuda & Suporte",
@@ -406,7 +406,7 @@
       },
       "account": {
         "title": "Entre para ter mais",
-        "desc": "Uma conta permite salvar eventos, ativar Me avise para receber lembretes e atualizações e usar as ferramentas para administrar uma organização."
+        "desc": "Uma conta permite salvar eventos, marcar os eventos aos quais você vai para receber lembretes e atualizações e usar as ferramentas para administrar uma organização."
       }
     },
     "help": {
@@ -578,7 +578,7 @@
       "items": {
         "free": {
           "question": "O Wat2Do é grátis?",
-          "answer": "Sim. O Wat2Do é grátis para estudantes, e você pode ver todos os eventos sem conta. Entre para ativar Me avise e receber lembretes."
+          "answer": "Sim. O Wat2Do é grátis para estudantes, e você pode ver todos os eventos sem conta. Entre para marcar eventos com Vou e receber lembretes."
         },
         "clubs": {
           "question": "Meu clube precisa se cadastrar?",

@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "التوظيف: {{positions}}",
-    "minimumGoing": "الحد الأدنى للمُنبَّهين",
+    "minimumGoing": "الحد الأدنى للمشاركين",
     "eventTitle": "عنوان الحدث",
     "loadFailed": "فشل تحميل الأحداث. يرجى المحاولة مرة أخرى.",
     "deleteFailed": "فشل في حذف الحدث. يرجى المحاولة مرة أخرى.",
@@ -86,9 +86,9 @@
       "submitFailed": "تعذر إرسال التقرير"
     },
     "goingEvents": {
-      "timeUnavailable": "بدأت هذه الفعالية بالفعل أو أُلغيت، لذا لا يتوفر «نبّهني».",
+      "timeUnavailable": "بدأت هذه الفعالية بالفعل أو أُلغيت، لذا لا يتوفر «سأحضر».",
       "saveFailed": "تعذر حفظ الوقت الذي اخترته",
-      "chooseOccurrences": "بأي مواعيد نُعلمك؟",
+      "chooseOccurrences": "أي المواعيد ستحضر؟",
       "chooseOccurrencesDescription": "اختر كل موعد تريد تذكيرًا وتحديثات بشأنه."
     },
     "calendar": {
@@ -116,9 +116,9 @@
     },
     "new": "جديد",
     "updated": "مُحدَّث",
-    "goingCount": "{{count}} مُنبَّه",
-    "goingCount_one": "{{count}} مُنبَّه",
-    "goingCount_other": "{{count}} مُنبَّه",
+    "goingCount": "{{count}} مشارك",
+    "goingCount_one": "{{count}} مشارك",
+    "goingCount_other": "{{count}} مشارك",
     "hostedBy": "باستضافة",
     "aboutEvent": "حول الحدث",
     "fetchingDetails": "جارٍ جلب التفاصيل...",
@@ -134,15 +134,15 @@
     "moreEvents": "المزيد من الفعاليات",
     "submitEvent": "إضافة حدث",
     "allEvents": "جميع الأحداث",
-    "going": "مشترك",
+    "going": "سأحضر",
     "notifyMe": {
-      "action": "نبّهني",
+      "action": "سأحضر",
       "description": "احصل على تذكير قبل أن تبدأ، وعلى رسالة بريد إلكتروني إذا تغيّر أي شيء.",
       "otherDates": "المواعيد الأخرى لا تحتاج إلى تذكرة. احصل على تذكير قبلها، وعلى رسالة بريد إلكتروني إذا تغيّر أي شيء.",
-      "onTitle": "سنُعلمك",
+      "onTitle": "ستحضر",
       "onDescription": "سنرسل إليك تذكيرًا بالبريد الإلكتروني قبل أن تبدأ، ونُعلمك إذا تغيّر أي شيء.",
-      "offPrompt": "لا تحتاج إلى التحديثات؟",
-      "off": "أوقف «نبّهني»."
+      "offPrompt": "لا تستطيع الحضور؟",
+      "off": "سجّل أنك لن تحضر."
     },
     "upcomingEventCount_one": "فعالية قادمة",
     "clickCount_one": "{{count}} نقرة",
@@ -151,10 +151,10 @@
     "clickCount_two": "{{count}} نقرتان",
     "clickCount_few": "{{count}} نقرات",
     "clickCount_many": "{{count}} نقرة",
-    "goingCount_zero": "{{count}} مُنبَّهين",
-    "goingCount_two": "{{count}} مُنبَّهان",
-    "goingCount_few": "{{count}} مُنبَّهين",
-    "goingCount_many": "{{count}} مُنبَّهًا",
+    "goingCount_zero": "{{count}} مشارك",
+    "goingCount_two": "{{count}} مشاركان",
+    "goingCount_few": "{{count}} مشاركين",
+    "goingCount_many": "{{count}} مشاركًا",
     "moreDatesCount_zero": "+{{count}} تواريخ",
     "moreDatesCount_two": "+{{count}} تاريخان",
     "moreDatesCount_few": "+{{count}} تواريخ",

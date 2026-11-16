@@ -54,7 +54,7 @@ const FOOTER: &str = "wat2do helps students discover campus events.";
 // Half the shell's 640px content width, less a little so two cards always fit a row.
 const GRID_CARD_MAX_WIDTH_PX: u32 = 318;
 const GRID_GUTTER_PX: u32 = 16;
-const REMINDER_INTRO: &str = "You turned on Notify me for this event. It starts in about an hour.";
+const REMINDER_INTRO: &str = "You're going to this event. It starts in about an hour.";
 
 fn or<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     if value.is_empty() { fallback } else { value }
@@ -653,7 +653,7 @@ mod tests {
                 .count(),
             3
         );
-        assert!(html.contains("You turned on Notify me for this event."));
+        assert!(html.contains("You&#x27;re going to this event."));
         let bare = render_event_reminder_html(&subject, &tea, None, TORONTO, &LINKS);
         assert_eq!(
             bare.matches(r#"href="https://uwaterloo.wat2do.io/events/42""#)
