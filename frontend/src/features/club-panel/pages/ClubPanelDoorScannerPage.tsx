@@ -18,13 +18,11 @@ export function ClubPanelDoorScannerPage() {
         back={{ href: clubPanelEventTicketsPath(eventId), label: t("tickets.desk.title") }}
         icon={QrCode}
         title={t("tickets.scanner.title")}
-        description={
-          desk
-            ? t("tickets.scanner.admitted", { checkedIn: desk.checked_in, issued: desk.issued })
-            : t("tickets.scanner.description")
-        }
       />
-      <DoorScanner eventId={eventId} />
+      <DoorScanner
+        eventId={eventId}
+        counts={desk ? { checkedIn: desk.checked_in, issued: desk.issued } : undefined}
+      />
     </Stack>
   );
 }

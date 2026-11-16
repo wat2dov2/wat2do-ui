@@ -195,14 +195,16 @@
     },
     "scanner": {
       "title": "Skanuj bilety",
-      "description": "Skieruj aparat na kod QR biletu.",
       "admitted": "Wpuszczono {{checkedIn}} z {{issued}}",
       "startCamera": "Włącz aparat",
       "stopCamera": "Wyłącz aparat",
+      "cameraStarting": "Włączanie aparatu",
       "cameraLabel": "Podgląd z aparatu do skanowania biletów",
       "cameraBlocked": "Zezwól na dostęp do aparatu, aby skanować bilety, albo wpisz kod poniżej.",
+      "manualToggle": "Nie da się zeskanować? Wpisz kod",
       "manual": "Kod biletu",
-      "manualPlaceholder": "Wpisz kod, który jest pod kodem QR"
+      "manualPlaceholder": "Wpisz kod, który jest pod kodem QR",
+      "scanNext": "Dotknij, aby zeskanować kolejny"
     },
     "errors": {
       "generic": "Coś poszło nie tak. Spróbuj ponownie."

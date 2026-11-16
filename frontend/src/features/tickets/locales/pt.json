@@ -190,14 +190,16 @@
     },
     "scanner": {
       "title": "Ler ingressos",
-      "description": "Aponte a câmera para o código QR de um ingresso.",
       "admitted": "Check-ins: {{checkedIn}} de {{issued}}",
       "startCamera": "Ligar a câmera",
       "stopCamera": "Desligar a câmera",
+      "cameraStarting": "Ligando a câmera",
       "cameraLabel": "Imagem da câmera para ler ingressos",
       "cameraBlocked": "Permita o acesso à câmera para ler ingressos, ou digite o código abaixo.",
+      "manualToggle": "Não deu para ler? Digite o código",
       "manual": "Código do ingresso",
-      "manualPlaceholder": "Digite o código que fica abaixo do código QR"
+      "manualPlaceholder": "Digite o código que fica abaixo do código QR",
+      "scanNext": "Toque para ler o próximo"
     },
     "errors": {
       "generic": "Algo deu errado. Tente novamente."

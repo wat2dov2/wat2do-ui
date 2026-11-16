@@ -190,14 +190,16 @@
     },
     "scanner": {
       "title": "Escanear boletos",
-      "description": "Apunta la cámara al código QR de un boleto.",
       "admitted": "{{checkedIn}} de {{issued}} entradas registradas",
       "startCamera": "Activar cámara",
       "stopCamera": "Desactivar cámara",
+      "cameraStarting": "Activando la cámara",
       "cameraLabel": "Vista de la cámara para escanear boletos",
       "cameraBlocked": "Permite el acceso a la cámara para escanear boletos, o escribe el código abajo.",
+      "manualToggle": "¿No se puede escanear? Escribe el código",
       "manual": "Código del boleto",
-      "manualPlaceholder": "Escribe el código que aparece bajo el código QR"
+      "manualPlaceholder": "Escribe el código que aparece bajo el código QR",
+      "scanNext": "Toca para escanear el siguiente"
     },
     "errors": {
       "generic": "Algo salió mal. Inténtalo de nuevo."

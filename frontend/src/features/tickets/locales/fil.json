@@ -185,14 +185,16 @@
     },
     "scanner": {
       "title": "I-scan ang mga tiket",
-      "description": "Itutok ang camera sa QR code ng tiket.",
       "admitted": "{{checkedIn}} sa {{issued}} ang naka-check in",
       "startCamera": "Buksan ang camera",
       "stopCamera": "Isara ang camera",
+      "cameraStarting": "Binubuksan ang camera",
       "cameraLabel": "Camera view para sa pag-scan ng tiket",
       "cameraBlocked": "Payagan ang access sa camera para ma-scan ang mga tiket, o i-type ang code sa ibaba.",
+      "manualToggle": "Hindi ma-scan? I-type ang code",
       "manual": "Code ng tiket",
-      "manualPlaceholder": "I-type ang code sa ilalim ng QR code"
+      "manualPlaceholder": "I-type ang code sa ilalim ng QR code",
+      "scanNext": "I-tap para i-scan ang susunod"
     },
     "errors": {
       "generic": "May nagkamali. Pakisubukang muli."

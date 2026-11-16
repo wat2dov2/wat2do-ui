@@ -180,14 +180,16 @@
     },
     "scanner": {
       "title": "Scan tickets",
-      "description": "Point the camera at a ticket's QR code.",
       "admitted": "{{checkedIn}} of {{issued}} checked in",
       "startCamera": "Start camera",
       "stopCamera": "Stop camera",
+      "cameraStarting": "Starting camera",
       "cameraLabel": "Camera view for scanning tickets",
       "cameraBlocked": "Allow camera access to scan tickets, or type the code below.",
+      "manualToggle": "Can't scan? Enter the code",
       "manual": "Ticket code",
-      "manualPlaceholder": "Type the code under the QR code"
+      "manualPlaceholder": "Type the code under the QR code",
+      "scanNext": "Tap to scan the next one"
     },
     "errors": {
       "generic": "Something went wrong. Please try again."

@@ -190,14 +190,16 @@
     },
     "scanner": {
       "title": "Scanner les billets",
-      "description": "Pointez la caméra vers le code QR d'un billet.",
       "admitted": "Entrées validées : {{checkedIn}} sur {{issued}}",
       "startCamera": "Activer la caméra",
       "stopCamera": "Désactiver la caméra",
+      "cameraStarting": "Activation de la caméra",
       "cameraLabel": "Vue de la caméra pour scanner les billets",
       "cameraBlocked": "Autorisez l'accès à la caméra pour scanner les billets, ou saisissez le code ci-dessous.",
+      "manualToggle": "Impossible de scanner ? Saisissez le code",
       "manual": "Code du billet",
-      "manualPlaceholder": "Saisissez le code sous le code QR"
+      "manualPlaceholder": "Saisissez le code sous le code QR",
+      "scanNext": "Touchez pour scanner le suivant"
     },
     "errors": {
       "generic": "Une erreur s'est produite. Veuillez réessayer."

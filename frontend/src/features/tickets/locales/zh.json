@@ -180,14 +180,16 @@
     },
     "scanner": {
       "title": "扫描门票",
-      "description": "将摄像头对准门票上的二维码。",
       "admitted": "已签到 {{checkedIn}} / {{issued}}",
       "startCamera": "打开摄像头",
       "stopCamera": "关闭摄像头",
+      "cameraStarting": "正在打开摄像头",
       "cameraLabel": "用于扫描门票的摄像头画面",
       "cameraBlocked": "请允许访问摄像头以扫描门票，或在下方输入票码。",
+      "manualToggle": "扫不了？输入票码",
       "manual": "票码",
-      "manualPlaceholder": "输入二维码下方的票码"
+      "manualPlaceholder": "输入二维码下方的票码",
+      "scanNext": "点按扫描下一张"
     },
     "errors": {
       "generic": "出错了，请重试。"

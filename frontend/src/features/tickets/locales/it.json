@@ -190,14 +190,16 @@
     },
     "scanner": {
       "title": "Scansiona i biglietti",
-      "description": "Inquadra con la fotocamera il codice QR di un biglietto.",
       "admitted": "Ingressi: {{checkedIn}} su {{issued}}",
       "startCamera": "Avvia la fotocamera",
       "stopCamera": "Ferma la fotocamera",
+      "cameraStarting": "Avvio della fotocamera",
       "cameraLabel": "Vista della fotocamera per scansionare i biglietti",
       "cameraBlocked": "Consenti l'accesso alla fotocamera per scansionare i biglietti, oppure scrivi il codice qui sotto.",
+      "manualToggle": "Non riesci a scansionare? Scrivi il codice",
       "manual": "Codice del biglietto",
-      "manualPlaceholder": "Scrivi il codice sotto il codice QR"
+      "manualPlaceholder": "Scrivi il codice sotto il codice QR",
+      "scanNext": "Tocca per scansionare il prossimo"
     },
     "errors": {
       "generic": "Qualcosa è andato storto. Riprova."
