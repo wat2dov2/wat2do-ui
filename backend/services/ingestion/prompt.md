@@ -64,6 +64,11 @@ Read the text and every image, then decide which of these it is (it can be sever
    When that is yes, the university's events are listed too: exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals, info sessions, and drop-in activities with food, games, crafts or conversation (weekly ones included), whenever current students can attend.
    Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and one-on-one services by appointment such as office hours, tutoring, advising or counselling.
 
+7. Another school's: the publishing account is followed for {{school_name}}, but a follow can be wrong.
+   When the source shows the club or event belongs to another university or campus (its name, its city, its buildings or rooms, or a program only that school has), it is not {{school_name}}'s, even when the handle seems to name it: "UW" is also the University of Washington, Wisconsin, Winnipeg and Windsor, so a "UW" club meeting in Thomson Hall (THO) or Moore Hall (MOR) in Seattle is the University of Washington's, not Waterloo's.
+   Then change nothing, and say so in your summary.
+   An off-campus outing of this school's own club (a ski trip, a conference in another city) is still this school's.
+
 ## Step 2: Look at what is already listed
 
 Before writing anything, look up this club's events from the last few months and their dates, not only upcoming ones: the series this source continues may have no future dates yet.

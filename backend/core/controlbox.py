@@ -1125,6 +1125,9 @@ class InstagramFollowControl(_ControlModel):
     # Names clubs use for their school besides its slug, searched in Following lists.
     # UofT's campuses list each other: a club named for one campus often runs on another.
     school_names: dict[str, list[str]]
+    # Schools and campuses that share each school's name, abbreviation or city, shown to
+    # the scorer so it rejects their accounts (UW is also Washington, Wisconsin and more).
+    confusable_schools: dict[str, str]
 
     @model_validator(mode="after")
     def _read_delays_are_ordered(self) -> "InstagramFollowControl":

@@ -64,6 +64,10 @@ def test_each_account_is_stored_with_its_score(world, monkeypatch):
     assert module.score_pending() == {"scored": 1}
     # The scorer is told the school's full name and city, never just its slug.
     assert "University of Toronto St. George in Toronto" in asked[0]
+    # It is also told the schools sharing its name, abbreviation or city, whose accounts
+    # it must reject (the other U of T campuses here; for UW, Washington and Wisconsin).
+    assert "U of T Mississauga and U of T Scarborough, which are other campuses" in asked[0]
+    assert "{{" not in asked[0]
     assert world[0] == (
         "1",
         PROFILE,
