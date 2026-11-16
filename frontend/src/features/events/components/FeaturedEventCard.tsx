@@ -15,7 +15,7 @@ import { formatCardDate } from "@/shared/utils/date";
 import { posterThumbnailUrl } from "@/shared/utils/media";
 
 /** Portrait like most club posters, so the poster fills the card. */
-const CARD_CLASS = "relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-media-scrim";
+const CARD_CLASS = "press-feedback relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-media-scrim";
 
 interface FeaturedEventCardProps {
   event: Event;
@@ -50,6 +50,7 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
     <article data-slot="featured-event-card" className={CARD_CLASS}>
       <button
         type="button"
+        data-card-surface
         className="absolute inset-0 cursor-pointer focus-visible:outline-none"
         aria-label={event.title}
         onClick={() => onEventClick(event)}

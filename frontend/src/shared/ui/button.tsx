@@ -17,13 +17,13 @@ const OUTLINE_CONTROL_STYLES =
  * styling is defined once per variant here so no call site hand-rolls it.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent text-sm font-medium transition-all duration-150 active:not-disabled:scale-[0.97] cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-2 aria-invalid:ring-destructive/50 aria-invalid:bg-destructive/10",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent text-sm font-medium transition-all duration-150 active:not-disabled:scale-[0.97] cursor-pointer disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-2 aria-invalid:ring-destructive/50 aria-invalid:bg-destructive/10",
   {
     variants: {
       variant: {
         link: "bg-transparent text-primary underline-offset-4 hover:text-primary-hover hover:underline",
         avatar:
-          "overflow-hidden rounded-full bg-secondary text-secondary-foreground hover:ring-2 hover:ring-ring/50 [&_img]:size-full [&_img]:object-cover",
+          "rounded-full bg-secondary text-secondary-foreground hover:ring-2 hover:ring-ring/50 [&>*]:rounded-full [&_img]:size-full [&_img]:object-cover",
         primary:
           "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active",
         outline:
@@ -41,8 +41,9 @@ const buttonVariants = cva(
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-11 px-5 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
+        // Icon-only buttons are smaller than a fingertip, so they take a 44px press on touch screens.
+        icon: "size-9 hit-area",
+        "icon-sm": "size-8 hit-area",
         "icon-lg": "size-10",
       },
     },

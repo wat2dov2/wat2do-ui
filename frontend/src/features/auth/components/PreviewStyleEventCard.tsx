@@ -68,8 +68,8 @@ export function PreviewStyleEventCard({
       {...interactiveProps}
       data-event-id={dataEventId}
       className={cn(
-        "rounded-xl flex flex-col h-full overflow-hidden transition-all duration-300",
-        onMouseDown && "cursor-pointer group hover:shadow-lg",
+        "rounded-xl flex flex-col h-full overflow-hidden",
+        onMouseDown && "press-feedback cursor-pointer group",
         selected && "outline-2 outline-sky-400 dark:outline-sky-300 outline-offset-2 rounded-xl",
       )}
     >

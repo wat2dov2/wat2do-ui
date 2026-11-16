@@ -130,6 +130,15 @@
   --shadow-xl: var(--app-shadow-xl);
   --shadow-control: var(--app-shadow-control);
 
+  /* Motion: Tailwind's easing utilities and its default transition use the
+     app's curves (styles/motion.css), so `transition` and `ease-out` match the
+     floating surfaces. */
+  --ease-in: var(--ease-in-ui);
+  --ease-out: var(--ease-out-ui);
+  --ease-in-out: var(--ease-in-out-ui);
+  --default-transition-duration: var(--motion-fast);
+  --default-transition-timing-function: var(--ease-out-ui);
+
   /* Z-index scale */
   --z-index-sidebar: 30;
   --z-index-nav: 40;
@@ -172,6 +181,25 @@
     }
     to {
       background-position: 0% 0%;
+    }
+  }
+}
+
+/*
+ * A control smaller than a fingertip still takes a 44px press on touch
+ * screens: an invisible box centred on it grows the hit area without moving
+ * or resizing anything. The control must be positioned (relative or absolute).
+ */
+@utility hit-area {
+  @media (pointer: coarse) {
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      translate: -50% -50%;
     }
   }
 }

@@ -1,8 +1,13 @@
 /*
- * App-wide motion rules. Floating surfaces (menus, popovers, selects,
- * tooltips, dialogs) get their timing here by data-slot, so no call site sets
- * its own durations.
+ * App-wide motion rules and tokens. Floating surfaces (menus, popovers,
+ * selects, tooltips, dialogs) get their timing here by data-slot, so no call
+ * site sets its own durations.
  *
+ *   Interface motion stays at 300ms or less: a press answers in 150ms, a state
+ *   change in 200ms, and nothing a person waits on runs longer than 300ms.
+ *   Tailwind's ease-in, ease-out, ease-in-out and its default transition
+ *   easing are these same curves (index.css), so a bare `transition` eases
+ *   out; nothing that moves runs at a linear speed.
  *   Entrances ease out; exits ease in and run about 20% shorter.
  *   Menus and popovers open in 200ms and close in 160ms.
  *   Dialogs open in 250ms and close in 200ms.
@@ -16,10 +21,14 @@
   --ease-out-ui: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-ui: cubic-bezier(0.55, 0, 1, 0.45);
   --ease-in-out-ui: cubic-bezier(0.65, 0, 0.35, 1);
-  --motion-menu-in: 200ms;
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 250ms;
+  --motion-max: 300ms;
+  --motion-menu-in: var(--motion-base);
   --motion-menu-out: 160ms;
-  --motion-dialog-in: 250ms;
-  --motion-dialog-out: 200ms;
+  --motion-dialog-in: var(--motion-slow);
+  --motion-dialog-out: var(--motion-base);
   --motion-row-stagger: 30ms;
 }
 
@@ -91,7 +100,22 @@
   transition-timing-function: var(--ease-in-out-ui), linear(0, 1200 45%, 1);
 }
 
-/* One pulse to confirm something worked: a copied link, a followed club, an event you turn Notify me on for. */
+/* A card shrinks a touch under the finger, so a press visibly lands before
+   the drawer or page it opens. A press on a control inside the card (its
+   Follow or Save button, its club badge) belongs to that control alone.
+   The card's border colour shares the transition, so a card class never
+   sets its own. */
+.press-feedback {
+  transition-property: scale, border-color;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--ease-out-ui);
+}
+/* A button stretched over the whole card (data-card-surface) is the card's own press. */
+.press-feedback:active:not(:has(:is(button:not([data-card-surface]), [role="button"], [data-no-card-activate]):active)) {
+  scale: 0.98;
+}
+
+/* One pulse to confirm something worked: a copied link, a followed club, a saved event, an event you turn Notify me on for. */
 @keyframes success-pulse {
   0% { scale: 1; }
   40% { scale: 1.08; }
@@ -107,7 +131,11 @@
   .animate-pulse-live {
     animation: none !important;
   }
-  [data-slot="switch-thumb"] {
+  [data-slot="switch-thumb"],
+  .press-feedback {
     transition: none !important;
+  }
+  .press-feedback:active {
+    scale: none !important;
   }
 }

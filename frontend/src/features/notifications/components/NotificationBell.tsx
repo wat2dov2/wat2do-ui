@@ -169,7 +169,6 @@ export function NotificationBell() {
         <Button
           variant="outline"
           size="icon-sm"
-          className="relative"
           aria-label={unread > 0 ? t("notifications.openUnread", { count: unread }) : t("notifications.open")}
         >
           <Bell />

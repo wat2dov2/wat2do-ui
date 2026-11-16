@@ -190,7 +190,7 @@ export function TopNav() {
     <header
       data-slot="top-nav"
       data-scrolled={scrolledPastBand ? true : undefined}
-      className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 transition-[background-color,border-color] duration-300 sm:gap-2 sm:px-4 group-has-[[data-under-nav]]/app:not-data-scrolled:border-transparent group-has-[[data-under-nav]]/app:not-data-scrolled:bg-transparent"
+      className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 transition-[background-color,border-color] duration-200 sm:gap-2 sm:px-4 group-has-[[data-under-nav]]/app:not-data-scrolled:border-transparent group-has-[[data-under-nav]]/app:not-data-scrolled:bg-transparent"
     >
       {/*
         Chromium paints as soon as its HTML parser pauses, which on a slow CPU

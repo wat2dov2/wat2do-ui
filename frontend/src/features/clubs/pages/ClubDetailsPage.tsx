@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus, UserCheck } from "lucide-react";
 import { IconSwap } from "@/shared/ui/icon-swap";
 import { cn } from "@/shared/lib/utils";
+import { useTurnOnPop } from "@/shared/hooks";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
@@ -68,6 +69,7 @@ function ClubDetailsContent({
     (state) => state.savedClubIds,
   );
   const isSaved = savedClubIds.includes(club.id);
+  const followPop = useTurnOnPop(isSaved);
   // Whoever created or claimed a club joins its team, and the API lets its team manage it.
   const managesClub = clubs.some((managedClub) => managedClub.id === club.id);
   const openClubPanel = useOpenClubPanel();
@@ -118,10 +120,13 @@ function ClubDetailsContent({
                       variant="outline"
                       selected={isSaved}
                       selectionIndicator="none"
-                      onClick={() => signedInAction(() => toggleSave(club.id))}
+                      onClick={() => signedInAction(() => {
+                        followPop.press();
+                        toggleSave(club.id);
+                      })}
                       aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
                     >
-                      <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(isSaved && "animate-success-pulse")} />} />
+                      <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(followPop.pop && "animate-success-pulse")} />} />
                       {isSaved ? t("clubs.following") : t("clubs.follow")}
                     </Button>
                     <Button

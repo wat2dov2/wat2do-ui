@@ -41,6 +41,7 @@ import {
   INDEPENDENT_CLUB_TYPE,
 } from "@/shared/data/clubTypeAssets";
 import { translateCategory } from "@/shared/utils/event";
+import { normalizeInstagramHandle } from "@/shared/utils/url";
 import type { Club } from "@/shared/types";
 
 interface ClubFormData {
@@ -153,7 +154,8 @@ export function ClubForm({
       club_name: form.formData.club_name.trim(),
       categories: form.formData.categories,
       club_page: form.formData.club_page.trim(),
-      ig: form.formData.ig.trim() || null,
+      // "@handle" and a pasted profile link both mean the handle; anything else is sent as typed for the server to judge.
+      ig: normalizeInstagramHandle(form.formData.ig) || form.formData.ig.trim() || null,
       discord: form.formData.discord.trim() || null,
       club_type: form.formData.club_type,
       school: form.formData.school,

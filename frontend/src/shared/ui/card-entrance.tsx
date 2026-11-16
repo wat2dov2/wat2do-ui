@@ -9,11 +9,19 @@ import { useEffect, useRef, type ReactNode } from "react";
  * staggered so the grid fills in a sweep. Both values live here rather than at
  * each grid, so every card in the app arrives the same way.
  */
-const ENTRANCE_DURATION_SECONDS = 0.5;
 const STAGGER_STEP_SECONDS = 0.03;
 /** Details marked data-settle (badges) trail the card by this much as it settles. */
 const SETTLE_LAG_SECONDS = 0.05;
-const ENTRANCE_EASE = "cubic-bezier(0.18, 0.39, 0.14, 0.9)";
+
+/** The entrance runs the longest interface motion (300ms) on the entering curve, both from styles/motion.css. */
+function entranceTiming() {
+  const style = getComputedStyle(document.documentElement);
+  return {
+    duration: parseFloat(style.getPropertyValue("--motion-max")),
+    easing: style.getPropertyValue("--ease-out-ui").trim(),
+    fill: "backwards",
+  } as const;
+}
 
 /**
  * How many cards a sweep runs across before starting over.
@@ -84,7 +92,7 @@ export function CardEntrance({
       markEntered();
       observer.disconnect();
       const delay = (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS * 1000;
-      const timing = { duration: ENTRANCE_DURATION_SECONDS * 1000, easing: ENTRANCE_EASE, fill: "backwards" } as const;
+      const timing = entranceTiming();
       animations = [
         element.animate(
           [{ opacity: 0, transform: "translateY(20px)" }, { opacity: 1, transform: "translateY(0)" }],

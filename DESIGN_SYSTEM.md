@@ -247,6 +247,13 @@ Variants:
 - `destructive`: error fill.
 - `link`: textual action.
 
+Touch targets:
+
+- Anything tappable takes at least a 44px by 44px press on touch screens.
+- A control drawn smaller (icon buttons, the bell, the avatar, a dialog's close, a card's corner Save badge) keeps its look and grows only its hit area with the `hit-area` utility (`index.css`): an invisible box centred on it, on coarse pointers only.
+- `Button`'s icon sizes carry it already; a hand-built control adds `relative hit-area`.
+- Leave it off a control whose grown box would cover a neighbouring target (a tag's remove button, the verified check inside a club badge) or poke out of a sideways-scrolling row.
+
 Tabs (`shared/ui/tabs.tsx`) are the one tabbed navigation, a segmented control:
 
 - A flat track (`--control-track`) with no shadow, `rounded-xl`, 36px high, 4px padding.
@@ -344,20 +351,29 @@ Ask for typed input only when it creates immediate value.
 
 ## Motion
 
-Motion exists but should stay subtle:
+Motion confirms what a person just did; it never makes them wait.
+Its tokens live once, in `frontend/src/styles/motion.css`:
 
-- Onboarding step transitions use fade plus small vertical movement.
-- Event cards animate in with opacity and y offset.
-- Faculty onboarding has a playful splash effect.
-- Live badge can pulse.
-- Theme toggle uses view transitions.
+| Token | Value | Use |
+| --- | --- | --- |
+| `--motion-fast` | `150ms` | Presses, hovers, colour changes (Tailwind's default `transition`) |
+| `--motion-base` | `200ms` | State changes: icon swaps, menus opening, the nav filling in |
+| `--motion-slow` | `250ms` | Dialogs opening |
+| `--motion-max` | `300ms` | The ceiling: card entrances, the theme reveal |
+| `--ease-out-ui` | `cubic-bezier(0.22, 1, 0.36, 1)` | Anything entering or answering a press (Tailwind's `ease-out` and default easing) |
+| `--ease-in-ui` | `cubic-bezier(0.55, 0, 1, 0.45)` | Anything leaving (Tailwind's `ease-in`) |
+| `--ease-in-out-ui` | `cubic-bezier(0.65, 0, 0.35, 1)` | A move that starts and ends on screen (Tailwind's `ease-in-out`) |
 
-Guidance:
+Rules:
 
-- Motion should confirm progress or make feedback feel alive.
-- Avoid decorative motion that slows browsing.
-- Use reward-screen motion sparingly for moments like Pro unlock or profile
-  completion.
+- Interface motion runs at 300ms or less, most of it 150 to 200ms; exits run about 20% shorter than entrances.
+- Nothing that moves runs at a linear speed; only endless loops (a spinner, a shine) may.
+- Every animation stops under `prefers-reduced-motion: reduce`, either in `motion.css` or with `motion-reduce:`.
+- Buttons shrink to 0.97 while pressed (`Button`), and cards shrink to 0.98 (`press-feedback`), so a press visibly lands before what it opens; a press on a control inside a card moves only that control.
+- Turning a toggle on (Save, Follow, Notify me) pops its icon or badge once (`animate-success-pulse`), only when the person turned it on there (`useTurnOnPop`), never when it loads already on.
+- Toggles change at once and send their request after, putting it back with a toast if it fails; they never dim or disable while the request runs.
+- Frequent controls never move: a toggle keeps one size in both states (`IconSwap`), and loading states hold the same boxes as what they stand for.
+- Reward screens (onboarding payoffs, the Pro unlock) may run longer, sparingly.
 
 ## Illustration And Imagery
 

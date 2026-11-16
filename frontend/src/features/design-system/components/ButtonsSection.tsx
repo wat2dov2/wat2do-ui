@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { Section, Stack } from "@/shared/layout";
+import { useTurnOnPop } from "@/shared/hooks";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { Plus } from "lucide-react";
+import { IconSwap } from "@/shared/ui/icon-swap";
+import { Check, Plus } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const BUTTON_VARIANTS = [
@@ -16,6 +20,26 @@ const BUTTON_SIZES = [
   { label: "Default", size: "default" as const },
   { label: "Large", size: "lg" as const },
 ];
+
+/** A toggle as the app's Follow and Save buttons behave: one size in both states, and a pop only when turned on. */
+function ToggleDemo() {
+  const [on, setOn] = useState(false);
+  const pop = useTurnOnPop(on);
+  return (
+    <Button
+      variant="outline"
+      selected={on}
+      selectionIndicator="none"
+      onClick={() => {
+        pop.press();
+        setOn(!on);
+      }}
+    >
+      <IconSwap showAlternate={on} icon={<Plus />} alternate={<Check className={cn(pop.pop && "animate-success-pulse")} />} />
+      <IconSwap showAlternate={on} icon="Follow" alternate="Following" />
+    </Button>
+  );
+}
 
 export function ButtonsSection() {
   return (
@@ -48,7 +72,7 @@ export function ButtonsSection() {
           </Stack>
         </ShowcaseBlock>
 
-        <ShowcaseBlock label="Icon buttons">
+        <ShowcaseBlock label="Icon buttons (a 44px press on touch screens)">
           <Stack direction="horizontal" gap={2} align="center">
             <Button size="icon-sm" variant="outline" aria-label="Add item">
               <Plus />
@@ -70,6 +94,10 @@ export function ButtonsSection() {
             </Button>
             <Button disabled>Disabled</Button>
           </Stack>
+        </ShowcaseBlock>
+
+        <ShowcaseBlock label="Toggle (changes at once, pops when turned on)">
+          <ToggleDemo />
         </ShowcaseBlock>
       </Stack>
     </Section>

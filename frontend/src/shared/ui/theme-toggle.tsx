@@ -43,6 +43,7 @@ export function ThemeToggle() {
         Math.max(y, window.innerHeight - y),
       );
 
+      const motion = getComputedStyle(root);
       const animation = root.animate(
         {
           clipPath: [
@@ -51,8 +52,9 @@ export function ThemeToggle() {
           ],
         },
         {
-          duration: 400,
-          easing: "ease-in-out",
+          // The reveal grows across the screen, so it eases in and out, within the 300ms interface limit (styles/motion.css).
+          duration: parseFloat(motion.getPropertyValue("--motion-max")),
+          easing: motion.getPropertyValue("--ease-in-out-ui").trim(),
           pseudoElement: "::view-transition-new(root)",
         },
       );
