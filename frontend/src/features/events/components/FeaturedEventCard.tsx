@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { ClubVerifiedCheck } from "@/features/clubs/components/ClubVerifiedCheck";
 import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
 import { centerTitleSvg, eventTitleSvg } from "@/features/events/lib/titleSvg";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -40,7 +41,8 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
     { name: event.club ?? "", src: event.club_logo_url ?? "" },
     ...(event.cohosts ?? []).map(club => ({ name: club.club_name, src: club.logo_url ?? "" })),
   ].filter(host => host.name);
-  const clubs = hosts.map(host => host.name).join(", ");
+  const hostName = event.club?.trim() ?? "";
+  const cohostNames = (event.cohosts ?? []).map(club => club.club_name).filter(Boolean).join(", ");
   // The day and the place; the time waits on the event itself.
   const facts = [formatCardDate(event, timezone, language), event.location?.trim()].filter(Boolean);
 
@@ -67,17 +69,36 @@ export function FeaturedEventCard({ event, onEventClick, priority = false }: Fea
       <Stack gap={3} align="center" className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-6 text-center text-on-media">
         {titleSvg ? <PosterTitle title={event.title} svg={centerTitleSvg(titleSvg)} /> : <TextTitle title={event.title} />}
         <Stack gap={2} align="center" className="w-full">
-          {clubs ? (
+          {hosts.length > 0 ? (
             <Stack direction="horizontal" gap={2} align="center" justify="center" className="max-w-full">
               <span className="shrink-0 text-xs text-on-media-muted">{t("events.highlights.by")}</span>
               <AvatarStack avatars={hosts} decorative loading={priority ? "eager" : "lazy"} />
-              <p className="line-clamp-1 min-w-0 text-left text-xs text-on-media-muted">{clubs}</p>
+              <ClubNames hostName={hostName} cohostNames={cohostNames} verified={Boolean(event.verified)} />
             </Stack>
           ) : null}
           <p className="line-clamp-1 text-xs font-medium">{facts.join(" · ")}</p>
         </Stack>
       </Stack>
     </article>
+  );
+}
+
+/**
+ * The hosting clubs on one line. A verified host's check always sits right after
+ * its name: cohosts truncate first, then the name, and the check never does.
+ */
+function ClubNames({ hostName, cohostNames, verified }: { hostName: string; cohostNames: string; verified: boolean }) {
+  return (
+    <p data-slot="featured-event-clubs" className="flex min-w-0 items-center text-left text-xs text-on-media-muted">
+      {hostName ? <span className="min-w-0 truncate">{hostName}</span> : null}
+      {hostName && verified ? (
+        // The overlay ignores the pointer so taps reach the card; the check takes them for its tooltip.
+        <span className="pointer-events-auto ml-1 flex shrink-0">
+          <ClubVerifiedCheck clubName={hostName} />
+        </span>
+      ) : null}
+      {cohostNames ? <span className="min-w-0 shrink-[999] truncate">{hostName ? `, ${cohostNames}` : cohostNames}</span> : null}
+    </p>
   );
 }
 
