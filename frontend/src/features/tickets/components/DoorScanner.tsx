@@ -1,38 +1,62 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import jsQR from "jsqr";
 import { useTranslation } from "react-i18next";
+import { useDoorCamera, type DoorCameraState } from "@/features/tickets/hooks/useDoorCamera";
 import { useTicketCheckIn } from "@/features/tickets/hooks/useTickets";
 import { formatClock, ticketCodeFrom } from "@/features/tickets/lib/ticketFormat";
 import type { ApiTicketCheckInResponse } from "@/shared/generated";
-import { FormActions, Stack } from "@/shared/layout";
-import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
+import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { Card, CardContent, CardDescription } from "@/shared/ui/card";
 import { FormInput } from "@/shared/ui/form-field";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import { AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
+import { Spinner } from "@/shared/ui/spinner";
+import { cn } from "@/shared/lib/utils";
+import { AlertTriangle, Camera, CameraOff, CheckCircle2, ChevronDown, Keyboard, Users, X, XCircle } from "lucide-react";
 
 // The same ticket held in front of the camera is read once, not once per frame.
 const SAME_CODE_COOLDOWN_MS = 4000;
-// Decoding every frame drains phone batteries at a long door; a few reads a second is plenty.
-const SCAN_INTERVAL_MS = 250;
 // One buzz lets them in; three short ones mean look at the screen.
 const ADMIT_VIBRATION_MS = [80];
 const LOOK_VIBRATION_MS = [60, 60, 60, 60, 60];
+// A ticket let in clears quickly for the next person; anything else stays up long enough to read.
+const ADMITTED_RESULT_MS = 2500;
+const LOOK_RESULT_MS = 6000;
 
-type CameraState = "starting" | "scanning" | "stopped" | "blocked";
+type ResultTone = "admit" | "look" | "refuse";
 
-/** A phone at the door: each QR code scanned checks its ticket in, with a glance at the result. */
-export function DoorScanner({ eventId }: { eventId: number }) {
-  const { t, i18n } = useTranslation();
+function resultTone(result: ApiTicketCheckInResponse["result"]): ResultTone {
+  if (result === "checked_in") return "admit";
+  if (result === "already_checked_in" || result === "undone") return "look";
+  return "refuse";
+}
+
+const TONE_STYLES: Record<ResultTone, { panel: string; disc: string; icon: typeof CheckCircle2 }> = {
+  admit: { panel: "border-success bg-success/15", disc: "bg-success text-success-foreground", icon: CheckCircle2 },
+  look: { panel: "border-warning bg-warning/15", disc: "bg-warning text-warning-foreground", icon: AlertTriangle },
+  refuse: {
+    panel: "border-destructive bg-destructive/15",
+    disc: "bg-destructive text-destructive-foreground",
+    icon: XCircle,
+  },
+};
+
+/** The checked-in count on the event so far, when the desk has loaded. */
+interface DoorCounts {
+  checkedIn: number;
+  issued: number;
+}
+
+/**
+ * A phone at the door: the camera fills the screen, each QR code it reads
+ * checks its ticket in, and the result covers the camera until it clears for
+ * the next person. Typing a code is a fallback tucked under the camera.
+ */
+export function DoorScanner({ eventId, counts }: { eventId: number; counts?: DoorCounts }) {
+  const { t } = useTranslation();
   const checkIn = useTicketCheckIn(eventId, { showsResults: true });
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastCode = useRef<{ code: string; at: number } | null>(null);
-  // The camera starts with the page: at a door, every tap counts.
-  const [camera, setCamera] = useState<CameraState>("starting");
-  const [manualCode, setManualCode] = useState("");
   const [result, setResult] = useState<ApiTicketCheckInResponse | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualCode, setManualCode] = useState("");
   const { mutate } = checkIn;
 
   const admit = useCallback(
@@ -57,146 +81,183 @@ export function DoorScanner({ eventId }: { eventId: number }) {
     [mutate],
   );
 
-  // The scan loop outlives renders, so it reads the latest admit through a ref.
-  const admitRef = useRef(admit);
+  // While a result covers the camera, the camera reads nothing: the door sees every result.
+  const scan = useCallback(
+    (scanned: string) => {
+      if (!result) admit(scanned);
+    },
+    [admit, result],
+  );
+  const { videoRef, camera, start, stop } = useDoorCamera(scan);
+
   useEffect(() => {
-    admitRef.current = admit;
-  }, [admit]);
-
-  // One camera session from "starting" through "scanning": keying the effect on
-  // the state itself would stop the stream the moment it switched to scanning.
-  const cameraOn = camera === "starting" || camera === "scanning";
-
-  useEffect(() => {
-    if (!cameraOn) return;
-    let stream: MediaStream | null = null;
-    let timer: number | undefined;
-    let cancelled = false;
-
-    const scanFrame = () => {
-      const video = videoRef.current;
-      if (cancelled || !video || video.readyState < video.HAVE_ENOUGH_DATA) return;
-      const canvas = (canvasRef.current ??= document.createElement("canvas"));
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      if (!context) return;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-      const decoded = jsQR(frame.data, frame.width, frame.height, { inversionAttempts: "dontInvert" });
-      if (decoded?.data) admitRef.current(decoded.data);
-    };
-
-    // Browsers without camera access (or off HTTPS) go straight to typing codes.
-    const media = navigator.mediaDevices?.getUserMedia
-      ? navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-      : Promise.reject(new Error("No camera"));
-    media
-      .then(async (opened) => {
-        if (cancelled) {
-          opened.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        stream = opened;
-        const video = videoRef.current;
-        if (!video) return;
-        video.srcObject = opened;
-        await video.play();
-        setCamera("scanning");
-        timer = window.setInterval(scanFrame, SCAN_INTERVAL_MS);
-      })
-      .catch(() => setCamera("blocked"));
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      stream?.getTracks().forEach((track) => track.stop());
-    };
-  }, [cameraOn]);
-
-  const resultTone = !result
-    ? null
-    : result.result === "checked_in"
-      ? "success"
-      : result.result === "already_checked_in" || result.result === "undone"
-        ? "warning"
-        : "destructive";
+    if (!result) return;
+    const timer = window.setTimeout(
+      () => setResult(null),
+      result.result === "checked_in" ? ADMITTED_RESULT_MS : LOOK_RESULT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [result]);
 
   return (
-    <Stack gap={4}>
-      <Card>
-        <CardContent>
-          <Stack gap={3} align="center">
-            {/* The camera's viewport: square, so a held-up phone screen fills it. */}
-            <video
-              ref={videoRef}
-              muted
-              playsInline
-              aria-label={t("tickets.scanner.cameraLabel")}
-              hidden={camera !== "scanning"}
-              className="aspect-square w-full max-w-sm rounded-xl bg-muted object-cover"
-            />
-            {camera === "scanning" ? (
-              <Button type="button" variant="outline" size="sm" onClick={() => setCamera("stopped")}>
-                {t("tickets.scanner.stopCamera")}
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                onClick={() => setCamera("starting")}
-                disabled={camera === "starting"}
-              >
-                <Camera className="size-4" />
-                {t("tickets.scanner.startCamera")}
-              </Button>
-            )}
-            {camera === "blocked" ? (
-              <CardDescription>{t("tickets.scanner.cameraBlocked")}</CardDescription>
-            ) : null}
-          </Stack>
-        </CardContent>
-      </Card>
+    <Stack gap={4} data-content-width="sm">
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted sm:aspect-[4/3]">
+        <video
+          ref={videoRef}
+          muted
+          playsInline
+          aria-label={t("tickets.scanner.cameraLabel")}
+          hidden={camera !== "scanning"}
+          className="size-full object-cover"
+        />
+        {camera === "scanning" ? <ScanFrame /> : <CameraIdle camera={camera} onStart={start} />}
 
-      {result && resultTone ? (
-        <Alert variant={resultTone} aria-live="assertive">
-          {resultTone === "success" ? <CheckCircle2 /> : <AlertTriangle />}
-          <AlertTitle>{t(`tickets.door.results.${result.result}`)}</AlertTitle>
-          {result.attendee ? (
-            <AlertDescription>
-              {result.attendee.holder_name}
-              {result.result === "already_checked_in" && result.attendee.checked_in_at
-                ? ` · ${t("tickets.door.checkedInAt", {
-                    time: formatClock(result.attendee.checked_in_at, i18n.language),
-                  })}`
-                : ""}
-            </AlertDescription>
-          ) : null}
-        </Alert>
-      ) : null}
+        {counts ? (
+          <p className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1.5 text-sm font-medium tabular-nums text-foreground shadow-sm backdrop-blur">
+            <Users className="size-4 text-muted-foreground" aria-hidden />
+            {t("tickets.scanner.admitted", { checkedIn: counts.checkedIn, issued: counts.issued })}
+          </p>
+        ) : null}
+        {camera === "scanning" ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            // Pinned to the camera's corner.
+            className="absolute top-3 right-3"
+            aria-label={t("tickets.scanner.stopCamera")}
+            onClick={stop}
+          >
+            <CameraOff />
+          </Button>
+        ) : null}
+        {checkIn.isPending && !result ? (
+          <Spinner className="absolute bottom-4 left-1/2 size-6 -translate-x-1/2 text-primary" />
+        ) : null}
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          lastCode.current = null;
-          admit(manualCode);
-          setManualCode("");
-        }}
-      >
-        <Stack gap={2}>
-          <FormInput
-            name={`door-code-${eventId}`}
-            label={t("tickets.scanner.manual")}
-            placeholder={t("tickets.scanner.manualPlaceholder")}
-            value={manualCode}
-            onChange={(value) => setManualCode(String(value))}
-          />
-          <FormActions align="start">
-            <LoadingButton type="submit" isLoading={checkIn.isPending} disabled={!manualCode.trim()}>
-              {t("tickets.door.checkIn")}
-            </LoadingButton>
-          </FormActions>
-        </Stack>
-      </form>
+        {result ? <ScanResult result={result} onDismiss={() => setResult(null)} /> : null}
+      </div>
+
+      <Stack gap={3} align="center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-expanded={manualOpen || camera === "blocked"}
+          onClick={() => setManualOpen((open) => !open)}
+        >
+          <Keyboard />
+          {t("tickets.scanner.manualToggle")}
+          <ChevronDown className={cn("transition-transform", (manualOpen || camera === "blocked") && "rotate-180")} />
+        </Button>
+        {manualOpen || camera === "blocked" ? (
+          <form
+            className="w-full"
+            onSubmit={(event) => {
+              event.preventDefault();
+              lastCode.current = null;
+              admit(manualCode);
+              setManualCode("");
+            }}
+          >
+            <Stack direction="horizontal" gap={2} align="end">
+              <FormInput
+                name={`door-code-${eventId}`}
+                label={t("tickets.scanner.manual")}
+                placeholder={t("tickets.scanner.manualPlaceholder")}
+                value={manualCode}
+                onChange={(value) => setManualCode(String(value))}
+                // Fills the row beside its button.
+                className="min-w-0 flex-1"
+              />
+              <LoadingButton type="submit" isLoading={checkIn.isPending} disabled={!manualCode.trim()}>
+                {t("tickets.door.checkIn")}
+              </LoadingButton>
+            </Stack>
+          </form>
+        ) : null}
+      </Stack>
     </Stack>
+  );
+}
+
+/** Corner brackets that show where to hold the ticket. */
+function ScanFrame() {
+  const corner = "absolute size-10 border-primary";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-[15%]">
+      <span className={cn(corner, "top-0 left-0 rounded-tl-2xl border-t-4 border-l-4")} />
+      <span className={cn(corner, "top-0 right-0 rounded-tr-2xl border-t-4 border-r-4")} />
+      <span className={cn(corner, "bottom-0 left-0 rounded-bl-2xl border-b-4 border-l-4")} />
+      <span className={cn(corner, "right-0 bottom-0 rounded-br-2xl border-r-4 border-b-4")} />
+    </div>
+  );
+}
+
+/** The camera's square while it is off, starting or not allowed. */
+function CameraIdle({ camera, onStart }: { camera: DoorCameraState; onStart: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Stack gap={3} align="center" justify="center" className="absolute inset-0 p-6 text-center">
+      {camera === "starting" ? (
+        <>
+          <Spinner className="size-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">{t("tickets.scanner.cameraStarting")}</p>
+        </>
+      ) : (
+        <>
+          {camera === "blocked" ? (
+            <p className="max-w-xs text-sm text-muted-foreground">{t("tickets.scanner.cameraBlocked")}</p>
+          ) : null}
+          <Button type="button" size="lg" onClick={onStart}>
+            <Camera />
+            {t("tickets.scanner.startCamera")}
+          </Button>
+        </>
+      )}
+    </Stack>
+  );
+}
+
+/** One scan's result, over the camera: green lets them in, amber means look, red turns them away. */
+function ScanResult({ result, onDismiss }: { result: ApiTicketCheckInResponse; onDismiss: () => void }) {
+  const { t, i18n } = useTranslation();
+  const tone = TONE_STYLES[resultTone(result.result)];
+  const Icon = tone.icon;
+  const checkedInAt =
+    result.result === "already_checked_in" && result.attendee?.checked_in_at
+      ? t("tickets.door.checkedInAt", { time: formatClock(result.attendee.checked_in_at, i18n.language) })
+      : null;
+  return (
+    // An alert, so a screen reader says each result as it appears.
+    <div role="alert" className="absolute inset-0">
+    <button
+      type="button"
+      onClick={onDismiss}
+      className="size-full cursor-pointer rounded-2xl bg-background outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+    >
+      <Stack
+        gap={3}
+        align="center"
+        justify="center"
+        className={cn("size-full rounded-2xl border-4 p-6 text-center", tone.panel)}
+      >
+        <span className={cn("flex size-20 items-center justify-center rounded-full", tone.disc)}>
+          <Icon className="size-11" aria-hidden />
+        </span>
+        <span className="text-2xl font-bold text-balance text-foreground">
+          {t(`tickets.door.results.${result.result}`)}
+        </span>
+        {result.attendee ? (
+          <span className="text-lg font-medium text-foreground">{result.attendee.holder_name}</span>
+        ) : null}
+        {checkedInAt ? <span className="text-sm text-muted-foreground">{checkedInAt}</span> : null}
+        <span className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
+          <X className="size-4" aria-hidden />
+          {t("tickets.scanner.scanNext")}
+        </span>
+      </Stack>
+    </button>
+    </div>
   );
 }

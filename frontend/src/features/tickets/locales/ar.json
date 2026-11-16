@@ -205,14 +205,16 @@
     },
     "scanner": {
       "title": "مسح التذاكر",
-      "description": "وجّه الكاميرا نحو رمز QR الخاص بالتذكرة.",
       "admitted": "تم تسجيل حضور {{checkedIn}} من {{issued}}",
       "startCamera": "تشغيل الكاميرا",
       "stopCamera": "إيقاف الكاميرا",
+      "cameraStarting": "جارٍ تشغيل الكاميرا",
       "cameraLabel": "عرض الكاميرا لمسح التذاكر",
       "cameraBlocked": "اسمح بالوصول إلى الكاميرا لمسح التذاكر، أو اكتب الرمز أدناه.",
+      "manualToggle": "تعذّر المسح؟ أدخل الرمز",
       "manual": "رمز التذكرة",
-      "manualPlaceholder": "اكتب الرمز الموجود أسفل رمز QR"
+      "manualPlaceholder": "اكتب الرمز الموجود أسفل رمز QR",
+      "scanNext": "اضغط لمسح التذكرة التالية"
     },
     "errors": {
       "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."

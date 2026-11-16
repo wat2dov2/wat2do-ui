@@ -107,7 +107,7 @@ test("someone on the club's team checks a scanned ticket in from its page", asyn
   await expect.poll(() => checkedIn).toEqual({ checked_in: true });
 });
 
-test("the door scanner checks in a typed code and says so at a glance", async ({ page, next }) => {
+test("the door scanner checks in a typed code and covers the camera with the result", async ({ page, next }) => {
   await signIn(page, next, [{ id: 7, club_name: "Board Game Club", school: "uwaterloo" }]);
   await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}/ticketing/desk`, () => ({
     json: {
@@ -138,6 +138,8 @@ test("the door scanner checks in a typed code and says so at a glance", async ({
 
   await page.goto(`/club-panel/events/${EVENT_ID}/scan`);
   await expect(page.getByText("3 of 12 checked in")).toBeVisible();
+  // Typing a code is tucked away under the camera until asked for.
+  await page.getByRole("button", { name: "Can't scan? Enter the code" }).click();
   await page.getByRole("textbox", { name: "Ticket code" }).fill("7kq2 mz4p abcd efgh ijkl mnop");
   await page.getByRole("button", { name: "Check in" }).click();
   await expect(page.getByText("Already checked in")).toBeVisible();

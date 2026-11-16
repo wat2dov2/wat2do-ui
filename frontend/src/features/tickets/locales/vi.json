@@ -180,14 +180,16 @@
     },
     "scanner": {
       "title": "Quét vé",
-      "description": "Hướng camera vào mã QR trên vé.",
       "admitted": "{{checkedIn}}/{{issued}} vé đã check-in",
       "startCamera": "Bật camera",
       "stopCamera": "Tắt camera",
+      "cameraStarting": "Đang bật camera",
       "cameraLabel": "Khung hình camera để quét vé",
       "cameraBlocked": "Cho phép truy cập camera để quét vé, hoặc nhập mã bên dưới.",
+      "manualToggle": "Không quét được? Nhập mã",
       "manual": "Mã vé",
-      "manualPlaceholder": "Nhập mã nằm dưới mã QR"
+      "manualPlaceholder": "Nhập mã nằm dưới mã QR",
+      "scanNext": "Chạm để quét vé tiếp theo"
     },
     "errors": {
       "generic": "Đã xảy ra lỗi. Vui lòng thử lại."

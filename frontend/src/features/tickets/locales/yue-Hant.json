@@ -180,14 +180,16 @@
     },
     "scanner": {
       "title": "掃描門票",
-      "description": "將鏡頭對住門票嘅 QR code。",
       "admitted": "已簽到 {{checkedIn}} / {{issued}}",
       "startCamera": "開鏡頭",
       "stopCamera": "閂鏡頭",
+      "cameraStarting": "開緊鏡頭",
       "cameraLabel": "用嚟掃描門票嘅鏡頭畫面",
       "cameraBlocked": "允許使用鏡頭先可以掃描門票，或者喺下面輸入票碼。",
+      "manualToggle": "掃唔到？輸入票碼",
       "manual": "票碼",
-      "manualPlaceholder": "輸入 QR code 下面嘅票碼"
+      "manualPlaceholder": "輸入 QR code 下面嘅票碼",
+      "scanNext": "撳一下掃下一張"
     },
     "errors": {
       "generic": "出咗啲問題，請再試一次。"

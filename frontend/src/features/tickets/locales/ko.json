@@ -180,14 +180,16 @@
     },
     "scanner": {
       "title": "티켓 스캔",
-      "description": "카메라를 티켓의 QR 코드에 맞춰 주세요.",
       "admitted": "{{issued}}장 중 {{checkedIn}}장 체크인",
       "startCamera": "카메라 켜기",
       "stopCamera": "카메라 끄기",
+      "cameraStarting": "카메라를 켜는 중",
       "cameraLabel": "티켓 스캔용 카메라 화면",
       "cameraBlocked": "티켓을 스캔하려면 카메라 접근을 허용하거나, 아래에 코드를 입력해 주세요.",
+      "manualToggle": "스캔이 안 되나요? 코드 입력",
       "manual": "티켓 코드",
-      "manualPlaceholder": "QR 코드 아래에 있는 코드를 입력하세요"
+      "manualPlaceholder": "QR 코드 아래에 있는 코드를 입력하세요",
+      "scanNext": "탭해서 다음 티켓 스캔"
     },
     "errors": {
       "generic": "문제가 발생했어요. 다시 시도해 주세요."
