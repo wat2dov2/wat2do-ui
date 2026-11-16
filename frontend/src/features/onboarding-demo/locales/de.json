@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 ausgewählt - mindestens 2 erforderlich, um fortzufahren",
       "reactionGroup": "Reaktion auf {{title}}",
       "reactions": {
-        "interested": "Benachrichtige mich",
+        "interested": "Dabei",
         "maybe": "Vielleicht",
         "notForMe": "Nicht für mich"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "Wir haben deine erste Wat2Do Woche erstellt",
-      "descriptionWithPicks": "Deine abonnierten Veranstaltungen, passenden Organisationen und besten Ausgehabende sind bereit.",
+      "descriptionWithPicks": "Die Veranstaltungen, bei denen du dabei bist, passende Organisationen und die besten Ausgehabende sind bereit.",
       "descriptionWithoutPicks": "Stattdessen haben wir einen Starter-Feed erstellt. Du kannst ihn beim Durchstöbern anpassen.",
       "tonight": "Heute Abend",
       "tonightWithPick": "1 Veranstaltung, die sich lohnt zu besuchen",
@@ -84,9 +84,9 @@
       "description": "Genießen Sie 14 Tage personalisierte Campus-Entdeckung. Keine Zahlung erforderlich.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Campus-Radar freigeschaltet",
-      "visualDescription": "Persönliche Benachrichtigungen, abonnierte Veranstaltungen und dein Wochenplan - alles an einem Ort.",
+      "visualDescription": "Persönliche Benachrichtigungen, Veranstaltungen, bei denen du dabei bist, und dein Wochenplan - alles an einem Ort.",
       "benefits": {
-        "save": "Tippe bei Veranstaltungen auf Benachrichtige mich",
+        "save": "Tippe bei Veranstaltungen auf Dabei",
         "follow": "Clubs folgen",
         "alerts": "Sofortige Übereinstimmungsbenachrichtigungen erhalten",
         "calendar": "Ereignisse mit deinem Kalender synchronisieren",
@@ -96,14 +96,14 @@
     },
     "challenge": {
       "title": "Pro aktiv halten, indem du Wat2Do diese Woche benutzt",
-      "description": "Tippe diese Woche bei 3 Veranstaltungen auf Benachrichtige mich, um Pro um 7 Tage zu verlängern.",
+      "description": "Tippe diese Woche bei 3 Veranstaltungen auf Dabei, um Pro um 7 Tage zu verlängern.",
       "label": "Campus Explorer Challenge",
       "progress": "{{count}} / {{total}} Veranstaltungen",
       "reward": "Belohnung: +7 Tage Pro",
       "progressAria": "Fortschritt der Challenge",
-      "markedInterested": "{{count}} Veranstaltungen während des Onboardings für Benachrichtigungen markiert",
-      "markedInterested_one": "{{count}} Veranstaltung während des Onboardings für Benachrichtigungen markiert",
-      "markedInterested_other": "{{count}} Veranstaltungen während des Onboardings für Benachrichtigungen markiert"
+      "markedInterested": "{{count}} Veranstaltungen während des Onboardings als Dabei markiert",
+      "markedInterested_one": "{{count}} Veranstaltung während des Onboardings als Dabei markiert",
+      "markedInterested_other": "{{count}} Veranstaltungen während des Onboardings als Dabei markiert"
     },
     "home": {
       "badge": "Demo abgeschlossen",
@@ -111,7 +111,7 @@
       "description": "Dies ist eine Vorschau Ihres personalisierten Startbildschirms – es wurden keine Daten gespeichert.",
       "recommended": "Für Sie empfohlen",
       "proTrialBadge": "Pro-Testversion – 14 Tage",
-      "saved": "Diese Woche abonniert",
+      "saved": "Diese Woche dabei",
       "freeFood": "Kostenloses Essen in Ihrer Nähe",
       "freeFoodPreview": "Pizza-Abend in SLC Great Hall – Do 18:00 Uhr",
       "trialEnds": "Testversion endet in 14 Tagen",

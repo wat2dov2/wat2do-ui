@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 선택됨 - 계속하려면 최소 2개 필요",
       "reactionGroup": "{{title}}에 대한 반응",
       "reactions": {
-        "interested": "알림 받기",
+        "interested": "참석",
         "maybe": "그럴 수도 있음",
         "notForMe": "나에게는 해당 없음"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "당신의 첫 번째 Wat2Do 주를 만들었습니다.",
-      "descriptionWithPicks": "구독 중인 이벤트, 매칭된 클럽, 최고의 외출 밤이 준비되었습니다.",
+      "descriptionWithPicks": "참석할 이벤트, 매칭된 클럽, 최고의 외출 밤이 준비되었습니다.",
       "descriptionWithoutPicks": "대신 스타터 피드를 만들었어요. 둘러보면서 조정할 수 있습니다.",
       "tonight": "오늘 밤",
       "tonightWithPick": "확인할 가치가 있는 1개의 이벤트",
@@ -84,9 +84,9 @@
       "description": "14일 동안 맞춤형 캠퍼스 탐색을 즐기세요. 결제 필요 없음.",
       "brand": "Wat2Do Pro",
       "visualTitle": "캠퍼스 레이더 잠금 해제",
-      "visualDescription": "맞춤 알림, 구독 중인 이벤트, 주간 계획 모두 한 곳에서 확인하세요.",
+      "visualDescription": "맞춤 알림, 참석할 이벤트, 주간 계획 모두 한 곳에서 확인하세요.",
       "benefits": {
-        "save": "이벤트에서 '알림 받기' 누르기",
+        "save": "이벤트에서 '참석' 누르기",
         "follow": "클럽 팔로우",
         "alerts": "즉시 매칭 알림 받기",
         "calendar": "일정을 캘린더와 동기화",
@@ -96,13 +96,13 @@
     },
     "challenge": {
       "title": "이번 주에 Wat2Do를 사용하여 Pro 유지",
-      "description": "이번 주에 이벤트 3개에서 '알림 받기'를 누르면 Pro가 7일 연장됩니다.",
+      "description": "이번 주에 이벤트 3개에서 '참석'을 누르면 Pro가 7일 연장됩니다.",
       "label": "캠퍼스 탐험가 챌린지",
       "progress": "{{count}} / {{total}}개 이벤트",
       "reward": "보상: Pro +7일",
       "progressAria": "챌린지 진행 상황",
-      "markedInterested": "온보딩 중 {{count}}개 이벤트에 알림 설정",
-      "markedInterested_other": "온보딩 중 {{count}}개 이벤트에 알림 설정"
+      "markedInterested": "온보딩 중 {{count}}개 이벤트에 참석 표시",
+      "markedInterested_other": "온보딩 중 {{count}}개 이벤트에 참석 표시"
     },
     "home": {
       "badge": "데모 완료",
@@ -110,7 +110,7 @@
       "description": "개인화된 홈 미리보기입니다 - 데이터는 저장되지 않았습니다.",
       "recommended": "추천",
       "proTrialBadge": "Pro 체험 - 14일",
-      "saved": "이번 주 구독 중",
+      "saved": "이번 주 참석 예정",
       "freeFood": "주변 무료 음식",
       "freeFoodPreview": "SLC 그레이트 홀에서 피자 나이트 - 목요일 오후 6:00",
       "trialEnds": "체험 기간 종료까지 14일",

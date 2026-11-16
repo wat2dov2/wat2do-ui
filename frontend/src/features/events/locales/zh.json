@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "招聘：{{positions}}",
-    "minimumGoing": "最少收到通知人数",
+    "minimumGoing": "最少参加人数",
     "eventTitle": "活动标题",
     "loadFailed": "加载活动失败。请重试。",
     "deleteFailed": "删除活动失败。请重试。",
@@ -81,9 +81,9 @@
       "submitFailed": "无法提交举报"
     },
     "goingEvents": {
-      "timeUnavailable": "此活动已开始或已取消，因此无法使用“提醒我”。",
+      "timeUnavailable": "此活动已开始或已取消，因此无法标记“参加”。",
       "saveFailed": "无法保存您选择的时间",
-      "chooseOccurrences": "要在哪些日期提醒你？",
+      "chooseOccurrences": "你要参加哪些日期？",
       "chooseOccurrencesDescription": "选择所有你想收到提醒和更新的日期。"
     },
     "calendar": {
@@ -111,8 +111,8 @@
     },
     "new": "新",
     "updated": "已更新",
-    "goingCount": "{{count}} 人会收到通知",
-    "goingCount_other": "{{count}} 人会收到通知",
+    "goingCount": "{{count}} 人参加",
+    "goingCount_other": "{{count}} 人参加",
     "hostedBy": "主办方",
     "aboutEvent": "关于活动",
     "fetchingDetails": "正在获取详情...",
@@ -128,15 +128,15 @@
     "moreEvents": "更多活动",
     "submitEvent": "添加活动",
     "allEvents": "所有活动",
-    "going": "已订阅",
+    "going": "参加",
     "notifyMe": {
-      "action": "提醒我",
+      "action": "参加",
       "description": "开始前提醒你，有任何变动时发邮件通知你。",
       "otherDates": "其他日期不需要门票。开始前会提醒你，有任何变动时会发邮件通知你。",
-      "onTitle": "你会收到通知",
+      "onTitle": "你会参加",
       "onDescription": "我们会在开始前发邮件提醒你，有任何变动也会告诉你。",
-      "offPrompt": "不需要更新？",
-      "off": "关闭“提醒我”。"
+      "offPrompt": "去不了？",
+      "off": "标记为不参加。"
     },
     "views": {
       "label": "活动视图",

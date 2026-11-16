@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Tuyển dụng: {{positions}}",
-    "minimumGoing": "Số người nhận thông báo tối thiểu",
+    "minimumGoing": "Số người sẽ đi tối thiểu",
     "eventTitle": "Tiêu đề sự kiện",
     "loadFailed": "Không tải được sự kiện. Vui lòng thử lại.",
     "deleteFailed": "Xóa sự kiện thất bại. Vui lòng thử lại.",
@@ -81,9 +81,9 @@
       "submitFailed": "Không thể gửi báo cáo"
     },
     "goingEvents": {
-      "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên không thể dùng \"Nhắc tôi\".",
+      "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên không thể đánh dấu \"Sẽ đi\".",
       "saveFailed": "Không thể lưu thời gian bạn đã chọn",
-      "chooseOccurrences": "Bạn muốn được nhắc vào những ngày nào?",
+      "chooseOccurrences": "Bạn sẽ đi vào những ngày nào?",
       "chooseOccurrencesDescription": "Chọn tất cả các ngày bạn muốn nhận lời nhắc và cập nhật."
     },
     "calendar": {
@@ -111,8 +111,8 @@
     },
     "new": "MỚI",
     "updated": "ĐÃ CẬP NHẬT",
-    "goingCount": "{{count}} người nhận thông báo",
-    "goingCount_other": "{{count}} người nhận thông báo",
+    "goingCount": "{{count}} người sẽ đi",
+    "goingCount_other": "{{count}} người sẽ đi",
     "hostedBy": "Được tổ chức bởi",
     "aboutEvent": "Về sự kiện",
     "fetchingDetails": "Đang lấy chi tiết...",
@@ -128,15 +128,15 @@
     "moreEvents": "Thêm sự kiện",
     "submitEvent": "Thêm sự kiện",
     "allEvents": "Tất cả các sự kiện",
-    "going": "Đã đăng ký",
+    "going": "Sẽ đi",
     "notifyMe": {
-      "action": "Nhắc tôi",
+      "action": "Sẽ đi",
       "description": "Nhận lời nhắc trước khi bắt đầu và email nếu có gì thay đổi.",
       "otherDates": "Các ngày khác không cần vé. Nhận lời nhắc trước các ngày đó và email nếu có gì thay đổi.",
-      "onTitle": "Bạn sẽ được thông báo",
+      "onTitle": "Bạn sẽ đi",
       "onDescription": "Chúng tôi sẽ gửi email nhắc bạn trước khi bắt đầu và báo cho bạn nếu có gì thay đổi.",
-      "offPrompt": "Không cần cập nhật?",
-      "off": "Tắt \"Nhắc tôi\"."
+      "offPrompt": "Không đi được?",
+      "off": "Đánh dấu là không đi."
     },
     "views": {
       "label": "Chế độ xem sự kiện",

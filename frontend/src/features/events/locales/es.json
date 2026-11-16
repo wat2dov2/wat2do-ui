@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Contratando: {{positions}}",
-    "minimumGoing": "Mínimo de notificados",
+    "minimumGoing": "Mínimo de asistentes",
     "eventTitle": "Título del Evento",
     "loadFailed": "No se pudo cargar los eventos. Por favor, inténtelo de nuevo.",
     "deleteFailed": "No se pudo eliminar el evento. Por favor, inténtelo de nuevo.",
@@ -83,9 +83,9 @@
       "submitFailed": "No se pudo enviar el reporte"
     },
     "goingEvents": {
-      "timeUnavailable": "Este evento ya comenzó o fue cancelado, así que Notificarme no está disponible.",
+      "timeUnavailable": "Este evento ya comenzó o fue cancelado, así que Voy no está disponible.",
       "saveFailed": "No se pudo guardar tu hora seleccionada",
-      "chooseOccurrences": "¿De qué fechas quieres que te avisemos?",
+      "chooseOccurrences": "¿A qué fechas vas a ir?",
       "chooseOccurrencesDescription": "Elige cada fecha para la que quieras un recordatorio y novedades."
     },
     "calendar": {
@@ -113,9 +113,9 @@
     },
     "new": "NUEVO",
     "updated": "ACTUALIZADO",
-    "goingCount": "{{count}} notificados",
-    "goingCount_one": "{{count}} notificado",
-    "goingCount_other": "{{count}} notificados",
+    "goingCount": "{{count}} van",
+    "goingCount_one": "{{count}} va",
+    "goingCount_other": "{{count}} van",
     "hostedBy": "Organizado por",
     "aboutEvent": "Acerca del evento",
     "fetchingDetails": "Recuperando detalles...",
@@ -131,21 +131,21 @@
     "moreEvents": "Más eventos",
     "submitEvent": "Agregar evento",
     "allEvents": "Todos los eventos",
-    "going": "Suscrito",
+    "going": "Voy",
     "notifyMe": {
-      "action": "Notificarme",
+      "action": "Voy",
       "description": "Recibe un recordatorio antes de que empiece y un correo si algo cambia.",
       "otherDates": "Las otras fechas no necesitan boleto. Recibe un recordatorio antes de cada una y un correo si algo cambia.",
-      "onTitle": "Te vamos a avisar",
+      "onTitle": "Vas a ir",
       "onDescription": "Te enviaremos un recordatorio por correo antes de que empiece y te avisaremos si algo cambia.",
-      "offPrompt": "¿Ya no necesitas novedades?",
-      "off": "Desactivar Notificarme."
+      "offPrompt": "¿No puedes ir?",
+      "off": "Marcar que no vas."
     },
     "upcomingEventCount_one": "evento próximo",
     "upcomingEventCount_many": "eventos próximos",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clics",
-    "goingCount_many": "{{count}} notificados",
+    "goingCount_many": "{{count}} van",
     "moreDatesCount_one": "+{{count}} fecha",
     "moreDatesCount_many": "+{{count}} fechas",
     "views": {

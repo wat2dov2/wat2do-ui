@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 picked - need at least 2 to continue",
       "reactionGroup": "Reaction for {{title}}",
       "reactions": {
-        "interested": "Notify me",
+        "interested": "Going",
         "maybe": "Maybe",
         "notForMe": "Not for me"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "We built your first Wat2Do week",
-      "descriptionWithPicks": "Your subscribed events, matching clubs, and best nights out are ready.",
+      "descriptionWithPicks": "The events you're going to, matching clubs, and best nights out are ready.",
       "descriptionWithoutPicks": "We made a starter feed instead. You can tune it as you browse.",
       "tonight": "Tonight",
       "tonightWithPick": "1 event worth checking out",
@@ -84,9 +84,9 @@
       "description": "Enjoy personalized campus discovery for 14 days. No payment needed.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Campus radar unlocked",
-      "visualDescription": "Personalized alerts, subscribed events, and your weekly plan - all in one place.",
+      "visualDescription": "Personalized alerts, events you're going to, and your weekly plan - all in one place.",
       "benefits": {
-        "save": "Tap Notify me on events",
+        "save": "Tap Going on events",
         "follow": "Follow clubs",
         "alerts": "Get instant matching alerts",
         "calendar": "Sync events to your calendar",
@@ -96,14 +96,14 @@
     },
     "challenge": {
       "title": "Keep Pro going by using Wat2Do this week",
-      "description": "Tap Notify me on 3 events this week to extend Pro by 7 days.",
+      "description": "Tap Going on 3 events this week to extend Pro by 7 days.",
       "label": "Campus Explorer Challenge",
       "progress": "{{count}} / {{total}} events",
       "reward": "Reward: +7 days of Pro",
       "progressAria": "Challenge progress",
-      "markedInterested": "{{count}} events marked to get notified during onboarding",
-      "markedInterested_one": "{{count}} event marked to get notified during onboarding",
-      "markedInterested_other": "{{count}} events marked to get notified during onboarding"
+      "markedInterested": "{{count}} events marked as going during onboarding",
+      "markedInterested_one": "{{count}} event marked as going during onboarding",
+      "markedInterested_other": "{{count}} events marked as going during onboarding"
     },
     "home": {
       "badge": "Demo complete",
@@ -111,7 +111,7 @@
       "description": "This is a preview of your personalized home - no data was saved.",
       "recommended": "Recommended for you",
       "proTrialBadge": "Pro trial - 14 days",
-      "saved": "Subscribed this week",
+      "saved": "Going this week",
       "freeFood": "Free food near you",
       "freeFoodPreview": "Pizza night at SLC Great Hall - Thu 6:00 PM",
       "trialEnds": "Trial ends in 14 days",

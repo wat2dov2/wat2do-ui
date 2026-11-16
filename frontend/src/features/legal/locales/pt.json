@@ -162,9 +162,9 @@
       "title": "Política de dados",
       "intro": "Esta política explica quais dados pessoais o Wat2Do coleta, por quê, com quem os compartilhamos, por quanto tempo os guardamos e quais escolhas você tem. Ela abrange o wat2do.io e cada site de universidade dentro dele (como uwaterloo.wat2do.io), os e-mails que enviamos e as contas do Instagram que administramos para cada universidade. Se tiver alguma dúvida, escreva para <email>{{email}}</email>.",
       "summary": {
-        "collect": "Coletamos o que você nos informa (seu e-mail, universidade, faculdade e interesses), o que você faz no Wat2Do (eventos que você salva ou em que ativa Me avise, ingressos, organizações que segue) e alguns dados técnicos, como uma forma embaralhada do seu endereço IP.",
+        "collect": "Coletamos o que você nos informa (seu e-mail, universidade, faculdade e interesses), o que você faz no Wat2Do (eventos que você salva ou marca com Vou, ingressos, organizações que segue) e alguns dados técnicos, como uma forma embaralhada do seu endereço IP.",
         "noSale": "Não vendemos seus dados pessoais e não mostramos anúncios.",
-        "share": "As organizações veem seu nome e seu e-mail quando você tem um ingresso para o evento delas. Ninguém mais vê em quais eventos você ativa Me avise. Empresas como Amazon Web Services, Cloudflare e Google operam partes do Wat2Do para nós, algumas delas fora do Canadá.",
+        "share": "As organizações veem seu nome e seu e-mail quando você tem um ingresso para o evento delas. Ninguém mais vê quais eventos você marca com Vou. Empresas como Amazon Web Services, Cloudflare e Google operam partes do Wat2Do para nós, algumas delas fora do Canadá.",
         "analytics": "Usamos o Google Analytics para contar visitas, e removemos códigos e endereços de e-mail dos endereços de página que ele recebe.",
         "public": "Também usamos informações públicas: eventos de organizações tirados de posts públicos do Instagram e os e-mails de contato que as organizações publicam na internet.",
         "choices": "Você pode desativar nossos e-mails a qualquer momento, mudar seu perfil em Configurações e nos pedir para mostrar, corrigir ou excluir suas informações.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "O que você faz no Wat2Do.",
-              "text": "Eventos que você salva ou em que ativa Me avise, posições que você salva, organizações que você segue, ingressos que você garante, quando uma organização faz o seu check-in e pedidos de reembolso que você envia."
+              "text": "Eventos que você salva ou marca com Vou, posições que você salva, organizações que você segue, ingressos que você garante, quando uma organização faz o seu check-in e pedidos de reembolso que você envia."
             },
             "submissions": {
               "term": "O que você nos envia.",
@@ -250,8 +250,8 @@
           "p1": "Usamos dados pessoais apenas para estas finalidades:",
           "purposes": {
             "account": "Para gerenciar sua conta, fazer seu login e manter sua sessão ativa.",
-            "show": "Para mostrar a você o que está acontecendo na sua universidade, e os eventos que você salvou, em que ativou Me avise ou para os quais tem ingressos.",
-            "emails": "Para enviar os e-mails que você controla: o e-mail matinal de eventos, lembretes antes dos eventos em que você ativou Me avise e alertas quando algum deles muda. Também enviamos e-mails de que você precisa, como códigos de login, ingressos e nossas decisões sobre o que você enviou.",
+            "show": "Para mostrar a você o que está acontecendo na sua universidade, e os eventos que você salvou, marcou com Vou ou para os quais tem ingressos.",
+            "emails": "Para enviar os e-mails que você controla: o e-mail matinal de eventos, lembretes antes dos eventos que você marcou com Vou e alertas quando algum deles muda. Também enviamos e-mails de que você precisa, como códigos de login, ingressos e nossas decisões sobre o que você enviou.",
             "tickets": "Para emitir ingressos e permitir que as organizações façam o seu check-in.",
             "payouts": "Para pagar promotores e organizações dos nossos programas de pagamento, e para manter os registros que a lei exige.",
             "safety": "Para manter o Wat2Do seguro: limitar abusos, detectar contas falsas, cliques falsos e leituras falsas, e investigar problemas.",
@@ -273,7 +273,7 @@
           "title": "Quem vê e com quem compartilhamos",
           "p1": "Parte do que você faz no Wat2Do fica visível para outras pessoas:",
           "visible": {
-            "notifyMe": "Ninguém mais vê em quais eventos você ativa Me avise. Um evento mostra apenas quantas pessoas fizeram isso.",
+            "notifyMe": "Ninguém mais vê quais eventos você marca com Vou. Um evento mostra apenas quantas pessoas fizeram isso.",
             "tickets": "Quando você tem um ingresso, a organização responsável pelo evento vê seu nome (ou o início do seu e-mail), seu e-mail, o código do seu ingresso, quando foi feito o seu check-in e qualquer pedido de reembolso.",
             "teams": "As pessoas que gerenciam a mesma organização veem os nomes, e-mails e fotos umas das outras.",
             "submissions": "Os eventos, vagas e organizações que publicamos a partir do que você envia são públicos, mas o seu e-mail não."
@@ -366,7 +366,7 @@
               "text": "os códigos expiram após {{codeMinutes}}, e uma sessão termina {{sessionDays}} depois da última vez que você a usou."
             },
             "activity": {
-              "term": "Me avise, eventos e posições salvos, organizações seguidas e ingressos:",
+              "term": "Vou, eventos e posições salvos, organizações seguidas e ingressos:",
               "text": "até você removê-los ou excluir sua conta."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "Desativar o e-mail matinal, os lembretes e os alertas de alteração em Configurações, ou pelo link de cancelamento de inscrição em qualquer um deles. Códigos de login e ingressos continuam chegando, porque você precisa deles.",
             "profile": "Mudar sua foto, universidade, faculdade, interesses e idioma em Configurações.",
-            "activity": "Desativar Me avise, remover eventos salvos e deixar de seguir organizações quando quiser.",
+            "activity": "Desmarcar Vou, remover eventos salvos e deixar de seguir organizações quando quiser.",
             "analytics": "Bloquear os cookies do Google Analytics no seu navegador."
           },
           "p2": "Você também pode nos pedir para:",

@@ -171,7 +171,7 @@
     "max": "Max",
     "today": "Today",
     "forYou": "For You",
-    "going": "Subscribed",
+    "going": "Going",
     "dateRange": "Date range",
     "dayOfWeek": "Day of the week",
     "registration": "Requires Registration",
@@ -200,7 +200,7 @@
     "showPersonalizedEvents": "Show Personalized Events",
     "openFilters": "Open Filters",
     "createNewEvent": "Submit Event",
-    "goingEvents": "Subscribed events",
+    "goingEvents": "Going events",
     "notificationPreferences": "Notification Preferences",
     "themeAppearance": "Theme & Appearance",
     "helpSupport": "Help & Support",
@@ -398,7 +398,7 @@
       },
       "account": {
         "title": "Sign in for more",
-        "desc": "An account lets you save events, turn on Notify me for reminders and updates, and use the tools for running a club."
+        "desc": "An account lets you save events, mark the ones you're going to for reminders and updates, and use the tools for running a club."
       }
     },
     "help": {
@@ -558,7 +558,7 @@
       "items": {
         "free": {
           "question": "Is Wat2Do free?",
-          "answer": "Yes. Wat2Do is free for students, and you can browse every event without an account. Sign in to turn on Notify me and get reminders."
+          "answer": "Yes. Wat2Do is free for students, and you can browse every event without an account. Sign in to mark events as Going and get reminders."
         },
         "clubs": {
           "question": "Does my club need to sign up?",

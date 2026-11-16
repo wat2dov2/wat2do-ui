@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Rekrutacja: {{positions}}",
-    "minimumGoing": "Minimum powiadomionych",
+    "minimumGoing": "Minimum uczestników",
     "eventTitle": "Tytuł wydarzenia",
     "loadFailed": "Nie udało się załadować wydarzeń. Spróbuj ponownie.",
     "deleteFailed": "Nie udało się usunąć wydarzenia. Spróbuj ponownie.",
@@ -84,9 +84,9 @@
       "submitFailed": "Nie udało się wysłać zgłoszenia"
     },
     "goingEvents": {
-      "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc opcja Powiadom mnie jest niedostępna.",
+      "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc opcja Idę jest niedostępna.",
       "saveFailed": "Nie udało się zapisać wybranego czasu",
-      "chooseOccurrences": "O których terminach mamy Cię powiadomić?",
+      "chooseOccurrences": "W których terminach idziesz?",
       "chooseOccurrencesDescription": "Wybierz wszystkie terminy, dla których chcesz dostać przypomnienie i aktualizacje."
     },
     "calendar": {
@@ -114,9 +114,9 @@
     },
     "new": "NOWE",
     "updated": "ZAKTUALIZOWANO",
-    "goingCount": "{{count}} osoby powiadomionej",
-    "goingCount_one": "{{count}} osoba powiadomiona",
-    "goingCount_other": "{{count}} osoby powiadomionej",
+    "goingCount": "{{count}} osoby idą",
+    "goingCount_one": "{{count}} osoba idzie",
+    "goingCount_other": "{{count}} osoby idą",
     "hostedBy": "Organizowane przez",
     "aboutEvent": "Informacje o wydarzeniu",
     "fetchingDetails": "Pobieranie szczegółów...",
@@ -132,15 +132,15 @@
     "moreEvents": "Więcej wydarzeń",
     "submitEvent": "Dodaj wydarzenie",
     "allEvents": "Wszystkie wydarzenia",
-    "going": "Subskrybowane",
+    "going": "Idę",
     "notifyMe": {
-      "action": "Powiadom mnie",
+      "action": "Idę",
       "description": "Dostaniesz przypomnienie przed rozpoczęciem i e-mail, jeśli coś się zmieni.",
       "otherDates": "Pozostałe terminy nie wymagają biletu. Dostaniesz przypomnienie przed każdym z nich i e-mail, jeśli coś się zmieni.",
-      "onTitle": "Powiadomimy Cię",
+      "onTitle": "Idziesz",
       "onDescription": "Wyślemy Ci e-mailem przypomnienie przed rozpoczęciem i damy znać, jeśli coś się zmieni.",
-      "offPrompt": "Nie potrzebujesz aktualizacji?",
-      "off": "Wyłącz Powiadom mnie."
+      "offPrompt": "Nie dasz rady?",
+      "off": "Zaznacz, że nie idziesz."
     },
     "upcomingEventCount_one": "nadchodzące wydarzenie",
     "upcomingEventCount_few": "nadchodzące wydarzenia",
@@ -148,8 +148,8 @@
     "clickCount_one": "{{count}} kliknięcie",
     "clickCount_few": "{{count}} kliknięcia",
     "clickCount_many": "{{count}} kliknięć",
-    "goingCount_few": "{{count}} osoby powiadomione",
-    "goingCount_many": "{{count}} osób powiadomionych",
+    "goingCount_few": "{{count}} osoby idą",
+    "goingCount_many": "{{count}} osób idzie",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_few": "+{{count}} daty",
     "moreDatesCount_many": "+{{count}} dat",

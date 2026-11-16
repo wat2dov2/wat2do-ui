@@ -44,7 +44,7 @@ def is_cancellation(diff: dict) -> bool:
 
 
 def event_change_subject(event: dict, diff: dict) -> str:
-    title = event.get("title") or "an event you get updates for"
+    title = event.get("title") or "an event you're going to"
     return f"{'Cancelled' if is_cancellation(diff) else 'Changed'}: {title}"
 
 
@@ -59,7 +59,7 @@ def render_event_change_text(
     unsubscribe_url: str,
     refund_url: str | None,
 ) -> str:
-    lines = [subject, "", "You turned on Notify me for this event. Here's what changed:", ""]
+    lines = [subject, "", "You're going to this event. Here's what changed:", ""]
     for label, old, new in _describe_changes(diff, tz):
         if old and new:
             lines.append(f"- {label}: {old} -> {new}")
@@ -103,7 +103,7 @@ def render_event_change_html(
     return email_shell(
         heading=subject,
         content=_event_spotlight(
-            intro="You turned on Notify me for this event. Here's what changed.",
+            intro="You're going to this event. Here's what changed.",
             event=event,
             image_src=image_src,
             frontend_url=frontend_url,

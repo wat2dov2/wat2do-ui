@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Mga bakanteng posisyon: {{positions}}",
-    "minimumGoing": "Minimum na aabisuhan",
+    "minimumGoing": "Minimum na pupunta",
     "eventTitle": "Pamagat ng Kaganapan",
     "loadFailed": "Nabigong i-load ang mga kaganapan. Pakisubukang muli.",
     "deleteFailed": "Nabigong tanggalin ang kaganapan. Pakisubukang muli.",
@@ -82,9 +82,9 @@
       "submitFailed": "Hindi maipasa ang ulat"
     },
     "goingEvents": {
-      "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi na available ang Paalalahanan ako.",
+      "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi na available ang Pupunta.",
       "saveFailed": "Hindi maisalba ang napiling oras",
-      "chooseOccurrences": "Aling mga petsa ang gusto mong ipaalala namin?",
+      "chooseOccurrences": "Aling mga petsa ka pupunta?",
       "chooseOccurrencesDescription": "Piliin ang bawat petsa na gusto mong makatanggap ng paalala at update."
     },
     "calendar": {
@@ -112,9 +112,9 @@
     },
     "new": "BAGO",
     "updated": "NA-UPDATE",
-    "goingCount": "{{count}} aabisuhan",
-    "goingCount_one": "{{count}} aabisuhan",
-    "goingCount_other": "{{count}} aabisuhan",
+    "goingCount": "{{count}} pupunta",
+    "goingCount_one": "{{count}} pupunta",
+    "goingCount_other": "{{count}} pupunta",
     "hostedBy": "Hinost ng",
     "aboutEvent": "Tungkol sa Kaganapan",
     "fetchingDetails": "Kinukuha ang mga detalye...",
@@ -130,15 +130,15 @@
     "moreEvents": "Higit pang mga kaganapan",
     "submitEvent": "Magdagdag ng kaganapan",
     "allEvents": "Lahat ng mga kaganapan",
-    "going": "Naka-subscribe",
+    "going": "Pupunta",
     "notifyMe": {
-      "action": "Paalalahanan ako",
+      "action": "Pupunta",
       "description": "Makatanggap ng paalala bago ito magsimula, at email kapag may nagbago.",
       "otherDates": "Hindi kailangan ng tiket sa ibang petsa. Makatanggap ng paalala bago ang mga ito, at email kapag may nagbago.",
-      "onTitle": "Aabisuhan ka namin",
+      "onTitle": "Pupunta ka",
       "onDescription": "Ie-email ka namin ng paalala bago ito magsimula, at sasabihan ka namin kapag may nagbago.",
-      "offPrompt": "Hindi mo kailangan ng mga update?",
-      "off": "I-off ang Paalalahanan ako."
+      "offPrompt": "Hindi ka makakapunta?",
+      "off": "Markahang hindi ka pupunta."
     },
     "upcomingEventCount_one": "paparating na kaganapan",
     "clickCount_one": "{{count}} pag-click",

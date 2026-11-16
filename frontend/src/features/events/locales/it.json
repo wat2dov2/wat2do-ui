@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Posizioni aperte: {{positions}}",
-    "minimumGoing": "Minimo di avvisati",
+    "minimumGoing": "Partecipanti minimi",
     "eventTitle": "Titolo dell'evento",
     "loadFailed": "Impossibile caricare gli eventi. Per favore riprova.",
     "deleteFailed": "Impossibile eliminare l'evento. Per favore riprova.",
@@ -83,9 +83,9 @@
       "submitFailed": "Impossibile inviare la segnalazione"
     },
     "goingEvents": {
-      "timeUnavailable": "Questo evento è già iniziato o è stato annullato, quindi Avvisami non è disponibile.",
+      "timeUnavailable": "Questo evento è già iniziato o è stato annullato, quindi Ci vado non è disponibile.",
       "saveFailed": "Impossibile salvare l'orario selezionato",
-      "chooseOccurrences": "Per quali date vuoi essere avvisato?",
+      "chooseOccurrences": "A quali date ci vai?",
       "chooseOccurrencesDescription": "Scegli ogni data per cui vuoi un promemoria e gli aggiornamenti."
     },
     "calendar": {
@@ -113,9 +113,9 @@
     },
     "new": "NUOVO",
     "updated": "AGGIORNATO",
-    "goingCount": "{{count}} avvisati",
-    "goingCount_one": "{{count}} avvisato",
-    "goingCount_other": "{{count}} avvisati",
+    "goingCount": "{{count}} partecipanti",
+    "goingCount_one": "{{count}} partecipante",
+    "goingCount_other": "{{count}} partecipanti",
     "hostedBy": "Ospitato da",
     "aboutEvent": "Informazioni sull'evento",
     "fetchingDetails": "Recupero dettagli...",
@@ -131,21 +131,21 @@
     "moreEvents": "Altri eventi",
     "submitEvent": "Aggiungi evento",
     "allEvents": "Tutti gli eventi",
-    "going": "Iscritto",
+    "going": "Ci vado",
     "notifyMe": {
-      "action": "Avvisami",
+      "action": "Ci vado",
       "description": "Ricevi un promemoria prima dell'inizio e un'email se cambia qualcosa.",
       "otherDates": "Le altre date non richiedono un biglietto. Ricevi un promemoria prima di ognuna e un'email se cambia qualcosa.",
-      "onTitle": "Ti avviseremo",
+      "onTitle": "Ci vai",
       "onDescription": "Ti manderemo un promemoria via email prima dell'inizio e ti avviseremo se cambia qualcosa.",
-      "offPrompt": "Non ti servono aggiornamenti?",
-      "off": "Disattiva Avvisami."
+      "offPrompt": "Non riesci a venire?",
+      "off": "Segna che non ci vai."
     },
     "upcomingEventCount_one": "evento in arrivo",
     "upcomingEventCount_many": "eventi in arrivo",
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clic",
-    "goingCount_many": "{{count}} avvisati",
+    "goingCount_many": "{{count}} partecipanti",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} date",
     "views": {

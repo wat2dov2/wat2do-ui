@@ -162,9 +162,9 @@
       "title": "Datenrichtlinie",
       "intro": "Diese Richtlinie erklärt, welche personenbezogenen Daten Wat2Do erhebt, warum, mit wem wir sie teilen, wie lange wir sie aufbewahren und welche Wahlmöglichkeiten du hast. Sie gilt für wat2do.io und jede Hochschulseite darauf (etwa uwaterloo.wat2do.io), für die E-Mails, die wir senden, und für die Instagram-Konten, die wir für jede Hochschule betreiben. Wenn du eine Frage hast, schreib uns an <email>{{email}}</email>.",
       "summary": {
-        "collect": "Wir erheben, was du uns gibst (deine E-Mail-Adresse, Hochschule, Fakultät und Interessen), was du auf Wat2Do tust (Veranstaltungen, die du speicherst oder für die du Benachrichtige mich einschaltest, Tickets, Organisationen, denen du folgst) und einige technische Angaben, etwa eine unkenntlich gemachte Form deiner IP-Adresse.",
+        "collect": "Wir erheben, was du uns gibst (deine E-Mail-Adresse, Hochschule, Fakultät und Interessen), was du auf Wat2Do tust (Veranstaltungen, die du speicherst oder als Dabei markierst, Tickets, Organisationen, denen du folgst) und einige technische Angaben, etwa eine unkenntlich gemachte Form deiner IP-Adresse.",
         "noSale": "Wir verkaufen deine personenbezogenen Daten nicht und zeigen keine Werbung.",
-        "share": "Organisationen sehen deinen Namen und deine E-Mail-Adresse, wenn du ein Ticket für ihre Veranstaltung hast. Sonst sieht niemand, für welche Veranstaltungen du Benachrichtige mich einschaltest. Unternehmen wie Amazon Web Services, Cloudflare und Google betreiben Teile von Wat2Do für uns, einige davon außerhalb Kanadas.",
+        "share": "Organisationen sehen deinen Namen und deine E-Mail-Adresse, wenn du ein Ticket für ihre Veranstaltung hast. Sonst sieht niemand, welche Veranstaltungen du als Dabei markierst. Unternehmen wie Amazon Web Services, Cloudflare und Google betreiben Teile von Wat2Do für uns, einige davon außerhalb Kanadas.",
         "analytics": "Wir nutzen Google Analytics, um Besuche zu zählen, und entfernen Codes und E-Mail-Adressen aus den Seitenadressen, die Google Analytics erhält.",
         "public": "Wir nutzen auch öffentliche Informationen: Veranstaltungen von Organisationen aus öffentlichen Instagram-Beiträgen und die Kontakt-E-Mail-Adressen, die Organisationen online veröffentlichen.",
         "choices": "Du kannst unsere E-Mails jederzeit abbestellen, dein Profil in den Einstellungen ändern und uns bitten, dir deine Daten zu zeigen, sie zu korrigieren oder zu löschen.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "Was du auf Wat2Do tust.",
-              "text": "Veranstaltungen, die du speicherst oder für die du Benachrichtige mich einschaltest, Positionen, die du speicherst, Organisationen, denen du folgst, Tickets, die du bekommst, wann dich eine Organisation eincheckt, und Erstattungsanfragen, die du sendest."
+              "text": "Veranstaltungen, die du speicherst oder als Dabei markierst, Positionen, die du speicherst, Organisationen, denen du folgst, Tickets, die du bekommst, wann dich eine Organisation eincheckt, und Erstattungsanfragen, die du sendest."
             },
             "submissions": {
               "term": "Was du uns schickst.",
@@ -250,8 +250,8 @@
           "p1": "Wir nutzen personenbezogene Daten nur für diese Zwecke:",
           "purposes": {
             "account": "Um dein Konto zu führen, dich anzumelden und angemeldet zu halten.",
-            "show": "Um dir zu zeigen, was an deiner Hochschule los ist, und die Veranstaltungen, die du gespeichert, für die du Benachrichtige mich eingeschaltet oder für die du Tickets hast.",
-            "emails": "Um die E-Mails zu senden, die du selbst steuerst: die Morgen-E-Mail mit Veranstaltungen, Erinnerungen vor Veranstaltungen, für die du Benachrichtige mich eingeschaltet hast, und Benachrichtigungen, wenn sich eine davon ändert. Außerdem senden wir E-Mails, die du brauchst, etwa Anmeldecodes, Tickets und unsere Entscheidungen zu deinen Einreichungen.",
+            "show": "Um dir zu zeigen, was an deiner Hochschule los ist, und die Veranstaltungen, die du gespeichert, als Dabei markiert oder für die du Tickets hast.",
+            "emails": "Um die E-Mails zu senden, die du selbst steuerst: die Morgen-E-Mail mit Veranstaltungen, Erinnerungen vor Veranstaltungen, die du als Dabei markiert hast, und Benachrichtigungen, wenn sich eine davon ändert. Außerdem senden wir E-Mails, die du brauchst, etwa Anmeldecodes, Tickets und unsere Entscheidungen zu deinen Einreichungen.",
             "tickets": "Um Tickets auszustellen und Organisationen zu ermöglichen, dich einzuchecken.",
             "payouts": "Um Promoter und Organisationen in unseren Auszahlungsprogrammen zu bezahlen und die gesetzlich vorgeschriebenen Aufzeichnungen zu führen.",
             "safety": "Um Wat2Do sicher zu halten: um Missbrauch zu begrenzen, gefälschte Konten, Klicks und Scans zu erkennen und Problemen nachzugehen.",
@@ -273,7 +273,7 @@
           "title": "Wer sie sieht und mit wem wir sie teilen",
           "p1": "Manches, was du auf Wat2Do tust, ist für andere sichtbar:",
           "visible": {
-            "notifyMe": "Sonst sieht niemand, für welche Veranstaltungen du Benachrichtige mich einschaltest. Eine Veranstaltung zeigt nur, wie viele Personen das getan haben.",
+            "notifyMe": "Sonst sieht niemand, welche Veranstaltungen du als Dabei markierst. Eine Veranstaltung zeigt nur, wie viele Personen das getan haben.",
             "tickets": "Wenn du ein Ticket hast, sieht die Organisation, die die Veranstaltung durchführt, deinen Namen (oder den Anfang deiner E-Mail-Adresse), deine E-Mail-Adresse, deinen Ticketcode, wann du eingecheckt wurdest, und eine eventuelle Erstattungsanfrage.",
             "teams": "Personen, die dieselbe Organisation verwalten, sehen gegenseitig ihre Namen, E-Mail-Adressen und Fotos.",
             "submissions": "Veranstaltungen, Positionen und Organisationen, die wir aus deinen Einreichungen veröffentlichen, sind öffentlich, deine E-Mail-Adresse aber nicht."
@@ -366,7 +366,7 @@
               "text": "Codes laufen nach {{codeMinutes}} ab, und eine Sitzung endet {{sessionDays}} nach ihrer letzten Nutzung."
             },
             "activity": {
-              "term": "Benachrichtige mich, gespeicherte Veranstaltungen und Positionen, gefolgte Organisationen und Tickets:",
+              "term": "Dabei, gespeicherte Veranstaltungen und Positionen, gefolgte Organisationen und Tickets:",
               "text": "bis du sie entfernst oder dein Konto löschst."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "Die Morgen-E-Mail, Erinnerungen und Änderungsbenachrichtigungen in den Einstellungen oder über den Abmeldelink in jeder dieser E-Mails abbestellen. Anmeldecodes und Tickets bekommst du weiterhin, weil du sie brauchst.",
             "profile": "Dein Foto, deine Hochschule, Fakultät, Interessen und Sprache in den Einstellungen ändern.",
-            "activity": "Benachrichtige mich jederzeit ausschalten, gespeicherte Veranstaltungen entfernen und Organisationen entfolgen.",
+            "activity": "Dabei jederzeit entfernen, gespeicherte Veranstaltungen entfernen und Organisationen entfolgen.",
             "analytics": "Cookies von Google Analytics in deinem Browser blockieren."
           },
           "p2": "Du kannst uns auch bitten:",

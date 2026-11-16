@@ -51,7 +51,7 @@
       "pickedStatus": "{{count}}/3 selezionati - ne servono almeno 2 per continuare",
       "reactionGroup": "Reazione per {{title}}",
       "reactions": {
-        "interested": "Avvisami",
+        "interested": "Ci vado",
         "maybe": "Forse",
         "notForMe": "Non fa per me"
       }
@@ -65,7 +65,7 @@
     },
     "buildWeek": {
       "title": "Abbiamo creato la tua prima settimana Wat2Do",
-      "descriptionWithPicks": "I tuoi eventi a cui sei iscritto, le organizzazioni adatte a te e le serate migliori sono pronti.",
+      "descriptionWithPicks": "Gli eventi a cui vai, le organizzazioni adatte a te e le serate migliori sono pronti.",
       "descriptionWithoutPicks": "Abbiamo creato invece un feed iniziale. Puoi aggiustarlo mentre navighi.",
       "tonight": "Stasera",
       "tonightWithPick": "1 evento che vale la pena controllare",
@@ -84,9 +84,9 @@
       "description": "Goditi la scoperta del campus personalizzata per 14 giorni. Nessun pagamento richiesto.",
       "brand": "Wat2Do Pro",
       "visualTitle": "Radar del campus sbloccato",
-      "visualDescription": "Avvisi personalizzati, eventi a cui sei iscritto e il tuo piano settimanale - tutto in un unico posto.",
+      "visualDescription": "Avvisi personalizzati, eventi a cui vai e il tuo piano settimanale - tutto in un unico posto.",
       "benefits": {
-        "save": "Tocca Avvisami sugli eventi",
+        "save": "Tocca Ci vado sugli eventi",
         "follow": "Segui club",
         "alerts": "Ricevi avvisi di corrispondenza istantanei",
         "calendar": "Sincronizza eventi con il tuo calendario",
@@ -96,15 +96,15 @@
     },
     "challenge": {
       "title": "Mantieni Pro attivo utilizzando Wat2Do questa settimana",
-      "description": "Tocca Avvisami su 3 eventi questa settimana per estendere Pro di 7 giorni.",
+      "description": "Tocca Ci vado su 3 eventi questa settimana per estendere Pro di 7 giorni.",
       "label": "Sfida Esploratore del Campus",
       "progress": "{{count}} / {{total}} eventi",
       "reward": "Ricompensa: +7 giorni di Pro",
       "progressAria": "Progresso della sfida",
-      "markedInterested": "{{count}} eventi segnati per ricevere avvisi durante l'onboarding",
-      "markedInterested_one": "{{count}} evento segnato per ricevere avvisi durante l'onboarding",
-      "markedInterested_other": "{{count}} eventi segnati per ricevere avvisi durante l'onboarding",
-      "markedInterested_many": "{{count}} eventi segnati per ricevere avvisi durante l'onboarding"
+      "markedInterested": "{{count}} eventi segnati con Ci vado durante l'onboarding",
+      "markedInterested_one": "{{count}} evento segnato con Ci vado durante l'onboarding",
+      "markedInterested_other": "{{count}} eventi segnati con Ci vado durante l'onboarding",
+      "markedInterested_many": "{{count}} eventi segnati con Ci vado durante l'onboarding"
     },
     "home": {
       "badge": "Demo completata",
@@ -112,7 +112,7 @@
       "description": "Questa è un'anteprima della tua home personalizzata - nessun dato è stato salvato.",
       "recommended": "Consigliato per te",
       "proTrialBadge": "Pro trial - 14 giorni",
-      "saved": "Iscritto questa settimana",
+      "saved": "Ci vai questa settimana",
       "freeFood": "Cibo gratuito vicino a te",
       "freeFoodPreview": "Serata pizza al SLC Great Hall - Gio 18:00",
       "trialEnds": "La prova termina tra 14 giorni",

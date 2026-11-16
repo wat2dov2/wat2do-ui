@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Hiring: {{positions}}",
-    "minimumGoing": "Minimum notified",
+    "minimumGoing": "Minimum going",
     "eventTitle": "Event Title",
     "loadFailed": "Failed to load events. Please try again.",
     "deleteFailed": "Failed to delete event. Please try again.",
@@ -81,9 +81,9 @@
       "submitFailed": "Couldn't submit report"
     },
     "goingEvents": {
-      "timeUnavailable": "This event has already started or was cancelled, so Notify me isn't available.",
+      "timeUnavailable": "This event has already started or was cancelled, so Going isn't available.",
       "saveFailed": "Couldn't save your selected time",
-      "chooseOccurrences": "Which dates should we notify you about?",
+      "chooseOccurrences": "Which dates are you going to?",
       "chooseOccurrencesDescription": "Pick every date you want a reminder and updates for."
     },
     "calendar": {
@@ -111,9 +111,9 @@
     },
     "new": "NEW",
     "updated": "UPDATED",
-    "goingCount": "{{count}} notified",
-    "goingCount_one": "{{count}} notified",
-    "goingCount_other": "{{count}} notified",
+    "goingCount": "{{count}} going",
+    "goingCount_one": "{{count}} going",
+    "goingCount_other": "{{count}} going",
     "hostedBy": "Hosted by",
     "aboutEvent": "About Event",
     "fetchingDetails": "Fetching details...",
@@ -129,15 +129,15 @@
     "moreEvents": "More events",
     "submitEvent": "Add event",
     "allEvents": "All events",
-    "going": "Subscribed",
+    "going": "Going",
     "notifyMe": {
-      "action": "Notify me",
+      "action": "Going",
       "description": "Get a reminder before it starts, and an email if anything changes.",
       "otherDates": "The other dates don't need a ticket. Get a reminder before them, and an email if anything changes.",
-      "onTitle": "You'll be notified",
+      "onTitle": "You're going",
       "onDescription": "We'll email you a reminder before it starts, and let you know if anything changes.",
-      "offPrompt": "Don't need updates?",
-      "off": "Turn off Notify me."
+      "offPrompt": "Can't make it?",
+      "off": "Mark yourself not going."
     },
     "views": {
       "label": "Event view",

@@ -162,9 +162,9 @@
       "title": "Data Policy",
       "intro": "This policy explains what personal information Wat2Do collects, why, who we share it with, how long we keep it and the choices you have. It covers wat2do.io and every school site on it (such as uwaterloo.wat2do.io), the emails we send and the Instagram accounts we run for each school. If you have a question, email us at <email>{{email}}</email>.",
       "summary": {
-        "collect": "We collect what you give us (your email, school, faculty and interests), what you do on Wat2Do (events you save or turn on Notify me for, tickets, clubs you follow) and some technical details, such as a scrambled form of your IP address.",
+        "collect": "We collect what you give us (your email, school, faculty and interests), what you do on Wat2Do (events you save or mark as Going, tickets, clubs you follow) and some technical details, such as a scrambled form of your IP address.",
         "noSale": "We don't sell your personal information, and we don't show ads.",
-        "share": "Clubs see your name and email address when you hold a ticket to their event. Nobody else sees which events you turn on Notify me for. Companies such as Amazon Web Services, Cloudflare and Google run parts of Wat2Do for us, some of them outside Canada.",
+        "share": "Clubs see your name and email address when you hold a ticket to their event. Nobody else sees which events you mark as Going. Companies such as Amazon Web Services, Cloudflare and Google run parts of Wat2Do for us, some of them outside Canada.",
         "analytics": "We use Google Analytics to count visits, and we strip codes and email addresses from the page addresses it receives.",
         "public": "We also use public information: club events from public Instagram posts, and the contact emails clubs publish online.",
         "choices": "You can turn off our emails at any time, change your profile in Settings, and ask us to show you, correct or delete your information.",
@@ -191,7 +191,7 @@
             },
             "activity": {
               "term": "What you do on Wat2Do.",
-              "text": "Events you save or turn on Notify me for, positions you save, clubs you follow, tickets you get, when a club checks you in and refund requests you send."
+              "text": "Events you save or mark as Going, positions you save, clubs you follow, tickets you get, when a club checks you in and refund requests you send."
             },
             "submissions": {
               "term": "What you send us.",
@@ -250,8 +250,8 @@
           "p1": "We use personal information only for these purposes:",
           "purposes": {
             "account": "To run your account, sign you in and keep you signed in.",
-            "show": "To show you what's on at your school, and the events you've saved, turned on Notify me for or have tickets for.",
-            "emails": "To send the emails you control: the morning email of events, reminders before events you turned on Notify me for and alerts when one of them changes. We also send emails you need, such as sign-in codes, tickets and our decisions on your submissions.",
+            "show": "To show you what's on at your school, and the events you've saved, marked as Going or have tickets for.",
+            "emails": "To send the emails you control: the morning email of events, reminders before events you marked as Going and alerts when one of them changes. We also send emails you need, such as sign-in codes, tickets and our decisions on your submissions.",
             "tickets": "To issue tickets and let clubs check you in.",
             "payouts": "To pay promoters and clubs in our payout programs, and to keep the records the law requires.",
             "safety": "To keep Wat2Do safe: to limit abuse, detect fake accounts, clicks and scans, and look into problems.",
@@ -273,7 +273,7 @@
           "title": "Who sees it, and who we share it with",
           "p1": "Some of what you do on Wat2Do is visible to others:",
           "visible": {
-            "notifyMe": "Nobody else sees which events you turn on Notify me for. An event shows only how many people did.",
+            "notifyMe": "Nobody else sees which events you mark as Going. An event shows only how many people did.",
             "tickets": "When you hold a ticket, the club running the event sees your name (or the start of your email address), your email address, your ticket code, when you were checked in and any refund request.",
             "teams": "People who manage the same club see each other's names, email addresses and photos.",
             "submissions": "Events, positions and clubs we publish from your submissions are public, but your email address isn't."
@@ -366,7 +366,7 @@
               "text": "codes expire after {{codeMinutes}}, and a session ends {{sessionDays}} after you last use it."
             },
             "activity": {
-              "term": "Notify me, saved events and positions, follows and tickets:",
+              "term": "Going, saved events and positions, follows and tickets:",
               "text": "until you remove them or delete your account."
             },
             "usage": {
@@ -406,7 +406,7 @@
           "choices": {
             "emails": "Turn off the morning email, reminders and change alerts in Settings, or with the unsubscribe link in any of them. Sign-in codes and tickets still arrive, because you need them.",
             "profile": "Change your photo, school, faculty, interests and language in Settings.",
-            "activity": "Turn off Notify me, remove saved events and unfollow clubs whenever you like.",
+            "activity": "Unmark Going, remove saved events and unfollow clubs whenever you like.",
             "analytics": "Block Google Analytics cookies in your browser."
           },
           "p2": "You can also ask us to:",

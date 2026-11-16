@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Vagas abertas: {{positions}}",
-    "minimumGoing": "Mínimo de avisados",
+    "minimumGoing": "Mínimo de participantes",
     "eventTitle": "Título do Evento",
     "loadFailed": "Falha ao carregar eventos. Por favor, tente novamente.",
     "deleteFailed": "Falha ao excluir evento. Por favor, tente novamente.",
@@ -83,9 +83,9 @@
       "submitFailed": "Não foi possível enviar a denúncia"
     },
     "goingEvents": {
-      "timeUnavailable": "Este evento já começou ou foi cancelado, então Me avise não está disponível.",
+      "timeUnavailable": "Este evento já começou ou foi cancelado, então Vou não está disponível.",
       "saveFailed": "Não foi possível salvar o horário selecionado",
-      "chooseOccurrences": "Sobre quais datas devemos te avisar?",
+      "chooseOccurrences": "Em quais datas você vai?",
       "chooseOccurrencesDescription": "Escolha todas as datas para as quais você quer um lembrete e atualizações."
     },
     "calendar": {
@@ -113,9 +113,9 @@
     },
     "new": "NOVO",
     "updated": "ATUALIZADO",
-    "goingCount": "{{count}} avisados",
-    "goingCount_one": "{{count}} avisado",
-    "goingCount_other": "{{count}} avisados",
+    "goingCount": "{{count}} vão",
+    "goingCount_one": "{{count}} vai",
+    "goingCount_other": "{{count}} vão",
     "hostedBy": "Organizado por",
     "aboutEvent": "Sobre o Evento",
     "fetchingDetails": "Buscando detalhes...",
@@ -131,21 +131,21 @@
     "moreEvents": "Mais eventos",
     "submitEvent": "Adicionar evento",
     "allEvents": "Todos os eventos",
-    "going": "Inscrito",
+    "going": "Vou",
     "notifyMe": {
-      "action": "Me avise",
+      "action": "Vou",
       "description": "Receba um lembrete antes de começar e um e-mail se algo mudar.",
       "otherDates": "As outras datas não precisam de ingresso. Receba um lembrete antes de cada uma e um e-mail se algo mudar.",
-      "onTitle": "Você será avisado",
+      "onTitle": "Você vai",
       "onDescription": "Vamos te mandar um lembrete por e-mail antes de começar e avisar se algo mudar.",
-      "offPrompt": "Não precisa de atualizações?",
-      "off": "Desativar Me avise."
+      "offPrompt": "Não vai conseguir ir?",
+      "off": "Marcar que não vou."
     },
     "upcomingEventCount_one": "evento próximo",
     "upcomingEventCount_many": "eventos próximos",
     "clickCount_one": "{{count}} clique",
     "clickCount_many": "{{count}} cliques",
-    "goingCount_many": "{{count}} avisados",
+    "goingCount_many": "{{count}} vão",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} datas",
     "views": {

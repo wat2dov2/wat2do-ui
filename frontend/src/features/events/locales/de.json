@@ -1,7 +1,7 @@
 {
   "events": {
     "instagramHiring": "Offene Stellen: {{positions}}",
-    "minimumGoing": "Mindestens benachrichtigt",
+    "minimumGoing": "Mindestens dabei",
     "eventTitle": "Veranstaltungstitel",
     "loadFailed": "Fehler beim Laden der Veranstaltungen. Bitte versuchen Sie es erneut.",
     "deleteFailed": "Fehler beim Löschen der Veranstaltung. Bitte versuchen Sie es erneut.",
@@ -82,9 +82,9 @@
       "submitFailed": "Meldung konnte nicht gesendet werden"
     },
     "goingEvents": {
-      "timeUnavailable": "Diese Veranstaltung hat bereits begonnen oder wurde abgesagt, daher ist Benachrichtige mich nicht verfügbar.",
+      "timeUnavailable": "Diese Veranstaltung hat bereits begonnen oder wurde abgesagt, daher ist Dabei nicht verfügbar.",
       "saveFailed": "Ihre ausgewählte Zeit konnte nicht gespeichert werden",
-      "chooseOccurrences": "Für welche Termine sollen wir dich benachrichtigen?",
+      "chooseOccurrences": "Bei welchen Terminen bist du dabei?",
       "chooseOccurrencesDescription": "Wähle alle Termine, für die du eine Erinnerung und Updates möchtest."
     },
     "calendar": {
@@ -112,9 +112,9 @@
     },
     "new": "NEU",
     "updated": "AKTUALISIERT",
-    "goingCount": "{{count}} benachrichtigt",
-    "goingCount_one": "{{count}} benachrichtigt",
-    "goingCount_other": "{{count}} benachrichtigt",
+    "goingCount": "{{count}} sind dabei",
+    "goingCount_one": "{{count}} ist dabei",
+    "goingCount_other": "{{count}} sind dabei",
     "hostedBy": "Veranstaltet von",
     "aboutEvent": "Über die Veranstaltung",
     "fetchingDetails": "Details werden abgerufen...",
@@ -130,15 +130,15 @@
     "moreEvents": "Weitere Veranstaltungen",
     "submitEvent": "Ereignis hinzufügen",
     "allEvents": "Alle Ereignisse",
-    "going": "Abonniert",
+    "going": "Dabei",
     "notifyMe": {
-      "action": "Benachrichtige mich",
+      "action": "Dabei",
       "description": "Erhalte vor Beginn eine Erinnerung und eine E-Mail, falls sich etwas ändert.",
       "otherDates": "Für die anderen Termine brauchst du kein Ticket. Erhalte vorher jeweils eine Erinnerung und eine E-Mail, falls sich etwas ändert.",
-      "onTitle": "Wir benachrichtigen dich",
+      "onTitle": "Du bist dabei",
       "onDescription": "Wir schicken dir vor Beginn eine Erinnerung per E-Mail und sagen dir Bescheid, falls sich etwas ändert.",
-      "offPrompt": "Keine Updates mehr nötig?",
-      "off": "Benachrichtige mich ausschalten."
+      "offPrompt": "Kannst du doch nicht?",
+      "off": "Als nicht dabei markieren."
     },
     "upcomingEventCount_one": "bevorstehende Veranstaltung",
     "clickCount_one": "{{count}} Klick",
