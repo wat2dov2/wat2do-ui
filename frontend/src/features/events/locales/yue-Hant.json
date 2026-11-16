@@ -113,6 +113,8 @@
     "updated": "已更新",
     "goingCount": "{{count}} 人會去",
     "goingCount_other": "{{count}} 人會去",
+    "andOthersCount": "以及 {{count}} 位其他人",
+    "andOthersCount_other": "以及 {{count}} 位其他人",
     "hostedBy": "主辦者",
     "aboutEvent": "活動資訊",
     "fetchingDetails": "正在獲取詳情…",

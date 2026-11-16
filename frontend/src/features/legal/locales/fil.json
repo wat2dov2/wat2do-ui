@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Kinokolekta namin ang ibinibigay mo sa amin (ang email, paaralan, kolehiyo at mga interes mo), ang ginagawa mo sa Wat2Do (mga kaganapang sine-save mo o minamarkahan mong Pupunta, mga tiket, mga organisasyong sinusundan mo) at ilang teknikal na detalye, gaya ng naka-scramble na anyo ng IP address mo.",
         "noSale": "Hindi namin ibinebenta ang personal na impormasyon mo, at hindi kami nagpapakita ng mga ad.",
-        "share": "Makikita ng mga organisasyon ang pangalan at email address mo kapag may tiket ka sa kanilang kaganapan. Walang ibang makakakita kung aling mga kaganapan ang minarkahan mong Pupunta. Pinapatakbo para sa amin ng mga kumpanya gaya ng Amazon Web Services, Cloudflare at Google ang ilang bahagi ng Wat2Do, at ang ilan sa kanila ay nasa labas ng Canada.",
+        "share": "Kapag minarkahan mong Pupunta ang isang kaganapan, makikita ng mga tumitingin dito ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo sa listahan ng mga pupunta. Makikita ng mga organisasyon ang pangalan at email address mo kapag may tiket ka sa kanilang kaganapan. Pinapatakbo para sa amin ng mga kumpanya gaya ng Amazon Web Services, Cloudflare at Google ang ilang bahagi ng Wat2Do, at ang ilan sa kanila ay nasa labas ng Canada.",
         "analytics": "Gumagamit kami ng Google Analytics para bilangin ang mga pagbisita, at tinatanggal namin ang mga code at email address sa mga address ng page na natatanggap nito.",
         "public": "Gumagamit din kami ng pampublikong impormasyon: mga kaganapan ng organisasyon mula sa mga pampublikong post sa Instagram, at ang mga contact email na inilalathala ng mga organisasyon online.",
         "choices": "Puwede mong i-off ang aming mga email anumang oras, baguhin ang profile mo sa Settings, at hilingin sa amin na ipakita sa iyo, itama o burahin ang impormasyon mo.",
@@ -273,7 +273,7 @@
           "title": "Sino ang nakakakita nito, at kanino namin ito ibinabahagi",
           "p1": "Nakikita ng iba ang ilan sa mga ginagawa mo sa Wat2Do:",
           "visible": {
-            "notifyMe": "Walang ibang makakakita kung aling mga kaganapan ang minarkahan mong Pupunta. Ang ipinapakita lang ng isang kaganapan ay kung ilang tao ang nagmarka nito.",
+            "going": "Kapag minarkahan mong Pupunta ang isang kaganapan, makikita ng mga tumitingin dito ang pangalan mo, ang unang letra ng apelyido mo at ang larawan mo sa listahan ng mga pupunta, maliban kung may tiket ka rito. Makikita rin ng lahat kung ilang tao ang pupunta.",
             "tickets": "Kapag may tiket ka, makikita ng organisasyong nagpapatakbo ng kaganapan ang pangalan mo (o ang simula ng email address mo), ang email address mo, ang code ng tiket mo, kung kailan ka na-check in at anumang kahilingan sa refund.",
             "teams": "Nakikita ng mga taong namamahala sa iisang organisasyon ang mga pangalan, email address at larawan ng isa't isa.",
             "submissions": "Pampubliko ang mga kaganapan, posisyon at organisasyong inilalathala namin mula sa mga isinumite mo, pero hindi ang email address mo."

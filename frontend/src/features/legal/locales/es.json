@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Recopilamos lo que nos das (tu correo, tu universidad, tu facultad y tus intereses), lo que haces en Wat2Do (eventos que guardas o marcas con Voy, boletos, organizaciones que sigues) y algunos datos técnicos, como una forma codificada de tu dirección IP.",
         "noSale": "No vendemos tu información personal y no mostramos anuncios.",
-        "share": "Las organizaciones ven tu nombre y tu correo cuando tienes un boleto para su evento. Nadie más ve qué eventos marcas con Voy. Empresas como Amazon Web Services, Cloudflare y Google operan partes de Wat2Do por nosotros, algunas de ellas fuera de Canadá.",
+        "share": "Cuando marcas un evento con Voy, las personas que lo ven pueden ver tu nombre, la inicial de tu apellido y tu foto entre las personas que van. Las organizaciones ven tu nombre y tu correo cuando tienes un boleto para su evento. Empresas como Amazon Web Services, Cloudflare y Google operan partes de Wat2Do por nosotros, algunas de ellas fuera de Canadá.",
         "analytics": "Usamos Google Analytics para contar visitas, y quitamos los códigos y las direcciones de correo de las direcciones de página que recibe.",
         "public": "También usamos información pública: eventos de organizaciones tomados de publicaciones públicas de Instagram, y los correos de contacto que las organizaciones publican en internet.",
         "choices": "Puedes desactivar nuestros correos en cualquier momento, cambiar tu perfil en Configuración, y pedirnos que te mostremos, corrijamos o eliminemos tu información.",
@@ -273,7 +273,7 @@
           "title": "Quién la ve y con quién la compartimos",
           "p1": "Parte de lo que haces en Wat2Do es visible para otras personas:",
           "visible": {
-            "notifyMe": "Nadie más ve qué eventos marcas con Voy. Un evento solo muestra cuántas personas lo hicieron.",
+            "going": "Cuando marcas un evento con Voy, las personas que lo ven pueden ver tu nombre, la inicial de tu apellido y tu foto entre las personas que van, salvo que tengas un boleto para él. Todos pueden ver también cuántas personas van.",
             "tickets": "Cuando tienes un boleto, la organización a cargo del evento ve tu nombre (o el inicio de tu correo), tu correo, el código de tu boleto, cuándo se registró tu entrada y cualquier solicitud de reembolso.",
             "teams": "Las personas que administran la misma organización ven los nombres, correos y fotos de las demás.",
             "submissions": "Los eventos, puestos y organizaciones que publicamos a partir de lo que nos envías son públicos, pero tu correo no."

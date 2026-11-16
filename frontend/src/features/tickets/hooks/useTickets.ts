@@ -163,6 +163,8 @@ function useInvalidateEventTickets() {
       queryClient.invalidateQueries({ queryKey: queryKeys.tickets.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.clubTicketing.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.goingEvents.all }),
+      // A ticket counts its holder among the event's going.
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.allAttendees() }),
     ]);
 }
 

@@ -2311,7 +2311,11 @@ test.describe("Events Page", () => {
       items: events, total: events.length, page: 1, page_size: 100, total_pages: 1,
       latest_added_event: { title, added_at: addedAt },
     } }));
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     await mockApi(page, next, url => /^\/events\/\d+$/.test(apiPath(url) ?? ""), async request => ({ json: events[Number(new URL(request.url).pathname.split("/").at(-1)) - 1] }));
+    await mockApi(page, next, url => /^\/going-events\/\d+\/attendees$/.test(apiPath(url) ?? ""), async () => ({ json: {
+      going_count: 1, attendees: [{ name: "Taylor Q.", avatar_url: avatar }],
+    } }));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
     const header = page.locator('[data-slot="page-header"]:visible');
@@ -2345,8 +2349,10 @@ test.describe("Events Page", () => {
     await expect(page.locator('[data-slot="event-highlights"]')).toHaveCount(1);
     await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
     const drawer = page.getByRole("dialog");
-    // Notify me is private: no list of people shows on an event.
-    await expect(drawer.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+    await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();
+    const photo = drawer.locator(`img[src="${avatar}"]`);
+    await photo.scrollIntoViewIfNeeded();
+    await expect.poll(() => photo.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBe(32);
     await drawer.getByRole("button", { name: "Next", exact: true }).focus();
     await page.keyboard.press("ArrowRight");
     await expect(drawer.getByRole("heading", { name: "Campus event 2", level: 2, exact: true })).toBeVisible();
@@ -2354,6 +2360,7 @@ test.describe("Events Page", () => {
     await expect(drawer.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("event-drawer-mobile.png"), fullPage: true });
     await page.goto(`${BASE}/events/1`);
+    await expect(page.getByRole("img", { name: "Taylor Q." })).toBeVisible();
     await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Add to calendar", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
@@ -4816,8 +4823,29 @@ test("admin event tabs show their school rows and review queues", async ({ page,
   await expect(page.getByRole("cell", { name: "uwaterloo", exact: true })).toBeVisible();
 });
 
+for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9, 1]]) {
+  test(`shows ${profileCount} attendee pictures and only real overflow for ${totalCount} going`, async ({ page, next }) => {
+    const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
+    await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+      id: 1, title: "Attendee profiles", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
+      description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
+      cancelled: false, occurrences: [{ id: "occurrence-1", event_id: 1,
+        dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
+      going_count: totalCount,
+      attendees: Array.from({ length: profileCount }, () => ({ name: "", avatar_url: avatar })),
+    } }));
+    await page.goto(BASE);
+    await page.locator('article[data-event-id="1"]:visible').click();
+    const stack = page.getByRole("dialog").locator('[data-slot="event-attendees"]');
+    await expect(stack.getByRole("img", { name: "Going", exact: true })).toHaveCount(profileCount);
+    await expect(stack.getByText("+1", { exact: true })).toHaveCount(overflow);
+  });
+}
+
 for (const surface of ["drawer", "page"]) {
-  test(`turns Notify me on and off in the ${surface}, showing nobody's picture`, async ({ page, next }) => {
+  test(`refreshes attendance and avatar stack after Going in the ${surface}`, async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     let going = false;
@@ -4831,6 +4859,10 @@ for (const surface of ["drawer", "page"]) {
       cancelled: false, occurrences: [{ id: occurrenceId, event_id: 1,
         dtstart_utc: new Date(Date.now() + 86400000).toISOString(), dtend_utc: null }],
     } }));
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
+      going_count: going ? 1 : 0,
+      attendees: going ? [{ name: "Test U.", avatar_url: avatar }] : [],
+    } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1", async request => {
       going = request.method !== "DELETE";
       if (going) await pendingGoing;
@@ -4841,17 +4873,20 @@ for (const surface of ["drawer", "page"]) {
     if (surface === "drawer") await page.locator('article[data-event-id="1"]:visible').click();
     const content = surface === "drawer" ? page.getByRole("dialog") : page.locator("body");
     await expect(content.locator('[data-slot="event-host-links"]')).toHaveCount(0);
+    await expect(content.locator('[data-slot="event-attendees"]')).toHaveCount(0);
     await expect(content.locator('[data-slot="club-badge"]').last().locator("img")).toHaveAttribute("src", avatar);
     await content.getByRole("button", { name: "Going", exact: true }).click();
-    // The card changes while the write is still blocked.
+    await expect(content.getByRole("heading", { name: "1 going", exact: true })).toBeVisible();
+    // The count and the card change while the write is still blocked.
     await expect(content.getByRole("button", { name: "Mark yourself not going.", exact: true })).toBeVisible();
     releaseGoing();
     await expect(content.getByText("You're going", { exact: true })).toBeVisible();
-    await expect(content.locator('[data-slot="avatar-stack"]')).toHaveCount(0);
+    await expect(content.locator('[data-slot="event-attendees"]').getByRole("img", { name: "Test U." })).toBeVisible();
     const cancel = content.getByRole("button", { name: "Mark yourself not going.", exact: true });
     await expect(cancel).toHaveCSS("text-decoration-line", "underline");
     await cancel.click();
     await expect(content.getByRole("button", { name: "Going", exact: true })).toBeVisible();
+    await expect(content.locator('[data-slot="event-attendees"]')).toHaveCount(0);
   });
 }
 
@@ -4859,8 +4894,11 @@ for (const [detail, message] of [
   ["One or more occurrences can no longer be selected", "This event has already started or was cancelled, so Going isn't available."],
   ["Unexpected storage failure", "Couldn't save your selected time"],
 ]) {
-  test(`Notify me rejection toast: ${detail}`, async ({ page, next }) => {
+  test(`Going rejection toast: ${detail}`, async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
+    await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({
+      json: { going_count: 0, attendees: [] },
+    }));
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
       id: 1, title: "Going toast test", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
       description: "", location: "SLC", category: "Career", price: 0, food: [], registration: false,
@@ -4875,6 +4913,7 @@ for (const [detail, message] of [
     await page.locator('article[data-event-id="1"]:visible').click();
     await page.getByRole("dialog").getByRole("button", { name: "Going", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: message })).toBeVisible();
+    await expect(page.getByRole("dialog").locator('[data-slot="event-attendees"]')).toHaveCount(0);
   });
 }
 

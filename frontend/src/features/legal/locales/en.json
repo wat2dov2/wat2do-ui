@@ -164,7 +164,7 @@
       "summary": {
         "collect": "We collect what you give us (your email, school, faculty and interests), what you do on Wat2Do (events you save or mark as Going, tickets, clubs you follow) and some technical details, such as a scrambled form of your IP address.",
         "noSale": "We don't sell your personal information, and we don't show ads.",
-        "share": "Clubs see your name and email address when you hold a ticket to their event. Nobody else sees which events you mark as Going. Companies such as Amazon Web Services, Cloudflare and Google run parts of Wat2Do for us, some of them outside Canada.",
+        "share": "When you mark an event as Going, people who view it can see your first name, last initial and photo among the people going. Clubs see your name and email address when you hold a ticket to their event. Companies such as Amazon Web Services, Cloudflare and Google run parts of Wat2Do for us, some of them outside Canada.",
         "analytics": "We use Google Analytics to count visits, and we strip codes and email addresses from the page addresses it receives.",
         "public": "We also use public information: club events from public Instagram posts, and the contact emails clubs publish online.",
         "choices": "You can turn off our emails at any time, change your profile in Settings, and ask us to show you, correct or delete your information.",
@@ -273,7 +273,7 @@
           "title": "Who sees it, and who we share it with",
           "p1": "Some of what you do on Wat2Do is visible to others:",
           "visible": {
-            "notifyMe": "Nobody else sees which events you mark as Going. An event shows only how many people did.",
+            "going": "When you mark an event as Going, people who view it can see your first name, last initial and photo among the people going, unless you hold a ticket to it. Everyone can also see how many people are going.",
             "tickets": "When you hold a ticket, the club running the event sees your name (or the start of your email address), your email address, your ticket code, when you were checked in and any refund request.",
             "teams": "People who manage the same club see each other's names, email addresses and photos.",
             "submissions": "Events, positions and clubs we publish from your submissions are public, but your email address isn't."

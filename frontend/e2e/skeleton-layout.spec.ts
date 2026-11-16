@@ -184,7 +184,7 @@ class Gate {
 interface Gates {
   /** Held until the loading state has been measured. */
   data: Gate;
-  /** Secondary client data (stats) that real visitors receive a beat later. */
+  /** Secondary client data (stats, attendees) that real visitors receive a beat later. */
   late: Gate;
 }
 
@@ -278,6 +278,10 @@ async function installMocks(
     if (path === "/positions/stats") {
       await gates.late.opened;
       return json(Object.fromEntries(POSITIONS.map(position => [String(position.id), { click_count: 5 + position.id }])));
+    }
+    if (/^\/going-events\/\d+\/attendees$/.test(path)) {
+      await gates.late.opened;
+      return json({ going_count: 0, attendees: [] });
     }
     if (path === "/events") {
       const clubId = url.searchParams.get("club_ids");

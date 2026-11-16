@@ -146,6 +146,10 @@
     "clickCount_one": "{{count}} clic",
     "clickCount_many": "{{count}} clic",
     "goingCount_many": "{{count}} partecipanti",
+    "andOthersCount": "e {{count}} altro",
+    "andOthersCount_other": "e {{count}} altri",
+    "andOthersCount_one": "e {{count}} altro",
+    "andOthersCount_many": "e {{count}} altri",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} date",
     "views": {

@@ -4,6 +4,7 @@ import contact from "../../../../backend/controlbox/contact.json" with { type: "
 import type eventDiscoveryControl from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json" with { type: "json" };
 import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
+import publicAttendance from "../../../../backend/controlbox/public_attendance.json" with { type: "json" };
 import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
 import ticketing from "../../../../backend/controlbox/ticketing.json" with { type: "json" };
 import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
@@ -77,6 +78,9 @@ export const controlBox = {
     eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
     claimProofAllowedMimeTypes: uploads.claim_proof_allowed_mime_types,
     claimProofMaxSizeBytes: uploads.claim_proof_max_size_bytes,
+  },
+  publicAttendance: {
+    maximumDisplayNames: publicAttendance.maximum_display_names,
   },
   socialPreviews: {
     width: socialPreviews.width,
