@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { filterClubs, normalizeClub, resolveClubByInstagramHandle } from "../src/features/clubs/api/clubService";
+import { filterClubs, normalizeClub, resolveClubByInstagramHandle, suggestClubsByHandle } from "../src/features/clubs/api/clubService";
 import { normalizeInstagramHandle } from "../src/shared/utils/url";
 import type { ApiClubResponse } from "../src/shared/generated";
 
@@ -148,20 +148,28 @@ test("organization field submits canonical IDs while displaying the typed handle
   runInNewContext(outputText, {
     exports: component.exports,
     require: (id: string) => {
-      if (id === "react") return { useState: (initial: unknown) => {
-        draft ??= initial;
-        return [draft, (next: unknown) => { draft = next; }];
-      } };
-      if (id === "react/jsx-runtime") return { jsx: (_type: unknown, props: unknown) => props };
+      if (id === "react") return {
+        useState: (initial: unknown) => {
+          draft ??= initial;
+          return [draft, (next: unknown) => { draft = next; }];
+        },
+        useDeferredValue: (next: unknown) => next,
+        useMemo: (compute: () => unknown) => compute(),
+      };
+      if (id === "react/jsx-runtime") return { jsx: (_type: unknown, props: unknown) => props, jsxs: (_type: unknown, props: unknown) => props };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-      if (id.endsWith("/clubService")) return { resolveClubByInstagramHandle };
+      if (id.endsWith("/clubService")) return { resolveClubByInstagramHandle, suggestClubsByHandle };
+      if (id.endsWith("/string")) return { nameInitial: (name: string) => name[0] };
       if (id.endsWith("/clubCardContent")) return { getClubSocialHandle: (club: { ig: string }) => `@${normalizeInstagramHandle(club.ig)}` };
       return {};
     },
   });
   const render = (availableClubs = directory) => component.exports.ClubInput({
     value, clubs: availableClubs, onChange: next => { value = next; }, touched: true,
-  }) as unknown as { label: string; value: string; disabled: boolean; error?: string; onChange: (text: string) => void };
+  }) as unknown as {
+    label: string; value: string; disabled: boolean; error?: string; onChange: (text: string) => void;
+    suggestions: { items: { key: number }[]; onSelect: (key: number) => void };
+  };
   expect(render([]).disabled).toBe(true);
   expect(render().disabled).toBe(false);
   expect(render().label).toBe("forms.instagramHandle");
@@ -179,14 +187,39 @@ test("organization field submits canonical IDs while displaying the typed handle
   value = 1;
   expect(render().value).toBe("@uw.tech");
 
+  // Typing part of a handle or name offers the matching clubs; picking one fills in its handle.
+  render().onChange("board");
+  expect(value).toBeNull();
+  expect(render().suggestions.items.map(item => item.key)).toEqual([2]);
+  render().suggestions.onSelect(2);
+  expect(value).toBe(2);
+  expect(render().value).toBe("@board_games");
+
   // A club owner's own club is shown and cannot be changed or reported as unknown.
   const locked = (club: typeof directory[number]) => component.exports.ClubInput({
     value: club.id, clubs: [club], locked: true, onChange: () => undefined, touched: true,
-  }) as unknown as { value: string; disabled: boolean; error?: string };
+  }) as unknown as { value: string; disabled: boolean; error?: string; suggestions: { items: unknown[] } };
   draft = { handle: "typed", resolvedId: null };
   expect(locked(directory[1])).toMatchObject({ value: "@board_games", disabled: true, error: undefined });
+  expect(locked(directory[1]).suggestions.items).toEqual([]);
 });
 
+
+test("handle suggestions rank handle starts, then name words, then matches anywhere", () => {
+  const directory = [
+    { ...clubs[0], id: 11, club_name: "Waterloo Robotics", ig: "uwrobotics" },
+    { ...clubs[0], id: 12, club_name: "Robot Fighting League", ig: "fightbots" },
+    { ...clubs[0], id: 13, club_name: "Hardware Club", ig: "uwhw.robo" },
+    { ...clubs[0], id: 14, club_name: "Robotics Without A Handle", ig: null },
+    { ...clubs[0], id: 15, club_name: "Chess", ig: "robo.chess" },
+  ];
+  const ids = (typed: string) => suggestClubsByHandle(directory, typed, 8).map(club => club.id);
+  expect(ids("robo")).toEqual([15, 12, 11, 13]);
+  expect(ids("@UWRO")).toEqual([11]);
+  expect(ids("https://www.instagram.com/fightbots/")).toEqual([12]);
+  expect(ids("  ")).toEqual([]);
+  expect(suggestClubsByHandle(directory, "robo", 2).map(club => club.id)).toEqual([15, 12]);
+});
 
 test("New clubs uses creation dates from the cached directory and composes with other filters", () => {
   const cutoff = "2026-10-01T12:00:00Z";

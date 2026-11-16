@@ -113,7 +113,8 @@ export function eventTicketingUpdate(event: Event, formData: EventFormData): Api
       quantity: ticketQuantity(release.quantity) ?? null,
       price_cents: ticketPriceCents(release.price) ?? 0,
     })),
-    paused: tickets.paused,
+    // Clubs no longer pause tickets, so saving always leaves them on sale.
+    paused: false,
     event_date_ids: eventDateIds,
   };
 }

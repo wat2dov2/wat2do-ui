@@ -76,7 +76,6 @@ function eventOccurrencesToFormOccurrences(
 export const NO_EVENT_TICKETS: EventFormTickets = {
   enabled: false,
   releases: [],
-  paused: false,
 };
 
 function eventTicketsToForm(
@@ -92,7 +91,6 @@ function eventTicketsToForm(
       quantity: release.quantity ? String(release.quantity) : "",
       price: release.price_cents > 0 ? (release.price_cents / 100).toFixed(2) : "",
     })),
-    paused: ticketing.paused,
   };
 }
 

@@ -93,8 +93,7 @@ pub const TICKETS_CLOSED: &str = "Tickets for this date are no longer available"
 pub const TICKETS_SOLD_OUT: &str = "There aren't enough tickets left for this date";
 pub const TICKET_DATE_NOT_FOUND: &str = "That date isn't part of this event";
 pub const TICKETS_NOT_FOR_DATE: &str = "This date doesn't have tickets";
-pub const TICKET_DATE_HAS_TICKETS: &str =
-    "People have tickets to a date you took tickets off. Pause tickets instead.";
+pub const TICKET_DATE_HAS_TICKETS: &str = "People have tickets to a date you took tickets off.";
 pub const TICKETED_EVENT_CANCELLED: &str = "This event was cancelled";
 pub const TICKET_QUANTITY_TOO_HIGH: &str = "That's more tickets than one order allows";
 pub const TICKET_PRICE_OUT_OF_RANGE: &str = "Enter a ticket price within the allowed range";
@@ -110,11 +109,10 @@ pub const TICKET_RELEASES_MIXED_PRICES: &str =
 pub const TICKET_RELEASE_UNLIMITED_NOT_LAST: &str = "Only the last release can have no limit";
 pub const TICKET_RELEASE_NOT_FOUND: &str = "That release isn't part of this event";
 pub const TICKET_RELEASE_HAS_TICKETS: &str =
-    "People have tickets from a release you removed. Keep it, or pause tickets instead.";
+    "People have tickets from a release you removed, so keep it.";
 pub const TICKETS_NOT_ON_SALE: &str = "Tickets for this date aren't on sale yet";
 pub const TICKETS_OWN_EVENT: &str = "You run this event, so you can't get tickets to it";
-pub const TICKETS_ALREADY_TAKEN: &str =
-    "People already have tickets for this event. Pause tickets instead.";
+pub const TICKETS_ALREADY_TAKEN: &str = "People already have tickets for this event.";
 pub const TICKET_REFUNDS_NEED_CANCELLATION: &str = "Cancel the event first to refund every ticket";
 pub const EVENT_HAS_PAID_TICKETS: &str =
     "This event has sold tickets. Cancel it instead, and every buyer is refunded.";

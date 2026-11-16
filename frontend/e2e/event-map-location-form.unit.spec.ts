@@ -8,7 +8,7 @@ const form = (location: string, map_location: string): EventFormData => ({
   timeZone: "America/Toronto", club_id: 7, title: "Jam", description: "",
   occurrences: [{ dtstart_local: "2026-10-21T19:00", dtend_local: "", tickets: true }],
   location, map_location, category: "", price: 0, food: [], registration: false,
-  tickets: { enabled: false, releases: [], paused: false },
+  tickets: { enabled: false, releases: [] },
 });
 const saved = { location: "AL 113", map_location: "Arts Lecture Hall, Waterloo, ON" };
 
@@ -29,7 +29,7 @@ test("a saved event keeps its saved map location only at its saved venue", () =>
 });
 
 test("a read flyer's venue is searched as written", () => {
-  const fallbacks = { timeZone: "America/Toronto", occurrences: [], source_image_url: null, tickets: { enabled: false, releases: [], paused: false } };
+  const fallbacks = { timeZone: "America/Toronto", occurrences: [], source_image_url: null, tickets: { enabled: false, releases: [] } };
   expect(mapEventInputToFormData({ location: "Sir Isaac Brock Statue" }, fallbacks).map_location).toBe("Sir Isaac Brock Statue");
   expect(mapEventInputToFormData({ location: "Online" }, fallbacks).map_location).toBe("");
 });
