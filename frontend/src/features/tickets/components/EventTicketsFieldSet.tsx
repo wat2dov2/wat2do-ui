@@ -34,7 +34,7 @@ import {
 } from "@/shared/ui/field";
 import { FormDateTimePicker, FormInput } from "@/shared/ui/form-field";
 import { Link } from "@/shared/ui/link";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { formatCents } from "@/shared/utils/currency";
 import { formatOccurrence } from "@/shared/utils/date";
 
@@ -128,30 +128,27 @@ export function EventTicketsFieldSet({
     <>
       <FieldSet data-slot="event-tickets">
         <FieldGroup>
-          <Field orientation="horizontal">
-            <Stack gap={1}>
-              <FieldLabel htmlFor={switchId}>{t("tickets.desk.title")}</FieldLabel>
-              <FieldDescription>{t("tickets.desk.setupDescription")}</FieldDescription>
-              {/* Turning tickets on is how a club accepts the payout terms, so they sit by the switch. */}
-              {club.school && clubPayouts.schools.includes(club.school) ? (
-                <FieldDescription>
-                  <Trans
-                    t={t}
-                    i18nKey={savedTickets ? "tickets.desk.payoutNote" : "tickets.desk.payoutNoteSetup"}
-                    values={{ rate: formatCents(clubPayouts.rate_cents, clubPayouts.currency, i18n.language) }}
-                    components={{ terms: <Link href={ROUTES.CLUB_PAYOUT_TERMS} target="_blank" /> }}
-                  />
-                </FieldDescription>
-              ) : null}
-              {held ? <FieldDescription>{t("tickets.desk.turnOffLocked")}</FieldDescription> : null}
-            </Stack>
-            <Switch
-              id={switchId}
-              checked={tickets.enabled}
-              disabled={held}
-              onCheckedChange={setEnabled}
-            />
-          </Field>
+          <SwitchField
+            id={switchId}
+            label={t("tickets.desk.title")}
+            description={t("tickets.desk.setupDescription")}
+            checked={tickets.enabled}
+            disabled={held}
+            onCheckedChange={setEnabled}
+          >
+            {/* Turning tickets on is how a club accepts the payout terms, so they sit by the switch. */}
+            {club.school && clubPayouts.schools.includes(club.school) ? (
+              <FieldDescription>
+                <Trans
+                  t={t}
+                  i18nKey={savedTickets ? "tickets.desk.payoutNote" : "tickets.desk.payoutNoteSetup"}
+                  values={{ rate: formatCents(clubPayouts.rate_cents, clubPayouts.currency, i18n.language) }}
+                  components={{ terms: <Link href={ROUTES.CLUB_PAYOUT_TERMS} target="_blank" /> }}
+                />
+              </FieldDescription>
+            ) : null}
+            {held ? <FieldDescription>{t("tickets.desk.turnOffLocked")}</FieldDescription> : null}
+          </SwitchField>
 
           {tickets.enabled ? (
             <>

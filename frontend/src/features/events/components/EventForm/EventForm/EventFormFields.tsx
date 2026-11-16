@@ -11,7 +11,7 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { FormGrid, Stack } from "@/shared/layout";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { Button } from "@/shared/ui/button";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { translateCategory } from "@/shared/utils/event";
@@ -218,20 +218,14 @@ export function EventFormFields() {
 
           {/* Tickets are the event's registration. */}
           {formData.tickets.enabled ? null : (
-            <Field>
-              <FieldLabel htmlFor={registrationId}>
-                {t("forms.registration")}
-              </FieldLabel>
-              <div className="w-fit">
-                <Switch
-                  id={registrationId}
-                  checked={formData.registration}
-                  onCheckedChange={(checked) =>
-                    updateField("registration", checked)
-                  }
-                />
-              </div>
-            </Field>
+            <SwitchField
+              id={registrationId}
+              label={t("forms.registration")}
+              checked={formData.registration}
+              onCheckedChange={(checked) =>
+                updateField("registration", checked)
+              }
+            />
           )}
 
           <ImageUploadField
