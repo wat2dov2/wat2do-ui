@@ -5,21 +5,36 @@
       "saved": "Événements enregistrés",
       "savedEmpty": "Les événements que vous enregistrez apparaissent ici.",
       "past": "Vos événements passés",
-      "pastEmpty": "Les événements pour lesquels vous avez activé Me notifier, ou pour lesquels vous aviez des billets, apparaissent ici une fois terminés.",
-      "upcoming": "Vos événements à venir",
-      "upcomingEmpty": "Les événements pour lesquels vous activez Me notifier, ou pour lesquels vous obtenez des billets, apparaissent ici.",
-      "ticket": "Billet"
+      "pastEmpty": "Les événements pour lesquels vous aviez indiqué J'y vais, ou pour lesquels vous aviez des billets, apparaissent ici une fois terminés.",
+      "upcoming": "J'y vais",
+      "upcomingEmpty": "Les événements pour lesquels vous indiquez J'y vais, ou pour lesquels vous obtenez des billets, apparaissent ici.",
+      "ticket": "Billet",
+      "submitted": "Événements que vous avez soumis",
+      "submittedEmpty": "Les événements que vous soumettez apparaissent ici pendant notre vérification, puis s'ouvrent une fois en ligne."
     },
     "clubs": {
-      "empty": "Les organisations que vous suivez apparaissent ici."
+      "following": "Organisations que vous suivez",
+      "empty": "Les organisations que vous suivez apparaissent ici.",
+      "member": "Organisations dont vous êtes membre",
+      "memberEmpty": "Les organisations dont vous faites partie de l'équipe apparaissent ici. Touchez-en une pour ouvrir son panneau.",
+      "submitted": "Organisations que vous avez soumises",
+      "submittedEmpty": "Les organisations que vous soumettez apparaissent ici pendant notre vérification."
     },
     "submissions": {
-      "description": "Ajoutez un événement, un poste ou une organisation. Nous examinons chacun avant sa mise en ligne."
+      "status": {
+        "pending": "En cours de vérification",
+        "approved": "Approuvé",
+        "rejected": "Non approuvé"
+      },
+      "statusOn": "{{status}} · Soumis le {{date}}"
     },
     "showAll": "Tout afficher ({{count}})",
     "showFewer": "Afficher moins",
-    "tabs": {
-      "submissions": "Soumissions"
+    "positions": {
+      "saved": "Postes enregistrés",
+      "deadline": "Postuler avant le {{date}}",
+      "submitted": "Postes que vous avez soumis",
+      "submittedEmpty": "Les postes que vous soumettez apparaissent ici pendant notre vérification."
     }
   }
 }

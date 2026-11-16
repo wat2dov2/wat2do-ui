@@ -121,6 +121,10 @@ export type ApiTicketRefundsResponse = components["schemas"]["TicketRefundsRespo
 export type ApiClubPayoutStatus = components["schemas"]["ClubPayoutStatus"];
 export type ApiStripeRedirectResponse = components["schemas"]["StripeRedirectResponse"];
 
+// ── The user's own submissions ──────────────────────────────────────
+export type ApiMySubmissionsResponse = components["schemas"]["MySubmissionsResponse"];
+export type ApiSubmissionStatus = components["schemas"]["SubmissionStatus"];
+
 // ── Notification inbox ──────────────────────────────────────────────
 export type ApiNotificationInboxResponse = components["schemas"]["NotificationInboxResponse"];
 export type ApiNotificationResponse = components["schemas"]["NotificationResponse"];

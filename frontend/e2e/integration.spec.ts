@@ -422,6 +422,33 @@ async function mockSignedInApi(page: Page, next: NextFixture) {
     });
   });
 
+  // Mock the user's submissions: an event still in review and an approved club
+  await mockApi(page, next, url => apiPath(url) === "/users/me/submissions", async () => ({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      events: [{
+        id: "00000000-0000-0000-0000-0000000000e1",
+        title: "Weekly Workshop",
+        status: "pending",
+        submitted_at: "2026-11-08T12:00:00Z",
+        school: "uwaterloo",
+        source_image_url: null,
+        club_logo_url: null,
+        event_id: null,
+      }],
+      positions: [],
+      clubs: [{
+        id: 2,
+        club_name: "Global Students Community",
+        status: "approved",
+        submitted_at: "2026-11-01T12:00:00Z",
+        school: "uwaterloo",
+        logo_url: null,
+      }],
+    }),
+  }));
+
   // Mock saved events and tickets
   await mockApi(page, next, url => apiPath(url) === "/v1/saved-events" || apiPath(url) === "/tickets/mine", async () => {
     return ({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
@@ -5024,16 +5051,25 @@ test.describe("Standalone submission pages", () => {
     await expect(moreFilters).toBeInViewport();
   });
 
-  test("the profile page opens every submission form", async ({ page, next }) => {
+  test("the profile lists what the user submitted in each kind's own tab", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${BASE}/profile`);
-    await expect(page.getByRole("heading", { name: "Your submissions", exact: true })).toBeVisible();
-    for (const name of ["Add event", "Add position", "Add club"]) {
-      await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
-    }
-    await page.getByRole("link", { name: "Add position", exact: true }).click();
-    await expect(page).toHaveURL(/\/positions\/submit$/);
+    // The retired Submissions tab's link opens Events, which lists the events they submitted.
+    await page.goto(`${BASE}/profile?tab=submissions`);
+    await expect(page.getByRole("tab", { name: "Events", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("heading", { name: "Events you submitted", exact: true, level: 2 })).toBeVisible();
+    // An event still in review says so, and opens nothing yet.
+    await expect(page.getByText("Weekly Workshop", { exact: true })).toBeVisible();
+    await expect(page.getByText(/^In review · Submitted /)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Weekly Workshop" })).toHaveCount(0);
+    // Positions they submitted have a section of their own, with the form to send one.
+    await page.getByRole("tab", { name: /^Positions/ }).click();
+    await expect(page.getByRole("heading", { name: "Positions you submitted", exact: true, level: 2 })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Add position", exact: true })).toBeVisible();
+    // An approved club opens its page.
+    await page.getByRole("tab", { name: /^Clubs/ }).click();
+    await page.getByRole("link", { name: "Global Students Community", exact: true }).click();
+    await expect(page).toHaveURL(/\/clubs\/2$/);
   });
 
   test("stale session can still access event submission as anonymous", async ({
@@ -5683,29 +5719,23 @@ test.describe("Navigation", () => {
     await expect(inbox).toHaveCount(0);
     await expect(page).toHaveURL(/\/events\/1$/);
 
-    // The avatar opens the profile, which holds the club panel and Admin for those who run them.
+    // The avatar opens the profile: Log out and Admin sit at the header's top right, on the name's line.
     await page.goto(`${BASE}/events`);
     await avatar.click();
     await expect(page).toHaveURL(/\/profile$/);
-    // Tony's order: saved, past, upcoming, clubs, submissions, settings, then signing out.
-    let previousTop = -Infinity;
-    for (const name of [
-      "Events saved",
-      "Your past events",
-      "Your upcoming events",
-      "Clubs you follow",
-      "Your submissions",
-      "Settings",
-    ]) {
-      const box = await page.getByRole("heading", { name, exact: true, level: 2 }).boundingBox();
-      expect(box!.y).toBeGreaterThan(previousTop);
-      previousTop = box!.y;
-    }
+    const name = await page.getByRole("heading", { level: 1 }).boundingBox();
     const logOut = await page.getByRole("button", { name: "Log out", exact: true }).boundingBox();
-    expect(logOut!.y).toBeGreaterThan(previousTop);
-    await expect(page.getByRole("button", { name: "Admin", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Club Panel", exact: true }).click();
-    await expect(page.getByRole("option", { name: "UW Tech Club" })).toBeVisible();
+    const admin = await page.getByRole("link", { name: "Admin", exact: true }).boundingBox();
+    expect(logOut!.x).toBeGreaterThan(name!.x);
+    expect(admin!.x).toBeLessThan(logOut!.x);
+    expect(logOut!.y).toBeLessThan(name!.y + name!.height);
+    await expect(page.getByRole("button", { name: "Club Panel", exact: true })).toHaveCount(0);
+    // A whole event row opens the event; the Clubs tab opens a club they help run in its club panel.
+    await page.getByRole("tab", { name: /^Clubs/ }).click();
+    await expect(page.getByRole("heading", { name: "Clubs you follow", exact: true, level: 2 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clubs you're a member of", exact: true, level: 2 })).toBeVisible();
+    await page.getByRole("button", { name: "UW Tech Club", exact: true }).click();
+    await expect(page).toHaveURL(/\/club-panel/);
   });
 
   test("an email's settings link opens the profile on that tab", async ({ page, next }) => {

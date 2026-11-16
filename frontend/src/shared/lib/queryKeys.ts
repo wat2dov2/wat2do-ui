@@ -22,6 +22,7 @@ export const queryKeys = {
     allForSchool: (school: string | null | undefined) =>
       [...queryKeys.clubs.all, "all", school ?? ""] as const,
     claimLink: (token: string) => [...queryKeys.clubs.all, "claim-link", token] as const,
+    mine: (userId: string) => [...queryKeys.clubs.all, "mine", userId] as const,
   },
   positions: {
     stats: (school: string) => [...queryKeys.positions.all, "stats", school] as const,
@@ -118,6 +119,10 @@ export const queryKeys = {
   savedEvents: {
     all: ["saved-events"] as const,
     byUser: (userId: string) => [...queryKeys.savedEvents.all, userId] as const,
+  },
+  mySubmissions: {
+    all: ["my-submissions"] as const,
+    byUser: (userId: string) => [...queryKeys.mySubmissions.all, userId] as const,
   },
   savedPositions: {
     all: ["saved-positions"] as const,

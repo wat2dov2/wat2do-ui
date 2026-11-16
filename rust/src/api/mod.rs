@@ -174,6 +174,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::submissions::update_submission,
             routes::submissions::delete_submission
         ))
+        .routes(routes!(routes::submissions::mine::list_my_submissions))
         // routers/uploads.py
         .routes(routes!(routes::uploads::upload_event_image_unsigned))
         .routes(routes!(routes::uploads::upload_event_image))

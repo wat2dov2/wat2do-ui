@@ -56,8 +56,8 @@
       "save": "Salva",
       "saved": "Salvata",
       "saveFailed": "Impossibile salvare questa posizione",
-      "emptyTitle": "Nessuna posizione salvata",
       "emptyDescription": "Le posizioni che salvi compaiono qui."
-    }
+    },
+    "allPositions": "Tutte le posizioni"
   }
 }

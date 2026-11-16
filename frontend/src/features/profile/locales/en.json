@@ -5,21 +5,36 @@
       "saved": "Events saved",
       "savedEmpty": "Events you save show up here.",
       "past": "Your past events",
-      "pastEmpty": "Events you turned on Notify me for, or had tickets to, show up here once they're over.",
-      "upcoming": "Your upcoming events",
-      "upcomingEmpty": "Events you turn on Notify me for, or get tickets to, show up here.",
-      "ticket": "Ticket"
+      "pastEmpty": "Events you marked Going, or had tickets to, show up here once they're over.",
+      "upcoming": "Going",
+      "upcomingEmpty": "Events you mark Going, or get tickets to, show up here.",
+      "ticket": "Ticket",
+      "submitted": "Events you submitted",
+      "submittedEmpty": "Events you submit show up here while we review them, and open once they're live."
     },
     "clubs": {
-      "empty": "Clubs you follow show up here."
+      "following": "Clubs you follow",
+      "empty": "Clubs you follow show up here.",
+      "member": "Clubs you're a member of",
+      "memberEmpty": "Clubs whose team you're on show up here. Tap one to open its club panel.",
+      "submitted": "Clubs you submitted",
+      "submittedEmpty": "Clubs you submit show up here while we review them."
     },
     "submissions": {
-      "description": "Add an event, a position or a club. We review each one before it goes live."
+      "status": {
+        "pending": "In review",
+        "approved": "Approved",
+        "rejected": "Not approved"
+      },
+      "statusOn": "{{status}} · Submitted {{date}}"
     },
     "showAll": "Show all ({{count}})",
     "showFewer": "Show fewer",
-    "tabs": {
-      "submissions": "Submissions"
+    "positions": {
+      "saved": "Positions saved",
+      "deadline": "Apply by {{date}}",
+      "submitted": "Positions you submitted",
+      "submittedEmpty": "Positions you submit show up here while we review them."
     }
   }
 }

@@ -5,21 +5,36 @@
       "saved": "Mga naka-save na kaganapan",
       "savedEmpty": "Dito lalabas ang mga kaganapang ise-save mo.",
       "past": "Mga nakaraan mong kaganapan",
-      "pastEmpty": "Dito lalabas, kapag tapos na, ang mga kaganapang in-on mo ang Paalalahanan ako o may tiket ka.",
-      "upcoming": "Mga paparating mong kaganapan",
-      "upcomingEmpty": "Dito lalabas ang mga kaganapang in-on mo ang Paalalahanan ako o kinuhanan mo ng tiket.",
-      "ticket": "Tiket"
+      "pastEmpty": "Dito lalabas, kapag tapos na, ang mga kaganapang minarkahan mo ng Pupunta o may tiket ka.",
+      "upcoming": "Pupunta",
+      "upcomingEmpty": "Dito lalabas ang mga kaganapang minarkahan mo ng Pupunta o kinuhanan mo ng tiket.",
+      "ticket": "Tiket",
+      "submitted": "Mga kaganapang isinumite mo",
+      "submittedEmpty": "Dito lalabas ang mga kaganapang isusumite mo habang nire-review namin, at mabubuksan na kapag live na."
     },
     "clubs": {
-      "empty": "Dito lalabas ang mga organisasyong sinusundan mo."
+      "following": "Mga organisasyong sinusundan mo",
+      "empty": "Dito lalabas ang mga organisasyong sinusundan mo.",
+      "member": "Mga organisasyong kasapi ka",
+      "memberEmpty": "Dito lalabas ang mga organisasyong kasama ka sa team. I-tap ang isa para buksan ang panel nito.",
+      "submitted": "Mga organisasyong isinumite mo",
+      "submittedEmpty": "Dito lalabas ang mga organisasyong isusumite mo habang nire-review namin."
     },
     "submissions": {
-      "description": "Magdagdag ng kaganapan, posisyon o organisasyon. Sinusuri namin ang bawat isa bago ito ilathala."
+      "status": {
+        "pending": "Nire-review",
+        "approved": "Naaprubahan",
+        "rejected": "Hindi naaprubahan"
+      },
+      "statusOn": "{{status}} · Isinumite noong {{date}}"
     },
     "showAll": "Ipakita lahat ({{count}})",
     "showFewer": "Ipakita ang mas kaunti",
-    "tabs": {
-      "submissions": "Mga isinumite"
+    "positions": {
+      "saved": "Mga naka-save na posisyon",
+      "deadline": "Mag-apply bago ang {{date}}",
+      "submitted": "Mga posisyong isinumite mo",
+      "submittedEmpty": "Dito lalabas ang mga posisyong isusumite mo habang nire-review namin."
     }
   }
 }

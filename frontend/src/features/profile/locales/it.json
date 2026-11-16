@@ -5,21 +5,36 @@
       "saved": "Eventi salvati",
       "savedEmpty": "Gli eventi che salvi compaiono qui.",
       "past": "I tuoi eventi passati",
-      "pastEmpty": "Gli eventi per cui hai attivato Avvisami, o per cui avevi biglietti, compaiono qui quando sono finiti.",
-      "upcoming": "I tuoi prossimi eventi",
-      "upcomingEmpty": "Gli eventi per cui attivi Avvisami, o per cui prendi biglietti, compaiono qui.",
-      "ticket": "Biglietto"
+      "pastEmpty": "Gli eventi che avevi segnato con Ci vado, o per cui avevi biglietti, compaiono qui quando sono finiti.",
+      "upcoming": "Ci vado",
+      "upcomingEmpty": "Gli eventi che segni con Ci vado, o per cui prendi biglietti, compaiono qui.",
+      "ticket": "Biglietto",
+      "submitted": "Eventi che hai inviato",
+      "submittedEmpty": "Gli eventi che invii compaiono qui mentre li controlliamo, e si aprono una volta pubblicati."
     },
     "clubs": {
-      "empty": "Le organizzazioni che segui compaiono qui."
+      "following": "Organizzazioni che segui",
+      "empty": "Le organizzazioni che segui compaiono qui.",
+      "member": "Organizzazioni di cui sei membro",
+      "memberEmpty": "Qui compaiono le organizzazioni del cui team fai parte. Toccane una per aprire il suo pannello.",
+      "submitted": "Organizzazioni che hai inviato",
+      "submittedEmpty": "Le organizzazioni che invii compaiono qui mentre le controlliamo."
     },
     "submissions": {
-      "description": "Aggiungi un evento, una posizione o un'organizzazione. Esaminiamo ciascuna proposta prima della pubblicazione."
+      "status": {
+        "pending": "In revisione",
+        "approved": "Approvato",
+        "rejected": "Non approvato"
+      },
+      "statusOn": "{{status}} · Inviato il {{date}}"
     },
     "showAll": "Mostra tutto ({{count}})",
     "showFewer": "Mostra meno",
-    "tabs": {
-      "submissions": "Proposte"
+    "positions": {
+      "saved": "Posizioni salvate",
+      "deadline": "Candidati entro il {{date}}",
+      "submitted": "Posizioni che hai inviato",
+      "submittedEmpty": "Le posizioni che invii compaiono qui mentre le controlliamo."
     }
   }
 }

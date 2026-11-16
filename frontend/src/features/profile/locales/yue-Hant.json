@@ -5,21 +5,36 @@
       "saved": "已收藏嘅活動",
       "savedEmpty": "你收藏嘅活動會喺度顯示。",
       "past": "你過去嘅活動",
-      "pastEmpty": "你開啟過「提醒我」或者有門票嘅活動，完咗之後會喺度顯示。",
-      "upcoming": "你即將嚟緊嘅活動",
-      "upcomingEmpty": "你開啟咗「提醒我」或者攞咗門票嘅活動會喺度顯示。",
-      "ticket": "門票"
+      "pastEmpty": "你揀過「會去」或者有門票嘅活動，完咗之後會喺度顯示。",
+      "upcoming": "會去",
+      "upcomingEmpty": "你揀咗「會去」或者攞咗門票嘅活動會喺度顯示。",
+      "ticket": "門票",
+      "submitted": "你提交嘅活動",
+      "submittedEmpty": "你提交嘅活動喺審核期間會喺度顯示，上線之後就可以打開。"
     },
     "clubs": {
-      "empty": "你追蹤嘅組織會喺度顯示。"
+      "following": "你追蹤嘅組織",
+      "empty": "你追蹤嘅組織會喺度顯示。",
+      "member": "你係成員嘅組織",
+      "memberEmpty": "你所屬團隊嘅組織會喺度顯示。撳一個就可以打開佢嘅組織面板。",
+      "submitted": "你提交嘅組織",
+      "submittedEmpty": "你提交嘅組織喺審核期間會喺度顯示。"
     },
     "submissions": {
-      "description": "新增活動、職位或者組織。每一項上線之前我哋都會審核。"
+      "status": {
+        "pending": "審核緊",
+        "approved": "已通過",
+        "rejected": "未通過"
+      },
+      "statusOn": "{{status}} · {{date}} 提交"
     },
     "showAll": "顯示全部（{{count}}）",
     "showFewer": "顯示較少",
-    "tabs": {
-      "submissions": "提交"
+    "positions": {
+      "saved": "已收藏嘅職位",
+      "deadline": "{{date}} 之前申請",
+      "submitted": "你提交嘅職位",
+      "submittedEmpty": "你提交嘅職位喺審核期間會喺度顯示。"
     }
   }
 }

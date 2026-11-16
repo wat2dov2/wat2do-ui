@@ -49,6 +49,8 @@ export function CreateClubPage() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.clubs.all,
       }),
+      // It shows on the profile, under the clubs they submitted.
+      queryClient.invalidateQueries({ queryKey: queryKeys.mySubmissions.all }),
     ]);
     return created;
   };

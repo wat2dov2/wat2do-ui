@@ -5,21 +5,36 @@
       "saved": "已收藏的活动",
       "savedEmpty": "你收藏的活动会显示在这里。",
       "past": "你过去的活动",
-      "pastEmpty": "你开启过“提醒我”或持有门票的活动，结束后会显示在这里。",
-      "upcoming": "你即将到来的活动",
-      "upcomingEmpty": "你开启“提醒我”或领取了门票的活动会显示在这里。",
-      "ticket": "门票"
+      "pastEmpty": "你标记过“要去”或持有门票的活动，结束后会显示在这里。",
+      "upcoming": "要去",
+      "upcomingEmpty": "你标记“要去”或领取了门票的活动会显示在这里。",
+      "ticket": "门票",
+      "submitted": "你提交的活动",
+      "submittedEmpty": "你提交的活动会在审核期间显示在这里，上线后即可打开。"
     },
     "clubs": {
-      "empty": "你关注的组织会显示在这里。"
+      "following": "你关注的组织",
+      "empty": "你关注的组织会显示在这里。",
+      "member": "你所在的组织",
+      "memberEmpty": "你所在团队的组织会显示在这里。点按一个即可打开它的组织面板。",
+      "submitted": "你提交的组织",
+      "submittedEmpty": "你提交的组织会在审核期间显示在这里。"
     },
     "submissions": {
-      "description": "添加活动、职位或组织。每项内容都会在上线前经过审核。"
+      "status": {
+        "pending": "审核中",
+        "approved": "已通过",
+        "rejected": "未通过"
+      },
+      "statusOn": "{{status}} · {{date}} 提交"
     },
     "showAll": "显示全部（{{count}}）",
     "showFewer": "收起",
-    "tabs": {
-      "submissions": "提交"
+    "positions": {
+      "saved": "已收藏的职位",
+      "deadline": "{{date}} 前申请",
+      "submitted": "你提交的职位",
+      "submittedEmpty": "你提交的职位会在审核期间显示在这里。"
     }
   }
 }

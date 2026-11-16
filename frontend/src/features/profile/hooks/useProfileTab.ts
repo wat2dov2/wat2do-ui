@@ -9,7 +9,8 @@ const SETTINGS_TAB_VALUES: readonly string[] = Object.values(SETTINGS_TABS);
 /**
  * The profile's open tab, kept in the address (`/profile?tab=clubs`) so a
  * link can open any of them. A settings tab's name (`?tab=notifications`, as
- * the emails link it) opens Settings with that tab selected.
+ * the emails link it) opens Settings with that tab selected. Any other name,
+ * such as the retired `?tab=submissions`, opens Events.
  */
 export function useProfileTab() {
   const [searchParams, setSearchParams] = useMutableSearchParams();

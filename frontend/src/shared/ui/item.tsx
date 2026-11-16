@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/shared/lib/utils"
 
 const itemVariants = cva(
-  "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-surface-hover",
+  "group/item relative flex flex-wrap items-center rounded-md border border-transparent text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-surface-hover has-[[data-slot=item-link]]:hover:bg-surface-hover has-[[data-slot=item-link]:focus-visible]:ring-[3px] has-[[data-slot=item-link]:focus-visible]:ring-inset has-[[data-slot=item-link]:focus-visible]:ring-ring/50",
   {
     variants: {
       variant: {
@@ -137,6 +137,29 @@ const itemDescriptionVariants = cva(
   }
 )
 
+/**
+ * The row's own link or button, around its title: it stretches over the
+ * whole row, so a click anywhere on the row opens it, while the row's other
+ * controls (in `ItemActions`) stay above it and keep their own clicks.
+ */
+function ItemLink({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "button"
+  return (
+    <Comp
+      data-slot="item-link"
+      className={cn(
+        "text-start outline-none after:absolute after:inset-0 after:content-['']",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 function ItemDescription({
   className,
   length,
@@ -155,7 +178,7 @@ function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="item-actions"
-      className={cn("flex items-center gap-2", className)}
+      className={cn("relative z-10 flex items-center gap-2", className)}
       {...props}
     />
   )
@@ -168,5 +191,6 @@ export {
   ItemContent,
   ItemActions,
   ItemTitle,
+  ItemLink,
   ItemDescription,
 }
