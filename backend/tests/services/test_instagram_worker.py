@@ -13,9 +13,10 @@ NIGHT = datetime(2026, 10, 28, 3, 0).astimezone()
 
 
 class _Device:
-    def __init__(self, unreachable=()):
+    def __init__(self, unreachable=(), lost=()):
         self.accounts = []
         self.unreachable = set(unreachable)
+        self.lost = set(lost)
         self.restarts = 0
 
     def adb(self, *args):
@@ -32,7 +33,9 @@ class _Device:
 
     def use_account(self, user, account):
         if account in self.unreachable:
-            raise worker.EmulatorError("Instagram did not switch to the account")
+            raise worker.EmulatorError("Instagram's DM inbox could not be opened")
+        if account in self.lost:
+            raise worker.AccountNotSwitched("Instagram did not switch to the account")
         self.accounts.append(account)
 
     def restart(self):
@@ -134,6 +137,19 @@ def test_switches_failing_in_a_row_restart_the_emulator(due, monkeypatch):
     worker.visit_next(device, DAY)
     assert device.accounts == [f"wat2do.{reachable}"]
     assert worker._switch_failures == 0
+
+
+def test_an_account_the_app_cannot_reach_never_restarts_the_emulator(due, monkeypatch):
+    in_a_row = worker.CONTROL.switch_failures_before_restart
+    lost = sorted(worker.CONTROL.android_user_by_school)[: in_a_row + 1]
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: lost)
+    due.music = lost
+    device = _Device(lost={f"wat2do.{school}" for school in lost})
+    for _ in lost:
+        worker.visit_next(device, DAY)
+    # The emulator answered every step, so a restart could not help; each account rests.
+    assert device.restarts == 0
+    assert set(worker._switch_rested_until) == set(lost)
 
 
 def test_at_night_the_worker_only_adds_songs(due, monkeypatch):

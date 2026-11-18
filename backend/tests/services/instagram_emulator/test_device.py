@@ -240,6 +240,35 @@ def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -
     assert len(scrolls) == 2
 
 
+def test_an_account_whose_name_instagram_lost_is_reached_by_its_nameless_row(monkeypatch) -> None:
+    device = _device([], [])
+    named = module.Node("", "wat2do.ocadu, 1 comment and 19 more", (42, 1543, 1038, 1716))
+    nameless = module.Node("", "2 chats and 22 more", (42, 1889, 1038, 2062))
+    scrolls = []
+    monkeypatch.setattr(device, "screen", lambda: [named, nameless])
+    monkeypatch.setattr(device, "scroll_down", lambda: scrolls.append(1))
+    assert device._account_in_switcher("wat2do.mcgill") == nameless
+    # A second nameless row is tried on the next attempt.
+    other = module.Node("", "1 chat and 22 more", (42, 2062, 1038, 2235))
+    monkeypatch.setattr(device, "screen", lambda: [named, nameless, other])
+    assert device._account_in_switcher("wat2do.mcgill", 1) == other
+
+
+def test_a_switch_through_a_nameless_row_that_lands_elsewhere_fails_as_not_switched(
+    monkeypatch,
+) -> None:
+    device = _device([], [])
+    profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
+    row = module.Node("", "wat2do.sfu, 2 follows", (42, 1130, 1038, 1303))
+    nameless = module.Node("", "1 chat and 22 more", (42, 1889, 1038, 2062))
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "screen", lambda: _inbox("wat2do.sfu") + [profile, row, nameless])
+    monkeypatch.setattr(device, "scroll_down", lambda: None)
+    monkeypatch.setattr(device, "_press", lambda node, hold_ms: None)
+    with pytest.raises(module.AccountNotSwitched):
+        device.use_account(11, "wat2do.ubc")
+
+
 LOW_STORAGE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
 <node text="Low device storage" content-desc="" bounds="[370,1000][710,1060]" />
 <node text="Close" content-desc="" bounds="[490,1440][590,1500]" />
