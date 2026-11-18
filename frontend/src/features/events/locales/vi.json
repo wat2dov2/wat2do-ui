@@ -82,6 +82,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Sự kiện này đã bắt đầu hoặc bị hủy nên không thể đánh dấu \"Sẽ đi\".",
+      "hostedByYourClub": "Đây là sự kiện của tổ chức bạn.",
       "saveFailed": "Không thể lưu thời gian bạn đã chọn",
       "chooseOccurrences": "Bạn sẽ đi vào những ngày nào?",
       "chooseOccurrencesDescription": "Chọn tất cả các ngày bạn muốn nhận lời nhắc và cập nhật."

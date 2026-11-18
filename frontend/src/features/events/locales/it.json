@@ -84,6 +84,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Questo evento è già iniziato o è stato annullato, quindi Ci vado non è disponibile.",
+      "hostedByYourClub": "Questo evento è della tua organizzazione.",
       "saveFailed": "Impossibile salvare l'orario selezionato",
       "chooseOccurrences": "A quali date ci vai?",
       "chooseOccurrencesDescription": "Scegli ogni data per cui vuoi un promemoria e gli aggiornamenti."

@@ -85,11 +85,17 @@ const event: Event = {
   occurrences: [{ dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null }],
 } as Event;
 
+/**
+ * The clubs whose team the visitor is on: `drawn` as the card last rendered,
+ * `now` as the cached profile says when a callback runs (after a sign-in, say).
+ */
+interface VisitorTeams { drawn?: { id: number }[]; now?: () => { id: number }[] }
+
 function goingSelection(fixture: Event, currentTimeMs: number, selectedIds: string[] = [], clock?: {
   now: () => number;
   onSave: (occurrenceIds: string[]) => void;
   onClear: () => void;
-}) {
+}, teams: VisitorTeams = {}) {
   const filename = new URL("../src/features/events/hooks/useGoingEvents.ts", import.meta.url);
   const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   const exports = {} as typeof import("../src/features/events/hooks/useGoingEvents");
@@ -106,10 +112,13 @@ function goingSelection(fixture: Event, currentTimeMs: number, selectedIds: stri
       clearGoingEvent: async () => clock?.onClear(),
     };
     if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-    if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
-    if (id === "@/features/auth/api/auth.api") return { getUserId: () => "test-user" };
+    if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true, clubs: teams.drawn ?? [] }) };
+    if (id === "@/features/auth/api/auth.api") return {
+      getUserId: () => "test-user",
+      getUserProfile: () => ({ clubs: teams.now?.() ?? teams.drawn ?? [] }),
+    };
     if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 0 } } };
-    if (id === "@/shared/lib/queryKeys" || id === "@/shared/utils/date" || id === "@/shared/services/apiClient") return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
+    if (["@/shared/lib/queryKeys", "@/shared/utils/date", "@/shared/utils/event", "@/shared/services/apiClient"].includes(id)) return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
     return {};
   } });
   return exports.useGoingEventSelection(fixture, "uwaterloo");
@@ -158,6 +167,32 @@ test("a Going callback captured before a recurring session starts cannot registe
   expect(selection.canRegisterNow()).toBe(true);
   await selection.saveSelection(["future"]);
   expect(saved).toEqual([["future"]]);
+});
+
+test("the team of a club hosting the event cannot turn Going on, even once a sign-in started from the card shows it", () => {
+  const now = Date.parse("2026-10-07T22:00:00Z");
+  const hosted = {
+    ...event, club_id: 7, cohosts: [{ id: 8, club_name: "Cohost Club", logo_url: null }],
+    occurrences: [{ id: "future", dtstart_utc: new Date(now + 86_400_000).toISOString(), dtend_utc: null }],
+  } as Event;
+  // On the cohost's team, or the club's.
+  for (const team of [{ id: 8 }, { id: 7 }]) {
+    const host = goingSelection(hosted, now, [], undefined, { drawn: [{ id: 3 }, team] });
+    expect(host.hostedByYourClub).toBe(true);
+    expect(host.canRegisterNow()).toBe(false);
+  }
+  // Another club's team, and a visitor on none, go as anyone does.
+  for (const drawn of [[{ id: 3 }], []]) {
+    const visitor = goingSelection(hosted, now, [], undefined, { drawn });
+    expect(visitor.hostedByYourClub).toBe(false);
+    expect(visitor.canRegisterNow()).toBe(true);
+  }
+  // Drawn signed out; the email sign-in that Going started then shows the visitor runs the club.
+  let profileClubs: { id: number }[] = [];
+  const signingIn = goingSelection(hosted, now, [], undefined, { drawn: [], now: () => profileClubs });
+  expect(signingIn.canRegisterNow()).toBe(true);
+  profileClubs = [{ id: 7 }];
+  expect(signingIn.canRegisterNow()).toBe(false);
 });
 
 test("started Going selections retain confirmation and cancellation until the session ends", () => {

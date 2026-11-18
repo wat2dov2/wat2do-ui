@@ -83,6 +83,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Diese Veranstaltung hat bereits begonnen oder wurde abgesagt, daher ist Dabei nicht verfügbar.",
+      "hostedByYourClub": "Deine Organisation richtet diese Veranstaltung aus.",
       "saveFailed": "Ihre ausgewählte Zeit konnte nicht gespeichert werden",
       "chooseOccurrences": "Bei welchen Terminen bist du dabei?",
       "chooseOccurrencesDescription": "Wähle alle Termine, für die du eine Erinnerung und Updates möchtest."

@@ -8,6 +8,7 @@ import type { Event, EventFormData } from "../src/shared/types";
 import type { PaginatedEventsResponse } from "../src/features/events/api/events.api";
 import { orderClubEvents } from "../src/features/events/lib/clubEventOrder";
 import { queryKeys } from "../src/shared/lib/queryKeys";
+import { clubsHostEvent } from "../src/shared/utils/event";
 import clientCache from "../../backend/controlbox/client_cache.json" with { type: "json" };
 
 const require = createRequire(import.meta.url);
@@ -595,8 +596,9 @@ test("Notify me mutations update immediately while collection requests are unres
         useMutation: (options: typeof mutation) => { mutation = options; return {}; },
       };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
+      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true, clubs: [] }) };
       if (id === "@/features/auth/api/auth.api") return { getUserId: () => "viewer" };
+      if (id === "@/shared/utils/event") return { clubsHostEvent };
       if (id === "@/features/events/api/events.api") return { fetchGoingEvents: () => completeSelections };
       if (id === "@/shared/lib/queryKeys") return { queryKeys };
       if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 60_000 } } };
@@ -646,8 +648,9 @@ test("Notify me beside tickets changes only the dates without tickets and keeps 
         useMutation: () => ({ mutateAsync: async (variables: typeof sent) => { sent = variables; } }),
       };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
-      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true }) };
+      if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: true, clubs: [] }) };
       if (id === "@/features/auth/api/auth.api") return { getUserId: () => "viewer" };
+      if (id === "@/shared/utils/event") return { clubsHostEvent };
       if (id === "@/shared/lib/queryKeys") return { queryKeys };
       if (id === "@/shared/config/controlBox") return { controlBox: { clientCache: { liveEventDataStaleMs: 60_000 } } };
       return {};

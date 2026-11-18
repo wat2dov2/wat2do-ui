@@ -84,6 +84,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Cet événement a déjà commencé ou a été annulé, donc J'y vais n'est pas disponible.",
+      "hostedByYourClub": "Cet événement est organisé par votre organisation.",
       "saveFailed": "Impossible d'enregistrer l'heure que vous avez sélectionnée",
       "chooseOccurrences": "À quelles dates y allez-vous ?",
       "chooseOccurrencesDescription": "Choisissez chaque date pour laquelle vous voulez un rappel et des mises à jour."

@@ -34,7 +34,7 @@ const TAP_TOOLTIP_MS = 2000
 interface TapTooltipProps {
   /** What the trigger means. */
   content: React.ReactNode
-  /** The trigger: one button, which a tap, click, Enter or Space presses. */
+  /** The trigger: one button (or the box around a disabled one), which a tap, click, Enter or Space presses. */
   children: React.ReactElement
 }
 

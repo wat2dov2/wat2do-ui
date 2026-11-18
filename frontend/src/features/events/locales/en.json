@@ -82,6 +82,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "This event has already started or was cancelled, so Going isn't available.",
+      "hostedByYourClub": "Your club is hosting this event.",
       "saveFailed": "Couldn't save your selected time",
       "chooseOccurrences": "Which dates are you going to?",
       "chooseOccurrencesDescription": "Pick every date you want a reminder and updates for."

@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Check } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip"
+import { TapTooltip } from "@/shared/ui/tooltip"
 
 const OUTLINE_CONTROL_STYLES =
   "border border-border/60 bg-background text-foreground hover:bg-surface-hover active:bg-surface-active dark:border-secondary dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary-hover dark:active:bg-secondary-active"
@@ -72,7 +72,7 @@ const Button = React.forwardRef<
       selected?: boolean
       /** Selection may be conveyed by the label or icon instead of a check. */
       selectionIndicator?: "check" | "none"
-      /** Disabled native buttons need a separate hover and keyboard tooltip target. */
+      /** Why a disabled button is off: hovering, focusing or tapping it says so. */
       disabledReason?: string
       "data-slot"?: string
     }
@@ -148,25 +148,53 @@ const Button = React.forwardRef<
     if (!disabled || !disabledReason) return button
 
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            data-slot="disabled-button-trigger"
-            className="inline-flex has-[>button.w-full]:w-full"
-            role="group"
-            tabIndex={0}
-            aria-label={props["aria-label"] ?? (typeof children === "string" ? children : undefined)}
-            aria-disabled="true"
-          >
-            {button}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{disabledReason}</TooltipContent>
-      </Tooltip>
+      <DisabledButtonReason
+        reason={disabledReason}
+        label={props["aria-label"] ?? (typeof children === "string" ? children : undefined)}
+      >
+        {button}
+      </DisabledButtonReason>
     )
   },
 )
 
 Button.displayName = "Button"
+
+/**
+ * A disabled button with the reason it is off. A disabled button takes no
+ * pointer events or focus, so a focusable box around it holds the reason:
+ * hovering, focusing or tapping the box shows it, and screen readers hear it
+ * as the box's description.
+ */
+function DisabledButtonReason({
+  reason,
+  label,
+  children,
+}: {
+  reason: string
+  /** The button's name, so the box is announced as the button it stands for. */
+  label: string | undefined
+  children: React.ReactElement
+}) {
+  const descriptionId = React.useId()
+  return (
+    <TapTooltip content={reason}>
+      <span
+        data-slot="disabled-button-trigger"
+        className="inline-flex has-[>button.w-full]:w-full"
+        role="group"
+        tabIndex={0}
+        aria-label={label}
+        aria-disabled="true"
+        aria-describedby={descriptionId}
+      >
+        {children}
+        <span id={descriptionId} hidden>
+          {reason}
+        </span>
+      </span>
+    </TapTooltip>
+  )
+}
 
 export { Button, buttonVariants, OUTLINE_CONTROL_STYLES }

@@ -24,7 +24,7 @@ function loadUI(name: string, { react, globals }: { react?: object; globals?: ob
       if (["@/shared/layout/stack", "@/shared/ui/Pagination", "@/shared/ui/skeleton"].includes(id)) return {};
       if (id === "lucide-react") return { Check: () => null, CheckIcon: () => null };
       if (id === "@/shared/ui/button") return { OUTLINE_CONTROL_STYLES: "" };
-      if (id === "@/shared/ui/tooltip") return { Tooltip: "Tooltip", TooltipContent: "TooltipContent", TooltipTrigger: "TooltipTrigger" };
+      if (id === "@/shared/ui/tooltip") return { TapTooltip: "TapTooltip", Tooltip: "Tooltip", TooltipContent: "TooltipContent", TooltipTrigger: "TooltipTrigger" };
       if (id === "@/shared/ui/drawer" || id === "@/shared/hooks/useExclusiveDisclosure") return {};
       if (id === "@/shared/lib/utils") return { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") };
       return require(id);
@@ -75,19 +75,28 @@ test("filter buttons wait for click and disabled buttons never activate", () => 
   expect(calls).toBe(1);
 });
 
-test("disabled buttons expose their reason on a hoverable keyboard target without enabling the action", () => {
+test("disabled buttons explain why on a box that hover, focus and a tap reach, without enabling the action", () => {
+  const { Button: ButtonWithReason } = loadUI("button", {
+    react: { ...require("react"), useId: () => "reason-id" },
+  }) as unknown as typeof import("../src/shared/ui/button");
   let calls = 0;
-  const render = (Button as unknown as { render: (props: ComponentProps<typeof Button>, ref: null) => ReactElement }).render;
-  const tree = render({ disabled: true, disabledReason: "This event has already started", className: "w-full", children: "Going", onClick: () => calls++ }, null);
-  expect(tree.type).toBe("Tooltip");
-  const [trigger, content] = tree.props.children;
-  expect(content.props.children).toBe("This event has already started");
-  const target = trigger.props.children;
+  const render = (ButtonWithReason as unknown as { render: (props: ComponentProps<typeof Button>, ref: null) => ReactElement }).render;
+  const reason = "Your club is hosting this event.";
+  const tree = render({ disabled: true, disabledReason: reason, className: "w-full", children: "Going", onClick: () => calls++ }, null);
+  // The box around the button holds the reason; the button gets no pointer events or focus.
+  const box = (tree.type as (props: unknown) => ReactElement)(tree.props);
+  // A tap tooltip: hover and focus show it, and so does a tap on a phone.
+  expect(box.type).toBe("TapTooltip");
+  expect(box.props.content).toBe(reason);
+  const target = box.props.children;
   expect(target.props.role).toBe("group");
   expect(target.props.tabIndex).toBe(0);
   expect(target.props["aria-disabled"]).toBe("true");
   expect(target.props["aria-label"]).toBe("Going");
-  const button = target.props.children;
+  // Screen readers hear the reason as the box's description.
+  expect(target.props["aria-describedby"]).toBe("reason-id");
+  const [button, description] = target.props.children;
+  expect(description.props).toMatchObject({ id: "reason-id", hidden: true, children: reason });
   expect(button.props.disabled).toBe(true);
   expect(button.props).not.toHaveProperty("disabledReason");
   button.props.onMouseDown?.(event());
