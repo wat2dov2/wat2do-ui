@@ -45,7 +45,7 @@ from services.instagram_emulator.device import (
     reclaim_due,
 )
 from services.instagram_follow import candidates, crawl, follows, scoring
-from services.instagram_publishing import music
+from services.instagram_publishing import music, stories
 
 log = logging.getLogger(__name__)
 FOLLOW = controlbox.instagram_follow
@@ -93,11 +93,11 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         if _switch_rested_until.get(school, moment) <= moment
     ]
 
-    def songs() -> list[str]:
-        waiting = _songs_waiting(moment)
+    def carousels() -> list[str]:
+        waiting = _carousels_waiting(moment)
         return [school for school in order if school in waiting]
 
-    tiers: list[Callable[[], list[str]]] = [songs]
+    tiers: list[Callable[[], list[str]]] = [carousels]
     if acting:
         tiers.append(lambda: [school for school in order if sweep.due(school, moment)])
     if following:
@@ -131,10 +131,13 @@ def visit(
         device.reclaim_data()
         if not _switched(device, school, now):
             return
-        waiting = _songs_waiting(now)
+        waiting = _carousels_waiting(now)
         if school in waiting:
             _step(f"music {school}", lambda: music.finish_due(device, school, now))
-        # Other accounts' carousels waiting for their songs come before anything else here.
+            if acting:
+                _step(f"stories {school}", lambda: stories.share_due(device, school, now))
+        # Other accounts' carousels waiting for their songs or stories come before anything
+        # else here.
         if waiting - {school}:
             return
         if acting and sweep.due(school, now):
@@ -171,17 +174,19 @@ def _follows_stuck(visits: list[object]) -> bool:
     )
 
 
-def _songs_waiting(now: datetime) -> set[str]:
-    """Schools whose new carousel waits for its song, leaving out any account the app
-    could not switch to, so one unreachable account never holds up the others' work."""
-    return {
-        school for school in music.schools_due(now) if _switch_rested_until.get(school, now) <= now
-    }
+def _carousels_waiting(now: datetime) -> set[str]:
+    """Schools whose new carousel waits for its song, or (in action hours) for its events'
+    posts on the story, leaving out any account the app could not switch to, so one
+    unreachable account never holds up the others' work."""
+    due = set(music.schools_due(now))
+    if acting_hours(now.astimezone()):
+        due.update(stories.schools_due(now))
+    return {school for school in due if _switch_rested_until.get(school, now) <= now}
 
 
 class _Interrupt:
     """True once the emulator is needed for something more urgent than the visit's long
-    steps: a carousel waiting for its song, or the daily reclaim and restart. Unfollows
+    steps: a carousel waiting for its song or story, or the daily reclaim and restart. Unfollows
     and follows ask it between profiles and stop for it."""
 
     def __init__(self) -> None:
@@ -189,7 +194,7 @@ class _Interrupt:
 
     def __call__(self) -> bool:
         try:
-            self.seen = bool(_songs_waiting(datetime.now(timezone.utc))) or reclaim_due()
+            self.seen = bool(_carousels_waiting(datetime.now(timezone.utc))) or reclaim_due()
         except Exception:
             log.exception("Could not check for carousels waiting for a song")
         return self.seen

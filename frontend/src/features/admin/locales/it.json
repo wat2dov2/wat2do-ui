@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Storia",
-        "afterPublish": "Ogni slide viene pubblicata nella storia dell'account subito dopo la pubblicazione di questo carosello.",
-        "pending": "Pubblicazione delle slide nella storia.",
-        "posted": "Tutte le slide sono state pubblicate nella storia.",
-        "failed": "Non pubblicato nella storia: {{reason}}",
-        "none": "Questo carosello è stato pubblicato prima che le slide venissero pubblicate nella storia."
+        "afterPublish": "Il post originale di ogni evento viene condiviso nella storia dell'account dopo la pubblicazione di questo carosello.",
+        "pending": "In attesa di condividere nella storia i post originali degli eventi.",
+        "posted": "Il post originale di ogni evento è stato condiviso nella storia.",
+        "partial": "Condiviso nella storia, senza alcuni post: {{reason}}",
+        "failed": "Non condiviso nella storia: {{reason}}",
+        "none": "Questo carosello è stato pubblicato prima che i post degli eventi andassero nella storia."
       }
     },
     "socialAccounts": {

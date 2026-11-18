@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Relacja",
-        "afterPublish": "Każdy slajd trafia do relacji konta zaraz po opublikowaniu tej karuzeli.",
-        "pending": "Publikowanie slajdów w relacji.",
-        "posted": "Wszystkie slajdy zostały opublikowane w relacji.",
-        "failed": "Nie opublikowano w relacji: {{reason}}",
-        "none": "Ta karuzela została opublikowana, zanim slajdy zaczęły trafiać do relacji."
+        "afterPublish": "Oryginalny post każdego wydarzenia trafia do relacji konta po opublikowaniu tej karuzeli.",
+        "pending": "Czekamy na udostępnienie oryginalnych postów wydarzeń w relacji.",
+        "posted": "Oryginalny post każdego wydarzenia został udostępniony w relacji.",
+        "partial": "Udostępniono w relacji, ale bez niektórych postów: {{reason}}",
+        "failed": "Nie udostępniono w relacji: {{reason}}",
+        "none": "Ta karuzela została opublikowana, zanim posty wydarzeń zaczęły trafiać do relacji."
       }
     },
     "socialAccounts": {

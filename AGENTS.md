@@ -132,7 +132,7 @@ At most every `ramp_interval_minutes` (kept in the queue across restarts) the la
 Every login's budget check and record happen in one queue transaction, and from the first keystroke of a Lightpanda password on, any failure pauses that account for a person.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
-It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows), switches the app to it once, and does everything that account needs before moving on.
+It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song or, in action hours, its story, then an inbox due a check, then follows), switches the app to it once, and does everything that account needs before moving on.
 Each inbox is checked at random times, a random gap set in `controlbox/instagram_dms.json` after each check.
 Replies, follows and post edits happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`; outside them the worker only reads.
 One failing step never stops the visit's other steps.
@@ -143,6 +143,7 @@ account's post to a story and the app is the one place that can do every step.
 The emulator holds every school account, logged in once outside this automation and
 spread across Android users because the app keeps at most ten accounts each.
 A switcher row whose name Instagram lost (it reads only its activity, "1 chat and 22 more") is tapped, and the inbox title confirms which account it was; a switch the app answered that never reached the account only rests that account, and never restarts the emulator.
+Instagram's "You've been logged out of <account>" dialog, which covers the app until answered, is acknowledged with OK and logged, so the Android user's other accounts go on; the logged-out account needs a person to log in again.
 Each visit holds the emulator's lock and switches to the school's Android user and
 account; the DM step then lists the main inbox and message requests.
 It opens, by tapping its row, each unread thread with a message it has not handled,
@@ -184,6 +185,9 @@ Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
 track or none.
 The same edit tags the post with the school's own place: the first one Instagram's location search lists under the school's exact name (`schools.name`), else the one Claude Haiku recognizes as the school, or none; a place that cannot be tagged never holds up the song.
+It also tags each event slide with its event's club (`events.ig_handle`, never our own accounts) through Tag people: the tagging screen is turned one slide at a time (cover first) and each turn is confirmed by the picture changing, the user search's row with the exact handle is tapped, and a club that lets only accounts it follows tag it ("Can't tag") is left untagged; a post that already has tags is left as it is.
+During action hours, while a carousel is at most `story_max_age_hours` old and its `story_status` is pending, the same visit then shares each event's original Instagram post to the account's story, in slide order, the way a DM's story request is shared, so the story opens the club's own post (`services/instagram_publishing/stories.py`).
+Each post is tried once and the story is marked before the first share, so it is never shared twice; a post that cannot be shared is left out and recorded in `story_error` ("2 of 3 posts shared"), shown in the admin's carousel drawer.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
 The emulator also follows the clubs each school account should follow, and the follow crawl finds them through the browser worker.
@@ -251,10 +255,9 @@ The public API is served by `wat2do-api` (`rust/src/api`), which listens on port
 Porting a router means writing its handlers with the shared extractors, errors and validation in `rust/src/api`, registering them in `rust_routes()`, regenerating `backend/core/rust_openapi.json`, proving parity with `backend/scripts/api_parity.py` against production read-only, and deleting the Python router, service, schemas and tests in the same change.
 `docs/rust_api.md` is the step-by-step guide.
 The admin's carousel routes are Rust (`rust/src/api/routes/instagram_publishing`), and so are the carousel jobs (`rust/src/instagram_publishing`, binary `wat2do-instagram`): Claude's daily drafts (`curate`, LaunchAgent `io.wat2do.instagram.curate`), the 9:35 publish (`publish`, `io.wat2do.instagram.publish`), both installed by `wat2do-instagram install-schedule` and run with `cargo run --release` against the installing checkout, and the daily token refresh and account stats (`stats`, the Mac mini's `io.wat2do.instagram-account-stats` timer, from the deployed release).
-Right after a carousel posts, the same job posts each of its slides, in order, to the account's story through the Graph API (`media_type=STORIES`), as 9:16 frames (`rendering.rs` `story_frame`: the whole slide centred, each edge's colour carried on to the frame's edges); the morning publish posts every school's carousel first, then the stories.
-A story that fails is recorded on the batch (`story_status`, `story_error`, shown in the admin's carousel drawer) and leaves the carousel published; `controlbox/instagram_publishing.json` `post_slides_to_story` turns the step off.
+A posted carousel's story is left to the emulator worker: the job marks its `story_status` pending (`controlbox/instagram_publishing.json` `share_event_posts_to_story` turns that off), and the API never posts to stories.
 The Publish button claims the batch in Rust, then starts `wat2do-instagram publish-batch <id>`, the binary beside `wat2do-api`, as a detached process from the API's working directory, and a process that cannot start or crashes marks the batch failed.
-Liking, reposting and adding music to a published carousel stay in the Python emulator worker (`services/instagram_publishing/music.py`).
+Liking, reposting, adding music, tagging clubs and sharing the story of a published carousel stay in the Python emulator worker (`services/instagram_publishing/music.py`, `stories.py`).
 Each `wat2do-api` server also runs the map location worker (`rust/src/map_locations.rs`), which looks up waiting `map_locations` with Nominatim; `claim_map_location` keeps every server to one lookup at a time between them.
 Uploads (`/uploads` and the `/ai` poster readers) are checked and stored in Cloudflare R2 (with the thumbnail of each poster and raster club logo) by `rust/src/storage.rs`, and posters are read by OpenAI with `backend/services/scraper/extraction_prompt.txt`, the template the vestigial Python extractor renders too; Python's `storage_service` remains only for that pipeline and scripts.
 Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.

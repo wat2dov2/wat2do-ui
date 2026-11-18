@@ -4,17 +4,21 @@ Instagram's API publishes a carousel without music and cannot like or repost, so
 app on the emulator opens the live post the way a person would: it likes and reposts
 it, comments a GIF from a movie or show scene that fits the carousel's first event
 when one is given, then edits it: More actions, Edit, Add location with the school's
-own place when one is given, Add audio, search for a song, pick a track, keep the
-suggested clip, then Done.
+own place when one is given, Tag people with each event slide's club, Add audio, search
+for a song, pick a track, keep the suggested clip, then Done.
 """
 
 from __future__ import annotations
 
+import hashlib
+import io
 import logging
 import re
 import unicodedata
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+
+from PIL import Image
 
 from services.instagram_emulator.device import (
     CONTROL,
@@ -63,6 +67,17 @@ _ADD_LOCATION = re.compile(r"^Add location$")
 _LOCATION_SEARCH = re.compile(r"^row_search_edit_text$")
 # Places load a moment after typing, like GIPHY's results.
 _PLACE_TITLE = "row_venue_title"
+# The edit screen's people row names the accounts tagged once the post has any.
+_PEOPLE_ROW = re.compile(r"^m2_people_tagging_primary_text$")
+_PEOPLE_TAGGED = re.compile(r"^m2_people_tagging_count$")
+# The tagging screen shows one slide at a time; a tap on it opens the user search there.
+_TAG_PHOTO = re.compile(r"^Photo\. Tap to tag people$")
+_USER_SEARCH = re.compile(r"^search_edit_text$")
+_USER_RESULT = "row_search_user_username"
+# An account that lets only the accounts it follows tag it says so when tapped.
+_CANT_TAG = re.compile(r"^Can't tag$")
+_OK = re.compile(r"^OK$")
+_SLIDE_TURN_ATTEMPTS = 2
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +116,14 @@ ChoosePlace = Callable[[str, Sequence[str]], int | None]
 
 
 @dataclass(frozen=True)
+class SlideTag:
+    """The club to tag on one slide: ``slide`` counts from the cover, which is 0."""
+
+    slide: int
+    handle: str
+
+
+@dataclass(frozen=True)
 class PlaceTag:
     """The school whose own place tags the post, and who decides which result it is."""
 
@@ -116,10 +139,11 @@ def finish_post(
     choose: ChooseTrack,
     gif: GifScene | None = None,
     place: PlaceTag | None = None,
+    clubs: Sequence[SlideTag] = (),
 ) -> AddedTrack:
-    """Like and repost the post, add the first song in ``queries`` that Instagram has and
-    tag the post with the school's place, then return the track used. A retry only does
-    what is still missing.
+    """Like and repost the post, add the first song in ``queries`` that Instagram has,
+    tag the post with the school's place and each slide with its club, then return the
+    track used. A retry only does what is still missing.
 
     The worker has already switched the app to the school's account and holds the lock.
     A try that fails starts the app afresh, so nothing it left open covers the next post.
@@ -128,7 +152,7 @@ def finish_post(
         raise EmulatorError("Only an exact Instagram post can get audio")
     user = CONTROL.android_user_by_school[school]
     try:
-        return _finish(device, user, permalink, queries, choose, gif, place)
+        return _finish(device, user, permalink, queries, choose, gif, place, clubs)
     except EmulatorError:
         device.reset_app(user)
         raise
@@ -142,6 +166,7 @@ def _finish(
     choose: ChooseTrack,
     gif: GifScene | None,
     place: PlaceTag | None,
+    clubs: Sequence[SlideTag],
 ) -> AddedTrack:
     _open_post(device, user, permalink)
     _like_and_repost(device)
@@ -160,6 +185,7 @@ def _finish(
     # The place goes first, while the edit screen is as it opened: a song just added
     # grows its row, and the rows below it move under a tap read before they did.
     tagged = place is not None and _tagged(device, place, permalink)
+    clubs_tagged = bool(clubs) and _clubs_tagged(device, clubs, permalink)
     audio = _scroll_to(device, _AUDIO_ROW)
     adding_song = audio.labelled(_ADD_AUDIO)
     if adding_song:
@@ -174,7 +200,7 @@ def _finish(
     else:
         # An earlier try saved a song but failed before it was recorded.
         added = AddedTrack("", audio.text)
-    if adding_song or tagged:
+    if adding_song or tagged or clubs_tagged:
         device.tap_when(_DONE)
         device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
     else:
@@ -227,6 +253,105 @@ def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
 def _places(nodes: list[Node]) -> list[tuple[str, Node]]:
     """The places Instagram's location search lists for the typed name, best match first."""
     return [(node.text, node) for node in nodes if node.resource_id == _PLACE_TITLE and node.text]
+
+
+def _clubs_tagged(device: EmulatorDevice, clubs: Sequence[SlideTag], permalink: str) -> bool:
+    """Tag each slide with its club; True when this edit tagged any.
+
+    The tags are a nice extra like the place: when tagging fails, the edit goes on
+    without the rest of them.
+    """
+    try:
+        return _tag_clubs(device, clubs)
+    except EmulatorError:
+        log.warning("Could not tag the clubs on %s", permalink, exc_info=True)
+        _back_to_edit(device)
+        return False
+
+
+def _tag_clubs(device: EmulatorDevice, clubs: Sequence[SlideTag]) -> bool:
+    row = _scroll_to(device, _PEOPLE_ROW)
+    if device.find(_PEOPLE_TAGGED) is not None:
+        # The post already has its tags, such as from an earlier try.
+        return False
+    device.tap(row)
+    photo = device.wait_for(_TAG_PHOTO)
+    shown = 0
+    tagged = False
+    for club in sorted(clubs, key=lambda club: club.slide):
+        while shown < club.slide:
+            _next_slide(device, photo)
+            shown += 1
+        tagged = _tag_club(device, photo, club.handle) or tagged
+    device.tap_when(_DONE)
+    device.wait_for(_EDIT_INFO)
+    return tagged
+
+
+def _next_slide(device: EmulatorDevice, photo: Node) -> None:
+    """Turn the tagging screen to the next slide, confirmed by the picture changing,
+    so no club is ever tagged on another club's slide."""
+    before = _picture(device, photo)
+    for _ in range(_SLIDE_TURN_ATTEMPTS):
+        device.swipe_left(photo)
+        device.pause()
+        if _picture(device, photo) != before:
+            return
+    raise EmulatorError("The tagging screen did not turn to the next slide")
+
+
+def _picture(device: EmulatorDevice, photo: Node) -> str:
+    """A fingerprint of the slide the tagging screen shows."""
+    with Image.open(io.BytesIO(device.screenshot())) as shot:
+        image = shot.convert("RGB").crop(photo.bounds).resize((32, 32))
+    return hashlib.sha256(image.tobytes()).hexdigest()
+
+
+def _tag_club(device: EmulatorDevice, photo: Node, handle: str) -> bool:
+    """Tag ``handle`` near the top left of the slide on screen; True when it took.
+
+    The search lists every account, so only the row with the exact handle is tapped.
+    """
+    x1, y1, x2, y2 = photo.bounds
+    width, height = x2 - x1, y2 - y1
+    spot = (
+        x1 + width * 2 // 10,
+        y1 + height * 2 // 10,
+        x1 + width * 3 // 10,
+        y1 + height * 3 // 10,
+    )
+    device.tap(Node("", "", spot))
+    device.wait_for(_USER_SEARCH)
+    device.type_text(handle)
+    result = device.watch(
+        lambda nodes: next(
+            (node for node in nodes if node.resource_id == _USER_RESULT and node.text == handle),
+            None,
+        )
+    )
+    if result is None:
+        _back_to_tagging(device)
+        return False
+    device.tap(result)
+    tagged = re.compile(rf"^Tagged user {re.escape(handle)}$")
+    shown = device.watch(lambda nodes: device.find(tagged, nodes) or device.find(_CANT_TAG, nodes))
+    if shown is not None and shown.labelled(tagged) and device.find(_USER_SEARCH) is None:
+        return True
+    if shown is not None and shown.labelled(_CANT_TAG):
+        device.tap_when(_OK)
+    _back_to_tagging(device)
+    return False
+
+
+def _back_to_tagging(device: EmulatorDevice) -> None:
+    """Leave the user search, its keyboard first, for the tagging screen."""
+    for _ in range(3):
+        nodes = device.screen()
+        if device.find(_USER_SEARCH, nodes) is None and device.find(_TAG_PHOTO, nodes):
+            return
+        device.back()
+    if device.find(_USER_SEARCH) is not None:
+        raise EmulatorError("The user search on the tagging screen did not close")
 
 
 def _back_to_edit(device: EmulatorDevice) -> None:
