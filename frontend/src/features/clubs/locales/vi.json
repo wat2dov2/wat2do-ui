@@ -69,7 +69,7 @@
     "minimumEvents": "Số sự kiện tối thiểu",
     "claimLink": {
       "title": "Nhận quản lý {{club}} trên Wat2Do",
-      "description": "Trang câu lạc bộ của bạn đã sẵn sàng. Khi nhận quản lý, bạn trở thành chủ sở hữu trang: có thể đăng sự kiện và vị trí, cập nhật chúng và phát hoặc bán vé.",
+      "description": "Trang câu lạc bộ của bạn đã sẵn sàng. Khi nhận quản lý, bạn trở thành chủ sở hữu trang: câu lạc bộ và các sự kiện của bạn có dấu xác minh, và bạn có thể đăng sự kiện và vị trí, phát vé QR miễn phí và quét vé ở cửa.",
       "checking": "Đang kiểm tra liên kết nhận quản lý...",
       "claim": "Nhận quản lý câu lạc bộ",
       "claiming": "Đang xử lý...",

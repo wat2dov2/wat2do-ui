@@ -75,7 +75,7 @@
     "minimumEvents": "Événements minimum",
     "claimLink": {
       "title": "Revendiquez {{club}} sur Wat2Do",
-      "description": "La page de votre organisation est prête. La revendiquer fait de vous son propriétaire : vous pourrez publier des événements et des postes, les tenir à jour et offrir ou vendre des billets.",
+      "description": "La page de votre organisation est prête. La revendiquer fait de vous son propriétaire : votre organisation et ses événements reçoivent la coche de vérification, et vous pourrez publier des événements et des postes, offrir des billets QR gratuits et les scanner à l'entrée.",
       "checking": "Vérification de votre lien de revendication...",
       "claim": "Revendiquer le club",
       "claiming": "Revendication...",

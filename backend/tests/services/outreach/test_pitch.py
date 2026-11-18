@@ -96,6 +96,15 @@ def test_the_prompt_names_the_school_payout_and_sender_but_leaves_both_links():
     assert "—" not in prompt
 
 
+def test_the_script_and_email_name_points_the_claimed_club_list_has():
+    prompt = pitch._prompt(LEAD)
+    claimed = prompt.split("## 2. What claiming gets the club\n", 1)[1].split("\n## ", 1)[0]
+    points = [line.split(".", 1)[0] for line in claimed.splitlines() if line[:1].isdigit()]
+    assert points == [str(number) for number in range(1, 9)]
+    assert "points 1 to 5" in prompt and "points 6 to 8" in prompt
+    assert "$2 for every student it checks in" in claimed
+
+
 @pytest.mark.parametrize(("cents", "said"), [(200, "$2"), (250, "$2.50"), (205, "$2.05")])
 def test_the_payout_reads_as_dollars(monkeypatch, cents, said):
     monkeypatch.setattr(pitch, "PAYOUTS", SimpleNamespace(rate_cents=cents))

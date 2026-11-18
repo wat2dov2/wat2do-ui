@@ -75,7 +75,7 @@
     "minimumEvents": "Mínimo de eventos",
     "claimLink": {
       "title": "Reivindique {{club}} no Wat2Do",
-      "description": "A página da sua organização está pronta. Ao reivindicá-la, você se torna o dono: pode publicar eventos e vagas, mantê-los atualizados e oferecer ou vender ingressos.",
+      "description": "A página da sua organização está pronta. Ao reivindicá-la, você se torna o dono: sua organização e seus eventos ganham o selo de verificado, e você pode publicar eventos e vagas, oferecer ingressos com QR gratuitos e lê-los na entrada.",
       "checking": "Verificando seu link de reivindicação...",
       "claim": "Reivindicar clube",
       "claiming": "Reivindicando...",
