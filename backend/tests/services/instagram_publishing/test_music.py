@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -311,6 +313,30 @@ def test_no_fitting_scene_means_no_gif(monkeypatch):
         music, "run_agent", lambda prompt, **_: {"query": None, "reason": "no scene"}
     )
     assert music.gif_comment("batch-1") is None
+
+
+def test_the_scene_picker_sees_recent_searches_and_each_new_one_is_remembered(
+    monkeypatch, tmp_path
+):
+    recent_path = tmp_path / "recent.json"
+    recent_path.write_text('["cillian murphy sigh", "jim halpert stare"]')
+    monkeypatch.setattr(music, "RECENT_GIFS_PATH", recent_path)
+    monkeypatch.setattr(music, "_first_event", lambda batch_id: {"title": "Trivia Night"})
+    shown = []
+
+    def agent(prompt, workdir, **_):
+        shown.append((Path(workdir) / "recent.json").read_text())
+        return {"query": "keanu reeves  tired exhale", "reason": "dry"}
+
+    monkeypatch.setattr(music, "run_agent", agent)
+    comment = music.gif_comment("batch-1")
+    assert comment is not None and comment.query == "keanu reeves tired exhale"
+    assert json.loads(shown[0]) == ["cillian murphy sigh", "jim halpert stare"]
+    assert json.loads(recent_path.read_text()) == [
+        "cillian murphy sigh",
+        "jim halpert stare",
+        "keanu reeves tired exhale",
+    ]
 
 
 def test_the_picker_reads_numbered_results(monkeypatch):

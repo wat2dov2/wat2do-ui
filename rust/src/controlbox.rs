@@ -335,6 +335,7 @@ pub struct InstagramPublishing {
     pub music_max_age_hours: i64,
     pub music_attempts: u32,
     pub gif_comments: bool,
+    pub gif_recent_searches: usize,
     pub music_retry_minutes: i64,
     /// After a carousel publishes, the emulator worker shares each of its
     /// events' original posts to the account's story, in slide order.

@@ -606,6 +606,8 @@ class InstagramPublishingControl(_ControlModel):
     music_attempts: int = Field(ge=1, le=10)
     # On a carousel's first song try, also comment a fitting movie or show GIF.
     gif_comments: bool
+    # The GIF scene picker is shown this many of the latest searches, so it never repeats one.
+    gif_recent_searches: int = Field(ge=1, le=200)
     music_retry_minutes: int = Field(ge=1, le=720)
     # After a carousel publishes, the emulator worker shares each of its events' original
     # posts to the account's story, in slide order, during action hours and only while the
