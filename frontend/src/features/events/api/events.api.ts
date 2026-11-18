@@ -6,6 +6,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { Event, EventFormData, FilterState } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
+import { eventHostClubIds } from "@/shared/utils/event";
 import type {
   ApiEventAttendeesResponse,
   ApiEventFeedResponse,
@@ -223,7 +224,7 @@ async function writeEventToQueries(event: Event): Promise<void> {
   for (const [key, events] of queryClient.getQueriesData<Event[]>({ queryKey: queryKeys.events.lists() })) {
     if (!events) continue;
     const existing = events.find(item => item.id === event.id);
-    const belongsToClub = [event.club_id, ...(event.cohosts ?? []).map(club => club.id)].includes(key.at(-2) as number) && key.at(-1) === event.school;
+    const belongsToClub = eventHostClubIds(event).includes(key.at(-2) as number) && key.at(-1) === event.school;
     if (!existing && !belongsToClub) continue;
     const items = events.filter(item => item.id !== event.id);
     if (belongsToClub) items.push(mergeEventSummary(existing, event));

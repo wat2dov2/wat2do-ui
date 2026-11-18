@@ -83,6 +83,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Nagsimula na o nakansela ang event na ito, kaya hindi na available ang Pupunta.",
+      "hostedByYourClub": "Ang organisasyon mo ang nagho-host ng event na ito.",
       "saveFailed": "Hindi maisalba ang napiling oras",
       "chooseOccurrences": "Aling mga petsa ka pupunta?",
       "chooseOccurrencesDescription": "Piliin ang bawat petsa na gusto mong makatanggap ng paalala at update."

@@ -82,6 +82,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "此活动已开始或已取消，因此无法标记“参加”。",
+      "hostedByYourClub": "这是你所在组织主办的活动。",
       "saveFailed": "无法保存您选择的时间",
       "chooseOccurrences": "你要参加哪些日期？",
       "chooseOccurrencesDescription": "选择所有你想收到提醒和更新的日期。"

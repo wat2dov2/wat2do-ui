@@ -82,6 +82,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "이 행사는 이미 시작되었거나 취소되어 '참석'을 표시할 수 없습니다.",
+      "hostedByYourClub": "소속 조직이 주최하는 행사입니다.",
       "saveFailed": "선택한 시간을 저장할 수 없습니다",
       "chooseOccurrences": "어떤 날짜에 참석하시겠어요?",
       "chooseOccurrencesDescription": "알림과 업데이트를 받을 날짜를 모두 선택하세요."

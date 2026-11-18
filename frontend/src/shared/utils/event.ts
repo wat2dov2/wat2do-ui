@@ -120,6 +120,24 @@ export function eventToFormData(
   };
 }
 
+/** The clubs hosting the event: its own club, then its cohosts. */
+export function eventHostClubIds(event: Pick<Event, "club_id" | "cohosts">): number[] {
+  const cohostIds = (event.cohosts ?? []).map((club) => club.id);
+  return event.club_id == null ? cohostIds : [event.club_id, ...cohostIds];
+}
+
+/**
+ * Whether one of these clubs hosts the event, as its club or a cohost. Given
+ * the clubs whose team someone is on, it says whether they help run it.
+ */
+export function clubsHostEvent(
+  clubs: readonly { id: number }[],
+  event: Pick<Event, "club_id" | "cohosts">,
+): boolean {
+  const hosts = eventHostClubIds(event);
+  return clubs.some((club) => hosts.includes(club.id));
+}
+
 export function getUniqueEvents(events: Event[]): Event[] {
   const seen = new Set<number>();
   return events.filter((event) => {

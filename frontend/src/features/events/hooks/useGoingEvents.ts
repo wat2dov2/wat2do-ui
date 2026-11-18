@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { getUserId } from "@/features/auth/api/auth.api";
+import { getUserId, getUserProfile } from "@/features/auth/api/auth.api";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import {
   clearGoingEvent,
@@ -19,6 +19,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { tracker } from "@/shared/services/trackingService";
 import { ApiError, isApiError } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
+import { clubsHostEvent } from "@/shared/utils/event";
 import {
   isActiveOrUpcomingOccurrence,
   isEventHappeningNow,
@@ -51,6 +52,7 @@ export function useGoingEvents() {
  * Notify me for one event (`user_going_events`). With `dates`, only those of
  * its dates are offered, and saving keeps the viewer's other dates as they
  * were: an event with tickets offers Notify me for its dates without them.
+ * The team of a club hosting the event runs it, so Going is not theirs to change.
  */
 export function useGoingEventSelection(
   event: Event,
@@ -58,6 +60,7 @@ export function useGoingEventSelection(
   dates?: readonly string[],
 ) {
   const { t } = useTranslation();
+  const { clubs } = useAuthState();
   const queryClient = useQueryClient();
   const { data: selections = [] } = useGoingEvents();
   const now = useCurrentTime(event.occurrences);
@@ -100,13 +103,13 @@ export function useGoingEventSelection(
     [event.cancelled, offered, now, selectedIds],
   );
   // Async sign-in and optimistic mutation work can outlive a rendered clock tick.
-  const canRegisterNow = () => !event.cancelled && !isEventHappeningNow(event, new Date());
+  const startedOrCancelledNow = () => event.cancelled || isEventHappeningNow(event, new Date());
 
   const mutation = useMutation({
     mutationKey: queryKeys.goingEvents.all,
     mutationFn: async ({ eventId, occurrenceIds }: GoingMutationVariables) => {
       if (occurrenceIds.length === 0) return clearGoingEvent(eventId);
-      if (!canRegisterNow()) throw new ApiError(400, { detail: UNAVAILABLE_OCCURRENCE_ERROR });
+      if (startedOrCancelledNow()) throw new ApiError(400, { detail: UNAVAILABLE_OCCURRENCE_ERROR });
       return setGoingEventOccurrences(eventId, occurrenceIds);
     },
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
@@ -196,7 +199,14 @@ export function useGoingEventSelection(
     isActive,
     currentTimeMs: now,
     isTimeUnavailable: now !== null && selectableOccurrences.length === 0,
-    canRegisterNow,
+    /** The visitor is on the team of a club hosting the event, as its club or a cohost. */
+    hostedByYourClub: clubsHostEvent(clubs, event),
+    /**
+     * Whether Going can be turned on now, read when called: a session can start, or
+     * a sign-in can show that the visitor's club hosts the event, after the last render.
+     */
+    canRegisterNow: () =>
+      !startedOrCancelledNow() && !clubsHostEvent(getUserProfile()?.clubs ?? [], event),
     isPending: mutation.isPending,
     saveSelection: (occurrenceIds: string[]) =>
       mutation.mutateAsync({

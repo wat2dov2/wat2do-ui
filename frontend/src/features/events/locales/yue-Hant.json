@@ -82,6 +82,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "呢個活動已經開始或者取消咗，所以標記唔到「會去」。",
+      "hostedByYourClub": "呢個係你嘅組織主辦嘅活動。",
       "saveFailed": "無法儲存你選擇的時間",
       "chooseOccurrences": "你會去邊幾日？",
       "chooseOccurrencesDescription": "揀晒所有你想收提醒同更新嘅日子。"

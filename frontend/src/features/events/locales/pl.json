@@ -85,6 +85,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "To wydarzenie już się rozpoczęło lub zostało odwołane, więc opcja Idę jest niedostępna.",
+      "hostedByYourClub": "To wydarzenie organizuje Twoja organizacja.",
       "saveFailed": "Nie udało się zapisać wybranego czasu",
       "chooseOccurrences": "W których terminach idziesz?",
       "chooseOccurrencesDescription": "Wybierz wszystkie terminy, dla których chcesz dostać przypomnienie i aktualizacje."

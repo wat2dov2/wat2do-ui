@@ -84,6 +84,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "Este evento ya comenzó o fue cancelado, así que Voy no está disponible.",
+      "hostedByYourClub": "Este evento es de tu organización.",
       "saveFailed": "No se pudo guardar tu hora seleccionada",
       "chooseOccurrences": "¿A qué fechas vas a ir?",
       "chooseOccurrencesDescription": "Elige cada fecha para la que quieras un recordatorio y novedades."

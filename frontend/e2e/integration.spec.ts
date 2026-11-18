@@ -362,7 +362,10 @@ test.describe("SEO discovery routes", () => {
 });
 
 /** The API's side of a signed-in admin: refresh, profile, clubs and saved items. */
-async function mockSignedInApi(page: Page, next: NextFixture) {
+/** The club the signed-in visitor runs, unless a test signs in someone on no club's team. */
+const VISITOR_CLUBS = [MOCK_CLUBS[0]!];
+
+async function mockSignedInApi(page: Page, next: NextFixture, clubs = VISITOR_CLUBS) {
   // Mock auth refresh
   await mockApi(page, next, url => apiPath(url) === "/auth/refresh", async () => {
     return ({
@@ -399,7 +402,7 @@ async function mockSignedInApi(page: Page, next: NextFixture) {
     return ({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([MOCK_CLUBS[0]]),
+      body: JSON.stringify(clubs),
     });
   });
 
@@ -475,9 +478,12 @@ async function mockSignedInApi(page: Page, next: NextFixture) {
   });
 }
 
-/** A signed-in admin whose session this campus has cached. */
-async function seedAuthenticatedSession(page: Page, next: NextFixture) {
-  await mockSignedInApi(page, next);
+/**
+ * A signed-in admin whose session this campus has cached. They run UW Tech Club,
+ * or with `clubs: []` no club, so the events they mark Going are not their own.
+ */
+async function seedAuthenticatedSession(page: Page, next: NextFixture, { clubs = VISITOR_CLUBS } = {}) {
+  await mockSignedInApi(page, next, clubs);
 
   const profile = {
     id: "mock-user-id",
@@ -486,15 +492,10 @@ async function seedAuthenticatedSession(page: Page, next: NextFixture) {
     isFirstYear: false,
     school: "uwaterloo",
     role: "admin",
-    hasClub: true,
-    clubs: [
-      {
-        id: 1,
-        club_name: "UW Tech Club",
-      }
-    ],
-    clubId: 1,
-    clubName: "UW Tech Club",
+    hasClub: clubs.length > 0,
+    clubs: clubs.map(club => ({ id: club.id, club_name: club.club_name })),
+    clubId: clubs[0]?.id ?? null,
+    clubName: clubs[0]?.club_name ?? null,
   };
 
   await page.addInitScript(({ keyEmail, email, keyProfile, profileObj }) => {
@@ -3324,7 +3325,7 @@ test.describe("Events Page", () => {
   for (const authenticated of [false, true]) {
     for (const recurring of [false, true]) {
       test(`started ${recurring ? "recurring " : ""}event Notify me is disabled with a hover explanation ${authenticated ? "when signed in" : "before sign in"}`, async ({ page, next }) => {
-        if (authenticated) await seedAuthenticatedSession(page, next);
+        if (authenticated) await seedAuthenticatedSession(page, next, { clubs: [] });
         const now = new Date();
         await page.clock.setFixedTime(now);
         let writes = 0;
@@ -3359,6 +3360,60 @@ test.describe("Events Page", () => {
         }
       });
     }
+  }
+
+  for (const host of ["club", "cohost"] as const) {
+    test(`Going is turned off, and says why, for the team of the event's ${host}`, async ({ page, next }) => {
+      // The signed-in visitor runs UW Tech Club (club 1).
+      await seedAuthenticatedSession(page, next);
+      const reason = "Your club is hosting this event.";
+      const occurrence = { id: "hosted-session", event_id: 1, dtstart_utc: new Date(Date.now() + 86_400_000).toISOString(), dtend_utc: null };
+      let going: string[] = [];
+      let writes = 0;
+      await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
+        id: 1, title: "Hack Night", school: "uwaterloo", description: "", location: "SLC", category: "Career",
+        price: 0, food: [], registration: false, source_image_url: null, cancelled: false, occurrences: [occurrence],
+        ...(host === "club"
+          ? { club_id: 1, club: "UW Tech Club" }
+          : { club_id: 2, club: "UW Board Games Club", cohosts: [{ id: 1, club_name: "UW Tech Club", logo_url: null }] }),
+      } }));
+      await mockApi(page, next, url => apiPath(url) === "/going-events", async () => ({
+        json: going.length ? [{ event_id: 1, occurrence_ids: going }] : [],
+      }));
+      await mockApi(page, next, url => apiPath(url) === "/going-events/1", async () => {
+        writes++;
+        return { status: 400, json: { detail: "The hosting team cannot change Going" } };
+      });
+
+      await page.goto(`${BASE}/events/1`);
+      await expect(page.getByRole("button", { name: "Going", exact: true })).toBeDisabled();
+      const box = page.locator('[data-slot="disabled-button-trigger"]');
+      // Screen readers hear why with the control itself.
+      await expect(page.getByRole("group", { name: "Going", exact: true })).toHaveAccessibleDescription(reason);
+      await box.hover();
+      await expect(page.getByRole("tooltip")).toContainText(reason);
+      await page.mouse.move(0, 0);
+      await expect(page.getByRole("tooltip")).toBeHidden();
+      await box.focus();
+      await expect(page.getByRole("tooltip")).toContainText(reason);
+      await page.keyboard.press("Enter");
+      await box.blur();
+      await expect(page.getByRole("tooltip")).toBeHidden();
+      // A phone has no hover: a tap shows it.
+      await box.dispatchEvent("pointerdown", { pointerType: "touch", isPrimary: true });
+      await box.dispatchEvent("pointerup", { pointerType: "touch", isPrimary: true });
+      await box.dispatchEvent("click");
+      await expect(page.getByRole("tooltip")).toContainText(reason);
+
+      // Marked Going before: it stays on, and turning it off is off too, for the same reason.
+      going = [occurrence.id];
+      await page.reload();
+      await expect(page.getByText("You're going", { exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Mark yourself not going.", exact: true })).toBeDisabled();
+      await page.locator('[data-slot="disabled-button-trigger"]').hover();
+      await expect(page.getByRole("tooltip")).toContainText(reason);
+      expect(writes).toBe(0);
+    });
   }
 
   /** A free event with tickets, hosted by `clubId` (the signed-in visitor runs club 1). */
@@ -3448,7 +3503,7 @@ test.describe("Events Page", () => {
 
   for (const hasEndTime of [true, false]) {
     test(`Notify me blocks future recurring registration while a session is live and reopens after ${hasEndTime ? "its end time" : "the no-end visibility window"}`, async ({ page, next }) => {
-      await seedAuthenticatedSession(page, next);
+      await seedAuthenticatedSession(page, next, { clubs: [] });
       const now = new Date();
       await page.clock.install({ time: new Date(now.getTime() - 3_600_000) });
       let submittedOccurrenceIds: string[] | null = null;
@@ -3545,7 +3600,7 @@ test.describe("Events Page", () => {
   });
 
   test("an existing Notify me can still be turned off after its session starts", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+    await seedAuthenticatedSession(page, next, { clubs: [] });
     const now = Date.now();
     let cancelled = false;
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
@@ -3568,7 +3623,7 @@ test.describe("Events Page", () => {
   });
 
   test("uses recurring-event controls above the event drawer", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+    await seedAuthenticatedSession(page, next, { clubs: [] });
 
     const firstOccurrenceId = "11111111-1111-4111-8111-111111111111";
     const secondOccurrenceId = "22222222-2222-4222-8222-222222222222";
@@ -3844,7 +3899,7 @@ test.describe("Events Page", () => {
   });
 
   test("persists optimistic click and going stats across refresh", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+    await seedAuthenticatedSession(page, next, { clubs: [] });
 
     let clickCount = 0;
     let goingCount = 0;
@@ -4854,7 +4909,7 @@ for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9,
 
 for (const surface of ["drawer", "page"]) {
   test(`refreshes attendance and avatar stack after Going in the ${surface}`, async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+    await seedAuthenticatedSession(page, next, { clubs: [] });
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     let going = false;
     let releaseGoing!: () => void;
@@ -4903,7 +4958,7 @@ for (const [detail, message] of [
   ["Unexpected storage failure", "Couldn't save your selected time"],
 ]) {
   test(`Going rejection toast: ${detail}`, async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
+    await seedAuthenticatedSession(page, next, { clubs: [] });
     await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({
       json: { going_count: 0, attendees: [] },
     }));

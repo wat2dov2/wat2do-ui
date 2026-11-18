@@ -87,6 +87,7 @@
     },
     "goingEvents": {
       "timeUnavailable": "بدأت هذه الفعالية بالفعل أو أُلغيت، لذا لا يتوفر «سأحضر».",
+      "hostedByYourClub": "منظمتك تستضيف هذه الفعالية.",
       "saveFailed": "تعذر حفظ الوقت الذي اخترته",
       "chooseOccurrences": "أي المواعيد ستحضر؟",
       "chooseOccurrencesDescription": "اختر كل موعد تريد تذكيرًا وتحديثات بشأنه."

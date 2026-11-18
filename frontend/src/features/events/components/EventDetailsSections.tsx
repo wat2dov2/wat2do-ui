@@ -395,7 +395,8 @@ function EventYoureInCard({
 /**
  * Notify me: a reminder before the event and an email when it changes. Only
  * the person themselves sees that they turned it on. With `dates`, it covers
- * only those dates (an event's dates without tickets).
+ * only those dates (an event's dates without tickets). The team of a club
+ * hosting the event sees Going turned off, on or not, with the reason.
  */
 function EventNotifyMeCard({
   event,
@@ -413,9 +414,9 @@ function EventNotifyMeCard({
   const now = notify.currentTimeMs;
   const [pickerOpen, setPickerOpen] = useState(false);
   const isOn = profileCompleted && notify.isActive;
-  const disabledReason = notify.isTimeUnavailable
-    ? t("events.goingEvents.timeUnavailable")
-    : undefined;
+  const hostedReason = notify.hostedByYourClub ? t("events.goingEvents.hostedByYourClub") : undefined;
+  const disabledReason =
+    hostedReason ?? (notify.isTimeUnavailable ? t("events.goingEvents.timeUnavailable") : undefined);
 
   const nextSelectedOccurrence = notify.selectableOccurrences.find((occurrence) =>
     notify.selectedSelectableIds.includes(occurrence.id),
@@ -460,7 +461,8 @@ function EventNotifyMeCard({
               type="button"
               variant="link"
               size="inline"
-              disabled={notify.isPending}
+              disabled={notify.isPending || notify.hostedByYourClub}
+              disabledReason={hostedReason}
               onClick={() => void notify.saveSelection([])}
             >
               {t("events.notifyMe.off")}
@@ -497,7 +499,7 @@ function EventNotifyMeCard({
   return (
     <EventRegistrationPrompt
       school={event.school ?? school}
-      unavailable={notify.selectableOccurrences.length === 0}
+      unavailable={notify.hostedByYourClub || notify.selectableOccurrences.length === 0}
       unavailableReason={disabledReason}
       isPending={notify.isPending}
       onRegister={turnOn}
