@@ -5,7 +5,7 @@
     "reportUpdateFailed": "Hindi ma-update ang ulat. Pakisubukang muli.",
     "eventReport": "Ulat sa kaganapan",
     "pendingCount": "{{label}}: {{value}} nakabinbin",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "Hindi ma-load ang ilang bilang ng mga nakabinbin.",
     "eventReports": "Mga ulat sa event",
     "reportReason": "Dahilan ng ulat",

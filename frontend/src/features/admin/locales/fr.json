@@ -5,7 +5,7 @@
     "reportUpdateFailed": "Impossible de mettre à jour le signalement. Réessayez.",
     "eventReport": "Signalement d’événement",
     "pendingCount": "{{label}} : {{value}} en attente",
-    "alertCount": "{{label}} : {{value}}",
+    "labeledCount": "{{label}} : {{value}}",
     "pendingCountsError": "Certains nombres en attente n’ont pas pu être chargés.",
     "eventReports": "Signalements d’événements",
     "reportReason": "Motif du signalement",

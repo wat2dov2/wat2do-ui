@@ -7,6 +7,17 @@
     "positionsDesc": "موقعیت‌های باز سازمان شما",
     "members": "تیم مدیریت",
     "membersDesc": "مدیریت اعضای سازمان",
+    "counts": {
+      "upcomingEvents": "رویدادهای آینده",
+      "openPositions": "موقعیت‌های باز",
+      "activeMembers": "اعضای فعال"
+    },
+    "preview": {
+      "open": "پیش‌نمایش سازمان",
+      "badge": "پیش‌نمایش",
+      "title": "بازدیدکنندگان سازمان شما را این‌طور می‌بینند",
+      "description": "دکمه‌های اینجا فقط برای نمایش‌اند."
+    },
     "memberColumns": {
       "name": "نام",
       "email": "ایمیل",

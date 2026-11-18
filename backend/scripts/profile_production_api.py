@@ -374,6 +374,7 @@ def discover_dynamic_endpoints(
     club_id = _first_id(school_owned_clubs) or _first_id(clubs)
     club_routes = (
         "/clubs/{club_id}",
+        "/clubs/{club_id}/counts",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
         "/clubs/{club_id}/ticket-sales",
@@ -385,6 +386,11 @@ def discover_dynamic_endpoints(
                     "/clubs/{club_id}",
                     f"/clubs/{club_id}",
                     False,
+                ),
+                Endpoint(
+                    "/clubs/{club_id}/counts",
+                    f"/clubs/{club_id}/counts",
+                    True,
                 ),
                 Endpoint(
                     "/clubs/{club_id}/invitations",
@@ -483,6 +489,7 @@ def _known_get_paths() -> set[str]:
         "/going-events/{event_id}/attendees",
         "/instagram-publishing/batches/{batch_id}",
         "/clubs/{club_id}",
+        "/clubs/{club_id}/counts",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
         "/clubs/{club_id}/ticket-sales",

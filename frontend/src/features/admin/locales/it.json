@@ -5,7 +5,7 @@
     "reportUpdateFailed": "Impossibile aggiornare la segnalazione. Riprova.",
     "eventReport": "Segnalazione di evento",
     "pendingCount": "{{label}}: {{value}} in attesa",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "Impossibile caricare alcuni conteggi in attesa.",
     "eventReports": "Segnalazioni eventi",
     "reportReason": "Motivo della segnalazione",

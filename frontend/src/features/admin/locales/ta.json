@@ -5,7 +5,7 @@
     "reportUpdateFailed": "புகாரைப் புதுப்பிக்க முடியவில்லை. மீண்டும் முயலவும்.",
     "eventReport": "நிகழ்வு புகார்",
     "pendingCount": "{{label}}: {{value}} நிலுவையில்",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "சில நிலுவை எண்ணிக்கைகளை ஏற்ற முடியவில்லை.",
     "eventReports": "நிகழ்வுப் புகார்கள்",
     "reportReason": "புகாரின் காரணம்",

@@ -5,7 +5,7 @@
     "reportUpdateFailed": "신고를 업데이트하지 못했습니다. 다시 시도해 주세요.",
     "eventReport": "이벤트 신고",
     "pendingCount": "{{label}}: {{value}}건 대기 중",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "일부 대기 건수를 불러오지 못했습니다.",
     "eventReports": "행사 신고",
     "reportReason": "신고 사유",

@@ -5,7 +5,7 @@
     "reportUpdateFailed": "Nie udało się zaktualizować zgłoszenia. Spróbuj ponownie.",
     "eventReport": "Zgłoszenie wydarzenia",
     "pendingCount": "{{label}}: {{value}} oczekujących",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "Nie udało się wczytać niektórych liczników oczekujących spraw.",
     "eventReports": "Zgłoszenia wydarzeń",
     "reportReason": "Powód zgłoszenia",

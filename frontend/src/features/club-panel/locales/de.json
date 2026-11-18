@@ -7,6 +7,17 @@
     "positionsDesc": "Offene Stellen Ihrer Organisation",
     "members": "Management-Team",
     "membersDesc": "Organisationmitglieder verwalten",
+    "counts": {
+      "upcomingEvents": "Kommende Veranstaltungen",
+      "openPositions": "Offene Stellen",
+      "activeMembers": "Aktive Mitglieder"
+    },
+    "preview": {
+      "open": "Vorschau anzeigen",
+      "badge": "Vorschau",
+      "title": "So sehen Besucher deine Organisation",
+      "description": "Die Buttons hier sind nur zur Ansicht."
+    },
     "memberColumns": {
       "name": "Name",
       "email": "E-Mail",

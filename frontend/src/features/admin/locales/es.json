@@ -5,7 +5,7 @@
     "reportUpdateFailed": "No se pudo actualizar el reporte. Inténtalo de nuevo.",
     "eventReport": "Reporte de evento",
     "pendingCount": "{{label}}: {{value}} pendientes",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "No se pudieron cargar algunos recuentos pendientes.",
     "eventReports": "Reportes de eventos",
     "reportReason": "Motivo del reporte",

@@ -676,9 +676,10 @@ struct LatestJson {
     club_logo_url: Option<String>,
 }
 
-/// `get_latest_added_event`'s condition: the event still has an occurrence on
-/// now or ahead, since selecting it searches the feed, which hides ended events.
-fn not_ended_sql() -> String {
+/// Whether event `e` still has an occurrence on now or ahead: the condition of
+/// `get_latest_added_event` (selecting it searches the feed, which hides ended
+/// events) and of a club's upcoming events in its club panel.
+pub fn not_ended_sql() -> String {
     format!(
         "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id AND {})",
         still_on_at("now()")
@@ -943,6 +944,11 @@ pub async fn scan(
     ))
 }
 
+/// Whether event `e` is hosted or co-hosted by the club whose id is SQL `club`.
+pub fn hosted_by(club: &str) -> String {
+    format!("(e.club_id = {club} OR e.cohost_club_ids @> ARRAY[{club}::int4])")
+}
+
 fn scan_sql(filters: &ScanFilters, binds: &mut Binds) -> String {
     let mut conditions = window_conditions(&filters.window, binds);
     if let Some(ids) = &filters.event_ids {
@@ -952,10 +958,7 @@ fn scan_sql(filters: &ScanFilters, binds: &mut Binds) -> String {
         ));
     }
     for club_id in &filters.club_ids {
-        let parameter = binds.push(Bind::Int(*club_id));
-        conditions.push(format!(
-            "(e.club_id = {parameter} OR e.cohost_club_ids @> ARRAY[{parameter}::int4])"
-        ));
+        conditions.push(hosted_by(&binds.push(Bind::Int(*club_id))));
     }
     if let Some(since) = filters.added_since {
         conditions.push(format!("e.added_at >= {}", binds.push(Bind::Time(since))));

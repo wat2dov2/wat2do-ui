@@ -198,6 +198,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::clubs::delete_club
         ))
         .routes(routes!(routes::clubs::review_club))
+        .routes(routes!(routes::clubs::counts::get_club_counts))
         .routes(routes!(
             routes::clubs::members::list_club_members,
             routes::clubs::members::add_club_member

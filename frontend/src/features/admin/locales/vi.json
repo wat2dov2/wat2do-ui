@@ -5,7 +5,7 @@
     "reportUpdateFailed": "Không thể cập nhật báo cáo. Vui lòng thử lại.",
     "eventReport": "Báo cáo sự kiện",
     "pendingCount": "{{label}}: {{value}} đang chờ",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "Không thể tải một số số lượng đang chờ.",
     "eventReports": "Báo cáo sự kiện",
     "reportReason": "Lý do báo cáo",

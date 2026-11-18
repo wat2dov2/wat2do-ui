@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/shared/lib/utils"
+import { Skeleton } from "@/shared/ui/skeleton"
 
 // A badge that is a link or button shows focus the way Button does: for the keyboard, never after a tap or click.
 const badgeVariants = cva(
@@ -86,4 +87,13 @@ const Badge = React.forwardRef<
 })
 Badge.displayName = "Badge"
 
-export { Badge }
+/** A badge that has not loaded yet: an unseen badge inside, so the placeholder takes exactly its box. */
+function BadgeSkeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <Skeleton className={cn("flex rounded-xl", className)} {...props}>
+      <Badge variant="muted" className="invisible">{"\u00a0"}</Badge>
+    </Skeleton>
+  )
+}
+
+export { Badge, BadgeSkeleton }

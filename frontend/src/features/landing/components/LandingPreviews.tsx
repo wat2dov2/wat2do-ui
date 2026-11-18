@@ -7,7 +7,7 @@
  * inert, as a picture of the app.
  */
 
-import { useCallback, type ReactNode } from "react";
+import { useCallback } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -22,17 +22,8 @@ import { useSearchStore } from "@/features/search/store/search.store";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
+import { Inert } from "@/shared/ui/inert";
 import type { Club, Event } from "@/shared/types";
-
-/** Takes a live component out of the interaction and accessibility trees; it is a picture of the app. */
-function Inert({ className = "w-full", children }: { className?: string; children: ReactNode }) {
-  return (
-    // React 18 has no `inert` prop, so the attribute is set on the element directly.
-    <div ref={(node) => node?.setAttribute("inert", "")} aria-hidden="true" className={`${className} select-none`}>
-      {children}
-    </div>
-  );
-}
 
 /**
  * The feed's search bar and its Free food filter, above a row of real
@@ -49,7 +40,7 @@ export function FreeFoodPreview({ events, isLoading }: { events: readonly Event[
     <Stack gap={4}>
       <Stack direction="horizontal" gap={2} wrap align="center">
         {/* The search bar keeps the width it has on the events page rather than stretching across the card. */}
-        <Inert className="w-full max-w-sm">
+        <Inert className="max-w-sm">
           <SearchBar searchQuery="" onSearchChange={() => {}} onSearchClear={() => {}} />
         </Inert>
         {/* The events page's Free food chip, on, and live. */}

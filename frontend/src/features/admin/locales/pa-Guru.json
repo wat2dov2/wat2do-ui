@@ -5,7 +5,7 @@
     "reportUpdateFailed": "ਰਿਪੋਰਟ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "eventReport": "ਇਵੈਂਟ ਰਿਪੋਰਟ",
     "pendingCount": "{{label}}: {{value}} ਬਕਾਇਆ",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "ਕੁਝ ਬਕਾਇਆ ਗਿਣਤੀਆਂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀਆਂ।",
     "eventReports": "ਇਵੈਂਟ ਰਿਪੋਰਟਾਂ",
     "reportReason": "ਰਿਪੋਰਟ ਦਾ ਕਾਰਨ",

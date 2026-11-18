@@ -7,6 +7,17 @@
     "positionsDesc": "الوظائف المفتوحة في منظمتك",
     "members": "فريق الإدارة",
     "membersDesc": "إدارة أعضاء المنظمة",
+    "counts": {
+      "upcomingEvents": "الفعاليات القادمة",
+      "openPositions": "الوظائف المفتوحة",
+      "activeMembers": "الأعضاء النشطون"
+    },
+    "preview": {
+      "open": "معاينة المنظمة",
+      "badge": "معاينة",
+      "title": "كيف يرى الزوار منظمتك",
+      "description": "الأزرار هنا للعرض فقط."
+    },
     "memberColumns": {
       "name": "الاسم",
       "email": "البريد الإلكتروني",

@@ -7,6 +7,17 @@
     "positionsDesc": "您组织正在招募的职位",
     "members": "管理团队",
     "membersDesc": "管理组织成员",
+    "counts": {
+      "upcomingEvents": "即将举行的活动",
+      "openPositions": "正在招募的职位",
+      "activeMembers": "活跃成员"
+    },
+    "preview": {
+      "open": "预览",
+      "badge": "预览",
+      "title": "访客看到的你的组织",
+      "description": "预览中的按钮无法使用。"
+    },
     "memberColumns": {
       "name": "姓名",
       "email": "电子邮箱",

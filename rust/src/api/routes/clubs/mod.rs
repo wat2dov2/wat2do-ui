@@ -2,11 +2,12 @@
 //! and the management team (`routers/clubs.py`, `services/club_service.py`,
 //! `services/admin_query.py`).
 //!
-//! `members`, `invitations` and `claims` hold the team routes; this module
-//! holds the club itself and the reads they share.
+//! `members`, `invitations`, `claims` and `counts` hold the team routes; this
+//! module holds the club itself and the reads they share.
 
 pub mod claim_links;
 pub mod claims;
+pub mod counts;
 pub mod emails;
 pub mod invitations;
 pub mod members;
@@ -193,6 +194,16 @@ pub fn club_columns(computed: Computed) -> String {
 }
 
 pub const CLUB_JOINS: &str = "LEFT JOIN public.schools s ON s.id = c.school_id";
+
+/// How many open positions the club whose id is SQL `club` hosts or co-hosts,
+/// with the open window's `today` and `cutoff` bound to those placeholders.
+pub fn open_position_count(club: &str, today: &str, cutoff: &str) -> String {
+    format!(
+        "(SELECT count(*) FROM public.positions p \
+          WHERE (p.club_id = {club} OR p.cohost_club_ids @> ARRAY[{club}]) AND {})",
+        OpenWindow::sql("p", today, cutoff)
+    )
+}
 
 impl ClubResponse {
     /// A row of `club_columns`, with `position_count` when the read selected it.
@@ -489,13 +500,11 @@ async fn directory<T>(
          page AS (SELECT id, club_name FROM matched ORDER BY club_name ASC, id ASC LIMIT $1 OFFSET $2) \
          SELECT (SELECT count(*) FROM matched) AS total, listed.* \
          FROM (SELECT 1) AS one LEFT JOIN ( \
-             SELECT {}, (SELECT count(*) FROM public.positions p \
-                         WHERE (p.club_id = c.id OR p.cohost_club_ids @> ARRAY[c.id]) \
-                           AND {}) AS position_count \
+             SELECT {}, {} AS position_count \
              FROM page JOIN public.clubs c ON c.id = page.id {CLUB_JOINS}) AS listed ON true \
          ORDER BY listed.club_name ASC, listed.id ASC",
         club_columns(computed),
-        OpenWindow::sql("p", "$9", "$10"),
+        open_position_count("c.id", "$9", "$10"),
     );
     let slug = filters.school.as_deref().map(normalize_slug);
     let rows = read_with_retry(|| {

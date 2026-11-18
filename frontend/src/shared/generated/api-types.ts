@@ -1066,6 +1066,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/{club_id}/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Club Counts
+         * @description The club's upcoming events, open positions and team members, for its team or an admin.
+         */
+        get: operations["get_club_counts_clubs__club_id__counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/{club_id}/members": {
         parameters: {
             query?: never;
@@ -2509,6 +2529,24 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
+        };
+        /** @description What a club has going on, as its team's club panel shows it. */
+        ClubCounts: {
+            /**
+             * Format: int64
+             * @description Events the club hosts or co-hosts that are on now or still to come.
+             */
+            upcoming_events: number;
+            /**
+             * Format: int64
+             * @description Positions the club hosts or co-hosts that are open, as its public page lists them.
+             */
+            open_positions: number;
+            /**
+             * Format: int64
+             * @description People on the club's team; invitations not yet accepted are not counted.
+             */
+            members: number;
         };
         /** @description The OpenAPI request bodies. */
         ClubCreate: {
@@ -7520,6 +7558,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_club_counts_clubs__club_id__counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubCounts"];
                 };
             };
             /** @description Validation Error */

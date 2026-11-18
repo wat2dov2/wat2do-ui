@@ -7,6 +7,17 @@
     "positionsDesc": "आपके संगठन के खुले पद",
     "members": "प्रबंधन टीम",
     "membersDesc": "संगठन के सदस्यों को प्रबंधित करें",
+    "counts": {
+      "upcomingEvents": "आगामी कार्यक्रम",
+      "openPositions": "खुले पद",
+      "activeMembers": "सक्रिय सदस्य"
+    },
+    "preview": {
+      "open": "पूर्वावलोकन",
+      "badge": "पूर्वावलोकन",
+      "title": "आगंतुक आपके संगठन को ऐसे देखते हैं",
+      "description": "यहाँ के बटन केवल दिखाने के लिए हैं।"
+    },
     "memberColumns": {
       "name": "नाम",
       "email": "ईमेल",

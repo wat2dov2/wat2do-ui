@@ -3804,6 +3804,49 @@
         }
       }
     },
+    "/clubs/{club_id}/counts": {
+      "get": {
+        "tags": [
+          "clubs"
+        ],
+        "summary": "Get Club Counts",
+        "description": "The club's upcoming events, open positions and team members, for its team or an admin.",
+        "operationId": "get_club_counts_clubs__club_id__counts_get",
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubCounts"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clubs/{club_id}/members": {
       "get": {
         "tags": [
@@ -8918,6 +8961,32 @@
         ],
         "title": "ClubCohostResponse",
         "description": "An additional existing club sharing an event or position."
+      },
+      "ClubCounts": {
+        "type": "object",
+        "description": "What a club has going on, as its team's club panel shows it.",
+        "required": [
+          "upcoming_events",
+          "open_positions",
+          "members"
+        ],
+        "properties": {
+          "upcoming_events": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Events the club hosts or co-hosts that are on now or still to come."
+          },
+          "open_positions": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Positions the club hosts or co-hosts that are open, as its public page lists them."
+          },
+          "members": {
+            "type": "integer",
+            "format": "int64",
+            "description": "People on the club's team; invitations not yet accepted are not counted."
+          }
+        }
       },
       "ClubCreate": {
         "type": "object",

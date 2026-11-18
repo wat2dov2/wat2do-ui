@@ -7,6 +7,17 @@
     "positionsDesc": "آپ کی تنظیم کے کھلے عہدے",
     "members": "انتظامی ٹیم",
     "membersDesc": "تنظیم کے ممبرز کا انتظام کریں",
+    "counts": {
+      "upcomingEvents": "آنے والے ایونٹس",
+      "openPositions": "کھلے عہدے",
+      "activeMembers": "فعال ممبرز"
+    },
+    "preview": {
+      "open": "پیش نظارہ",
+      "badge": "پیش نظارہ",
+      "title": "وزیٹرز کو آپ کی تنظیم ایسے دکھتی ہے",
+      "description": "پیش نظارے میں بٹن کام نہیں کرتے۔"
+    },
     "memberColumns": {
       "name": "نام",
       "email": "ای میل",

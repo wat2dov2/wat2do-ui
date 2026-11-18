@@ -7,6 +7,17 @@
     "positionsDesc": "Otwarte stanowiska Twojej organizacji",
     "members": "Zespół zarządzający",
     "membersDesc": "Zarządzaj członkami organizacji",
+    "counts": {
+      "upcomingEvents": "Nadchodzące wydarzenia",
+      "openPositions": "Otwarte stanowiska",
+      "activeMembers": "Aktywni członkowie"
+    },
+    "preview": {
+      "open": "Podgląd",
+      "badge": "Podgląd",
+      "title": "Tak odwiedzający widzą Twoją organizację",
+      "description": "W podglądzie przyciski nie działają."
+    },
     "memberColumns": {
       "name": "Imię",
       "email": "E-mail",
