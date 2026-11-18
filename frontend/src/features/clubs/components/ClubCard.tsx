@@ -135,14 +135,13 @@ function ClubCardComponent({
         <div data-club-card-action {...stopCardActivation}>
           {managesClub ? (
             // Members always follow their club, so they see their role instead of a follow toggle.
-            <Button type="button" variant="outline" size="sm" selected onClick={() => openClubPanel(club)}>
+            <Button type="button" variant="outline" selected onClick={() => openClubPanel(club)}>
               {t("clubPanel.roleOwner")}
             </Button>
           ) : (
             <Button
               type="button"
               variant="outline"
-              size="sm"
               selected={isSaved}
               selectionIndicator="none"
               onClick={toggleFollow}

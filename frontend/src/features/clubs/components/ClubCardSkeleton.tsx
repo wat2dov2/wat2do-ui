@@ -15,7 +15,7 @@ export function ClubCardSkeleton() {
       <div className={CLUB_CARD_CLASSES.top} data-skeleton-key="card-top">
         <Skeleton className="size-12 shrink-0 rounded-full" />
         <Skeleton className="rounded-xl">
-          <Button type="button" variant="outline" size="sm" tabIndex={-1} className="invisible">
+          <Button type="button" variant="outline" tabIndex={-1} className="invisible">
             <Plus />
             {t("clubs.follow")}
           </Button>
