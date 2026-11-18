@@ -131,7 +131,7 @@ def _hook_style(lead_id: str) -> str:
 
 
 def _payout_per_scan() -> str:
-    """The club payout for one scanned student as a script says it, such as "$2" or "$2.50"."""
+    """The club payout for one scanned student as a script says it, such as "$4" or "$4.50"."""
     dollars, cents = divmod(PAYOUTS.rate_cents, 100)
     return f"${dollars}" if cents == 0 else f"${dollars}.{cents:02d}"
 
