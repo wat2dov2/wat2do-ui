@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "Cài đặt",
+    "backToClubs": "Quay lại tổ chức của bạn",
     "events": {
       "saved": "Sự kiện đã lưu",
       "savedEmpty": "Các sự kiện bạn lưu sẽ hiện ở đây.",

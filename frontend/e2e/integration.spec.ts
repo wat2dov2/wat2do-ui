@@ -5769,12 +5769,17 @@ test.describe("Navigation", () => {
     expect(admin!.x).toBeLessThan(logOut!.x);
     expect(logOut!.y).toBeLessThan(name!.y + name!.height);
     await expect(page.getByRole("button", { name: "Club Panel", exact: true })).toHaveCount(0);
-    // A whole event row opens the event; the Clubs tab opens a club they help run in its club panel.
+    // A whole event row opens the event; the Clubs tab lists the clubs they help run first,
+    // then the ones they follow and submitted, and opens a club they help run in its club panel.
     await page.getByRole("tab", { name: /^Clubs/ }).click();
-    await expect(page.getByRole("heading", { name: "Clubs you follow", exact: true, level: 2 })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Clubs you're a member of", exact: true, level: 2 })).toBeVisible();
+    await expect(page.getByRole("tabpanel").getByRole("heading", { level: 2 }))
+      .toHaveText(["Clubs you're a member of", "Clubs you follow", "Clubs you submitted"]);
     await page.getByRole("button", { name: "UW Tech Club", exact: true }).click();
     await expect(page).toHaveURL(/\/club-panel/);
+    // The panel's top-left back link returns to the profile's Clubs tab.
+    await page.getByRole("link", { name: "Back to your clubs", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile\?tab=clubs$/);
+    await expect(page.getByRole("tab", { name: /^Clubs/ })).toHaveAttribute("aria-selected", "true");
   });
 
   test("an email's settings link opens the profile on that tab", async ({ page, next }) => {

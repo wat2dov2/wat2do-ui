@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "Settings",
+    "backToClubs": "Back to your clubs",
     "events": {
       "saved": "Events saved",
       "savedEmpty": "Events you save show up here.",

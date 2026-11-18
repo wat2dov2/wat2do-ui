@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "설정",
+    "backToClubs": "내 조직으로 돌아가기",
     "events": {
       "saved": "저장한 이벤트",
       "savedEmpty": "저장한 이벤트가 여기에 표시됩니다.",

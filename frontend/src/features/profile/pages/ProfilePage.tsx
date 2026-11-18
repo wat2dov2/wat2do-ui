@@ -153,18 +153,18 @@ export function ProfilePage() {
             <TabsContent value={PROFILE_TABS.CLUBS}>
               <Stack gap={12}>
                 <ProfileClubSection
-                  title={t("profile.clubs.following")}
-                  empty={{ icon: Users, text: t("profile.clubs.empty"), action: { label: t("clubs.allClubs"), href: ROUTES.CLUBS } }}
-                  clubs={followed.clubs}
-                  isPending={followed.isPending}
-                  target={(club) => ({ href: clubPagePath(club.id) })}
-                />
-                <ProfileClubSection
                   title={t("profile.clubs.member")}
                   empty={{ icon: Crown, text: t("profile.clubs.memberEmpty"), action: { label: t("clubs.allClubs"), href: ROUTES.CLUBS } }}
                   clubs={memberClubs.clubs}
                   isPending={memberClubs.isPending}
                   target={(club) => ({ onOpen: () => openClubPanel(club) })}
+                />
+                <ProfileClubSection
+                  title={t("profile.clubs.following")}
+                  empty={{ icon: Users, text: t("profile.clubs.empty"), action: { label: t("clubs.allClubs"), href: ROUTES.CLUBS } }}
+                  clubs={followed.clubs}
+                  isPending={followed.isPending}
+                  target={(club) => ({ href: clubPagePath(club.id) })}
                 />
                 <ProfileSubmissionSection
                   title={t("profile.clubs.submitted")}
