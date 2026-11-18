@@ -5,7 +5,7 @@
     "reportUpdateFailed": "रिपोर्ट अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
     "eventReport": "इवेंट रिपोर्ट",
     "pendingCount": "{{label}}: {{value}} लंबित",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "कुछ लंबित संख्याएँ लोड नहीं हो सकीं।",
     "eventReports": "इवेंट रिपोर्ट",
     "reportReason": "रिपोर्ट का कारण",

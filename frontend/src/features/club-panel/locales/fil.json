@@ -7,6 +7,17 @@
     "positionsDesc": "Mga bukas na posisyon ng inyong organisasyon",
     "members": "Koponan sa Pamamahala",
     "membersDesc": "Pamahalaan ang mga miyembro ng organisasyon",
+    "counts": {
+      "upcomingEvents": "Mga paparating na kaganapan",
+      "openPositions": "Mga bukas na posisyon",
+      "activeMembers": "Mga aktibong miyembro"
+    },
+    "preview": {
+      "open": "I-preview",
+      "badge": "Preview",
+      "title": "Ganito makikita ng mga bisita ang organisasyon mo",
+      "description": "Pang-display lang ang mga button dito."
+    },
     "memberColumns": {
       "name": "Pangalan",
       "email": "Email",

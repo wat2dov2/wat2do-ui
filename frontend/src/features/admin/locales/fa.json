@@ -5,7 +5,7 @@
     "reportUpdateFailed": "به‌روزرسانی گزارش ممکن نشد. دوباره تلاش کنید.",
     "eventReport": "گزارش رویداد",
     "pendingCount": "{{label}}: {{value}} در انتظار",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "بارگیری برخی شمارش‌های در انتظار ممکن نشد.",
     "eventReports": "گزارش‌های رویدادها",
     "reportReason": "دلیل گزارش",

@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import i18n from "@/shared/lib/i18n";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { BadgeSkeleton } from "@/shared/ui/badge";
 import { FormGrid } from "@/shared/layout/form-grid";
 import { Stack } from "@/shared/layout/stack";
 import { Container } from "@/shared/layout/container";
@@ -78,7 +79,7 @@ export function LoadingPage({
               <SurfaceSkeleton key={index} className="flex flex-col items-start gap-3 p-6">
                 <Skeleton className="size-10 rounded-lg" />
                 <Skeleton className="h-5 w-2/5" />
-                <Skeleton className="h-5 w-32 rounded-full" />
+                <BadgeSkeleton className="w-32" />
                 <Skeleton className="h-3 w-4/5" />
                 <Skeleton className="size-4" />
               </SurfaceSkeleton>

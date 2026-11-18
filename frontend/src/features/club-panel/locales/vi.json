@@ -7,6 +7,17 @@
     "positionsDesc": "Các vị trí đang tuyển của tổ chức bạn",
     "members": "Đội Quản Lý",
     "membersDesc": "Quản lý thành viên tổ chức",
+    "counts": {
+      "upcomingEvents": "Sự kiện sắp tới",
+      "openPositions": "Vị trí đang tuyển",
+      "activeMembers": "Thành viên hoạt động"
+    },
+    "preview": {
+      "open": "Xem trước",
+      "badge": "Xem trước",
+      "title": "Khách truy cập thấy tổ chức của bạn như thế này",
+      "description": "Các nút ở đây chỉ để xem."
+    },
     "memberColumns": {
       "name": "Tên",
       "email": "Email",

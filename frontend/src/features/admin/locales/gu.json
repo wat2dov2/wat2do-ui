@@ -5,7 +5,7 @@
     "reportUpdateFailed": "રિપોર્ટ અપડેટ થઈ શક્યો નહીં. ફરી પ્રયાસ કરો.",
     "eventReport": "ઇવેન્ટ રિપોર્ટ",
     "pendingCount": "{{label}}: {{value}} બાકી",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "કેટલીક બાકી સંખ્યાઓ લોડ થઈ શકી નથી.",
     "eventReports": "ઇવેન્ટ રિપોર્ટ",
     "reportReason": "રિપોર્ટનું કારણ",

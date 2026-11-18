@@ -7,6 +7,17 @@
     "positionsDesc": "તમારી સંસ્થાની ખુલ્લી પોઝિશન્સ",
     "members": "વ્યવસ્થાપન ટીમ",
     "membersDesc": "સંગઠનના સભ્યોનું સંચાલન કરો",
+    "counts": {
+      "upcomingEvents": "આગામી ઇવેન્ટ્સ",
+      "openPositions": "ખુલ્લી પોઝિશન્સ",
+      "activeMembers": "સક્રિય સભ્યો"
+    },
+    "preview": {
+      "open": "પૂર્વાવલોકન",
+      "badge": "પૂર્વાવલોકન",
+      "title": "મુલાકાતીઓ તમારી સંસ્થાને આ રીતે જુએ છે",
+      "description": "અહીંના બટનો ફક્ત દેખાવ માટે છે."
+    },
     "memberColumns": {
       "name": "નામ",
       "email": "ઇમેઇલ",

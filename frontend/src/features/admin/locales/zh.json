@@ -5,7 +5,7 @@
     "reportUpdateFailed": "无法更新举报，请重试。",
     "eventReport": "活动举报",
     "pendingCount": "{{label}}：{{value}} 项待处理",
-    "alertCount": "{{label}}：{{value}}",
+    "labeledCount": "{{label}}：{{value}}",
     "pendingCountsError": "部分待处理数量无法加载。",
     "eventReports": "活动举报",
     "reportReason": "举报原因",

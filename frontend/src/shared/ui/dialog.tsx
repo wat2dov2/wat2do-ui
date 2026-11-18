@@ -37,6 +37,8 @@ const dialogSizeClasses = {
   md: "max-w-md",
   lg: "max-w-2xl",
   xl: "max-w-4xl",
+  // A whole page at its own width (a `Container` of size lg), such as the club panel's preview of the club page.
+  page: "max-w-6xl",
 } as const
 
 type DialogSize = keyof typeof dialogSizeClasses

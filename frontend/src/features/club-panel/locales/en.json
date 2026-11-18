@@ -7,6 +7,17 @@
     "positionsDesc": "Your club's open positions",
     "members": "Management Team",
     "membersDesc": "Manage club members",
+    "counts": {
+      "upcomingEvents": "Upcoming events",
+      "openPositions": "Open positions",
+      "activeMembers": "Active members"
+    },
+    "preview": {
+      "open": "Preview club",
+      "badge": "Preview",
+      "title": "How visitors see your club",
+      "description": "Buttons here are just for show."
+    },
     "memberColumns": {
       "name": "Name",
       "email": "Email",

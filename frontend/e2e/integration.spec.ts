@@ -5845,6 +5845,57 @@ test.describe("Navigation", () => {
     await expect(page.getByRole("tab", { name: /^Clubs/ })).toHaveAttribute("aria-selected", "true");
   });
 
+  test("the club panel counts what each card manages and previews the club page as a visitor sees it", async ({ page, next }) => {
+    await seedAuthenticatedSession(page, next);
+    await mockApi(page, next, url => apiPath(url) === "/clubs/1", () => ({ json: { ...MOCK_CLUBS[0], verified: true } }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/1/counts", () => ({
+      json: { upcoming_events: 3, open_positions: 0, members: 2 },
+    }));
+    await mockApi(page, next, url => apiPath(url) === "/clubs/1/payouts", () => ({ json: {
+      paid_tickets_enabled: false, connected: false, charges_enabled: false, payouts_enabled: false,
+      details_submitted: false, requirements_due: [], country: "CA", currency: "cad",
+    } }));
+    await mockApi(page, next, url => apiPath(url) === "/positions", () => ({ json: {
+      items: [{
+        id: 1, title: "Campus volunteer", club_id: 1, club_name: "UW Tech Club",
+        school: "uwaterloo", position_type: "volunteer", requirements: [],
+        description: "Help run campus events", added_at: new Date().toISOString(),
+      }],
+      total: 1, page: 1, page_size: 20, total_pages: 1,
+    } }));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${BASE}/club-panel`);
+
+    // Each card counts what it manages, zero included.
+    for (const count of ["Upcoming events: 3", "Open positions: 0", "Active members: 2"]) {
+      await expect(page.getByText(count, { exact: true })).toBeVisible();
+    }
+    // Preview club sits at the top right, on the back link's line, even on a phone.
+    const back = await page.getByRole("link", { name: "Back to your clubs", exact: true }).boundingBox();
+    const open = page.getByRole("button", { name: "Preview club", exact: true });
+    const openBox = await open.boundingBox();
+    expect(openBox!.x).toBeGreaterThan(back!.x + back!.width);
+    expect(Math.abs(openBox!.y - back!.y)).toBeLessThanOrEqual(1);
+
+    await open.click();
+    const preview = page.getByRole("dialog", { name: /How visitors see your club/ });
+    await expect(preview.getByText("Preview", { exact: true })).toBeVisible();
+    // The club's own page, with a visitor's Follow and "I'm a member" in place of the team's role,
+    // drawn as a picture: those controls sit in inert content, so nothing there acts.
+    const clubPage = preview.locator("[data-slot=club-details]");
+    await expect(clubPage.getByRole("heading", { level: 1, includeHidden: true })).toContainText("UW Tech Club");
+    await expect(clubPage.locator("[inert]").getByText("Follow", { exact: true })).toBeVisible();
+    await expect(clubPage.locator("[inert]").getByText("I'm a member", { exact: true })).toBeVisible();
+    await expect(clubPage.getByText("Owner", { exact: true })).toHaveCount(0);
+    await expect(clubPage.locator("[inert]").getByText("Tech Career Fair").first()).toBeVisible();
+    // Its tabs still switch, so the team can see its positions too.
+    await clubPage.getByRole("tab", { name: "Positions" }).click();
+    await expect(clubPage.locator("[inert]").getByText("Campus volunteer").first()).toBeVisible();
+
+    await preview.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(preview).toHaveCount(0);
+  });
+
   test("an email's settings link opens the profile on that tab", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.goto(`${BASE}/settings?tab=notifications`);

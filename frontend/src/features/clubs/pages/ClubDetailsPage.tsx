@@ -19,6 +19,8 @@ import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
 import { ClubVerifiedCheck } from "@/features/clubs/components/ClubVerifiedCheck";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
+import { ClubEventsGrid } from "@/features/events/components/ClubEventsGrid";
+import { ClubPositionsGrid } from "@/features/positions/components/ClubPositionsGrid";
 import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
@@ -26,6 +28,8 @@ import { QP } from "@/shared/constants/queryParams";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { Inert } from "@/shared/ui/inert";
 import { sanitizeHref } from "@/shared/utils/url";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { Club } from "@/shared/types";
@@ -45,17 +49,25 @@ interface ClubDetailsPageProps extends ClubActivitySlots {
 interface ClubDetailsContentProps extends ClubActivitySlots {
   club: Club;
   schoolName: string;
+  /** The page as someone outside the club sees it, as a picture: the club panel's preview. */
+  preview?: boolean;
 }
 
 // Layout only: how the icon sits beside the label. The link's own appearance -
 // colour, underline on hover - belongs to the Link primitive, not to this page.
 const CLUB_LINK_CLASS = "flex items-center gap-2 text-sm";
 
+/** In the club panel's preview the page is a picture: only its tabs answer a press. */
+function PreviewInert({ preview, children }: { preview: boolean; children: ReactNode }) {
+  return preview ? <Inert>{children}</Inert> : children;
+}
+
 function ClubDetailsContent({
   club,
   schoolName,
   events,
   positions,
+  preview = false,
 }: ClubDetailsContentProps) {
   const { t } = useTranslation();
   const { clubs } = useAuthState();
@@ -68,10 +80,11 @@ function ClubDetailsContent({
   const savedClubIds = useSavedClubsStore(
     (state) => state.savedClubIds,
   );
-  const isSaved = savedClubIds.includes(club.id);
+  // The preview shows the page to someone outside the club who has not followed it yet.
+  const isSaved = !preview && savedClubIds.includes(club.id);
   const followPop = useTurnOnPop(isSaved);
   // Whoever created or claimed a club joins its team, and the API lets its team manage it.
-  const managesClub = clubs.some((managedClub) => managedClub.id === club.id);
+  const managesClub = !preview && clubs.some((managedClub) => managedClub.id === club.id);
   const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
@@ -81,125 +94,129 @@ function ClubDetailsContent({
     <>
       <Container size="lg" data-slot="club-details">
         <Stack gap={6}>
-          <PageHeader
-            back={{
-              href: ROUTES.CLUBS,
-              label: t("clubs.allClubs"),
-            }}
-            title={
-              // Club profile header: the club's logo beside its name.
-              <span className="flex items-center gap-3">
-                <AvatarStack
-                  size="lg"
-                  loading="eager"
-                  avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
-                />
-                {club.club_name}
-                {club.verified ? <ClubVerifiedCheck clubName={club.club_name} size="heading" /> : null}
-              </span>
-            }
-            description={schoolName}
-            actionsPlacement="heading"
-            actions={
-              <Stack
-                direction="horizontal"
-                gap={2}
-                align="center"
-                wrap
-                justify="end"
-              >
-                {managesClub ? (
-                  // Members always follow their club, so they see their role instead of a follow toggle.
-                  <Button type="button" variant="outline" selected onClick={() => openClubPanel(club)}>
-                    {t("clubPanel.roleOwner")}
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      selected={isSaved}
-                      selectionIndicator="none"
-                      onClick={() => signedInAction(() => {
-                        followPop.press();
-                        toggleSave(club.id);
-                      })}
-                      aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
-                    >
-                      <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(followPop.pop && "animate-success-pulse")} />} />
-                      {isSaved ? t("clubs.following") : t("clubs.follow")}
+          <PreviewInert preview={preview}>
+            <PageHeader
+              back={{
+                href: ROUTES.CLUBS,
+                label: t("clubs.allClubs"),
+              }}
+              title={
+                // Club profile header: the club's logo beside its name.
+                <span className="flex items-center gap-3">
+                  <AvatarStack
+                    size="lg"
+                    loading="eager"
+                    avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
+                  />
+                  {club.club_name}
+                  {club.verified ? <ClubVerifiedCheck clubName={club.club_name} size="heading" /> : null}
+                </span>
+              }
+              description={schoolName}
+              actionsPlacement="heading"
+              actions={
+                <Stack
+                  direction="horizontal"
+                  gap={2}
+                  align="center"
+                  wrap
+                  justify="end"
+                >
+                  {managesClub ? (
+                    // Members always follow their club, so they see their role instead of a follow toggle.
+                    <Button type="button" variant="outline" selected onClick={() => openClubPanel(club)}>
+                      {t("clubPanel.roleOwner")}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      // The form is open to everyone; it asks for sign-in when it is sent. A club
-                      // someone already runs takes requests to join its team instead of claims.
-                      onClick={() => setShowClaimModal(true)}
-                    >
-                      {club.verified ? <UserCheck /> : <BadgeCheck />}
-                      {club.verified ? t("clubs.memberRequest.open") : t("clubs.claimClub")}
-                    </Button>
-                  </>
-                )}
-              </Stack>
-            }
-          />
-
-          <Stack gap={3} data-skeleton-key="club-meta">
-            <ClubCategoryBadges
-              categories={club.categories}
-              badgeClassName="text-xs px-2.5"
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        selected={isSaved}
+                        selectionIndicator="none"
+                        onClick={() => signedInAction(() => {
+                          followPop.press();
+                          toggleSave(club.id);
+                        })}
+                        aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
+                      >
+                        <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(followPop.pop && "animate-success-pulse")} />} />
+                        {isSaved ? t("clubs.following") : t("clubs.follow")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        // The form is open to everyone; it asks for sign-in when it is sent. A club
+                        // someone already runs takes requests to join its team instead of claims.
+                        onClick={() => setShowClaimModal(true)}
+                      >
+                        {club.verified ? <UserCheck /> : <BadgeCheck />}
+                        {club.verified ? t("clubs.memberRequest.open") : t("clubs.claimClub")}
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              }
             />
+          </PreviewInert>
 
-            <Stack direction="horizontal" gap={4} align="center" wrap>
-              {clubPageHref ? (
-                <Link
-                  href={clubPageHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={CLUB_LINK_CLASS}
-                >
-                  <ExternalLink className="size-4 text-muted-foreground" />
-                  <span className="truncate">
-                    {club.club_page}
+          <PreviewInert preview={preview}>
+            <Stack gap={3} data-skeleton-key="club-meta">
+              <ClubCategoryBadges
+                categories={club.categories}
+                badgeClassName="text-xs px-2.5"
+              />
+
+              <Stack direction="horizontal" gap={4} align="center" wrap>
+                {clubPageHref ? (
+                  <Link
+                    href={clubPageHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={CLUB_LINK_CLASS}
+                  >
+                    <ExternalLink className="size-4 text-muted-foreground" />
+                    <span className="truncate">
+                      {club.club_page}
+                    </span>
+                  </Link>
+                ) : null}
+                {club.ig ? (
+                  <Link
+                    href={`https://instagram.com/${club.ig}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={CLUB_LINK_CLASS}
+                  >
+                    <Instagram className="size-4 text-muted-foreground" />
+                    <span>@{club.ig}</span>
+                  </Link>
+                ) : null}
+                {discordHref ? (
+                  <Link
+                    href={discordHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={CLUB_LINK_CLASS}
+                  >
+                    <DiscordIcon className="size-4 text-muted-foreground" />
+                    <span>{t("clubPanel.joinDiscord")}</span>
+                  </Link>
+                ) : null}
+              </Stack>
+
+              {club.status !== "approved" ? (
+                <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
+                  <HelpCircle className="size-4 shrink-0" />
+                  <span>
+                    {club.status === "rejected"
+                      ? t("clubs.reviewRejected")
+                      : t("clubs.awaitingReview")}
                   </span>
-                </Link>
-              ) : null}
-              {club.ig ? (
-                <Link
-                  href={`https://instagram.com/${club.ig}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={CLUB_LINK_CLASS}
-                >
-                  <Instagram className="size-4 text-muted-foreground" />
-                  <span>@{club.ig}</span>
-                </Link>
-              ) : null}
-              {discordHref ? (
-                <Link
-                  href={discordHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={CLUB_LINK_CLASS}
-                >
-                  <DiscordIcon className="size-4 text-muted-foreground" />
-                  <span>{t("clubPanel.joinDiscord")}</span>
-                </Link>
+                </div>
               ) : null}
             </Stack>
-
-            {club.status !== "approved" ? (
-              <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-sm text-warning">
-                <HelpCircle className="size-4 shrink-0" />
-                <span>
-                  {club.status === "rejected"
-                    ? t("clubs.reviewRejected")
-                    : t("clubs.awaitingReview")}
-                </span>
-              </div>
-            ) : null}
-          </Stack>
+          </PreviewInert>
 
           <Separator />
 
@@ -211,10 +228,10 @@ function ClubDetailsContent({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="events" className="mt-6">
-              {events}
+              <PreviewInert preview={preview}>{events}</PreviewInert>
             </TabsContent>
             <TabsContent value="positions" className="mt-6">
-              {positions}
+              <PreviewInert preview={preview}>{positions}</PreviewInert>
             </TabsContent>
           </Tabs>
         </Stack>
@@ -267,6 +284,24 @@ export function ClubDetailsPage({
       schoolName={schoolName}
       events={events}
       positions={positions}
+    />
+  );
+}
+
+/**
+ * The club's page as someone outside the club sees it, for the club panel's
+ * preview: the same page with the team's controls swapped for a visitor's,
+ * its events and positions read here, and nothing but its tabs working.
+ */
+export function ClubPagePreview({ club }: { club: Club }) {
+  const { getSchoolName } = useSchoolDirectory();
+  return (
+    <ClubDetailsContent
+      club={club}
+      schoolName={getSchoolName(club.school)}
+      events={<ClubEventsGrid clubId={club.id} school={club.school} />}
+      positions={<ClubPositionsGrid clubId={club.id} school={club.school} />}
+      preview
     />
   );
 }

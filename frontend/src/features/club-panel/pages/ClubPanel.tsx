@@ -4,6 +4,8 @@ import { ROUTES } from "@/shared/constants/routes";
 import { Briefcase, Calendar, Coins, Users } from "lucide-react";
 import { useActiveClub } from "@/features/clubs";
 import { useClubPayouts } from "@/features/tickets";
+import { ClubPreview } from "@/features/club-panel/components/ClubPreview";
+import { useClubCounts } from "@/features/club-panel/hooks/useClubCounts";
 import { FormGrid, Stack } from "@/shared/layout";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import type { ClubPanelRouteKey } from "@/shared/constants/routes";
@@ -17,27 +19,39 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
   const { clubId, club } = useActiveClub();
   // Payouts matter only once wat2do sells paid tickets; free tickets need none.
   const { data: payouts } = useClubPayouts(clubId);
+  const { data: counts, isError: countsFailed } = useClubCounts(clubId);
+  // An admin may open the panel with no club of their own, which has nothing to count or preview.
+  const showCounts = clubId != null && !countsFailed;
+  const total = (label: string, count: number | undefined) =>
+    showCounts ? [{ label, count: count ?? null }] : [];
 
   return (
     <Stack gap={5}>
-      <PageShellHeader route={ROUTES.CLUB_PANEL} title={club?.club_name} />
+      <PageShellHeader
+        route={ROUTES.CLUB_PANEL}
+        title={club?.club_name}
+        actions={clubId != null ? <ClubPreview club={club} /> : undefined}
+      />
       <FormGrid columns={3}>
         <AdminCard
           icon={Calendar}
           title={t("navigation.events")}
           description={t("clubPanel.eventsDesc")}
+          totals={total(t("clubPanel.counts.upcomingEvents"), counts?.upcoming_events)}
           onClick={() => onNavigate("club-panel-events")}
         />
         <AdminCard
           icon={Briefcase}
           title={t("navigation.positions")}
           description={t("clubPanel.positionsDesc")}
+          totals={total(t("clubPanel.counts.openPositions"), counts?.open_positions)}
           onClick={() => onNavigate("club-panel-positions")}
         />
         <AdminCard
           icon={Users}
           title={t("clubPanel.members")}
           description={t("clubPanel.membersDesc")}
+          totals={total(t("clubPanel.counts.activeMembers"), counts?.members)}
           onClick={() => onNavigate("club-panel-members")}
         />
         {payouts?.paid_tickets_enabled ? (

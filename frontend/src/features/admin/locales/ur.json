@@ -5,7 +5,7 @@
     "reportUpdateFailed": "رپورٹ اپ ڈیٹ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
     "eventReport": "ایونٹ کی رپورٹ",
     "pendingCount": "{{label}}: {{value}} زیر التوا",
-    "alertCount": "{{label}}: {{value}}",
+    "labeledCount": "{{label}}: {{value}}",
     "pendingCountsError": "کچھ زیر التوا تعداد لوڈ نہیں ہو سکیں۔",
     "eventReports": "ایونٹ رپورٹس",
     "reportReason": "رپورٹ کی وجہ",

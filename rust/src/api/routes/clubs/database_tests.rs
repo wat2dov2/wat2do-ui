@@ -1,6 +1,6 @@
-//! Who owns a club, against a real Postgres loaded with our schema
-//! (`api::test_database`): the club reads anyone can make never say, and
-//! only admins' reads do.
+//! Club reads against a real Postgres loaded with our schema
+//! (`api::test_database`): the reads anyone can make never say who owns a
+//! club, only admins' reads do, and only a club's team reads its counts.
 
 use axum::body::Body as HttpBody;
 use axum::extract::Request;
@@ -138,4 +138,120 @@ async fn only_admins_read_who_owns_a_club() {
     assert_eq!(status, StatusCode::FORBIDDEN);
     let (status, _) = get(&state, "/clubs/admin", None).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+}
+
+/// An approved club at Waterloo, and the school's id.
+async fn club(db: &PgPool, name: &str) -> (i32, i32) {
+    sqlx::query_as(
+        "INSERT INTO public.clubs (club_name, school_id, status) \
+         SELECT $1, id, 'approved' FROM public.schools WHERE slug = 'uwaterloo' \
+         RETURNING id, school_id",
+    )
+    .bind(format!("{name} {}", Uuid::new_v4().simple()))
+    .fetch_one(db)
+    .await
+    .unwrap()
+}
+
+/// An event `host` runs with `cohosts`, on from `start` to `end` from now.
+async fn event(
+    db: &PgPool,
+    school: i32,
+    host: i32,
+    cohosts: &[i32],
+    start: chrono::Duration,
+    end: Option<chrono::Duration>,
+) {
+    let event: i32 = sqlx::query_scalar(
+        "INSERT INTO public.events (title, location, club, school_id, club_id, cohost_club_ids) \
+         VALUES ('Board Games Night', 'SLC', 'Counted Club', $1, $2, $3) RETURNING id",
+    )
+    .bind(school)
+    .bind(host)
+    .bind(cohosts)
+    .fetch_one(db)
+    .await
+    .unwrap();
+    let now = chrono::Utc::now();
+    sqlx::query(
+        "INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc) VALUES ($1, $2, $3)",
+    )
+    .bind(event)
+    .bind(now + start)
+    .bind(end.map(|end| now + end))
+    .execute(db)
+    .await
+    .unwrap();
+}
+
+/// A position `host` posts with `cohosts`, open until `deadline` days from today.
+async fn position(
+    db: &PgPool,
+    school: i32,
+    host: i32,
+    cohosts: &[i32],
+    deadline: i64,
+    active: bool,
+) {
+    sqlx::query(
+        "INSERT INTO public.positions (club_id, school_id, title, description, position_type, \
+         source_url, deadline_date, is_active, cohost_club_ids) \
+         VALUES ($1, $2, 'Treasurer', 'Keeps the books.', 'executive', $3, \
+         CURRENT_DATE + $4::int, $5, $6)",
+    )
+    .bind(host)
+    .bind(school)
+    .bind(format!("https://example.com/{}", Uuid::new_v4().simple()))
+    .bind(i32::try_from(deadline).unwrap())
+    .bind(active)
+    .bind(cohosts)
+    .execute(db)
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn a_clubs_team_reads_its_upcoming_events_open_positions_and_members() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let (officer, _, officer_token) = user(&db, "user").await;
+    let (teammate, _, _) = user(&db, "user").await;
+    let (_, _, stranger_token) = user(&db, "user").await;
+    let (_, _, admin_token) = user(&db, "admin").await;
+    let (counted, school) = club(&db, "Counted club").await;
+    let (partner, _) = club(&db, "Partner club").await;
+    for member in [officer, teammate] {
+        sqlx::query("INSERT INTO public.club_members (club_id, user_id) VALUES ($1, $2)")
+            .bind(counted)
+            .bind(member)
+            .execute(&db)
+            .await
+            .unwrap();
+    }
+    let hours = chrono::Duration::hours;
+    // Still to come, on now, and co-hosted count; an event that is over does not.
+    event(&db, school, counted, &[], hours(24), Some(hours(27))).await;
+    event(&db, school, counted, &[], hours(-1), Some(hours(2))).await;
+    event(&db, school, partner, &[counted], hours(48), None).await;
+    event(&db, school, counted, &[], hours(-50), Some(hours(-47))).await;
+    // Open and co-hosted positions count; a closed or withdrawn one does not.
+    position(&db, school, counted, &[], 7, true).await;
+    position(&db, school, partner, &[counted], 7, true).await;
+    position(&db, school, counted, &[], -1, true).await;
+    position(&db, school, counted, &[], 7, false).await;
+
+    let path = format!("/clubs/{counted}/counts");
+    let expected = serde_json::json!({ "upcoming_events": 3, "open_positions": 2, "members": 2 });
+    for token in [&officer_token, &admin_token] {
+        let (status, counts) = get(&state, &path, Some(token)).await;
+        assert_eq!(status, StatusCode::OK, "{counts}");
+        assert_eq!(counts, expected);
+    }
+    // Nobody outside the team reads them.
+    let (status, _) = get(&state, &path, Some(&stranger_token)).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let (status, _) = get(&state, &path, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = get(&state, "/clubs/2147483647/counts", Some(&admin_token)).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
 }

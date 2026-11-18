@@ -7,6 +7,17 @@
     "positionsDesc": "Los puestos abiertos de tu organización",
     "members": "Equipo de gestión",
     "membersDesc": "Administrar miembros de la organización",
+    "counts": {
+      "upcomingEvents": "Próximos eventos",
+      "openPositions": "Puestos abiertos",
+      "activeMembers": "Miembros activos"
+    },
+    "preview": {
+      "open": "Vista previa",
+      "badge": "Vista previa",
+      "title": "Así ven tu organización los visitantes",
+      "description": "En la vista previa, los botones no funcionan."
+    },
     "memberColumns": {
       "name": "Nombre",
       "email": "Correo electrónico",
