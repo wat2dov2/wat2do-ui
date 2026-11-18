@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Coletamos o que você nos informa (seu e-mail, universidade, faculdade e interesses), o que você faz no Wat2Do (eventos que você salva ou marca com Vou, ingressos, organizações que segue) e alguns dados técnicos, como uma forma embaralhada do seu endereço IP.",
         "noSale": "Não vendemos seus dados pessoais e não mostramos anúncios.",
-        "share": "Quando você marca um evento com Vou, quem vê o evento pode ver seu primeiro nome, a inicial do seu sobrenome e sua foto entre as pessoas que vão. As organizações veem seu nome e seu e-mail quando você tem um ingresso para o evento delas. Empresas como Amazon Web Services, Cloudflare e Google operam partes do Wat2Do para nós, algumas delas fora do Canadá.",
+        "share": "Quando você marca um evento com Vou, quem vê o evento pode ver sua foto de perfil (se você adicionou uma) entre as pessoas que vão, mas nunca o seu nome. As organizações veem seu nome e seu e-mail quando você tem um ingresso para o evento delas. Empresas como Amazon Web Services, Cloudflare e Google operam partes do Wat2Do para nós, algumas delas fora do Canadá.",
         "analytics": "Usamos o Google Analytics para contar visitas, e removemos códigos e endereços de e-mail dos endereços de página que ele recebe.",
         "public": "Também usamos informações públicas: eventos de organizações tirados de posts públicos do Instagram e os e-mails de contato que as organizações publicam na internet.",
         "choices": "Você pode desativar nossos e-mails a qualquer momento, mudar seu perfil em Configurações e nos pedir para mostrar, corrigir ou excluir suas informações.",
@@ -273,7 +273,7 @@
           "title": "Quem vê e com quem compartilhamos",
           "p1": "Parte do que você faz no Wat2Do fica visível para outras pessoas:",
           "visible": {
-            "going": "Quando você marca um evento com Vou, quem vê o evento pode ver seu primeiro nome, a inicial do seu sobrenome e sua foto entre as pessoas que vão, a menos que você tenha um ingresso para ele. Todos também podem ver quantas pessoas vão.",
+            "going": "Quando você marca um evento com Vou, quem vê o evento pode ver sua foto de perfil entre as pessoas que vão, a menos que você tenha um ingresso para ele. Se você não adicionou uma foto, uma silhueta genérica aparece no seu lugar. Ninguém vê seu nome nem seu e-mail. Todos podem ver quantas pessoas vão.",
             "tickets": "Quando você tem um ingresso, a organização responsável pelo evento vê seu nome (ou o início do seu e-mail), seu e-mail, o código do seu ingresso, quando foi feito o seu check-in e qualquer pedido de reembolso.",
             "teams": "As pessoas que gerenciam a mesma organização veem os nomes, e-mails e fotos umas das outras.",
             "submissions": "Os eventos, vagas e organizações que publicamos a partir do que você envia são públicos, mas o seu e-mail não."

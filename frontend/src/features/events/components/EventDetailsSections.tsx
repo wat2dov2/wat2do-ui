@@ -13,7 +13,7 @@ import {
   getPrimaryOccurrence,
   hasActiveEventOccurrence,
 } from "@/shared/utils/date";
-import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, Utensils } from "lucide-react";
+import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, UserRound, Utensils } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { DateTile, IconTile } from "@/shared/ui/tile";
@@ -645,9 +645,11 @@ function EventMapSection({
 }
 
 /**
- * Who's going: the event's Going count and the first people who marked it,
- * shown as "First L." with their photo. Ticket holders count but are never
- * named. Shared by the drawer and the event page.
+ * Who's going: the event's Going count and the profile photos of the first
+ * people who marked it, with a plain silhouette for anyone without one.
+ * Nobody is named, and ticket holders count but are never shown. The heading
+ * says how many, so the pictures stay silent to screen readers. Shared by the
+ * drawer and the event page.
  */
 function EventAttendeesSection({ eventId }: { eventId: number }) {
   const { t } = useTranslation();
@@ -659,19 +661,18 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
   });
   if (!attendees || attendees.going_count <= 0) return null;
 
-  const { maximumDisplayNames } = controlBox.publicAttendance;
-  const profiles = attendees.attendees.slice(0, maximumDisplayNames);
-  // Ticket holders are counted but never named, so "+N" shows only once the names fill the list.
-  const overflowCount = profiles.length === maximumDisplayNames
+  const { maximumShownPeople } = controlBox.publicAttendance;
+  const profiles = attendees.attendees.slice(0, maximumShownPeople);
+  // Ticket holders are counted but never shown, so "+N" shows only once the photos fill the list.
+  const overflowCount = profiles.length === maximumShownPeople
     ? Math.max(0, attendees.going_count - profiles.length)
     : 0;
   return (
     <Section variant="divided" title={t("events.goingCount", { count: attendees.going_count })} data-slot="event-attendees">
       <AvatarStack
-        avatars={profiles.map((attendee) => ({
-          name: attendee.name || t("events.going"),
-          src: attendee.avatar_url,
-        }))}
+        avatars={profiles.map((attendee) => ({ src: attendee.avatar_url }))}
+        decorative
+        fallback={<UserRound aria-hidden="true" className="size-5 text-muted-foreground" />}
         overflowCount={overflowCount}
         overflowLabel={t("events.andOthersCount", { count: overflowCount })}
       />

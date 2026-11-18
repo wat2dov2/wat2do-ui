@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Chúng tôi thu thập những gì bạn cung cấp (email, trường, khoa và sở thích của bạn), những gì bạn làm trên Wat2Do (sự kiện bạn đã lưu hoặc đánh dấu \"Sẽ đi\", vé, tổ chức bạn theo dõi) và một số chi tiết kỹ thuật, chẳng hạn một dạng đã xáo trộn của địa chỉ IP của bạn.",
         "noSale": "Chúng tôi không bán thông tin cá nhân của bạn, và không hiển thị quảng cáo.",
-        "share": "Khi bạn đánh dấu \"Sẽ đi\" cho một sự kiện, những người xem sự kiện đó có thể thấy tên, chữ cái đầu trong họ và ảnh của bạn trong danh sách những người sẽ đi. Các tổ chức thấy tên và địa chỉ email của bạn khi bạn có vé tham dự sự kiện của họ. Các công ty như Amazon Web Services, Cloudflare và Google vận hành một số phần của Wat2Do cho chúng tôi, trong đó có công ty ở ngoài Canada.",
+        "share": "Khi bạn đánh dấu \"Sẽ đi\" cho một sự kiện, những người xem sự kiện đó có thể thấy ảnh hồ sơ của bạn (nếu bạn đã thêm) trong danh sách những người sẽ đi, nhưng không bao giờ thấy tên bạn. Các tổ chức thấy tên và địa chỉ email của bạn khi bạn có vé tham dự sự kiện của họ. Các công ty như Amazon Web Services, Cloudflare và Google vận hành một số phần của Wat2Do cho chúng tôi, trong đó có công ty ở ngoài Canada.",
         "analytics": "Chúng tôi dùng Google Analytics để đếm lượt truy cập, và loại bỏ mã cũng như địa chỉ email khỏi các địa chỉ trang mà Google Analytics nhận được.",
         "public": "Chúng tôi cũng sử dụng thông tin công khai: sự kiện của các tổ chức từ những bài đăng Instagram công khai, và email liên hệ mà các tổ chức công bố trên mạng.",
         "choices": "Bạn có thể tắt email của chúng tôi bất cứ lúc nào, thay đổi hồ sơ trong Cài đặt, và yêu cầu chúng tôi cho bạn xem, sửa hoặc xóa thông tin của bạn.",
@@ -273,7 +273,7 @@
           "title": "Ai thấy thông tin, và chúng tôi chia sẻ với ai",
           "p1": "Một số hoạt động của bạn trên Wat2Do được người khác nhìn thấy:",
           "visible": {
-            "going": "Khi bạn đánh dấu \"Sẽ đi\" cho một sự kiện, những người xem sự kiện đó có thể thấy tên, chữ cái đầu trong họ và ảnh của bạn trong danh sách những người sẽ đi, trừ khi bạn có vé tham dự sự kiện đó. Mọi người cũng thấy có bao nhiêu người sẽ đi.",
+            "going": "Khi bạn đánh dấu \"Sẽ đi\" cho một sự kiện, những người xem sự kiện đó có thể thấy ảnh hồ sơ của bạn trong danh sách những người sẽ đi, trừ khi bạn có vé tham dự sự kiện đó. Nếu bạn chưa thêm ảnh, một hình bóng người đơn giản sẽ hiển thị thay cho bạn. Họ không bao giờ thấy tên hay địa chỉ email của bạn. Mọi người đều thấy có bao nhiêu người sẽ đi.",
             "tickets": "Khi bạn có vé, tổ chức điều hành sự kiện sẽ thấy tên của bạn (hoặc phần đầu địa chỉ email của bạn), địa chỉ email, mã vé, thời điểm bạn được check-in và mọi yêu cầu hoàn tiền.",
             "teams": "Những người cùng quản lý một tổ chức thấy tên, địa chỉ email và ảnh của nhau.",
             "submissions": "Sự kiện, vị trí đang tuyển và tổ chức mà chúng tôi đăng từ nội dung bạn gửi đều được công khai, nhưng địa chỉ email của bạn thì không."

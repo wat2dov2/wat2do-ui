@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { logoThumbnailUrl } from "@/shared/utils/media";
 import { nameInitial } from "@/shared/utils/string";
 
 interface AvatarStackProps {
-  avatars: { src: string; name: string }[];
+  /** Each picture, and the name it stands for; with no name the stack must be `decorative`. */
+  avatars: { src: string | null; name?: string }[];
   size?: "default" | "sm" | "lg";
   overflowCount?: number;
   overflowLabel?: string;
@@ -11,6 +13,8 @@ interface AvatarStackProps {
   loading?: "eager" | "lazy";
   /** The names are already written beside the avatars, so the images stay silent. */
   decorative?: boolean;
+  /** Shown for a missing picture in place of the name's initial. */
+  fallback?: ReactNode;
 }
 
 const AVATAR_SIZES = {
@@ -21,8 +25,8 @@ const AVATAR_SIZES = {
 } as const;
 
 /** Overlapping profile images with accessible names and an optional overflow count. */
-export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel, loading = "lazy", decorative = false }: AvatarStackProps) {
-  const { box, px, fallback } = AVATAR_SIZES[size];
+export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel, loading = "lazy", decorative = false, fallback }: AvatarStackProps) {
+  const { box, px, fallback: fallbackText } = AVATAR_SIZES[size];
   return (
     <div data-slot="avatar-stack" className={size === "sm" ? "flex shrink-0 items-center -space-x-1.5" : "flex shrink-0 items-center -space-x-2"}>
       {avatars.map((avatar, index) => (
@@ -33,14 +37,14 @@ export function AvatarStack({ avatars, size = "default", overflowCount = 0, over
         >
           <LazyImage
             // Avatars are at most 48 px, so a club logo shows its stored thumbnail.
-            src={logoThumbnailUrl(avatar.src)}
+            src={avatar.src && logoThumbnailUrl(avatar.src)}
             fallbackSrc={avatar.src}
-            alt={decorative ? "" : avatar.name}
+            alt={decorative ? "" : avatar.name ?? ""}
             width={px}
             height={px}
             loading={loading}
             className="size-full"
-            fallback={<span aria-hidden="true" className={`text-muted-foreground ${fallback}`}>{nameInitial(avatar.name)}</span>}
+            fallback={fallback ?? <span aria-hidden="true" className={`text-muted-foreground ${fallbackText}`}>{nameInitial(avatar.name ?? "")}</span>}
           />
         </div>
       ))}

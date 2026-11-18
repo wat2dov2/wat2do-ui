@@ -2314,7 +2314,7 @@ test.describe("Events Page", () => {
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     await mockApi(page, next, url => /^\/events\/\d+$/.test(apiPath(url) ?? ""), async request => ({ json: events[Number(new URL(request.url).pathname.split("/").at(-1)) - 1] }));
     await mockApi(page, next, url => /^\/going-events\/\d+\/attendees$/.test(apiPath(url) ?? ""), async () => ({ json: {
-      going_count: 1, attendees: [{ name: "Taylor Q.", avatar_url: avatar }],
+      going_count: 1, attendees: [{ avatar_url: avatar }],
     } }));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE);
@@ -2349,8 +2349,12 @@ test.describe("Events Page", () => {
     await expect(page.locator('[data-slot="event-highlights"]')).toHaveCount(1);
     await page.locator('article[data-event-id="1"]:visible').getByText("SLC", { exact: true }).click();
     const drawer = page.getByRole("dialog");
-    await expect(drawer.getByRole("img", { name: "Taylor Q." })).toBeVisible();
-    const photo = drawer.locator(`img[src="${avatar}"]`);
+    // Who's going shows the photo and the count, never a name.
+    const going = drawer.locator('[data-slot="event-attendees"]');
+    await expect(going.getByRole("heading", { name: "1 going", exact: true })).toBeVisible();
+    await expect(going.locator("[title]")).toHaveCount(0);
+    const photo = going.locator(`img[src="${avatar}"]`);
+    await expect(photo).toHaveAttribute("alt", "");
     await photo.scrollIntoViewIfNeeded();
     await expect.poll(() => photo.evaluate(element => (element as HTMLImageElement).naturalWidth)).toBe(32);
     await drawer.getByRole("button", { name: "Next", exact: true }).focus();
@@ -2360,7 +2364,7 @@ test.describe("Events Page", () => {
     await expect(drawer.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("event-drawer-mobile.png"), fullPage: true });
     await page.goto(`${BASE}/events/1`);
-    await expect(page.getByRole("img", { name: "Taylor Q." })).toBeVisible();
+    await expect(page.locator('[data-slot="event-attendees"]').locator(`img[src="${avatar}"]`)).toBeVisible();
     await page.locator('[data-slot="event-actions"]').getByRole("button", { name: "Add to calendar", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "Google Calendar" })).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "iCal" })).toBeVisible();
@@ -4824,7 +4828,7 @@ test("admin event tabs show their school rows and review queues", async ({ page,
 });
 
 for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9, 1]]) {
-  test(`shows ${profileCount} attendee pictures and only real overflow for ${totalCount} going`, async ({ page, next }) => {
+  test(`shows ${profileCount} attendee pictures, a silhouette for no photo, and only real overflow for ${totalCount} going`, async ({ page, next }) => {
     const avatar = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="16" fill="blue"/></svg>');
     await mockApi(page, next, url => apiPath(url) === "/events/1", async () => ({ json: {
       id: 1, title: "Attendee profiles", school: "uwaterloo", club_id: 1, club: "UW Tech Club",
@@ -4834,12 +4838,16 @@ for (const [profileCount, totalCount, overflow] of [[0, 1, 0], [1, 1, 0], [8, 9,
     } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
       going_count: totalCount,
-      attendees: Array.from({ length: profileCount }, () => ({ name: "", avatar_url: avatar })),
+      // The first person has no photo.
+      attendees: Array.from({ length: profileCount }, (_, index) => ({ avatar_url: index === 0 ? null : avatar })),
     } }));
     await page.goto(BASE);
     await page.locator('article[data-event-id="1"]:visible').click();
     const stack = page.getByRole("dialog").locator('[data-slot="event-attendees"]');
-    await expect(stack.getByRole("img", { name: "Going", exact: true })).toHaveCount(profileCount);
+    await expect(stack.getByRole("heading", { name: `${totalCount} going`, exact: true })).toBeVisible();
+    await expect(stack.locator('[data-slot="lazy-image"]')).toHaveCount(profileCount);
+    await expect(stack.locator(`img[src="${avatar}"]`)).toHaveCount(Math.max(0, profileCount - 1));
+    await expect(stack.locator('[data-image-state="missing"]')).toHaveCount(Math.min(1, profileCount));
     await expect(stack.getByText("+1", { exact: true })).toHaveCount(overflow);
   });
 }
@@ -4861,7 +4869,7 @@ for (const surface of ["drawer", "page"]) {
     } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1/attendees", async () => ({ json: {
       going_count: going ? 1 : 0,
-      attendees: going ? [{ name: "Test U.", avatar_url: avatar }] : [],
+      attendees: going ? [{ avatar_url: avatar }] : [],
     } }));
     await mockApi(page, next, url => apiPath(url) === "/going-events/1", async request => {
       going = request.method !== "DELETE";
@@ -4881,7 +4889,7 @@ for (const surface of ["drawer", "page"]) {
     await expect(content.getByRole("button", { name: "Mark yourself not going.", exact: true })).toBeVisible();
     releaseGoing();
     await expect(content.getByText("You're going", { exact: true })).toBeVisible();
-    await expect(content.locator('[data-slot="event-attendees"]').getByRole("img", { name: "Test U." })).toBeVisible();
+    await expect(content.locator('[data-slot="event-attendees"]').locator(`img[src="${avatar}"]`)).toBeVisible();
     const cancel = content.getByRole("button", { name: "Mark yourself not going.", exact: true });
     await expect(cancel).toHaveCSS("text-decoration-line", "underline");
     await cancel.click();

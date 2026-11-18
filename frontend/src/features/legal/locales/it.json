@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Raccogliamo ciò che ci dai (la tua email, la tua università, la tua facoltà e i tuoi interessi), ciò che fai su Wat2Do (eventi che salvi o segni con Ci vado, biglietti, organizzazioni che segui) e alcuni dati tecnici, come una forma offuscata del tuo indirizzo IP.",
         "noSale": "Non vendiamo i tuoi dati personali e non mostriamo pubblicità.",
-        "share": "Quando segni un evento con Ci vado, chi lo visualizza può vedere il tuo nome, l'iniziale del tuo cognome e la tua foto tra le persone che ci vanno. Le organizzazioni vedono il tuo nome e il tuo indirizzo email quando hai un biglietto per il loro evento. Aziende come Amazon Web Services, Cloudflare e Google gestiscono parti di Wat2Do per noi, alcune al di fuori del Canada.",
+        "share": "Quando segni un evento con Ci vado, chi lo visualizza può vedere la tua foto profilo (se ne hai aggiunta una) tra le persone che ci vanno, ma mai il tuo nome. Le organizzazioni vedono il tuo nome e il tuo indirizzo email quando hai un biglietto per il loro evento. Aziende come Amazon Web Services, Cloudflare e Google gestiscono parti di Wat2Do per noi, alcune al di fuori del Canada.",
         "analytics": "Usiamo Google Analytics per contare le visite, e togliamo codici e indirizzi email dagli indirizzi delle pagine che riceve.",
         "public": "Usiamo anche informazioni pubbliche: gli eventi delle organizzazioni presi da post pubblici di Instagram, e le email di contatto che le organizzazioni pubblicano online.",
         "choices": "Puoi disattivare le nostre email in qualsiasi momento, modificare il tuo profilo in Impostazioni, e chiederci di mostrarti, correggere o cancellare i tuoi dati.",
@@ -273,7 +273,7 @@
           "title": "Chi li vede e con chi li condividiamo",
           "p1": "Parte di ciò che fai su Wat2Do è visibile ad altre persone:",
           "visible": {
-            "going": "Quando segni un evento con Ci vado, chi lo visualizza può vedere il tuo nome, l'iniziale del tuo cognome e la tua foto tra le persone che ci vanno, a meno che tu non abbia un biglietto per quell'evento. Tutti vedono anche quante persone ci vanno.",
+            "going": "Quando segni un evento con Ci vado, chi lo visualizza può vedere la tua foto profilo tra le persone che ci vanno, a meno che tu non abbia un biglietto per quell'evento. Se non hai aggiunto una foto, al tuo posto compare una sagoma neutra. Non vede mai il tuo nome né il tuo indirizzo email. Tutti vedono quante persone ci vanno.",
             "tickets": "Quando hai un biglietto, l'organizzazione che gestisce l'evento vede il tuo nome (o l'inizio del tuo indirizzo email), il tuo indirizzo email, il codice del tuo biglietto, quando è stato registrato il tuo ingresso ed eventuali richieste di rimborso.",
             "teams": "Le persone che gestiscono la stessa organizzazione vedono a vicenda nomi, indirizzi email e foto.",
             "submissions": "Eventi, posizioni e organizzazioni che pubblichiamo dalle tue proposte sono pubblici, ma il tuo indirizzo email no."

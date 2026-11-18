@@ -1209,7 +1209,7 @@
           "going-events"
         ],
         "summary": "List Event Attendees",
-        "description": "Public who's-going summary for an event's details view.",
+        "description": "Public who's-going summary for an event's details view: the Going count and profile photos only.",
         "operationId": "list_event_attendees_going_events__event_id__attendees_get",
         "parameters": [
           {
@@ -9638,21 +9638,24 @@
       },
       "EventAttendeeResponse": {
         "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
           "avatar_url": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Avatar Url"
           }
         },
         "type": "object",
         "required": [
-          "name",
           "avatar_url"
         ],
-        "title": "EventAttendeeResponse"
+        "title": "EventAttendeeResponse",
+        "description": "One person going, as their uploaded profile photo or null. Never a name."
       },
       "EventAttendeesResponse": {
         "properties": {
@@ -9674,7 +9677,7 @@
           "attendees"
         ],
         "title": "EventAttendeesResponse",
-        "description": "Public who's-going summary without user IDs or full names."
+        "description": "Public who's-going summary: the count and profile photos, never names or emails."
       },
       "EventCreate": {
         "properties": {

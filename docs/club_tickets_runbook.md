@@ -32,7 +32,7 @@ wat2do takes no fee and pays no Connect fees.
 - The club's own team never gets tickets to its own event: the event page turns Get tickets off for them and says why, and the API refuses them too.
 - A date people hold tickets to keeps its tickets: taking it off is refused, and pausing stops new ones instead. Tickets can be turned off only while nobody has one.
 - Taking or buying a ticket marks the holder Going for that date (`user_going_events`), so reminders and change alerts reach them.
-  Ticket holders count toward Going but are never named on the event's public who's-going list, and turning tickets on gives nobody a ticket they did not take.
+  Ticket holders count toward Going but are never shown on the event's public who's-going list (which shows only profile photos, never names), and turning tickets on gives nobody a ticket they did not take.
 - A free ticket's holder can give it back until the date ends; a paid ticket's holder asks the club for a refund instead, and everyone on the club's team gets an email.
 - Cancelling an event refunds every paid ticket in the background; the club's desk can finish any refund Stripe could not make at the time.
   An order paid after the cancellation is refunded when its webhook arrives, and Stripe repeats that webhook until the refund goes through.

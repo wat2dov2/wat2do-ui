@@ -446,7 +446,7 @@ class ScrapingControl(_ControlModel):
 
 
 class PublicAttendanceControl(_ControlModel):
-    maximum_display_names: int = Field(gt=0)
+    maximum_shown_people: int = Field(gt=0)
 
 
 class SocialPreviewsControl(_ControlModel):

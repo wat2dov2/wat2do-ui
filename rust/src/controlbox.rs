@@ -600,7 +600,7 @@ pub struct MapGeocoding {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PublicAttendance {
-    pub maximum_display_names: usize,
+    pub maximum_shown_people: usize,
 }
 
 /// `controlbox/interaction_ingestion.json`, every field.
@@ -990,7 +990,7 @@ mod tests {
         assert!(!SCRAPING.instagram_web_app_id.is_empty());
         assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
-        assert!(PUBLIC_ATTENDANCE.maximum_display_names > 0);
+        assert!(PUBLIC_ATTENDANCE.maximum_shown_people > 0);
         assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
         assert_eq!(INSTAGRAM_LIGHTPANDA.sha256.len(), 64);
     }
