@@ -60,6 +60,8 @@ log = logging.getLogger(__name__)
 _CONTROL = controlbox.instagram_publishing
 _TORONTO = ZoneInfo("America/Toronto")
 WORKDIR_PREFIX = "wat2do-music-"
+# The GIF searches used lately, so 37 schools' carousels do not all get the same scene.
+RECENT_GIFS_PATH = Path.home() / ".local/state/wat2do/instagram-gifs/recent.json"
 PROMPT = (Path(__file__).parent / "music_prompt.md").read_text()
 GIF_QUERY_PROMPT = (Path(__file__).parent / "gif_query_prompt.md").read_text()
 GIF_PICK_PROMPT = (Path(__file__).parent / "gif_pick_prompt.md").read_text()
@@ -206,14 +208,17 @@ def _gif_scene(batch_id: str) -> GifScene:
 
 
 def gif_comment(batch_id: str) -> GifComment | None:
-    """The GIF search for the carousel's first event, or None when no scene fits."""
+    """The GIF search for the carousel: a nonchalant, worn-out moment from a movie or
+    show, none used lately, or None for an event too serious for one."""
     try:
         event = _first_event(batch_id)
         if event is None:
             return None
+        recent = _recent_gif_searches()
         workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
         try:
             (Path(workdir) / "event.json").write_text(json.dumps(event, ensure_ascii=False))
+            (Path(workdir) / "recent.json").write_text(json.dumps(recent, ensure_ascii=False))
             answer = run_agent(
                 GIF_QUERY_PROMPT,
                 workdir=workdir,
@@ -231,7 +236,26 @@ def gif_comment(batch_id: str) -> GifComment | None:
     query = " ".join(str(answer.get("query") or "").split())[:60]
     if not query:
         return None
+    _remember_gif_search(recent, query)
     return GifComment(query, lambda screenshot, boxes: pick_gif(event, query, screenshot, boxes))
+
+
+def _recent_gif_searches() -> list[str]:
+    try:
+        searches = json.loads(RECENT_GIFS_PATH.read_text())
+    except (OSError, ValueError):
+        return []
+    return [str(search) for search in searches][-_CONTROL.gif_recent_searches :]
+
+
+def _remember_gif_search(recent: list[str], query: str) -> None:
+    try:
+        RECENT_GIFS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        RECENT_GIFS_PATH.write_text(
+            json.dumps([*recent, query][-_CONTROL.gif_recent_searches :], ensure_ascii=False)
+        )
+    except OSError:
+        log.warning("Could not remember the GIF search %r", query, exc_info=True)
 
 
 def pick_gif(
