@@ -80,7 +80,7 @@ export const controlBox = {
     claimProofMaxSizeBytes: uploads.claim_proof_max_size_bytes,
   },
   publicAttendance: {
-    maximumDisplayNames: publicAttendance.maximum_display_names,
+    maximumShownPeople: publicAttendance.maximum_shown_people,
   },
   socialPreviews: {
     width: socialPreviews.width,

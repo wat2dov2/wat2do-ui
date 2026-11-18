@@ -331,7 +331,7 @@ export interface paths {
         };
         /**
          * List Event Attendees
-         * @description Public who's-going summary for an event's details view.
+         * @description Public who's-going summary for an event's details view: the Going count and profile photos only.
          */
         get: operations["list_event_attendees_going_events__event_id__attendees_get"];
         put?: never;
@@ -2713,16 +2713,17 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
-        /** EventAttendeeResponse */
+        /**
+         * EventAttendeeResponse
+         * @description One person going, as their uploaded profile photo or null. Never a name.
+         */
         EventAttendeeResponse: {
-            /** Name */
-            name: string;
             /** Avatar Url */
-            avatar_url: string;
+            avatar_url: string | null;
         };
         /**
          * EventAttendeesResponse
-         * @description Public who's-going summary without user IDs or full names.
+         * @description Public who's-going summary: the count and profile photos, never names or emails.
          */
         EventAttendeesResponse: {
             /** Going Count */

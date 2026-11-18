@@ -10,9 +10,10 @@ use crate::api::messages::{
     EVENT_NOT_FOUND, GOING_EVENTS_CAP_REACHED, INVALID_EVENT_OCCURRENCE, OCCURRENCE_NOT_SELECTABLE,
 };
 use crate::api::pagination::{DEFAULT_MAX_ROWS, LOAD_PAGE_SIZE, fetch_all_pages};
-use crate::api::routes::users::avatar_url_for_user;
+use crate::constants::BUCKET_AVATARS;
 use crate::controlbox::PUBLIC_ATTENDANCE;
 use crate::db::read_with_retry;
+use crate::storage::Storage;
 
 /// `GoingEventSelection`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -130,11 +131,12 @@ pub async fn set_occurrences(
     }
 }
 
-/// `EventAttendeeResponse`.
+/// `EventAttendeeResponse`: one person going, as their profile photo only.
+/// Never a name, initial, email or anything else that says who they are.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Attendee {
-    pub name: String,
-    pub avatar_url: String,
+    /// The photo they uploaded, or `None` (the page shows a plain silhouette).
+    pub avatar_url: Option<String>,
 }
 
 /// `EventAttendeesResponse`.
@@ -144,8 +146,8 @@ pub struct Attendees {
     pub attendees: Vec<Attendee>,
 }
 
-/// "First Middle Last" becomes "First L.", how the who's-going list and a
-/// club's door list name someone.
+/// "First Middle Last" becomes "First L.", how a club's door list names a
+/// ticket holder.
 pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
     let parts: Vec<&str> = full_name?
         .split(crate::text::python_space)
@@ -161,9 +163,24 @@ pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
     }
 }
 
-/// The public who's-going list: the event's Going count and the first people
-/// who marked Going, as "First L." and their photo (or identicon).
-pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError> {
+/// A profile photo the who's-going list may show: only one uploaded to our
+/// avatars storage (its file name is random). Anything else is left out: old
+/// rows hold generated pictures of the person's initial, and an identicon
+/// seeded by their id would follow them around the site.
+pub fn public_photo(storage: &Storage, avatar_url: Option<&str>) -> Option<String> {
+    let url = avatar_url?;
+    storage
+        .path_from_url(url, BUCKET_AVATARS)
+        .map(|_| url.to_owned())
+}
+
+/// The public who's-going list: the event's Going count and the profile
+/// photos of the first people who marked Going. Nobody is named.
+pub async fn attendees(
+    db: &PgPool,
+    storage: &Storage,
+    event_id: i64,
+) -> Result<Attendees, ApiError> {
     let going_count: Option<i64> = read_with_retry(|| {
         sqlx::query_scalar(
             "SELECT going_count::int8 FROM public.get_event_going_counts(ARRAY[$1::int4])",
@@ -174,8 +191,8 @@ pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError
     .await?;
     // Distinct users by first Going time, reading pages only until the
     // display cap is reached. Ticket holders count toward Going but are never
-    // named: a ticket should not put anyone's name and face on a public list.
-    let cap = PUBLIC_ATTENDANCE.maximum_display_names;
+    // shown: a ticket should not put anyone's face on a public list.
+    let cap = PUBLIC_ATTENDANCE.maximum_shown_people;
     let mut user_ids: Vec<Uuid> = Vec::new();
     let mut offset = 0;
     while user_ids.len() < cap {
@@ -204,20 +221,19 @@ pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError
     }
     let mut attendees = Vec::with_capacity(user_ids.len());
     if !user_ids.is_empty() {
-        let users: Vec<(Uuid, Option<String>, Option<String>)> = read_with_retry(|| {
-            sqlx::query_as("SELECT id, full_name, avatar_url FROM public.users WHERE id = ANY($1)")
+        let users: Vec<(Uuid, Option<String>)> = read_with_retry(|| {
+            sqlx::query_as("SELECT id, avatar_url FROM public.users WHERE id = ANY($1)")
                 .bind(&user_ids)
                 .fetch_all(db)
         })
         .await?;
         for id in &user_ids {
-            let row = users.iter().find(|(user, ..)| user == id);
-            let (full_name, photo) = row.map_or((None, None), |(_, name, photo)| {
-                (name.as_deref(), photo.as_deref())
-            });
+            let photo = users
+                .iter()
+                .find(|(user, _)| user == id)
+                .and_then(|(_, photo)| photo.as_deref());
             attendees.push(Attendee {
-                name: abbreviate(full_name).unwrap_or_default(),
-                avatar_url: avatar_url_for_user(&id.to_string(), photo),
+                avatar_url: public_photo(storage, photo),
             });
         }
     }
@@ -329,7 +345,24 @@ mod tests {
     }
 
     #[test]
-    fn names_are_abbreviated_for_public_display() {
+    fn only_uploaded_photos_are_shown_publicly() {
+        let (storage, _) = crate::storage::recording::storage("bucket", "https://media.wat2do.io");
+        let photo = "https://media.wat2do.io/avatars/0f3c9a.jpg";
+        assert_eq!(public_photo(&storage, Some(photo)).as_deref(), Some(photo));
+        for other in [
+            // A generated picture of the person's initial, as some old rows hold.
+            "data:image/svg+xml;utf8,<svg><text>T</text></svg>",
+            "https://example.com/avatars/a.jpg",
+            "https://media.wat2do.io/club-logos/a.jpg",
+            "",
+        ] {
+            assert_eq!(public_photo(&storage, Some(other)), None, "{other}");
+        }
+        assert_eq!(public_photo(&storage, None), None);
+    }
+
+    #[test]
+    fn names_are_abbreviated_for_the_door_list() {
         assert_eq!(
             abbreviate(Some("Sean Michael Young")).as_deref(),
             Some("Sean Y.")

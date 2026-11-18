@@ -177,6 +177,20 @@ test("attendee avatars are discoverable before hydration and load the stored fil
   expect(html).toContain('aria-label="2 more attendees"');
 });
 
+test("who's going shows photos and a plain silhouette, and never a name or an initial", () => {
+  const avatar = `${imageDelivery.media_origin}/avatars/student.jpg`;
+  const html = render(AvatarStack, {
+    avatars: [{ src: avatar }, { src: null }],
+    decorative: true,
+    fallback: "silhouette",
+  });
+  expect(html).toContain(`src="${avatar}"`);
+  expect(html).toContain('<img alt=""');
+  expect(html).toContain("silhouette");
+  expect(html).not.toContain("title=");
+  expect(html).not.toContain('role="img"');
+});
+
 test("small club logos load their stored thumbnail and keep the original as its fallback", () => {
   const logos = `${imageDelivery.media_origin}/organization-logos`;
   const html = render(AvatarStack, {

@@ -52,7 +52,7 @@ pub async fn list_event_attendees(
     if store::event_by_id(&state.db, id).await?.is_none() {
         return Err(ApiError::not_found(EVENT_NOT_FOUND));
     }
-    Ok(Json(going::attendees(&state.db, id).await?).into_response())
+    Ok(Json(going::attendees(&state.db, &state.storage, id).await?).into_response())
 }
 
 #[utoipa::path(
