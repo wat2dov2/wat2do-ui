@@ -36,8 +36,8 @@
   "music_attempts": 5,
   "gif_comments": true,
   "music_retry_minutes": 10,
-  "post_slides_to_story": true,
-  "story_frame_jpeg_quality": 90,
+  "share_event_posts_to_story": true,
+  "story_max_age_hours": 12,
   "stats_media_limit": 25,
   "stats_history_days": 30,
   "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"]

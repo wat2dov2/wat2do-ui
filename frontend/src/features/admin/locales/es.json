@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Historia",
-        "afterPublish": "Cada diapositiva se publica en la historia de la cuenta justo después de publicar este carrusel.",
-        "pending": "Publicando las diapositivas en la historia.",
-        "posted": "Todas las diapositivas se publicaron en la historia.",
-        "failed": "No se publicó en la historia: {{reason}}",
-        "none": "Este carrusel se publicó antes de que las diapositivas se publicaran en la historia."
+        "afterPublish": "La publicación original de cada evento se comparte en la historia de la cuenta cuando se publica este carrusel.",
+        "pending": "Esperando para compartir las publicaciones originales de los eventos en la historia.",
+        "posted": "La publicación original de cada evento se compartió en la historia.",
+        "partial": "Compartido en la historia, sin algunas publicaciones: {{reason}}",
+        "failed": "No se compartió en la historia: {{reason}}",
+        "none": "Este carrusel se publicó antes de que las publicaciones de los eventos fueran a la historia."
       }
     },
     "socialAccounts": {

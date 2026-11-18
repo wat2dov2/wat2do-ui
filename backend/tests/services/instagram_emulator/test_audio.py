@@ -404,3 +404,67 @@ def test_buttons_below_a_tall_first_slide_are_scrolled_into_view(screens) -> Non
     device = screens(tall, POST_PAGE, LIKED_PAGE, LIKED_PAGE, reposted=(False, True))
     module._like_and_repost(device)
     assert device.taps == ["Like", "Repost"]
+
+
+PEOPLE_ROW = Node(
+    "Tag people and collaborators", "", (0, 0, 100, 100), "m2_people_tagging_primary_text"
+)
+PHOTO = Node("", "Photo. Tap to tag people", (108, 275, 972, 1355), "tag_image_view")
+TAGGING = [PHOTO, Node("", "Done", (932, 128, 1059, 275))]
+USER_SEARCH = [*TAGGING, Node("", "Search for a user", (189, 133, 975, 228), "search_edit_text")]
+USERS = [
+    *USER_SEARCH,
+    Node("western.newmanclub", "", (242, 297, 535, 344), "row_search_user_username"),
+    Node("western.newman", "", (242, 487, 535, 534), "row_search_user_username"),
+]
+TAGGED = [*TAGGING, Node("western.newman", "Tagged user western.newman", (206, 597, 455, 638))]
+CANT_TAG = [Node("Can't tag", "", (301, 948, 779, 995)), Node("OK", "", (238, 1280, 842, 1408))]
+NEWMAN = [module.SlideTag(2, "western.newman")]
+
+
+class _TaggingDevice(_Device):
+    def __init__(self, screens):
+        super().__init__(screens)
+        self.swipes = 0
+
+    def swipe_left(self, node):
+        self.swipes += 1
+
+
+@pytest.fixture
+def pictures(monkeypatch):
+    """A new slide shows after every swipe unless the list says it did not."""
+    shown = iter(range(1000))
+    monkeypatch.setattr(module, "_picture", lambda device, photo: next(shown))
+
+
+def test_each_club_is_tagged_on_its_own_slide_by_its_exact_handle(pictures) -> None:
+    device = _TaggingDevice([[PEOPLE_ROW], TAGGING, USER_SEARCH, USERS, TAGGED, EDIT_INFO])
+    assert module._tag_clubs(device, NEWMAN)
+    # The cover is slide 0, so the second event slide is two swipes away.
+    assert device.swipes == 2
+    assert device.typed == ["western.newman"]
+    assert device.taps == ["Tag people and collaborators", "", "western.newman", ""]
+
+
+def test_a_club_that_does_not_allow_tags_is_left_untagged(pictures) -> None:
+    device = _TaggingDevice(
+        [[PEOPLE_ROW], TAGGING, USER_SEARCH, USERS, CANT_TAG, USER_SEARCH, TAGGING, EDIT_INFO]
+    )
+    assert not module._tag_clubs(device, NEWMAN)
+    assert device.taps[-4:] == ["western.newman", "OK", "back", ""]
+
+
+def test_a_post_with_tags_already_is_left_as_it_is(pictures) -> None:
+    tagged_row = Node("western.newman", "", (0, 0, 100, 100), "m2_people_tagging_count")
+    device = _TaggingDevice([[PEOPLE_ROW, tagged_row]])
+    assert not module._tag_clubs(device, NEWMAN)
+    assert device.taps == []
+
+
+def test_a_slide_that_does_not_turn_tags_nothing_on_the_wrong_slide(monkeypatch) -> None:
+    monkeypatch.setattr(module, "_picture", lambda device, photo: "the cover")
+    device = _TaggingDevice([[PEOPLE_ROW], TAGGING, EDIT_INFO])
+    assert not module._clubs_tagged(device, NEWMAN, POST)
+    assert device.typed == []
+    assert device.swipes == module._SLIDE_TURN_ATTEMPTS
