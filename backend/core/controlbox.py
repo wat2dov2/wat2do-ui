@@ -450,11 +450,16 @@ class PublicAttendanceControl(_ControlModel):
 
 
 class SocialPreviewsControl(_ControlModel):
-    """The school share image the frontend renders at `/og-image.png`."""
+    """How a page previews in search results and shared links: the school share
+    image the frontend renders at `/og-image.png`, and the longest title and
+    description a school page's copy may use before it falls back to a shorter
+    form (`frontend/src/shared/lib/seo.ts`)."""
 
     width: int = Field(ge=600, le=2400)
     height: int = Field(ge=315, le=1260)
     cache_max_age_seconds: int = Field(ge=60, le=604_800)
+    title_max_characters: int = Field(ge=30, le=120)
+    description_max_characters: int = Field(ge=70, le=320)
 
 
 class EmailDeliveryControl(_ControlModel):

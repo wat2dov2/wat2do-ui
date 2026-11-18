@@ -136,6 +136,8 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.social_previews.width == 1200
     assert controlbox.social_previews.height == 630
     assert controlbox.social_previews.cache_max_age_seconds == 86400
+    assert controlbox.social_previews.title_max_characters == 60
+    assert controlbox.social_previews.description_max_characters == 160
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.authentication.signed_in_cookie == "wat2do_signed_in"
     assert controlbox.club_management.directory_page_size == 20
@@ -256,6 +258,8 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
         ("height", 1261),
         ("cache_max_age_seconds", 59),
         ("cache_max_age_seconds", 604_801),
+        ("title_max_characters", 29),
+        ("description_max_characters", 321),
     ],
 )
 def test_invalid_social_preview_control_is_rejected(

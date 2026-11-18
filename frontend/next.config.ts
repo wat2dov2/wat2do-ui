@@ -130,11 +130,9 @@ const nextConfig: NextConfig = {
     root: repositoryRoot,
   },
   generateBuildId: () => process.env.APP_VERSION || "development",
-  // The landing page lives at /landing; the root opens the events feed. Temporary, so
-  // browsers never cache where the root goes.
+  // The root's redirect to the events feed is src/app/route.ts, which also sets its cache header.
   async redirects() {
     return [
-      { source: "/", destination: "/events", permanent: false },
       // Settings moved into the profile page; emails already sent still link /settings?tab=notifications.
       { source: "/settings", destination: "/profile", permanent: true },
     ];

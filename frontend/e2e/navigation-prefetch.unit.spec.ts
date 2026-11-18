@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
 import { getRedirectUrl, getRewrittenUrl, unstable_getResponseFromNextConfig } from "next/experimental/testing/server.js";
 import nextConfig from "../next.config";
+import { GET as openRoot } from "../src/app/route";
 import openApi from "../src/shared/generated/openapi.json" with { type: "json" };
 
 const { warmPublicPages, prefetchPublicPage }: typeof import("../src/app/hooks/useAppNavigation") =
@@ -71,13 +72,15 @@ for (const host of ["wat2do.io", "uwaterloo.wat2do.io"]) {
     const params = new URLSearchParams([
       ["event", "42"], ["school", "uwaterloo"], ["query", "free food"], ["returnTo", "/events?tab=new"],
     ]);
-    const response = await unstable_getResponseFromNextConfig({
-      url: `https://${host}/?${params}`,
-      nextConfig,
-    });
-    // Temporary, so browsers never cache where the root goes.
-    expect(response.status).toBe(307);
-    const destination = new URL(getRedirectUrl(response)!);
+    // The route handler owns the root, so Next's own redirects leave it alone.
+    const configResponse = await unstable_getResponseFromNextConfig({ url: `https://${host}/?${params}`, nextConfig });
+    expect(getRedirectUrl(configResponse)).toBeNull();
+
+    const response = openRoot(new Request(`https://${host}/?${params}`));
+    // Permanent for search engines, but never stored, so browsers never cache where the root goes.
+    expect(response.status).toBe(308);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const destination = new URL(response.headers.get("location")!, `https://${host}`);
     expect(destination.origin).toBe(`https://${host}`);
     expect(destination.pathname).toBe("/events");
     expect([...destination.searchParams]).toEqual([...params]);

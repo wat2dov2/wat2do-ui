@@ -368,6 +368,7 @@
     },
     "about": {
       "title": "Why we built Wat2Do",
+      "summary": "Wat2Do tracks the club events, free food, parties, workshops and open club roles at universities across Canada and the US, all in one place and updated every day. Tony and Erica, two University of Waterloo students, build and run it.",
       "origin": "Wat2Do began when we were bored, simple as that. We wanted to find things to do on campus at the University of Waterloo but had no way of seeing everything in one place. When we discovered a way to scrape events from Instagram, we knew what we had to do. Since August 2025, Wat2Do has captured more than 29,000 events from 19,600 accounts at {{count}} school.",
       "belief": "University is one of the best times to try something new. Clubs you didn't know existed often hold welcoming, low-cost events open to every student, from workshops and game nights to sports and more. Plenty come with free food, too. If you're looking for a j*b (sorry), there are plenty of company-sponsored events and networking nights as well.",
       "problem": "The problem was never that there is nothing to do. It was finding out about events after they already happened.",

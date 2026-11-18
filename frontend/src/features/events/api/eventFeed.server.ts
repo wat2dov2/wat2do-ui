@@ -7,8 +7,14 @@ import {
   buildEventFeedFirstScreen,
   type EventFeedFirstScreen,
 } from "@/features/events/lib/eventFeedFirstScreen";
+import {
+  buildSchoolShareCard,
+  buildSchoolShareImage,
+} from "@/features/events/lib/schoolShareCard";
+import type { School } from "@/shared/api/schools.api";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
 import { controlBox } from "@/shared/config/controlBox";
+import { BRAND_SHARE_IMAGE, type SeoImage } from "@/shared/lib/seo";
 import { lookupSchoolTimezone, resolveSchool } from "@/shared/constants/schools";
 import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
@@ -95,6 +101,25 @@ export async function getEventFeedFirstScreen(
     (eventSchool) => lookupSchoolTimezone(schoolBySlug, eventSchool),
     Date.now(),
   );
+}
+
+/**
+ * The link preview every page of a school's site shares: the school's card,
+ * drawn from this feed, or Wat2Do's own card when the school or its feed
+ * cannot be read.
+ */
+export async function getSchoolShareImage(school: School | null): Promise<SeoImage> {
+  if (!school) return BRAND_SHARE_IMAGE;
+  try {
+    const feed = await getSchoolBrowseSnapshot(school.slug);
+    return buildSchoolShareImage(
+      school.slug,
+      buildSchoolShareCard(school, feed.items, Date.now()),
+    );
+  } catch (error) {
+    console.error("School share image feed fetch failed:", error);
+    return BRAND_SHARE_IMAGE;
+  }
 }
 
 /** Login uses the same published feed and refresh lifecycle as Events. */

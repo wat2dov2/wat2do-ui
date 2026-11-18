@@ -2,7 +2,7 @@
 
 Status: active operating playbook.
 Owner: Tony.
-Last updated: August 3, 2026.
+Last updated: November 17, 2026.
 Review cadence: monthly, and after any search-indexing incident or major public-route change.
 
 ## Purpose
@@ -201,6 +201,24 @@ The first scoped SEO foundation now covers the school event feed, event detail, 
 
 Search Console verification and social-client preview testing remain operational follow-up work.
 
+### Implementation update: November 17, 2026
+
+Google showed the old wat2do.ca site above wat2do.io for the query `wat2do`, titled "Wat2Do: 0 Upcoming Events", and wat2do.io's own snippet opened with "Discover current events, activities, and things to do".
+Builderloo, the Waterloo tech directory, ranks with concrete copy instead: "Waterloo tech jobs, tech events and startups in one place: this week's meetups, the newest roles in Kitchener and Waterloo, local startups and funding news."
+This update rewrote every school page's title and description to that standard.
+
+- The school event feed, landing page, club directory and positions directory take their title and description from one copy table, `SCHOOL_PAGE_COPY` in `frontend/src/shared/lib/seo.ts`, through `buildSchoolPageMetadata`.
+- Each page lists its copy from the fullest form to the shortest, and the first one within `controlbox/social_previews.json` `title_max_characters` (60) or `description_max_characters` (160) is used, so a long school name drops a phrase instead of being cut off mid-word.
+- French schools (`schools.language` `fr`) get French copy and `og:locale` `fr_CA`, matching their `lang="fr"` pages.
+- Every school page shares the school's card from `/og-image.png`, the club and positions directories included, which used to show one arbitrary club's logo or poster.
+- Brand pages and every page without an image of its own share Wat2Do's wordmark card, `frontend/public/images/brand/wat2do-share.png` (1200 by 630, `BRAND_SHARE_IMAGE`).
+- Every school's event feed and the about page carry Wat2Do's `Organization` and `WebSite` JSON-LD (`buildBrandStructuredData`): the name, `https://wat2do.io/`, the square logo at `/icon-512.png`, and `sameAs` for LinkedIn and every school's Wat2Do Instagram account.
+- The old wat2do.ca domain is not in `sameAs`, which names profiles on other sites; it is meant to redirect to wat2do.io instead.
+- The root's redirect to `/events` is permanent (308) and sent with `Cache-Control: no-store` by `frontend/src/app/route.ts`, so search engines credit the feed while browsers never cache where the root goes.
+- The about page now says plainly what Wat2Do tracks and who runs it.
+
+Still open: the event feed, club and positions pages' H1 is a count ("195 upcoming events") rather than the school and topic, and French schools' server-rendered text is English until the browser switches it to French.
+
 ## ROI scoring heuristic
 
 Score every SEO proposal before it enters the committed backlog.
@@ -269,23 +287,34 @@ Priority bands:
 - Every page has one visible H1 that describes the same primary topic as the title.
 - Every indexable page has a unique, human-readable meta description that summarizes the page and includes useful differentiators.
 - Programmatic descriptions may use structured page data, but they must read naturally and must not become keyword lists.
-- Do not enforce a brittle character count.
+- Lead with what the student gets on the page, in concrete nouns: club events, free food, parties, workshops, career nights, clubs and student groups, club positions and exec roles.
+- Name the school by its display name (`schools.name`), and name its city where the copy speaks of things to do around it.
+- Say "in one place" and "Updated daily" when they are true of the page.
+- Never use stock verbs such as "Discover", "Explore" or "Browse".
+- Never put a live count in a title or description: it can read 0, and a result keeps showing an old number long after it changes.
+  A share image may show a count, since its URL changes with what it draws.
+- Keep titles within `controlbox/social_previews.json` `title_max_characters` (60) and descriptions within `description_max_characters` (160).
+  Give each page a shorter fallback form for long school names rather than letting a result cut the copy off.
+- French schools get natural Québec French copy, not a translation of the English word for word, with the article elided before a vowel ("de l'Université Laval").
+- Never use an em dash.
 - Write the most useful copy first and review actual Search Console click-through rate and displayed snippets.
 - Do not add a meta-keywords tag.
 - Do not repeat a keyword to meet a density target.
 
-Recommended title patterns:
+Current title and description patterns, from `SCHOOL_PAGE_COPY` in `frontend/src/shared/lib/seo.ts` (fullest form first):
 
-| Page type | Pattern |
-| --- | --- |
-| School event feed | `[School name] Events and Things to Do | Wat2Do` |
-| Event detail | `[Event name] at [School or location] | Wat2Do` |
-| Organization directory | `[School name] Clubs and Student Organizations | Wat2Do` |
-| Organization detail | `[Organization name] Events at [School name] | Wat2Do` |
-| Promoter page | `Promote Campus Events at [School name] | Wat2Do` |
+| Page type | Title | Description |
+| --- | --- | --- |
+| School event feed | `[School] Events, Free Food & Parties | Wat2Do` | `[School] club events in one place: free food, parties, workshops, career nights and more things to do around [City]. Updated daily.` |
+| School event feed (French) | `Événements et activités à [l'École] | Wat2Do` | `Les événements des clubs de [l'École] au même endroit : bouffe gratuite, partys, ateliers, soirées réseautage et plus. Mis à jour chaque jour.` |
+| School landing page | `Every [School] Event in One Place | Wat2Do` | `Club events at [School] get buried across hundreds of Instagram accounts. Wat2Do puts them all in one place, minutes after clubs post.` |
+| Organization directory | `[School] Clubs & Student Groups | Wat2Do` | `[School] clubs in one place: what each club does, its upcoming events, open exec roles and where to follow it. Updated daily.` |
+| Positions directory | `[School] Club Positions & Exec Roles | Wat2Do` | `Open club roles at [School] in one place: exec, committee and volunteer spots, paid positions and internships. Updated daily.` |
+| About | `About Wat2Do, Every Campus Club Event in One Place` | What Wat2Do tracks and who runs it. |
+| Event detail | `[Event name] at [School] | Wat2Do` | The event's own description. |
+| Organization detail | `[Organization name] Events and Positions at [School] | Wat2Do` | What the organization is and how to engage. |
 
-These are templates, not mandatory literal strings.
-Shorten or adapt them when actual names would produce repetitive or misleading results.
+A new school page type adds its copy to the same table in both languages rather than writing a title in its route file.
 
 ### Content-quality rules
 
@@ -395,8 +424,8 @@ The current event data model contains records that will fail the public-attendan
 
 Other structured-data priorities:
 
-1. Add `Organization` or the best supported subtype for Wat2Do on one canonical brand page.
-2. Add `WebSite` identity data on the canonical brand home when it accurately describes the site.
+1. Wat2Do's `Organization` and `WebSite` data (`buildBrandStructuredData`) is on every school's event feed, the page the root opens, and on the about page.
+2. Its `sameAs` lists only Wat2Do's own profiles on other sites: LinkedIn and every school's Wat2Do Instagram account.
 3. Add `BreadcrumbList` to public detail pages once the visible breadcrumb hierarchy exists.
 4. Add organization-page semantic markup only when it accurately represents the student organization and does not imply ownership or affiliation by Wat2Do.
 
@@ -489,7 +518,7 @@ This matrix is the intended default policy and must be finalized before implemen
 
 | Surface | Default policy | Canonical policy | Required quality gate |
 | --- | --- | --- | --- |
-| Root `/` | Permanent redirect to `/events`, preserving query parameters | Redirect on the current host; the destination declares the owning school canonical | Must not appear in the sitemap or compete with the event feed |
+| Root `/` | Permanent redirect (308, `Cache-Control: no-store`) to `/events`, preserving query parameters (`frontend/src/app/route.ts`) | Redirect on the current host; the destination declares the owning school canonical | Must not appear in the sitemap or compete with the event feed |
 | School event feed `/events` | Index when inventory is useful | Self on the owning school host, with the bare brand host defaulting to Waterloo | Server-rendered heading, intro, current event links, unique school metadata |
 | `/events/{id}` | Conditional index | Self on the event's school host | Valid event, unique record, useful visible data, correct 200 or 404 behavior |
 | `/organizations` | Index | Self on the owning school host | Server-rendered directory, crawlable pagination, unique school metadata |
@@ -648,7 +677,7 @@ Definition of done:
 - [ ] Add visible source, organizer, update, cancellation, and attendance information to the event content contract.
 - [ ] Roll out Event JSON-LD only to eligible pages and validate samples in the Rich Results Test.
 - [ ] Add visible breadcrumbs and matching `BreadcrumbList` data to public detail pages.
-- [ ] Add canonical Wat2Do `Organization` or appropriate subtype data on one brand page.
+- [x] Add canonical Wat2Do `Organization` and `WebSite` data on the brand home and about page.
 - [ ] Monitor Search Console enhancement reports and remove markup from records that do not remain compliant.
 
 Definition of done:
@@ -927,6 +956,9 @@ Result and follow-up:
 | 2026-08-03 | Treat the root event feed as school-owned and canonicalize the bare-root default feed to the Waterloo school host. | The root and Waterloo host can serve the same default-school experience, so only the school URL should compete in Search. | Tony | The bare root becomes a unique brand or school-selection experience. |
 | 2026-08-03 | Ship server-rendered content, page-specific metadata, owning-school canonicals, conditional indexing, and entity-first share images for the scoped public routes. | The production baseline showed generic metadata, client-dependent detail content, soft 404s, and missing social previews. | Tony | Search Console, production previews, or data-quality monitoring shows a different policy is needed. |
 | 2026-08-03 | Keep login out of the index and keep contact canonical to the root brand host. | Login is a utility workflow, while contact provides unique brand and support information. | Tony | The authentication or brand-host architecture changes. |
+| 2026-11-17 | Rewrite school page titles and descriptions to lead with concrete student nouns, fit 60 and 160 characters through shorter fallback forms, never show a live count, and speak French at French schools. | Google showed the old site as "Wat2Do: 0 Upcoming Events" above wat2do.io, whose own snippet opened with generic verbs; Builderloo ranks with concrete, place-specific copy. | Tony | Search Console shows how the new snippets' click-through rate compares. |
+| 2026-11-17 | Make the root's redirect to `/events` permanent (308) with `Cache-Control: no-store`. | A temporary redirect left `wat2do.io/` indexed in the feed's place, while `no-store` keeps the earlier reason for a temporary one: browsers never cache where the root goes. | Tony | The root gets a page of its own. |
+| 2026-11-17 | Share each school's card on all of its pages, Wat2Do's wordmark card on brand pages, and carry `Organization` and `WebSite` data on the brand home and about page. | Directory previews showed one arbitrary club's logo, and brand pages had a photo or an extreme-aspect hero. | Tony | Social-client preview tests or Search Console show a better image choice. |
 | Unresolved | Define the event indexability and Event structured-data eligibility gate. | Current event records vary in public eligibility, location detail, descriptions, images, and duplication. | Tony | Before event sitemap or JSON-LD rollout. |
 | Unresolved | Decide whether `things to do in Waterloo for students` belongs on the existing school feed or a dedicated maintained landing page. | The query is valuable but broader than the current campus-event promise. | Tony | After Search Console query data and inventory-depth review. |
 

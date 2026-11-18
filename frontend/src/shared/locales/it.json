@@ -374,6 +374,7 @@
     },
     "about": {
       "title": "Perché abbiamo creato Wat2Do",
+      "summary": "Wat2Do riunisce in un solo posto gli eventi dei club, il cibo gratis, le feste, i workshop e i ruoli aperti nei club delle università di Canada e Stati Uniti, e si aggiorna ogni giorno. Tony ed Erica, due studenti della University of Waterloo, lo creano e lo gestiscono.",
       "origin": "Wat2Do è nato dalla noia, semplice così. Volevamo trovare cose da fare nel campus della University of Waterloo, ma non avevamo modo di vedere tutto in un posto solo. Quando abbiamo scoperto come estrarre gli eventi da Instagram, abbiamo capito cosa fare. Da agosto 2025, Wat2Do ha raccolto più di 29.000 eventi da 19.600 account in {{count}} università.",
       "origin_one": "Wat2Do è nato dalla noia, semplice così. Volevamo trovare cose da fare nel campus della University of Waterloo, ma non avevamo modo di vedere tutto in un posto solo. Quando abbiamo scoperto come estrarre gli eventi da Instagram, abbiamo capito cosa fare. Da agosto 2025, Wat2Do ha raccolto più di 29.000 eventi da 19.600 account in {{count}} università.",
       "origin_many": "Wat2Do è nato dalla noia, semplice così. Volevamo trovare cose da fare nel campus della University of Waterloo, ma non avevamo modo di vedere tutto in un posto solo. Quando abbiamo scoperto come estrarre gli eventi da Instagram, abbiamo capito cosa fare. Da agosto 2025, Wat2Do ha raccolto più di 29.000 eventi da 19.600 account in {{count}} università.",

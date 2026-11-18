@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import imgSchoolVisit from "@/assets/utsg-university-college.webp";
+import { BrandStructuredData } from "@/app/brand-structured-data";
 import { AboutPage as AboutPageContent } from "@/features/contact/pages/AboutPage";
 import { ROUTES } from "@/shared/constants/routes";
 import {
@@ -7,23 +7,18 @@ import {
   getBrandCanonicalUrl,
 } from "@/shared/lib/seo";
 
-const title = "About Wat2Do | Campus Event Discovery";
-const description =
-  "Learn how Wat2Do's student founders built an Instagram event discovery system that helps students find clubs and events on campus.";
-
 export const metadata: Metadata = buildPublicPageMetadata({
-  title,
-  description,
+  title: "About Wat2Do, Every Campus Club Event in One Place",
+  description:
+    "Wat2Do tracks club events, free food, parties and club roles at universities in Canada and the US. Tony and Erica, two University of Waterloo students, run it.",
   canonicalUrl: getBrandCanonicalUrl(ROUTES.ABOUT),
-  image: {
-    url: imgSchoolVisit.src,
-    alt: "Meet the Wat2Do campus event discovery team",
-    width: imgSchoolVisit.width,
-    height: imgSchoolVisit.height,
-    type: "image/webp",
-  },
 });
 
 export default function AboutPage() {
-  return <AboutPageContent />;
+  return (
+    <>
+      <BrandStructuredData />
+      <AboutPageContent />
+    </>
+  );
 }

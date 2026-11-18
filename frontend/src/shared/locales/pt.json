@@ -374,6 +374,7 @@
     },
     "about": {
       "title": "Por que criamos Wat2Do",
+      "summary": "O Wat2Do reúne em um só lugar os eventos de clubes, a comida grátis, as festas, os workshops e as vagas abertas em clubes de universidades do Canadá e dos Estados Unidos, com atualização diária. Tony e Erica, dois estudantes da University of Waterloo, criam e mantêm o Wat2Do.",
       "origin": "O Wat2Do nasceu do tédio, simples assim. Queríamos encontrar coisas para fazer no campus da University of Waterloo, mas não tínhamos como ver tudo em um só lugar. Quando descobrimos uma forma de extrair eventos do Instagram, soubemos o que tínhamos que fazer. Desde agosto de 2025, o Wat2Do reuniu mais de 29.000 eventos de 19.600 contas em {{count}} universidade.",
       "origin_one": "O Wat2Do nasceu do tédio, simples assim. Queríamos encontrar coisas para fazer no campus da University of Waterloo, mas não tínhamos como ver tudo em um só lugar. Quando descobrimos uma forma de extrair eventos do Instagram, soubemos o que tínhamos que fazer. Desde agosto de 2025, o Wat2Do reuniu mais de 29.000 eventos de 19.600 contas em {{count}} universidade.",
       "origin_many": "O Wat2Do nasceu do tédio, simples assim. Queríamos encontrar coisas para fazer no campus da University of Waterloo, mas não tínhamos como ver tudo em um só lugar. Quando descobrimos uma forma de extrair eventos do Instagram, soubemos o que tínhamos que fazer. Desde agosto de 2025, o Wat2Do reuniu mais de 29.000 eventos de 19.600 contas em {{count}} universidades.",

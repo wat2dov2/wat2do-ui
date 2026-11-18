@@ -3,7 +3,7 @@ import type { School } from "@/shared/api/schools.api";
 import { controlBox } from "@/shared/config/controlBox";
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
 import { getSchoolColors, type SchoolColors } from "@/shared/lib/schoolBranding";
-import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
+import { getSchoolCanonicalUrl, type SeoImage } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
@@ -52,16 +52,16 @@ export function buildSchoolShareCard(
 /**
  * The page metadata image for a school's card. Its URL carries a hash of what
  * the card draws, so link previews (and the CDN) fetch a new image exactly
- * when the card changes.
+ * when the card changes, and its alt text reads out the card's own words.
  */
-export function buildSchoolShareImage(school: string, card: SchoolShareCard) {
+export function buildSchoolShareImage(school: string, card: SchoolShareCard): SeoImage {
   const version = createHash("sha256")
     .update(JSON.stringify(card))
     .digest("base64url")
     .slice(0, 12);
   return {
     url: `${getSchoolCanonicalUrl(school, SCHOOL_SHARE_IMAGE_PATH)}?v=${version}`,
-    alt: `Upcoming events at ${card.schoolName} on Wat2Do`,
+    alt: `${card.schoolName} · ${card.eventsLine} · Wat2Do`,
     width: controlBox.socialPreviews.width,
     height: controlBox.socialPreviews.height,
     type: "image/png",
