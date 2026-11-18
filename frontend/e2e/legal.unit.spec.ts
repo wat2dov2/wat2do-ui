@@ -30,8 +30,8 @@ test("every placeholder in the payout terms and the data policy has a value", ()
 
 test("the payout terms write the control box's numbers out in the visitor's language", () => {
   const english = clubPayoutTermsValues("en", ["University of Waterloo"]);
-  expect(english.rate).toBe("CA$2.00");
-  expect(english.maxPerEventDate).toBe("CA$300.00");
+  expect(english.rate).toBe("CA$4.00");
+  expect(english.maxPerEventDate).toBe("CA$600.00");
   expect(english.payoutDay).toBe("15th");
   expect(english.deadlineDays).toBe("180 days");
   expect(english.opensHours).toBe("12 hours");

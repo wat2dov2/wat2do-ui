@@ -1010,9 +1010,9 @@ def test_every_pitched_school_takes_part_in_club_payouts() -> None:
     assert set(box.outreach.pitch_schools) <= set(box.club_payouts.schools)
 
 
-def test_club_payouts_pay_two_dollars_a_scan_within_limits() -> None:
+def test_club_payouts_pay_four_dollars_a_scan_within_limits() -> None:
     control = load_controlbox().club_payouts
-    assert (control.rate_cents, control.currency) == (200, "cad")
+    assert (control.rate_cents, control.currency) == (400, "cad")
     assert control.max_payout_cents_per_club_per_month >= control.rate_cents
     assert 1 <= control.payout_day_of_month <= 28
 
