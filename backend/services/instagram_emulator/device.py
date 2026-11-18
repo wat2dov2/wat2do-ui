@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import fcntl
 import io
+import logging
 import os
 import random
 import re
@@ -32,10 +33,14 @@ from PIL import Image
 from core.controlbox import controlbox
 from services.instagram_emulator.screen_reader import ScreenReader, ScreenReaderError
 
+log = logging.getLogger(__name__)
+
 CONTROL = controlbox.instagram_emulator
 _BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
+# Where a drag that turns a pager left goes down, moves and lifts, as shares of its width.
+_DRAG_LEFT = (0.917, 0.824, 0.685, 0.512, 0.338, 0.164, 0.049, 0.014)
 # Every job that drives the emulator holds this lock, so two never tap at once.
 _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 # Touched after each reclaim; the caches it deletes refill as the app is used, so
@@ -108,6 +113,10 @@ _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
 _NOT_NOW = re.compile(r"^Not now$")
 _LOW_STORAGE = labels("Low device storage")
+# Instagram drops an account from the app ("The account owner may have changed the
+# password") and says so over whatever opens next, until OK.
+_LOGGED_OUT = re.compile(r"^You've been logged out of (?P<account>[\w.]+?)\.(?:\s|$)")
+_OK = re.compile(r"^OK$")
 # Android's own dialog when the app freezes for a few seconds on a busy emulator.
 _NOT_RESPONDING = re.compile(r"^.+ isn't responding$")
 _INSTAGRAM_NOT_RESPONDING = re.compile(r"^Instagram isn't responding$")
@@ -314,7 +323,8 @@ class EmulatorDevice:
         waiting is always safe. A frozen Instagram rarely comes back, so it is closed
         and the next step reopens it; Android's own processes are waited for. Login
         info is saved when offered after an account switch, so a later logout can come
-        back without a password.
+        back without a password. Instagram's note that it logged an account out is
+        acknowledged, so the app's other accounts go on; that account needs a person.
         """
         if self.find(_SAVE_LOGIN, nodes) is not None:
             return self.find(_SAVE, nodes)
@@ -324,6 +334,14 @@ class EmulatorDevice:
             or self.find(_FIRST_REPOST_NOTE, nodes) is not None
         ):
             prompt = self.find(_CLOSE, nodes)
+        logged_out = self.find(_LOGGED_OUT, nodes)
+        if prompt is None and logged_out is not None:
+            match = _LOGGED_OUT.match(logged_out.label)
+            log.warning(
+                "Instagram logged %s out of the emulator; it needs a person to log in again",
+                match["account"] if match else "an account",
+            )
+            prompt = self.find(_OK, nodes)
         if prompt is None and self.find(_INSTAGRAM_NOT_RESPONDING, nodes) is not None:
             prompt = self.find(_CLOSE_APP, nodes)
         if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
@@ -409,22 +427,22 @@ class EmulatorDevice:
 
         A pager such as Instagram's tagging screen reads ``input swipe`` as a tap (and
         drops a tag where it landed), so the drag is sent as a finger going down, moving
-        in steps and lifting.
+        in steps and lifting. The steps keep the shape of a drag that turns Instagram's
+        tagging screen every time (a short first move, then even strides, lifting just
+        past the last one); drags of other shapes were often ignored.
         """
         self.pause()
         x1, y1, x2, y2 = node.bounds
-        width = x2 - x1
-        y = round(self._rng.uniform(y1 + (y2 - y1) * 0.4, y1 + (y2 - y1) * 0.6))
-        start = round(x2 - width * self._rng.uniform(0.05, 0.12))
-        end = round(x1 + width * self._rng.uniform(0.05, 0.12))
-        steps = 6
-        moves = [
-            f"input motionevent MOVE {start + (end - start) * step // steps} "
-            f"{y + self._rng.randint(-4, 4)}"
-            for step in range(1, steps)
-        ]
+        width, height = x2 - x1, y2 - y1
+        y = round(y1 + height * self._rng.uniform(0.47, 0.51))
+        xs = [round(x1 + width * (share + self._rng.uniform(-0.01, 0.01))) for share in _DRAG_LEFT]
+        down, *moves, up = xs
         script = "; ".join(
-            [f"input motionevent DOWN {start} {y}", *moves, f"input motionevent UP {end} {y}"]
+            [
+                f"input motionevent DOWN {down} {y}",
+                *(f"input motionevent MOVE {x} {y + step}" for step, x in enumerate(moves, 1)),
+                f"input motionevent UP {up} {y + len(moves)}",
+            ]
         )
         self.adb("shell", script)
 

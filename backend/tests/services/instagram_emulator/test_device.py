@@ -228,6 +228,22 @@ def test_waiting_declines_an_announcement_covering_the_app() -> None:
     assert commands[0][-3:-2] == ["tap"]
 
 
+LOGGED_OUT = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="Error" content-desc="" bounds="[300,800][780,870]" />
+<node text="You've been logged out of wat2do.queensu. The account owner may have changed the password." content-desc="" bounds="[180,880][900,1100]" />
+<node text="OK" content-desc="" bounds="[180,1150][900,1270]" />
+</hierarchy>"""
+
+
+def test_instagrams_note_that_it_logged_an_account_out_is_acknowledged(caplog) -> None:
+    # It covers the app until OK, which kept every account on the Android user unreachable.
+    commands = []
+    node = _device([(0, "")], commands, [LOGGED_OUT, SCREEN]).wait_for(re.compile("^Your story$"))
+    assert node.text == "Your story"
+    assert commands[0][-3:-2] == ["tap"]
+    assert "wat2do.queensu" in caplog.text
+
+
 def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -> None:
     device = _device([], [])
     row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
@@ -595,3 +611,18 @@ def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:
 def test_the_new_inbox_header_title_is_recognized():
     node = module.Node("wat2do.brocku", "", (60, 150, 500, 250), "action_bar_large_title_auto_size")
     assert node.labelled(module._INBOX_TITLE)
+
+
+def test_a_pager_is_turned_with_one_drag_from_its_right_side_to_its_left() -> None:
+    commands = []
+    photo = module.Node("", "Photo. Tap to tag people", (108, 275, 972, 1355))
+    _device([(0, "")], commands).swipe_left(photo)
+    (command,) = commands
+    steps = command[-1].split("; ")
+    assert steps[0].startswith("input motionevent DOWN ") and steps[-1].startswith(
+        "input motionevent UP "
+    )
+    xs = [int(step.split()[3]) for step in steps]
+    assert xs == sorted(xs, reverse=True)
+    assert xs[0] > 880 and xs[-1] < 140
+    assert all(275 < int(step.split()[4]) < 1355 for step in steps)
