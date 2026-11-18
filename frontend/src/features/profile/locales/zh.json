@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "设置",
+    "backToClubs": "返回你的组织",
     "events": {
       "saved": "已收藏的活动",
       "savedEmpty": "你收藏的活动会显示在这里。",

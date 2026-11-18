@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "Impostazioni",
+    "backToClubs": "Torna alle tue organizzazioni",
     "events": {
       "saved": "Eventi salvati",
       "savedEmpty": "Gli eventi che salvi compaiono qui.",

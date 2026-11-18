@@ -1,6 +1,7 @@
 {
   "profile": {
     "settings": "Mga setting",
+    "backToClubs": "Bumalik sa iyong mga organisasyon",
     "events": {
       "saved": "Mga naka-save na kaganapan",
       "savedEmpty": "Dito lalabas ang mga kaganapang ise-save mo.",

@@ -33,7 +33,7 @@ export interface PageShell {
   icon?: LucideIcon;
   titleKey: string;
   descriptionKey?: string;
-  back?: "admin" | "clubPanel" | "events" | "positions" | "clubs";
+  back?: "admin" | "clubPanel" | "events" | "positions" | "clubs" | "profileClubs";
   /** The width of the page and of its loading state. */
   container: ContainerSize;
   /** How many tabs sit between the header and the body. */
@@ -55,7 +55,7 @@ export const PAGE_SHELLS: Readonly<Record<string, PageShell>> = {
   [ROUTES.ADMIN_SPONSORS]: { icon: Building2, titleKey: "admin.sponsors.title", descriptionKey: "admin.sponsors.description", back: "admin", container: "lg", body: "list" },
   [ROUTES.ADMIN_PAIN_POINTS]: { icon: MessageCircle, titleKey: "admin.painPoints.title", descriptionKey: "admin.painPoints.description", back: "admin", tabs: 3, container: "lg", body: "list" },
   [ROUTES.ADMIN_OUTREACH]: { icon: Mail, titleKey: "admin.outreach.title", descriptionKey: "admin.outreach.description", back: "admin", container: "lg", body: "list" },
-  [ROUTES.CLUB_PANEL]: { icon: Building2, titleKey: "clubPanel.title", descriptionKey: "clubPanel.description", cards: 3, container: "lg", body: "dashboard" },
+  [ROUTES.CLUB_PANEL]: { icon: Building2, titleKey: "clubPanel.title", descriptionKey: "clubPanel.description", back: "profileClubs", cards: 3, container: "lg", body: "dashboard" },
   [ROUTES.CLUB_PANEL_EVENTS]: { icon: Calendar, titleKey: "navigation.events", descriptionKey: "clubPanel.eventsDesc", back: "clubPanel", container: "lg", body: "list" },
   [ROUTES.CLUB_PANEL_POSITIONS]: { icon: Briefcase, titleKey: "navigation.positions", descriptionKey: "clubPanel.positionsDesc", back: "clubPanel", container: "lg", body: "list" },
   [ROUTES.CLUB_PANEL_MEMBERS]: { icon: Users, titleKey: "clubPanel.members", descriptionKey: "clubPanel.membersDesc", back: "clubPanel", container: "lg", body: "list" },

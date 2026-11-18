@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "@/shared/layout/page-header"
 import { PAGE_SHELLS, type PageShell } from "@/shared/constants/pageShells"
-import { ROUTES } from "@/shared/constants/routes"
+import { PROFILE_TABS, profileTabPath, ROUTES } from "@/shared/constants/routes"
 
 const BACK_LINKS = {
   admin: { href: ROUTES.ADMIN, labelKey: "admin.backToDashboard" },
@@ -14,6 +14,7 @@ const BACK_LINKS = {
   events: { href: ROUTES.EVENTS, labelKey: "events.allEvents" },
   positions: { href: ROUTES.POSITIONS, labelKey: "navigation.positions" },
   clubs: { href: ROUTES.CLUBS, labelKey: "clubs.allClubs" },
+  profileClubs: { href: profileTabPath(PROFILE_TABS.CLUBS), labelKey: "profile.backToClubs" },
 } as const satisfies Record<NonNullable<PageShell["back"]>, { href: string; labelKey: string }>
 
 interface PageShellHeaderProps {
