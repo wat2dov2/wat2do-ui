@@ -86,6 +86,8 @@ export const controlBox = {
     width: socialPreviews.width,
     height: socialPreviews.height,
     cacheMaxAgeSeconds: socialPreviews.cache_max_age_seconds,
+    titleMaxCharacters: socialPreviews.title_max_characters,
+    descriptionMaxCharacters: socialPreviews.description_max_characters,
   },
   ticketing: {
     minimumPriceCents: ticketing.minimum_price_cents,

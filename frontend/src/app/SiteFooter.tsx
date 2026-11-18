@@ -5,7 +5,7 @@ import navLogo from "@/assets/wat2do-logo-nav.webp";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
 import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
-import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links";
+import { EXTERNAL_LINKS, schoolInstagramHandle, schoolInstagramUrl } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, PageBleed, Stack } from "@/shared/layout";
 import { Link } from "@/shared/ui/link";
@@ -42,8 +42,9 @@ const FOOTER_LINK_GROUPS = [
  */
 export function SiteFooter() {
   const { t } = useTranslation();
-  const handle = schoolInstagramHandle(useRequestSchool());
-  const instagramHref = `https://www.instagram.com/${handle}/`;
+  const school = useRequestSchool();
+  const handle = schoolInstagramHandle(school);
+  const instagramHref = schoolInstagramUrl(school);
   const socials = [
     { label: "Instagram", href: instagramHref },
     { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN },

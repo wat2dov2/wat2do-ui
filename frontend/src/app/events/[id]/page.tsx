@@ -2,7 +2,6 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
-import imgContactHero from "@/assets/contact_hero.png";
 import { getEventDetailSnapshot } from "@/features/events/api/eventFeed.server";
 import {
   buildEventDescription,
@@ -50,19 +49,11 @@ export async function generateMetadata({
   const { id } = await params;
   const eventId = parseEventId(id);
   const event = eventId ? await loadEvent(eventId) : null;
-  const fallbackImage = {
-    url: imgContactHero.src,
-    alt: "Discover campus events with Wat2Do",
-    width: imgContactHero.width,
-    height: imgContactHero.height,
-    type: "image/png",
-  };
 
   if (!event) {
     return buildNoIndexPageMetadata({
       title: "Event Not Found | Wat2Do",
       description: "This Wat2Do event could not be found.",
-      image: fallbackImage,
     });
   }
 
@@ -79,7 +70,6 @@ export async function generateMetadata({
     image: selectSeoImage(
       event.source_image_url,
       `${event.title} event poster`,
-      fallbackImage,
     ),
     index: isEventIndexable(event),
   });

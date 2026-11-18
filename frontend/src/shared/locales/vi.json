@@ -368,6 +368,7 @@
     },
     "about": {
       "title": "Tại sao chúng tôi xây dựng Wat2Do",
+      "summary": "Wat2Do tổng hợp sự kiện câu lạc bộ, đồ ăn miễn phí, tiệc tùng, workshop và các vị trí đang mở trong câu lạc bộ tại các trường đại học ở Canada và Mỹ về một nơi, cập nhật mỗi ngày. Tony và Erica, hai sinh viên University of Waterloo, xây dựng và vận hành Wat2Do.",
       "origin": "Wat2Do bắt đầu vì chúng tôi chán, đơn giản vậy thôi. Chúng tôi muốn tìm việc để làm trong khuôn viên University of Waterloo nhưng không có cách nào xem tất cả ở một nơi. Khi tìm ra cách thu thập sự kiện từ Instagram, chúng tôi biết mình phải làm gì. Từ tháng 8 năm 2025, Wat2Do đã ghi nhận hơn 29.000 sự kiện từ 19.600 tài khoản tại {{count}} trường.",
       "origin_other": "Wat2Do bắt đầu vì chúng tôi chán, đơn giản vậy thôi. Chúng tôi muốn tìm việc để làm trong khuôn viên University of Waterloo nhưng không có cách nào xem tất cả ở một nơi. Khi tìm ra cách thu thập sự kiện từ Instagram, chúng tôi biết mình phải làm gì. Từ tháng 8 năm 2025, Wat2Do đã ghi nhận hơn 29.000 sự kiện từ 19.600 tài khoản tại {{count}} trường.",
       "belief": "Đại học là một trong những khoảng thời gian tuyệt nhất để thử điều mới. Những câu lạc bộ bạn chưa từng biết đến thường tổ chức các sự kiện thân thiện, chi phí thấp, mở cho mọi sinh viên, từ hội thảo thực hành và đêm trò chơi đến thể thao và hơn thế nữa. Nhiều sự kiện có đồ ăn miễn phí. Nếu bạn đang tìm việc, cũng có rất nhiều sự kiện do công ty tài trợ và các buổi giao lưu networking.",

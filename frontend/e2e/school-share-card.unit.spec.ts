@@ -44,12 +44,15 @@ test("the preview URL lives on the school's host and changes exactly when the ca
   const card = buildSchoolShareCard(waterloo, [running, tomorrow], now);
   const image = buildSchoolShareImage("uwaterloo", card);
   expect(image).toMatchObject({
-    alt: "Upcoming events at University of Waterloo on Wat2Do",
+    alt: "University of Waterloo · 2 upcoming events · Wat2Do",
     width: socialPreviews.width,
     height: socialPreviews.height,
     type: "image/png",
   });
   expect(image.url).toMatch(/^https:\/\/uwaterloo\.wat2do\.io\/og-image\.png\?v=[\w-]{12}$/);
+  // The alt text reads the card's own words, in the school's language.
+  expect(buildSchoolShareImage("ulaval", buildSchoolShareCard(laval, [tomorrow], now)).alt)
+    .toBe("Université Laval · 1 événement à venir · Wat2Do");
 
   // Same drawing, same URL: an hour later both events are still upcoming.
   const later = buildSchoolShareCard(waterloo, [running, tomorrow], now + 60 * 60 * 1000 - 1);

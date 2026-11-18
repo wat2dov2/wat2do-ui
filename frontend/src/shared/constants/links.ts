@@ -11,3 +11,8 @@ export const EXTERNAL_LINKS = {
 export function schoolInstagramHandle(school: string): string {
   return `wat2do.${school}`;
 }
+
+/** The profile page of a school's Wat2Do Instagram account. */
+export function schoolInstagramUrl(school: string): string {
+  return `https://www.instagram.com/${schoolInstagramHandle(school)}/`;
+}

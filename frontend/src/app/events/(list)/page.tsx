@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
 import { cache } from "react";
+import { BrandStructuredData } from "@/app/brand-structured-data";
 import { EventRoutePage } from "@/app/event-route-page";
-import imgContactHero from "@/assets/contact_hero.png";
 import {
   getEventFeedFirstScreen,
   getSchoolBrowseSnapshot,
+  getSchoolShareImage,
 } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import {
-  buildSchoolShareCard,
-  buildSchoolShareImage,
-} from "@/features/events/lib/schoolShareCard";
 import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
-import { ROUTES } from "@/shared/constants/routes";
-import {
-  buildPublicPageMetadata,
-  getSchoolCanonicalUrl,
-} from "@/shared/lib/seo";
+import { buildSchoolPageMetadata } from "@/shared/lib/seo";
 
 export const revalidate = 0;
 
@@ -37,29 +30,12 @@ export async function generateMetadata(): Promise<Metadata> {
     getSchool(school),
     loadInitialSnapshot(school),
   ]);
-  const schoolName = schoolRecord?.name ?? school;
-  const title = `${schoolName} Events and Things to Do | Wat2Do`;
-  const description = `Discover current events, activities, and things to do for students at ${schoolName}. Explore campus events by date, category, cost, and more.`;
-  // The school's card needs its feed; without either, the generic hero stands in.
-  const image =
-    schoolRecord && snapshot
-      ? buildSchoolShareImage(
-          schoolRecord.slug,
-          buildSchoolShareCard(schoolRecord, snapshot.items, Date.now()),
-        )
-      : {
-          url: imgContactHero.src,
-          alt: `Discover events and student life at ${schoolName} with Wat2Do`,
-          width: imgContactHero.width,
-          height: imgContactHero.height,
-          type: "image/png",
-        };
 
-  return buildPublicPageMetadata({
-    title,
-    description,
-    canonicalUrl: getSchoolCanonicalUrl(school, ROUTES.EVENTS),
-    image,
+  return buildSchoolPageMetadata({
+    page: "events",
+    school,
+    schoolRecord,
+    image: await getSchoolShareImage(schoolRecord),
     index: Boolean(snapshot && snapshot.items.length > 0),
   });
 }
@@ -69,5 +45,11 @@ export default async function EventsPage() {
   const snapshot = await loadInitialSnapshot(school);
   const firstScreen = snapshot && await getEventFeedFirstScreen(snapshot, school);
 
-  return <EventRoutePage firstScreen={firstScreen} initialSchool={school} />;
+  // The root opens this page, so it carries the brand's home page data.
+  return (
+    <>
+      <BrandStructuredData />
+      <EventRoutePage firstScreen={firstScreen} initialSchool={school} />
+    </>
+  );
 }

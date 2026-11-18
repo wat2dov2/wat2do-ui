@@ -37,6 +37,7 @@ export function AboutPage({ isLoading = false }: { isLoading?: boolean }) {
           </CardHeader>
           <CardContent>
             <Stack gap={4}>
+              <CardDescription>{t("contact.about.summary")}</CardDescription>
               <CardDescription>
                 {t("contact.about.origin", { count: schools.length })}
               </CardDescription>

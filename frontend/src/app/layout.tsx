@@ -14,6 +14,7 @@ import {
 import { sessionInitScript } from "@/features/auth/lib/sessionInitScript";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
+import { BRAND_DESCRIPTION, BRAND_SHARE_IMAGE } from "@/shared/lib/seo";
 import "../index.css";
 import "@/styles/motion.css";
 
@@ -38,9 +39,6 @@ const satoshiItalic = localFont({
   display: "swap",
   preload: false,
 });
-
-const APP_DESCRIPTION =
-  "Discover campus events, explore student clubs, and stay connected with what's happening around you.";
 
 const themeInitScript = `
 (function() {
@@ -74,10 +72,12 @@ const themeInitScript = `
 })();
 `;
 
+const BRAND_TITLE = "Wat2Do: Club Events, Free Food & Parties on Campus";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://wat2do.io"),
-  title: "Wat2Do | Campus Events",
-  description: APP_DESCRIPTION,
+  title: BRAND_TITLE,
+  description: BRAND_DESCRIPTION,
   authors: [{ name: "Wat2Do" }],
   robots: {
     index: false,
@@ -96,16 +96,18 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    title: "Wat2Do | Campus Events",
-    description: APP_DESCRIPTION,
+    title: BRAND_TITLE,
+    description: BRAND_DESCRIPTION,
     url: "https://wat2do.io",
     siteName: "Wat2Do",
     locale: "en_US",
+    images: [BRAND_SHARE_IMAGE],
   },
   twitter: {
-    card: "summary",
-    title: "Wat2Do | Campus Events",
-    description: APP_DESCRIPTION,
+    card: "summary_large_image",
+    title: BRAND_TITLE,
+    description: BRAND_DESCRIPTION,
+    images: [BRAND_SHARE_IMAGE],
   },
 };
 

@@ -2,7 +2,6 @@ import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
-import imgContactHero from "@/assets/contact_hero.png";
 import { getClubEventsSnapshot } from "@/features/events/api/eventFeed.server";
 import { getClubPositionsSnapshot } from "@/features/positions/api/positionDirectory.server";
 import { getClubDetailSnapshot } from "@/features/clubs/api/clubDirectory.server";
@@ -76,19 +75,11 @@ export async function generateMetadata({
   const club = clubId
     ? await loadClub(clubId)
     : null;
-  const fallbackImage = {
-    url: imgContactHero.src,
-    alt: "Discover student clubs with Wat2Do",
-    width: imgContactHero.width,
-    height: imgContactHero.height,
-    type: "image/png",
-  };
 
   if (!club || club.status !== "approved") {
     return buildNoIndexPageMetadata({
       title: "Club Not Found | Wat2Do",
       description: "This Wat2Do club could not be found.",
-      image: fallbackImage,
     });
   }
 
@@ -108,7 +99,6 @@ export async function generateMetadata({
     image: selectSeoImage(
       club.logo_url,
       `${club.club_name} logo`,
-      fallbackImage,
     ),
     index: isClubIndexable(club),
   });

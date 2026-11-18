@@ -1,5 +1,7 @@
 {
   "width": 1200,
   "height": 630,
-  "cache_max_age_seconds": 86400
+  "cache_max_age_seconds": 86400,
+  "title_max_characters": 60,
+  "description_max_characters": 160
 }

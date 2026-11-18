@@ -5505,7 +5505,9 @@ test.describe("Navigation", () => {
       ["event", "1"], ["school", "uwaterloo"], ["tag", "free food"], ["tag", "new"],
     ]);
     const rootResponse = await request.get(`${BASE}/?${params}`, { maxRedirects: 0 });
-    expect(rootResponse.status()).toBe(307);
+    // Permanent for search engines, never stored by browsers.
+    expect(rootResponse.status()).toBe(308);
+    expect(rootResponse.headers()["cache-control"]).toBe("no-store");
     const destination = new URL(rootResponse.headers().location, BASE);
     expect(destination.origin).toBe(BASE);
     expect(destination.pathname).toBe("/events");
@@ -5516,6 +5518,8 @@ test.describe("Navigation", () => {
     const html = await response.text();
     expect(html).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/events"');
     expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
+    expect(html).toContain("<title>University of Waterloo Events, Free Food &amp; Parties | Wat2Do</title>");
+    expect(html).toContain('"@type":"Organization","@id":"https://wat2do.io/#organization"');
 
     const landingResponse = await request.get(`${BASE}/landing`, { maxRedirects: 0 });
     expect(landingResponse.status()).toBe(200);
@@ -5673,7 +5677,7 @@ test.describe("Navigation", () => {
       .toHaveAttribute("href", "/about");
     await navigation.getByRole("link", { name: "About", exact: true }).click();
     await expect(page).toHaveURL(/\/about$/);
-    await expect(page).toHaveTitle("About Wat2Do | Campus Event Discovery");
+    await expect(page).toHaveTitle("About Wat2Do, Every Campus Club Event in One Place");
     await expect(page.getByText("How you can help us", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("link", {

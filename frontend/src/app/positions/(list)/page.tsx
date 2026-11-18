@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import imgContactHero from "@/assets/contact_hero.png";
+import { getSchoolShareImage } from "@/features/events/api/eventFeed.server";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { PositionsPage as PositionsPageContent } from "@/features/positions/pages/PositionsPage";
 import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
-import {
-  buildPublicPageMetadata,
-  getSchoolCanonicalUrl,
-  selectSeoImage,
-} from "@/shared/lib/seo";
+import { buildSchoolPageMetadata } from "@/shared/lib/seo";
 
 const loadPositions = cache(async (
   school: string,
@@ -28,28 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
     getSchool(school),
     loadPositions(school),
   ]);
-  const schoolName = schoolRecord?.name ?? school;
-  const title = `${schoolName} Student Club Positions | Wat2Do`;
-  const description = `Find open executive, committee, volunteer, staff, and internship positions with student clubs at ${schoolName}.`;
-  const featuredPosition = directory?.items.find(
-    (position) => position.source_image_url,
-  );
 
-  return buildPublicPageMetadata({
-    title,
-    description,
-    canonicalUrl: getSchoolCanonicalUrl(school, "/positions"),
-    image: selectSeoImage(
-      featuredPosition?.source_image_url,
-      featuredPosition ? `${featuredPosition.title} position` : "",
-      {
-        url: imgContactHero.src,
-        alt: `Discover student club positions at ${schoolName}`,
-        width: imgContactHero.width,
-        height: imgContactHero.height,
-        type: "image/png",
-      },
-    ),
+  return buildSchoolPageMetadata({
+    page: "positions",
+    school,
+    schoolRecord,
+    image: await getSchoolShareImage(schoolRecord),
     index: Boolean(directory && directory.total > 0),
   });
 }
