@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Story",
-        "afterPublish": "Ipo-post ang bawat slide sa story ng account pagkatapos mismong mailathala ang carousel na ito.",
-        "pending": "Ipino-post ang mga slide sa story.",
-        "posted": "Na-post sa story ang lahat ng slide.",
-        "failed": "Hindi na-post sa story: {{reason}}",
-        "none": "Nailathala ang carousel na ito bago pa ipinapadala ang mga slide sa story."
+        "afterPublish": "Ibinabahagi sa story ng account ang orihinal na post ng bawat event kapag nailathala na ang carousel na ito.",
+        "pending": "Hinihintay pang maibahagi sa story ang mga orihinal na post ng mga event.",
+        "posted": "Naibahagi sa story ang orihinal na post ng bawat event.",
+        "partial": "Naibahagi sa story, pero may ilang post na hindi kasama: {{reason}}",
+        "failed": "Hindi naibahagi sa story: {{reason}}",
+        "none": "Nailathala ang carousel na ito bago pa ibinabahagi sa story ang mga post ng event."
       }
     },
     "socialAccounts": {

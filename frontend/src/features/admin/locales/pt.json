@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Story",
-        "afterPublish": "Cada slide vai para o story da conta logo depois que este carrossel é publicado.",
-        "pending": "Publicando os slides no story.",
-        "posted": "Todos os slides foram publicados no story.",
-        "failed": "Não publicado no story: {{reason}}",
-        "none": "Este carrossel foi publicado antes de os slides irem para o story."
+        "afterPublish": "O post original de cada evento é compartilhado no story da conta depois que este carrossel é publicado.",
+        "pending": "Aguardando para compartilhar os posts originais dos eventos no story.",
+        "posted": "O post original de cada evento foi compartilhado no story.",
+        "partial": "Compartilhado no story, sem alguns posts: {{reason}}",
+        "failed": "Não compartilhado no story: {{reason}}",
+        "none": "Este carrossel foi publicado antes de os posts dos eventos irem para o story."
       }
     },
     "socialAccounts": {

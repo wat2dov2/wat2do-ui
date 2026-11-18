@@ -52,6 +52,7 @@ def due(monkeypatch, tmp_path):
     """What each step reports as due; the steps record what they did."""
     state = SimpleNamespace(
         music=[],
+        stories=[],
         dms=set(),
         unfollows=set(),
         follows=set(),
@@ -65,6 +66,14 @@ def due(monkeypatch, tmp_path):
     monkeypatch.setattr(worker, "_switch_errors", [])
     monkeypatch.setattr(worker, "RESTART_LOG", tmp_path / "restarts.log")
     monkeypatch.setattr(worker.music, "schools_due", lambda now: list(state.music))
+    monkeypatch.setattr(worker.stories, "schools_due", lambda now: list(state.stories))
+    monkeypatch.setattr(
+        worker.stories,
+        "share_due",
+        lambda device, school, now: (
+            school in state.stories and state.done.append(("stories", school))
+        ),
+    )
     monkeypatch.setattr(worker, "reclaim_due", lambda: state.reclaim)
     monkeypatch.setattr(
         worker.music, "finish_due", lambda device, school, now: state.done.append(("music", school))
@@ -150,6 +159,20 @@ def test_an_account_the_app_cannot_reach_never_restarts_the_emulator(due, monkey
     # The emulator answered every step, so a restart could not help; each account rests.
     assert device.restarts == 0
     assert set(worker._switch_rested_until) == set(lost)
+
+
+def test_a_carousel_waiting_for_its_story_comes_first_in_action_hours_only(due):
+    due.stories = ["ubc"]
+    due.dms = {"uwo"}
+    device = _Device()
+    assert worker.visit_next(device, DAY)
+    assert device.accounts == ["wat2do.ubc"]
+    assert due.done[0] == ("music", "ubc")
+    assert ("stories", "ubc") in due.done
+    # At night the story waits; nothing else is due.
+    due.done.clear()
+    assert not worker.visit_next(_Device(), NIGHT)
+    assert due.done == []
 
 
 def test_at_night_the_worker_only_adds_songs(due, monkeypatch):

@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Story",
-        "afterPublish": "Chaque diapositive est publiée dans la story du compte juste après la publication de ce carrousel.",
-        "pending": "Publication des diapositives dans la story.",
-        "posted": "Toutes les diapositives ont été publiées dans la story.",
-        "failed": "Non publié dans la story : {{reason}}",
-        "none": "Ce carrousel a été publié avant que les diapositives soient publiées dans la story."
+        "afterPublish": "La publication d'origine de chaque événement est partagée dans la story du compte une fois ce carrousel publié.",
+        "pending": "En attente du partage des publications d'origine des événements dans la story.",
+        "posted": "La publication d'origine de chaque événement a été partagée dans la story.",
+        "partial": "Partagé dans la story, sans certaines publications : {{reason}}",
+        "failed": "Non partagé dans la story : {{reason}}",
+        "none": "Ce carrousel a été publié avant que les publications des événements aillent dans la story."
       }
     },
     "socialAccounts": {

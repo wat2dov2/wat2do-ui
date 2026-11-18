@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Story",
-        "afterPublish": "Jede Folie wird direkt nach der Veröffentlichung dieses Karussells in der Story des Kontos gepostet.",
-        "pending": "Die Folien werden in der Story gepostet.",
-        "posted": "Alle Folien wurden in der Story gepostet.",
-        "failed": "Nicht in der Story gepostet: {{reason}}",
-        "none": "Dieses Karussell wurde veröffentlicht, bevor Folien in die Story gepostet wurden."
+        "afterPublish": "Der Originalbeitrag jeder Veranstaltung wird nach der Veröffentlichung dieses Karussells in der Story des Kontos geteilt.",
+        "pending": "Die Originalbeiträge der Veranstaltungen werden bald in der Story geteilt.",
+        "posted": "Der Originalbeitrag jeder Veranstaltung wurde in der Story geteilt.",
+        "partial": "In der Story geteilt, einige Beiträge fehlen: {{reason}}",
+        "failed": "Nicht in der Story geteilt: {{reason}}",
+        "none": "Dieses Karussell wurde veröffentlicht, bevor Beiträge von Veranstaltungen in die Story gingen."
       }
     },
     "socialAccounts": {

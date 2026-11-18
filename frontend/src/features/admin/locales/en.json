@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Story",
-        "afterPublish": "Every slide goes to the account's story right after this carousel publishes.",
-        "pending": "Posting the slides to the story.",
-        "posted": "Every slide was posted to the story.",
-        "failed": "Not posted to the story: {{reason}}",
-        "none": "This carousel was published before slides went to the story."
+        "afterPublish": "Each event's original post goes to the account's story once this carousel publishes.",
+        "pending": "Waiting to share the events' original posts to the story.",
+        "posted": "Every event's original post was shared to the story.",
+        "partial": "Shared to the story, with some posts left out: {{reason}}",
+        "failed": "Not shared to the story: {{reason}}",
+        "none": "This carousel was published before events' posts went to the story."
       }
     },
     "socialAccounts": {

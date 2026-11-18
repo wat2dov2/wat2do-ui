@@ -404,6 +404,30 @@ class EmulatorDevice:
         """
         self._swipe(start=(850, 950), end=(1250, 1350))
 
+    def swipe_left(self, node: Node) -> None:
+        """Drag across ``node`` from its right side to its left, to the next page of a pager.
+
+        A pager such as Instagram's tagging screen reads ``input swipe`` as a tap (and
+        drops a tag where it landed), so the drag is sent as a finger going down, moving
+        in steps and lifting.
+        """
+        self.pause()
+        x1, y1, x2, y2 = node.bounds
+        width = x2 - x1
+        y = round(self._rng.uniform(y1 + (y2 - y1) * 0.4, y1 + (y2 - y1) * 0.6))
+        start = round(x2 - width * self._rng.uniform(0.05, 0.12))
+        end = round(x1 + width * self._rng.uniform(0.05, 0.12))
+        steps = 6
+        moves = [
+            f"input motionevent MOVE {start + (end - start) * step // steps} "
+            f"{y + self._rng.randint(-4, 4)}"
+            for step in range(1, steps)
+        ]
+        script = "; ".join(
+            [f"input motionevent DOWN {start} {y}", *moves, f"input motionevent UP {end} {y}"]
+        )
+        self.adb("shell", script)
+
     def _swipe(self, *, start: tuple[int, int], end: tuple[int, int]) -> None:
         self.pause()
         x = round(self._rng.uniform(400, 680))

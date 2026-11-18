@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from services.claude_code import ClaudeLimited
-from services.instagram_emulator.audio import AddedTrack, PlaceTag, SongNotFound
+from services.instagram_emulator.audio import AddedTrack, PlaceTag, SlideTag, SongNotFound
 from services.instagram_publishing import music
 
 NOW = datetime(2026, 10, 21, 18, tzinfo=timezone.utc)
@@ -46,6 +46,12 @@ def database(monkeypatch):
             {"query": "bts dope", "asian_campuses_only": True},
         ],
         "instagram_publish_batches": [BATCH],
+        "instagram_publish_items": [
+            {"position": 1, "event": {"ig_handle": "@UWMathSoc"}},
+            {"position": 2, "event": {"ig_handle": None}},
+            {"position": 3, "event": {"ig_handle": "wat2do.uwaterloo"}},
+            {"position": 5, "event": {"ig_handle": "uwcsclub "}},
+        ],
     }
     calls = []
     monkeypatch.setattr(
@@ -73,8 +79,10 @@ def test_pending_carousels_get_a_song_in_rotation_order(monkeypatch, database):
     finish_post = Mock(return_value=AddedTrack("bts dope", "Dope by BTS,3:57"))
     monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"added": 1}
-    device, school, permalink, songs, choose, _gif, place = finish_post.call_args.args
+    device, school, permalink, songs, choose, _gif, place, clubs = finish_post.call_args.args
     assert (device, school, permalink) == (DEVICE, "uwaterloo", POST)
+    # Each event slide's club, counting from the cover; never our own account.
+    assert clubs == [SlideTag(1, "uwmathsoc"), SlideTag(4, "uwcsclub")]
     assert sorted(songs) == ["bigbang loser", "bts dope"]
     assert choose is music.choose_track
     assert place == PlaceTag("University of Waterloo", music.choose_place)
@@ -234,7 +242,7 @@ def _tried_songs(monkeypatch, database, school):
     monkeypatch.setattr(
         music,
         "finish_post",
-        lambda _school, _user, _post, songs, _choose, _gif=None, _place=None: (
+        lambda _school, _user, _post, songs, _choose, _gif=None, _place=None, _clubs=(): (
             tried.append(sorted(songs)) or AddedTrack(songs[0], "After Hours by The Weeknd")
         ),
     )

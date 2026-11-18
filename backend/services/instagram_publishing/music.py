@@ -13,7 +13,8 @@ movie or show scene that fits the carousel's first event (or none), and picks a 
 movie or show clip from GIPHY's results (or none, so nothing is commented). The same
 edit tags the post with the school's own place: the first one Instagram's location
 search lists under the school's exact name, else the one Haiku recognizes as the
-school itself, or none.
+school itself, or none, and tags each event slide with the club behind its event
+(``slide_tags``); a club that lets only accounts it follows tag it is left untagged.
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ from services.instagram_emulator.audio import (
     GifComment,
     GifScene,
     PlaceTag,
+    SlideTag,
     SongNotFound,
     finish_post,
 )
@@ -169,9 +171,10 @@ def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[st
     # Only the first try comments, so a retry never posts a second GIF.
     gif = _gif_scene(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None
     place = _place_tag(batch["school"])
+    clubs = slide_tags(batch["id"])
     try:
         added = finish_post(
-            device, batch["school"], batch["permalink"], songs, choose_track, gif, place
+            device, batch["school"], batch["permalink"], songs, choose_track, gif, place, clubs
         )
     except SongNotFound as exc:
         _record(batch["id"], INSTAGRAM_MUSIC_FAILED, attempts, error=str(exc))
@@ -285,6 +288,34 @@ def _first_event(batch_id: str) -> dict[str, Any] | None:
     if not event:
         return None
     return {**event, "description": (event.get("description") or "")[:1500]}
+
+
+_HANDLE = re.compile(r"^[a-z0-9._]{1,30}$")
+
+
+def slide_tags(batch_id: str) -> list[SlideTag]:
+    """The club to tag on each event slide: the event's Instagram account, counting
+    slides from the cover (0), as the carousel was posted. Our own accounts are never
+    tagged."""
+    try:
+        rows = (
+            get_sb()
+            .table(INSTAGRAM_PUBLISH_ITEMS)
+            .select("position,event:events(ig_handle)")
+            .eq("batch_id", str(batch_id))
+            .order("position")
+            .execute()
+        ).data or []
+    except Exception:
+        # The tags are a nice extra; they never hold up the song.
+        log.warning("Could not read the clubs of Instagram batch %s", batch_id, exc_info=True)
+        return []
+    tags = []
+    for slide, row in enumerate(rows, start=1):
+        handle = ((row.get("event") or {}).get("ig_handle") or "").strip().lstrip("@").lower()
+        if _HANDLE.fullmatch(handle) and not handle.startswith("wat2do"):
+            tags.append(SlideTag(slide, handle))
+    return tags
 
 
 def choose_track(query: str, tracks: Sequence[str]) -> int | None:

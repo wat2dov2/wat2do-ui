@@ -415,11 +415,12 @@
       },
       "story": {
         "title": "Tin",
-        "afterPublish": "Mỗi trang chiếu được đăng lên tin của tài khoản ngay sau khi băng chuyền này được đăng.",
-        "pending": "Đang đăng các trang chiếu lên tin.",
-        "posted": "Đã đăng tất cả trang chiếu lên tin.",
-        "failed": "Chưa đăng lên tin: {{reason}}",
-        "none": "Băng chuyền này được đăng trước khi các trang chiếu được đưa lên tin."
+        "afterPublish": "Bài đăng gốc của mỗi sự kiện được chia sẻ lên tin của tài khoản sau khi băng chuyền này được đăng.",
+        "pending": "Đang chờ chia sẻ các bài đăng gốc của sự kiện lên tin.",
+        "posted": "Đã chia sẻ bài đăng gốc của mọi sự kiện lên tin.",
+        "partial": "Đã chia sẻ lên tin nhưng thiếu một số bài: {{reason}}",
+        "failed": "Chưa chia sẻ lên tin: {{reason}}",
+        "none": "Băng chuyền này được đăng trước khi bài đăng của sự kiện được đưa lên tin."
       }
     },
     "socialAccounts": {
