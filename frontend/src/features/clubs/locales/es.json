@@ -75,7 +75,7 @@
     "minimumEvents": "Mínimo de eventos",
     "claimLink": {
       "title": "Reclama {{club}} en Wat2Do",
-      "description": "La página de tu organización está lista. Al reclamarla te conviertes en su dueño: puedes publicar eventos y puestos, mantenerlos al día y regalar o vender boletos.",
+      "description": "La página de tu organización está lista. Al reclamarla te conviertes en su dueño: tu organización y sus eventos llevan la marca de verificado, y puedes publicar eventos y puestos, dar boletos con QR gratis y escanearlos en la puerta.",
       "checking": "Revisando tu enlace de reclamo...",
       "claim": "Reclamar club",
       "claiming": "Reclamando...",

@@ -2,9 +2,11 @@
 
 Claude reads one club's newest events (``pitch_prompt.md``) and decides whether
 students would come out for them; for a club that is a fit it writes the video
-script the admin records and the personal email sent with the video. Both offer
-the club payout per scanned student (``controlbox/club_payouts.json``), and the
-email links its terms. Each script
+script the admin records and the personal email sent with the video. Both say only
+what the prompt lists a claimed club gets (the verified check, free QR tickets
+scanned at the door, the club payout per scanned student from
+``controlbox/club_payouts.json``, who's going, its team and club panel), and the
+email links the payout terms. Each script
 opens with a hook in one style from ``hooks.md``, the same style for a lead every
 time, so scripts across clubs do not all open the same way. Only leads at
 the control box's ``pitch_schools`` are pitched, and only fit leads reach the admin

@@ -72,7 +72,7 @@
     "minimumEvents": "Mindestanzahl an Veranstaltungen",
     "claimLink": {
       "title": "Beanspruche {{club}} auf Wat2Do",
-      "description": "Die Seite deiner Organisation ist fertig. Wenn du sie beanspruchst, wirst du ihr Inhaber: Du kannst Veranstaltungen und Positionen veröffentlichen, sie aktuell halten und Tickets verschenken oder verkaufen.",
+      "description": "Die Seite deiner Organisation ist fertig. Wenn du sie beanspruchst, wirst du ihr Inhaber: Deine Organisation und ihre Veranstaltungen bekommen ein Verifiziert-Häkchen, und du kannst Veranstaltungen und Positionen veröffentlichen, kostenlose QR-Tickets ausgeben und sie am Einlass scannen.",
       "checking": "Dein Beanspruchungslink wird geprüft...",
       "claim": "Club beanspruchen",
       "claiming": "Wird beansprucht...",

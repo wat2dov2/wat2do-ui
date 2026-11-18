@@ -47,6 +47,7 @@ Keep it a scene they would picture, never a claim about what happened at their e
 - "POV: you're the exec making the poster, the post, the story and the reminder for <event>."
 - "POV: your next event pays for its own snacks."
 - "POV: you're scanning people into <event>, and every scan pays the club {{payout_per_scan}}."
+- "POV: the door at <event> is just you, your phone's camera and a line that keeps moving."
 
 ### Question
 
@@ -62,11 +63,11 @@ Ask something they will answer in their head before you finish the sentence.
 
 Lead with the most concrete thing they get, then explain it.
 - "{{payout_per_scan}} for every student you scan into your next event."
-- "<event> is already on Wat2Do. Claim it, and it's verified and set up for QR check-in, free."
+- "<event> is already on Wat2Do. Claim <club>, and it gets a verified check and free QR tickets."
 - "<club> already has a page on Wat2Do. You just haven't claimed it."
 - "Your <club> page is already up, and <event> is on it."
 - "Your next <event> could pay for part of itself."
-- "One click, and <club> gets the top spot on Wat2Do."
+- "One tap, and every <club> event on Wat2Do gets a verified check."
 
 ### Hot take
 
