@@ -146,6 +146,10 @@
     "clickCount_one": "{{count}} clique",
     "clickCount_many": "{{count}} cliques",
     "goingCount_many": "{{count}} vão",
+    "andOthersCount": "e {{count}} outro",
+    "andOthersCount_other": "e {{count}} outros",
+    "andOthersCount_one": "e {{count}} outro",
+    "andOthersCount_many": "e {{count}} outros",
     "moreDatesCount_one": "+{{count}} data",
     "moreDatesCount_many": "+{{count}} datas",
     "views": {

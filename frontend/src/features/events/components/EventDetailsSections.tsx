@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type Re
 import { useEventView } from "@/features/events/hooks/useEventStats";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { sanitizeHref } from "@/shared/utils/url";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import {
@@ -42,17 +43,20 @@ import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
 import { eventTitleSvg } from "@/features/events/lib/titleSvg";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeLink } from "@/features/clubs";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
 import { SaveEventButton, SaveEventButtonPlaceholder } from "@/features/events/components/SaveEventButton";
-import { deleteEventAPI } from "@/features/events/api/events.api";
+import { deleteEventAPI, fetchEventAttendees } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { ClubManagerView, SessionView } from "@/features/auth/components/SessionView";
 import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
+import { controlBox } from "@/shared/config/controlBox";
 import { translateFoods } from "@/shared/utils/foodTranslation";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   EventTicketCard,
@@ -641,6 +645,41 @@ function EventMapSection({
 }
 
 /**
+ * Who's going: the event's Going count and the first people who marked it,
+ * shown as "First L." with their photo. Ticket holders count but are never
+ * named. Shared by the drawer and the event page.
+ */
+function EventAttendeesSection({ eventId }: { eventId: number }) {
+  const { t } = useTranslation();
+  const { data: attendees } = useQuery({
+    queryKey: queryKeys.events.attendees(eventId),
+    queryFn: () => fetchEventAttendees(eventId),
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
+    enabled: eventId > 0,
+  });
+  if (!attendees || attendees.going_count <= 0) return null;
+
+  const { maximumDisplayNames } = controlBox.publicAttendance;
+  const profiles = attendees.attendees.slice(0, maximumDisplayNames);
+  // Ticket holders are counted but never named, so "+N" shows only once the names fill the list.
+  const overflowCount = profiles.length === maximumDisplayNames
+    ? Math.max(0, attendees.going_count - profiles.length)
+    : 0;
+  return (
+    <Section variant="divided" title={t("events.goingCount", { count: attendees.going_count })} data-slot="event-attendees">
+      <AvatarStack
+        avatars={profiles.map((attendee) => ({
+          name: attendee.name || t("events.going"),
+          src: attendee.avatar_url,
+        }))}
+        overflowCount={overflowCount}
+        overflowLabel={t("events.andOthersCount", { count: overflowCount })}
+      />
+    </Section>
+  );
+}
+
+/**
  * The actions everyone sees, inert, while the event loads. Members who manage
  * the event see more once it arrives.
  */
@@ -798,7 +837,7 @@ export function EventActions({
 /**
  * Full event details layout shared by the drawer and the /events/[id] page:
  * single column on mobile, poster + hosts sidebar next to details on md+.
- * Mobile stacking order: poster, title, hosts, then event details.
+ * Mobile stacking order: poster, title, hosts and who's going, then event details.
  */
 export function EventDetailsBody({
   event,
@@ -881,6 +920,7 @@ export function EventDetailsBody({
             />
         </Section>
 
+        <EventAttendeesSection eventId={event.id} />
       </Stack>
     </div>
   );

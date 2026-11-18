@@ -840,6 +840,49 @@
         ]
       }
     },
+    "/going-events/{event_id}/attendees": {
+      "get": {
+        "tags": [
+          "going-events"
+        ],
+        "summary": "List Event Attendees",
+        "description": "Public who's-going summary for an event's details view.",
+        "operationId": "list_event_attendees_going_events__event_id__attendees_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAttendeesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/going-events/{event_id}": {
       "put": {
         "tags": [
@@ -1424,6 +1467,46 @@
       ],
       "title": "ClubCohostResponse",
       "description": "An additional existing club sharing an event or position."
+    },
+    "EventAttendeeResponse": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name"
+        },
+        "avatar_url": {
+          "type": "string",
+          "title": "Avatar Url"
+        }
+      },
+      "type": "object",
+      "required": [
+        "name",
+        "avatar_url"
+      ],
+      "title": "EventAttendeeResponse"
+    },
+    "EventAttendeesResponse": {
+      "properties": {
+        "going_count": {
+          "type": "integer",
+          "title": "Going Count"
+        },
+        "attendees": {
+          "items": {
+            "$ref": "#/components/schemas/EventAttendeeResponse"
+          },
+          "type": "array",
+          "title": "Attendees"
+        }
+      },
+      "type": "object",
+      "required": [
+        "going_count",
+        "attendees"
+      ],
+      "title": "EventAttendeesResponse",
+      "description": "Public who's-going summary without user IDs or full names."
     },
     "EventCreate": {
       "properties": {

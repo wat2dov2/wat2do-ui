@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Zbieramy to, co nam podajesz (Twój e-mail, uczelnię, wydział i zainteresowania), to, co robisz w Wat2Do (wydarzenia, które zapisujesz lub oznaczasz jako Idę, bilety, obserwowane organizacje), oraz niektóre dane techniczne, na przykład zamaskowaną postać Twojego adresu IP.",
         "noSale": "Nie sprzedajemy Twoich danych osobowych i nie wyświetlamy reklam.",
-        "share": "Organizacje widzą Twoje imię i nazwisko oraz adres e-mail, gdy masz bilet na ich wydarzenie. Nikt inny nie widzi, które wydarzenia oznaczasz jako Idę. Firmy takie jak Amazon Web Services, Cloudflare i Google obsługują dla nas części Wat2Do, niektóre z nich poza Kanadą.",
+        "share": "Gdy oznaczysz wydarzenie jako Idę, osoby, które je oglądają, mogą zobaczyć Twoje imię, pierwszą literę nazwiska i zdjęcie wśród osób, które idą. Organizacje widzą Twoje imię i nazwisko oraz adres e-mail, gdy masz bilet na ich wydarzenie. Firmy takie jak Amazon Web Services, Cloudflare i Google obsługują dla nas części Wat2Do, niektóre z nich poza Kanadą.",
         "analytics": "Korzystamy z Google Analytics, aby liczyć odwiedziny, a z adresów stron, które do niego trafiają, usuwamy kody i adresy e-mail.",
         "public": "Korzystamy też z informacji publicznych: wydarzeń organizacji z publicznych postów na Instagramie oraz kontaktowych adresów e-mail, które organizacje publikują w internecie.",
         "choices": "W każdej chwili możesz wyłączyć nasze e-maile, zmienić swój profil w Ustawieniach i poprosić nas o pokazanie, poprawienie lub usunięcie swoich danych.",
@@ -273,7 +273,7 @@
           "title": "Kto widzi dane i komu je udostępniamy",
           "p1": "Część Twojej aktywności w Wat2Do jest widoczna dla innych:",
           "visible": {
-            "notifyMe": "Nikt inny nie widzi, które wydarzenia oznaczasz jako Idę. Wydarzenie pokazuje tylko, ile osób to zrobiło.",
+            "going": "Gdy oznaczysz wydarzenie jako Idę, osoby, które je oglądają, mogą zobaczyć Twoje imię, pierwszą literę nazwiska i zdjęcie wśród osób, które idą, chyba że masz na nie bilet. Wszyscy widzą też, ile osób idzie.",
             "tickets": "Gdy masz bilet, organizacja prowadząca wydarzenie widzi Twoje imię i nazwisko (albo początek Twojego adresu e-mail), Twój adres e-mail, kod biletu, czas zameldowania i ewentualną prośbę o zwrot pieniędzy.",
             "teams": "Osoby zarządzające tą samą organizacją widzą nawzajem swoje imiona i nazwiska, adresy e-mail i zdjęcia.",
             "submissions": "Wydarzenia, stanowiska i organizacje, które publikujemy na podstawie tego, co nam przesyłasz, są publiczne, ale Twój adres e-mail nie."

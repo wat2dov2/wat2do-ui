@@ -322,6 +322,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/going-events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Attendees
+         * @description Public who's-going summary for an event's details view.
+         */
+        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/going-events/{event_id}": {
         parameters: {
             query?: never;
@@ -2692,6 +2712,23 @@ export interface components {
             };
             /** Format: date-time */
             created_at: string;
+        };
+        /** EventAttendeeResponse */
+        EventAttendeeResponse: {
+            /** Name */
+            name: string;
+            /** Avatar Url */
+            avatar_url: string;
+        };
+        /**
+         * EventAttendeesResponse
+         * @description Public who's-going summary without user IDs or full names.
+         */
+        EventAttendeesResponse: {
+            /** Going Count */
+            going_count: number;
+            /** Attendees */
+            attendees: components["schemas"]["EventAttendeeResponse"][];
         };
         /** EventCreate */
         EventCreate: {
@@ -5926,6 +5963,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoingEventSelection"][];
+                };
+            };
+        };
+    };
+    list_event_attendees_going_events__event_id__attendees_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendeesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

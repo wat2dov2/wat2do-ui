@@ -328,12 +328,18 @@ def discover_dynamic_endpoints(
                     f"/events/{event_id}/ticketing",
                     False,
                 ),
+                Endpoint(
+                    "/going-events/{event_id}/attendees",
+                    f"/going-events/{event_id}/attendees",
+                    False,
+                ),
             )
         )
     else:
         for route in (
             "/events/{event_id}",
             "/events/{event_id}/ticketing",
+            "/going-events/{event_id}/attendees",
         ):
             skipped[route] = "No event was available for a path parameter."
 
@@ -474,6 +480,7 @@ def _known_get_paths() -> set[str]:
         "/events/{event_id}",
         "/events/{event_id}/ticketing",
         "/positions/{position_id}",
+        "/going-events/{event_id}/attendees",
         "/instagram-publishing/batches/{batch_id}",
         "/clubs/{club_id}",
         "/clubs/{club_id}/invitations",

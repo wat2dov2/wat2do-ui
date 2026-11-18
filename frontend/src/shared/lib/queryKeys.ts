@@ -94,6 +94,9 @@ export const queryKeys = {
     all: ["events"] as const,
     detail: (eventId: number) =>
       [...queryKeys.events.all, "detail", eventId] as const,
+    allAttendees: () => [...queryKeys.events.all, "attendees"] as const,
+    attendees: (eventId: number) =>
+      [...queryKeys.events.allAttendees(), eventId] as const,
     stats: (school: string) =>
       [...queryKeys.events.all, "stats", school] as const,
     lists: () => [...queryKeys.events.all, "list"] as const,

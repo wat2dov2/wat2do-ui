@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Wir erheben, was du uns gibst (deine E-Mail-Adresse, Hochschule, Fakultät und Interessen), was du auf Wat2Do tust (Veranstaltungen, die du speicherst oder als Dabei markierst, Tickets, Organisationen, denen du folgst) und einige technische Angaben, etwa eine unkenntlich gemachte Form deiner IP-Adresse.",
         "noSale": "Wir verkaufen deine personenbezogenen Daten nicht und zeigen keine Werbung.",
-        "share": "Organisationen sehen deinen Namen und deine E-Mail-Adresse, wenn du ein Ticket für ihre Veranstaltung hast. Sonst sieht niemand, welche Veranstaltungen du als Dabei markierst. Unternehmen wie Amazon Web Services, Cloudflare und Google betreiben Teile von Wat2Do für uns, einige davon außerhalb Kanadas.",
+        "share": "Wenn du eine Veranstaltung als Dabei markierst, können Personen, die sie ansehen, unter den Teilnehmenden deinen Vornamen, den Anfangsbuchstaben deines Nachnamens und dein Foto sehen. Organisationen sehen deinen Namen und deine E-Mail-Adresse, wenn du ein Ticket für ihre Veranstaltung hast. Unternehmen wie Amazon Web Services, Cloudflare und Google betreiben Teile von Wat2Do für uns, einige davon außerhalb Kanadas.",
         "analytics": "Wir nutzen Google Analytics, um Besuche zu zählen, und entfernen Codes und E-Mail-Adressen aus den Seitenadressen, die Google Analytics erhält.",
         "public": "Wir nutzen auch öffentliche Informationen: Veranstaltungen von Organisationen aus öffentlichen Instagram-Beiträgen und die Kontakt-E-Mail-Adressen, die Organisationen online veröffentlichen.",
         "choices": "Du kannst unsere E-Mails jederzeit abbestellen, dein Profil in den Einstellungen ändern und uns bitten, dir deine Daten zu zeigen, sie zu korrigieren oder zu löschen.",
@@ -273,7 +273,7 @@
           "title": "Wer sie sieht und mit wem wir sie teilen",
           "p1": "Manches, was du auf Wat2Do tust, ist für andere sichtbar:",
           "visible": {
-            "notifyMe": "Sonst sieht niemand, welche Veranstaltungen du als Dabei markierst. Eine Veranstaltung zeigt nur, wie viele Personen das getan haben.",
+            "going": "Wenn du eine Veranstaltung als Dabei markierst, können Personen, die sie ansehen, unter den Teilnehmenden deinen Vornamen, den Anfangsbuchstaben deines Nachnamens und dein Foto sehen, außer du hast ein Ticket dafür. Alle sehen außerdem, wie viele Personen dabei sind.",
             "tickets": "Wenn du ein Ticket hast, sieht die Organisation, die die Veranstaltung durchführt, deinen Namen (oder den Anfang deiner E-Mail-Adresse), deine E-Mail-Adresse, deinen Ticketcode, wann du eingecheckt wurdest, und eine eventuelle Erstattungsanfrage.",
             "teams": "Personen, die dieselbe Organisation verwalten, sehen gegenseitig ihre Namen, E-Mail-Adressen und Fotos.",
             "submissions": "Veranstaltungen, Positionen und Organisationen, die wir aus deinen Einreichungen veröffentlichen, sind öffentlich, deine E-Mail-Adresse aber nicht."

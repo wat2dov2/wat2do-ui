@@ -9,7 +9,10 @@ import {
   setGoingEventOccurrences,
   type EventStats,
 } from "@/features/events/api/events.api";
-import type { ApiGoingEventSelection } from "@/shared/generated";
+import type {
+  ApiEventAttendeesResponse,
+  ApiGoingEventSelection,
+} from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { controlBox } from "@/shared/config/controlBox";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -108,19 +111,38 @@ export function useGoingEventSelection(
     },
     onMutate: async ({ eventId, occurrenceIds, userId: mutationUserId }) => {
       const queryKey = queryKeys.goingEvents.byUser(mutationUserId ?? "");
-      const cancellation = queryClient.cancelQueries({ queryKey });
+      const attendeesKey = queryKeys.events.attendees(eventId);
+      const cancellation = Promise.all([
+        queryClient.cancelQueries({ queryKey }),
+        queryClient.cancelQueries({ queryKey: attendeesKey }),
+      ]);
       const previous =
         queryClient.getQueryData<ApiGoingEventSelection[]>(queryKey) ?? [];
+      const previousAttendees = queryClient.getQueryData<ApiEventAttendeesResponse>(attendeesKey);
+      const wasGoing = previous.some(selection => selection.event_id === eventId && selection.occurrence_ids.length > 0);
+      const delta = Number(occurrenceIds.length > 0) - Number(wasGoing);
+      const cachedStats = school
+        ? queryClient.getQueryData<EventStatsMap>(queryKeys.events.stats(school))
+        : undefined;
+      queryClient.setQueryData<ApiEventAttendeesResponse>(attendeesKey, (current) => ({
+        going_count: Math.max(0, (current?.going_count ?? cachedStats?.[String(eventId)]?.going_count ?? 0) + delta),
+        attendees: current?.attendees ?? [],
+      }));
       patchGoingSelection(queryClient, queryKey, {
         event_id: eventId,
         occurrence_ids: occurrenceIds,
       });
       await cancellation;
-      return { previous, queryKey, eventId };
+      return { previous, queryKey, previousAttendees, attendeesKey, eventId };
     },
     onError: (error, _variables, context) => {
       if (context?.previous) {
         patchGoingSelection(queryClient, context.queryKey, context.previous.find(selection => selection.event_id === context.eventId) ?? { event_id: context.eventId, occurrence_ids: [] });
+        if (context.previousAttendees) {
+          queryClient.setQueryData(context.attendeesKey, context.previousAttendees);
+        } else {
+          queryClient.resetQueries({ queryKey: context.attendeesKey, exact: true });
+        }
       }
       toast({
         description: t(isApiError(error) && error.message === UNAVAILABLE_OCCURRENCE_ERROR
@@ -131,6 +153,10 @@ export function useGoingEventSelection(
     },
     onSuccess: (response, variables, context) => {
       patchGoingSelection(queryClient, context.queryKey, response);
+      queryClient.setQueryData<ApiEventAttendeesResponse>(context.attendeesKey, current => ({
+        going_count: response.going_count,
+        attendees: current?.attendees ?? [],
+      }));
       if (school) {
         queryClient.setQueryData<EventStatsMap>(
           queryKeys.events.stats(school),
@@ -155,10 +181,12 @@ export function useGoingEventSelection(
         tracker.track(response.event_id, isGoing ? "going" : "ungoing");
       }
     },
-    onSettled: (_response, _error, variables) =>
+    onSettled: (_response, _error, variables) => Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.attendees(variables.eventId) }),
       queryClient.isMutating({ mutationKey: queryKeys.goingEvents.all }) === 1
         ? queryClient.invalidateQueries({ queryKey: queryKeys.goingEvents.byUser(variables.userId ?? "") })
         : Promise.resolve(),
+    ]),
   });
 
   return {

@@ -7,6 +7,7 @@ import { queryOptions } from "@tanstack/react-query";
 import type { Event, EventFormData, FilterState } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import type {
+  ApiEventAttendeesResponse,
   ApiEventFeedResponse,
   ApiLatestAddedItem,
   ApiEventPublicResponse,
@@ -336,6 +337,7 @@ async function removeDeletedEventFromQueries(eventId: number): Promise<void> {
     queryClient.cancelQueries({ queryKey: queryKeys.goingEvents.all }),
   ]);
   queryClient.removeQueries({ queryKey: queryKeys.events.detail(eventId) });
+  queryClient.removeQueries({ queryKey: queryKeys.events.attendees(eventId) });
   for (const [key, feed] of queryClient.getQueriesData<PaginatedEventsResponse>({ queryKey: queryKeys.events.feeds() })) {
     const school = key.at(-1);
     if (feed || typeof school !== "string" || queryClient.getQueryState(key)?.fetchStatus !== "fetching") continue;
@@ -384,6 +386,11 @@ async function invalidateEventQueries(): Promise<void> {
 }
 
 export type EventStats = ApiEventStatsResponse;
+
+/** Public who's-going summary (count + abbreviated display names). */
+export async function fetchEventAttendees(eventId: number): Promise<ApiEventAttendeesResponse> {
+  return api.get<ApiEventAttendeesResponse>(`/going-events/${eventId}/attendees`);
+}
 
 export async function fetchGoingEvents(): Promise<ApiGoingEventSelection[]> {
   return api.get<ApiGoingEventSelection[]>("/going-events/");

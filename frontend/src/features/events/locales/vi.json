@@ -113,6 +113,8 @@
     "updated": "ĐÃ CẬP NHẬT",
     "goingCount": "{{count}} người sẽ đi",
     "goingCount_other": "{{count}} người sẽ đi",
+    "andOthersCount": "và {{count}} người khác",
+    "andOthersCount_other": "và {{count}} người khác",
     "hostedBy": "Được tổ chức bởi",
     "aboutEvent": "Về sự kiện",
     "fetchingDetails": "Đang lấy chi tiết...",

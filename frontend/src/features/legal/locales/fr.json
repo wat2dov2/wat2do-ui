@@ -164,7 +164,7 @@
       "summary": {
         "collect": "Nous recueillons ce que vous nous donnez (votre adresse e-mail, votre établissement, votre faculté et vos centres d'intérêt), ce que vous faites sur Wat2Do (les événements que vous enregistrez ou marquez J'y vais, vos billets, les organisations que vous suivez) et certains détails techniques, comme une forme brouillée de votre adresse IP.",
         "noSale": "Nous ne vendons pas vos renseignements personnels, et nous n'affichons pas de publicité.",
-        "share": "Les organisations voient votre nom et votre adresse e-mail lorsque vous avez un billet pour leur événement. Personne d'autre ne voit quels événements vous marquez J'y vais. Des entreprises comme Amazon Web Services, Cloudflare et Google exploitent certaines parties de Wat2Do pour nous, certaines d'entre elles à l'extérieur du Canada.",
+        "share": "Lorsque vous marquez un événement J'y vais, les personnes qui le consultent peuvent voir votre prénom, l'initiale de votre nom de famille et votre photo parmi les personnes qui y vont. Les organisations voient votre nom et votre adresse e-mail lorsque vous avez un billet pour leur événement. Des entreprises comme Amazon Web Services, Cloudflare et Google exploitent certaines parties de Wat2Do pour nous, certaines d'entre elles à l'extérieur du Canada.",
         "analytics": "Nous utilisons Google Analytics pour compter les visites, et nous retirons les codes et les adresses e-mail des adresses de pages qu'il reçoit.",
         "public": "Nous utilisons aussi des renseignements publics : les événements des organisations tirés de publications Instagram publiques, et les adresses e-mail de contact que les organisations publient en ligne.",
         "choices": "Vous pouvez désactiver nos e-mails à tout moment, modifier votre profil dans Paramètres, et nous demander de vous montrer, de corriger ou de supprimer vos renseignements.",
@@ -273,7 +273,7 @@
           "title": "Qui les voit, et avec qui nous les partageons",
           "p1": "Une partie de ce que vous faites sur Wat2Do est visible par d'autres personnes :",
           "visible": {
-            "notifyMe": "Personne d'autre ne voit quels événements vous marquez J'y vais. Un événement affiche seulement combien de personnes l'ont fait.",
+            "going": "Lorsque vous marquez un événement J'y vais, les personnes qui le consultent peuvent voir votre prénom, l'initiale de votre nom de famille et votre photo parmi les personnes qui y vont, sauf si vous avez un billet pour cet événement. Tout le monde voit aussi combien de personnes y vont.",
             "tickets": "Lorsque vous avez un billet, l'organisation responsable de l'événement voit votre nom (ou le début de votre adresse e-mail), votre adresse e-mail, le code de votre billet, le moment où votre entrée a été enregistrée et toute demande de remboursement.",
             "teams": "Les personnes qui gèrent la même organisation voient les noms, les adresses e-mail et les photos les unes des autres.",
             "submissions": "Les événements, les postes et les organisations que nous publions à partir de vos soumissions sont publics, mais votre adresse e-mail ne l'est pas."

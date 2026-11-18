@@ -1,5 +1,5 @@
-//! Notify me selections (`user_going_events`: the dates someone gets
-//! reminders and change alerts for) and V1 saved events.
+//! Going selections (`user_going_events`: the dates someone gets reminders
+//! and change alerts for), the public who's-going list, and V1 saved events.
 
 use serde::Serialize;
 use sqlx::PgPool;
@@ -10,6 +10,8 @@ use crate::api::messages::{
     EVENT_NOT_FOUND, GOING_EVENTS_CAP_REACHED, INVALID_EVENT_OCCURRENCE, OCCURRENCE_NOT_SELECTABLE,
 };
 use crate::api::pagination::{DEFAULT_MAX_ROWS, LOAD_PAGE_SIZE, fetch_all_pages};
+use crate::api::routes::users::avatar_url_for_user;
+use crate::controlbox::PUBLIC_ATTENDANCE;
 use crate::db::read_with_retry;
 
 /// `GoingEventSelection`.
@@ -128,8 +130,22 @@ pub async fn set_occurrences(
     }
 }
 
-/// "First Middle Last" becomes "First L.", how a club's door list names a
-/// ticket holder.
+/// `EventAttendeeResponse`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Attendee {
+    pub name: String,
+    pub avatar_url: String,
+}
+
+/// `EventAttendeesResponse`.
+#[derive(Debug, Serialize)]
+pub struct Attendees {
+    pub going_count: i64,
+    pub attendees: Vec<Attendee>,
+}
+
+/// "First Middle Last" becomes "First L.", how the who's-going list and a
+/// club's door list name someone.
 pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
     let parts: Vec<&str> = full_name?
         .split(crate::text::python_space)
@@ -143,6 +159,72 @@ pub fn abbreviate(full_name: Option<&str>) -> Option<String> {
             last.chars().next().unwrap_or_default()
         )),
     }
+}
+
+/// The public who's-going list: the event's Going count and the first people
+/// who marked Going, as "First L." and their photo (or identicon).
+pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError> {
+    let going_count: Option<i64> = read_with_retry(|| {
+        sqlx::query_scalar(
+            "SELECT going_count::int8 FROM public.get_event_going_counts(ARRAY[$1::int4])",
+        )
+        .bind(event_id)
+        .fetch_optional(db)
+    })
+    .await?;
+    // Distinct users by first Going time, reading pages only until the
+    // display cap is reached. Ticket holders count toward Going but are never
+    // named: a ticket should not put anyone's name and face on a public list.
+    let cap = PUBLIC_ATTENDANCE.maximum_display_names;
+    let mut user_ids: Vec<Uuid> = Vec::new();
+    let mut offset = 0;
+    while user_ids.len() < cap {
+        let page: Vec<Uuid> = read_with_retry(|| {
+            sqlx::query_scalar::<_, Uuid>(
+                "SELECT g.user_id FROM public.user_going_events g WHERE g.event_id = $1 \
+                 AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.event_id = g.event_id \
+                                 AND t.holder_user_id = g.user_id AND t.status = 'valid') \
+                 ORDER BY g.going_at LIMIT $2 OFFSET $3",
+            )
+            .bind(event_id)
+            .bind(LOAD_PAGE_SIZE)
+            .bind(offset)
+            .fetch_all(db)
+        })
+        .await?;
+        for id in &page {
+            if user_ids.len() < cap && !user_ids.contains(id) {
+                user_ids.push(*id);
+            }
+        }
+        if (page.len() as i64) < LOAD_PAGE_SIZE {
+            break;
+        }
+        offset += LOAD_PAGE_SIZE;
+    }
+    let mut attendees = Vec::with_capacity(user_ids.len());
+    if !user_ids.is_empty() {
+        let users: Vec<(Uuid, Option<String>, Option<String>)> = read_with_retry(|| {
+            sqlx::query_as("SELECT id, full_name, avatar_url FROM public.users WHERE id = ANY($1)")
+                .bind(&user_ids)
+                .fetch_all(db)
+        })
+        .await?;
+        for id in &user_ids {
+            let row = users.iter().find(|(user, ..)| user == id);
+            let (full_name, photo) = row.map_or((None, None), |(_, name, photo)| {
+                (name.as_deref(), photo.as_deref())
+            });
+            attendees.push(Attendee {
+                name: abbreviate(full_name).unwrap_or_default(),
+                avatar_url: avatar_url_for_user(&id.to_string(), photo),
+            });
+        }
+    }
+    Ok(Attendees {
+        going_count: going_count.unwrap_or(0),
+        attendees,
+    })
 }
 
 /// `get_saved_event_ids`: the user's V1 saved events, newest first.
@@ -247,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn names_are_abbreviated_for_the_door_list() {
+    fn names_are_abbreviated_for_public_display() {
         assert_eq!(
             abbreviate(Some("Sean Michael Young")).as_deref(),
             Some("Sean Y.")
