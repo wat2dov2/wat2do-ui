@@ -142,6 +142,7 @@ It runs in the official Instagram app on the Mac's Android emulator
 account's post to a story and the app is the one place that can do every step.
 The emulator holds every school account, logged in once outside this automation and
 spread across Android users because the app keeps at most ten accounts each.
+A switcher row whose name Instagram lost (it reads only its activity, "1 chat and 22 more") is tapped, and the inbox title confirms which account it was; a switch the app answered that never reached the account only rests that account, and never restarts the emulator.
 Each visit holds the emulator's lock and switches to the school's Android user and
 account; the DM step then lists the main inbox and message requests.
 It opens, by tapping its row, each unread thread with a message it has not handled,

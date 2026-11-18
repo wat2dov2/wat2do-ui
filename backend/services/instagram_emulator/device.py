@@ -60,6 +60,11 @@ class EmulatorError(RuntimeError):
     """The emulator or the Instagram app is not in a state the automation expects."""
 
 
+class AccountNotSwitched(EmulatorError):
+    """The app answered every step, but its inbox never showed the account: the
+    account itself is the problem (not in the switcher), not a stalled emulator."""
+
+
 _Seen = TypeVar("_Seen")
 
 
@@ -113,6 +118,9 @@ _CLOSE = re.compile(r"^Close$")
 _FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
+# Instagram sometimes loses an account's name in the switcher, and its row then reads
+# only its activity, "1 chat and 22 more"; tapping it still switches to that account.
+_NAMELESS_SWITCHER_ROW = re.compile(r"^\d+ [a-z]+(?: and \d+ more)?$")
 _SWITCHER_SCROLLS = 3
 
 
@@ -539,14 +547,14 @@ class EmulatorDevice:
         attempt that fails starts the app afresh for the next one, since a sheet or
         dialog left open by an earlier step can keep the inbox from ever showing.
         """
-        for _ in range(_SWITCH_ATTEMPTS):
+        for attempt in range(_SWITCH_ATTEMPTS):
             try:
                 if self.open_inbox(user) == account_username:
                     return
                 self.tap_when(_PROFILE_TAB, hold_ms=1200)
                 # A tap while the account sheet is still sliding up can miss, leaving the
                 # sheet open; the next attempt notices and switches again.
-                self.tap(self._account_in_switcher(account_username))
+                self.tap(self._account_in_switcher(account_username, attempt))
             except EmulatorError:
                 self.reset_app(user)
                 continue
@@ -554,7 +562,7 @@ class EmulatorDevice:
             # inbox, which opens again if its link still lands too early.
             self._sleep(CONTROL.account_switch_settle_seconds)
         if self.open_inbox(user) != account_username:
-            raise EmulatorError("Instagram did not switch to the account")
+            raise AccountNotSwitched("Instagram did not switch to the account")
 
     def reset_app(self, user: int) -> None:
         """Close Instagram on the Android user, so the next link starts it afresh.
@@ -589,9 +597,16 @@ class EmulatorDevice:
                 self.back()
         raise EmulatorError("Instagram's DM inbox could not be opened")
 
-    def _account_in_switcher(self, account_username: str) -> Node:
+    def _account_in_switcher(self, account_username: str, attempt: int = 0) -> Node:
         """The account's row in the switcher, scrolled into view: a full Android user's
-        tenth account starts below the bottom of the screen."""
+        tenth account starts below the bottom of the screen.
+
+        When no row carries the account's name, a row whose name Instagram lost is
+        tapped instead (the ``attempt``-th one, when there are several), and the inbox
+        title then tells whether it was this account. Tapping it also brings the name
+        back. From 2026-11-14 McGill, SFU and UTSG showed only such rows, every switch to
+        them failed, and the restarts those failures caused came every 15 minutes.
+        """
         account = re.compile(rf"^{re.escape(account_username)}$")
         self.wait_for(_SWITCHER_ROW)
         for _ in range(_SWITCHER_SCROLLS):
@@ -599,6 +614,13 @@ class EmulatorDevice:
             if node is not None:
                 return node
             self.scroll_down()
+        nodes = self.screen()
+        node = self.find(account, nodes)
+        if node is not None:
+            return node
+        nameless = [node for node in nodes if _NAMELESS_SWITCHER_ROW.match(node.description)]
+        if nameless:
+            return nameless[attempt % len(nameless)]
         return self.wait_for(account)
 
     def open_instagram(self, user: int, url: str | None = None) -> None:

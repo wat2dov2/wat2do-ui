@@ -38,6 +38,7 @@ from services.instagram_accounts import school_account_username
 from services.instagram_dms import sweep
 from services.instagram_emulator.device import (
     CONTROL,
+    AccountNotSwitched,
     EmulatorDevice,
     EmulatorError,
     exclusive,
@@ -221,6 +222,7 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
 
     Failed switches in a row restart the emulator: by then Android itself has
     usually stalled ("Process system isn't responding") and no account can be reached.
+    A switch the app answered but that never reached the account only rests it.
     """
     global _switch_failures
     user = CONTROL.android_user_by_school[school]
@@ -230,6 +232,9 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
     except EmulatorError as exc:
         log.exception("Could not switch the emulator to %s", school)
         _switch_rested_until[school] = now + timedelta(seconds=CONTROL.switch_rest_seconds)
+        if isinstance(exc, AccountNotSwitched):
+            # The emulator answered every step; restarting it cannot bring the account back.
+            return False
         _switch_failures += 1
         _switch_errors.append(f"{school} (Android user {user}): {exc}")
         if _switch_failures >= CONTROL.switch_failures_before_restart:
