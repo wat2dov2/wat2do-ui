@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from core.constants import INSTAGRAM_BATCH_PUBLISHED
@@ -32,6 +33,15 @@ EMULATOR = controlbox.instagram_emulator
 STORY_PENDING = "pending"
 STORY_POSTED = "posted"
 STORY_FAILED = "failed"
+# The blue "Featured" sticker on each story, in the school's language; drawn like the
+# slides' stickers by frontend/scripts/render-featured-story-sticker.mjs.
+_FEATURED_STICKERS = {
+    language: Path(__file__).parents[1]
+    / "instagram_emulator"
+    / "assets"
+    / f"featured_sticker_{language}.png"
+    for language in ("en", "fr")
+}
 _POST_URL = re.compile(
     r"^https://(?:www\.)?instagram\.com/(?P<kind>p|reel)/(?P<code>[A-Za-z0-9_-]+)"
 )
@@ -73,12 +83,14 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
 
 def _share(device: EmulatorDevice, school: str, batch_id: str) -> None:
     urls = original_posts(batch_id)
+    record = school_service.get_school(school)
+    sticker = _FEATURED_STICKERS[record.language if record else "en"]
     # Recorded before the first share, so a worker stopped halfway never shares twice.
     _record(batch_id, STORY_FAILED, "Stopped while sharing")
     shared = 0
     for url in urls:
         try:
-            share_to_story(device, school, url)
+            share_to_story(device, school, url, sticker=sticker)
             shared += 1
         except EmulatorError:
             log.warning("Could not share %s to %s's story", url, school, exc_info=True)
