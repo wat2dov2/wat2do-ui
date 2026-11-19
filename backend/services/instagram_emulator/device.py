@@ -59,6 +59,9 @@ _RESTART_POLL_SECONDS = 5
 _POLL_SECONDS = 0.5
 # Dialogs one wait answers before it stops expecting the screen to change for them.
 _PROMPTS_PER_WAIT = 5
+# Finger moves in one ``drag``.
+_DRAG_STEPS = 8
+_DRAG_REST_SECONDS = 0.08
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
 _MARKED_DARK_SHARE = 0.2
@@ -457,6 +460,59 @@ class EmulatorDevice:
             ]
         )
         self.adb("shell", script)
+
+    def drag(self, node: Node, to: tuple[int, int]) -> None:
+        """Drag ``node`` by its middle until its middle is at ``to``.
+
+        Sent as a finger going down, moving in even steps and lifting, like ``swipe_left``,
+        with a short rest between moves: Instagram's story editor drops moves that come
+        all at once, leaving a sticker part of the way.
+        """
+        self.pause()
+        x1, y1, x2, y2 = node.bounds
+        x, y = (x1 + x2) // 2, (y1 + y2) // 2
+        moves = [
+            (
+                round(x + (to[0] - x) * step / _DRAG_STEPS),
+                round(y + (to[1] - y) * step / _DRAG_STEPS),
+            )
+            for step in range(1, _DRAG_STEPS + 1)
+        ]
+        script = f"; sleep {_DRAG_REST_SECONDS}; ".join(
+            [
+                f"input motionevent DOWN {x} {y}",
+                *(f"input motionevent MOVE {mx} {my}" for mx, my in moves),
+                f"input motionevent UP {to[0]} {to[1]}",
+            ]
+        )
+        self.adb("shell", script)
+
+    def put_photo(self, user: int, photo: Path) -> None:
+        """Make ``photo`` the newest picture in the Android user's gallery.
+
+        Instagram's photo-sticker picker lists the gallery newest first, so the story
+        editor's first photo is this one. The file is copied as root into the user's
+        Pictures folder with that folder's owner, then Android's media scanner is told.
+        """
+        staged = f"/data/local/tmp/{photo.name}"
+        pictures = f"/data/media/{user}/Pictures"
+        target = f"{pictures}/{photo.name}"
+        self.adb("push", str(photo), staged)
+        command = (
+            f"cp {staged} {target} && chown $(stat -c %u:%g {pictures}) {target} && touch {target}"
+        )
+        self.adb("shell", "su", "0", "sh", "-c", shlex.quote(command))
+        self.adb(
+            "shell",
+            "am",
+            "broadcast",
+            "--user",
+            str(user),
+            "-a",
+            "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
+            "-d",
+            f"file:///storage/emulated/{user}/Pictures/{photo.name}",
+        )
 
     def _swipe(self, *, start: tuple[int, int], end: tuple[int, int]) -> None:
         self.pause()

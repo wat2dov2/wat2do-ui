@@ -65,12 +65,16 @@ def database(monkeypatch):
 def shared(monkeypatch):
     posts = []
 
-    def share(device, school, url):
+    def share(device, school, url, *, sticker):
+        assert sticker.name == "featured_sticker_en.png" and sticker.is_file()
         if url in device.refused:
             raise EmulatorError("Instagram never showed Add to story")
         posts.append((school, url))
 
     monkeypatch.setattr(stories, "share_to_story", share)
+    monkeypatch.setattr(
+        stories.school_service, "get_school", lambda slug: SimpleNamespace(language="en")
+    )
     return posts
 
 

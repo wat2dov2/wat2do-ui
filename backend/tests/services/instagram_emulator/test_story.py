@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from services.instagram_emulator import story as module
@@ -31,6 +33,8 @@ class _Device(EmulatorDevice):
         super().__init__(sleep=lambda _seconds: None, monotonic=lambda: next(clock))
         self.screens = list(screens)
         self.taps = []
+        self.photos = []
+        self.drags = []
 
     def adb(self, *args):
         return "12\n" if args[:3] == ("shell", "am", "get-current-user") else ""
@@ -46,6 +50,13 @@ class _Device(EmulatorDevice):
     def open_instagram(self, user, url=None):
         if url is not None:
             self.screens.pop(0)
+
+    def put_photo(self, user, photo):
+        self.photos.append((user, photo.name))
+
+    def drag(self, node, to):
+        self.drags.append((node.bounds, to))
+        self.screens.pop(0)
 
 
 @pytest.fixture
@@ -93,3 +104,65 @@ def test_only_exact_post_urls_are_shared(screens, url) -> None:
     with pytest.raises(EmulatorError, match="exact Instagram post"):
         module.share_to_story(device, "columbia", url)
     assert device.taps == []
+
+
+PLACED = "Sticker. Touch and hold to reposition. Use two fingers to rotate or resize."
+POST_ON_STORY = Node(PLACED, "", (108, 514, 972, 1661))
+
+
+def _editor(*extra):
+    return [*EDITOR, POST_ON_STORY, _node("Stickers"), *extra]
+
+
+STICKER_TRAY = _screen("Location sticker", "Photo sticker", "Cutout Sticker")
+GALLERY_PROMPT = _screen("Allow Instagram to access photos?", "Allow all")
+GALLERY = [Node("Photo", "", (24, 599, 348, 1211), "gallery_sticker_grid_item_thumbnail")]
+
+
+def test_the_featured_sticker_goes_on_the_post_corner_before_posting(screens) -> None:
+    added = Node(PLACED, "", (270, 905, 810, 1271))
+    moved = Node(PLACED, "", (542, 371, 1082, 737))
+    device = screens(
+        HOME,
+        POST_PAGE,
+        SHARE_SHEET,
+        _editor(),
+        STICKER_TRAY,
+        GALLERY_PROMPT,
+        GALLERY,
+        _editor(added),
+        _editor(moved),
+        POST_PAGE,
+    )
+    module.share_to_story(device, "uwaterloo", POST, sticker=Path("featured_sticker_en.png"))
+    assert device.photos == [(0, "featured_sticker_en.png")]
+    assert device.taps == [
+        "Send post. Button.",
+        "Add to story",
+        "Stickers",
+        "Photo sticker",
+        "Allow all",
+        "Photo",
+        "Your story",
+    ]
+    # The post's top-right corner (972, 514), moved in and down.
+    assert device.drags == [((270, 905, 810, 1271), (812, 554))]
+
+
+def test_a_sticker_that_does_not_reach_the_corner_stops_the_share(screens) -> None:
+    added = Node(PLACED, "", (270, 905, 810, 1271))
+    device = screens(
+        HOME,
+        POST_PAGE,
+        SHARE_SHEET,
+        _editor(),
+        STICKER_TRAY,
+        GALLERY,
+        _editor(added),
+        _editor(added),
+        _editor(added),
+        _editor(added),
+    )
+    with pytest.raises(EmulatorError, match="did not move"):
+        module.share_to_story(device, "uwaterloo", POST, sticker=Path("featured_sticker_en.png"))
+    assert "Your story" not in device.taps
