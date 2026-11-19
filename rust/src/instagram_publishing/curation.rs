@@ -16,7 +16,9 @@ use futures_util::StreamExt;
 use serde_json::{Map, Value, json};
 use sqlx::PgPool;
 
-use super::drafts::{NEEDS_REVIEW, Outcome, Packet, list_draft_candidates, save_review_draft};
+use super::drafts::{
+    Candidate, NEEDS_REVIEW, Outcome, Packet, list_draft_candidates, save_review_draft,
+};
 use super::selection::{CAPTION_INTRO_LIMIT, DraftSelection, SelectionError};
 use super::{Refused, error_message};
 use crate::claude::{self, Agent};
@@ -171,13 +173,42 @@ fn selection_from_answer(packet: &Packet, answer: &Map<String, Value>) -> Result
         .and_then(Value::as_str)
         .ok_or_else(|| anyhow!("the answer has no cover_body"))?;
     let picks = answer.get("picks").unwrap_or(&Value::Null);
-    Ok(DraftSelection::new(
+    let selection = DraftSelection::new(
         &packet.account_key,
         packet.window_end,
         python_strip(caption_intro),
         python_strip(cover_body),
         picks,
-    )?)
+    )?;
+    if let Some(post) = overfeatured_post(&open.events, &selection) {
+        return Err(Refused(format!(
+            "More than {} picks come from the same Instagram post ({post}); \
+             keep at most {} events from any one source_post",
+            INSTAGRAM_PUBLISHING.maximum_slides_per_post,
+            INSTAGRAM_PUBLISHING.maximum_slides_per_post,
+        ))
+        .into());
+    }
+    Ok(selection)
+}
+
+/// A post more than `maximum_slides_per_post` of the picks were read from:
+/// a club's one post listing a week of events would fill the carousel.
+fn overfeatured_post<'a>(events: &'a [Candidate], selection: &DraftSelection) -> Option<&'a str> {
+    let mut picked: BTreeMap<&str, usize> = BTreeMap::new();
+    for pick in &selection.picks {
+        let post = events
+            .iter()
+            .find(|event| event.id == pick.event_id)
+            .and_then(|event| event.source_url.as_deref());
+        if let Some(post) = post {
+            *picked.entry(post).or_default() += 1;
+        }
+    }
+    picked
+        .into_iter()
+        .find(|(_, count)| *count > INSTAGRAM_PUBLISHING.maximum_slides_per_post)
+        .map(|(post, _)| post)
 }
 
 /// `_write_packet`: `packet.json` and the posters, for the agent to read.
@@ -315,7 +346,7 @@ mod tests {
     use std::sync::Mutex;
 
     use super::*;
-    use crate::instagram_publishing::drafts::{Candidate, OpenPacket};
+    use crate::instagram_publishing::drafts::OpenPacket;
 
     fn packet() -> Packet {
         let now = "2026-10-12T13:00:00Z".parse().unwrap();
@@ -357,6 +388,40 @@ mod tests {
         assert_eq!(selection.cover_body, "Pizza Night with free slices.");
         let refused = selection_from_answer(&packet(), &answer(&["free pizza"])).unwrap_err();
         assert!(refused.downcast_ref::<SelectionError>().is_some());
+    }
+
+    #[test]
+    fn at_most_two_picks_come_from_one_post() {
+        let limit = INSTAGRAM_PUBLISHING.maximum_slides_per_post;
+        let mut packet = packet();
+        let open = packet.open.as_mut().unwrap();
+        for id in 1..=(limit as i64 + 2) {
+            let mut event = candidate(id);
+            event.source_url = Some(if id == limit as i64 + 2 {
+                "https://www.instagram.com/p/OTHER/".into()
+            } else {
+                "https://www.instagram.com/p/WEEK/".into()
+            });
+            open.events.push(event);
+        }
+        let answer_for = |ids: Vec<i64>| {
+            json!({
+                "picks": ids.iter().map(|id| json!({"event_id": id, "sticker_labels": ["Free Pizza"]})).collect::<Vec<_>>(),
+                "cover_body": "A week of rallies",
+                "caption_intro": "",
+            })
+            .as_object()
+            .unwrap()
+            .clone()
+        };
+        let within: Vec<i64> = (1..=limit as i64).chain([limit as i64 + 2]).collect();
+        assert!(selection_from_answer(&packet, &answer_for(within)).is_ok());
+        let over = selection_from_answer(&packet, &answer_for((1..=limit as i64 + 1).collect()))
+            .unwrap_err();
+        let refusal = over.downcast_ref::<Refused>().unwrap();
+        assert!(refusal.0.contains("https://www.instagram.com/p/WEEK/"));
+        // The agent is shown it and asked again.
+        assert!(refused(&over));
     }
 
     /// Saves the way `save_answer` checks an answer, without a database.
@@ -424,6 +489,7 @@ mod tests {
             food: None,
             registration: false,
             carousel_requested_at: None,
+            source_url: None,
             dtstart_utc: "2026-10-14T23:00:00Z".parse().unwrap(),
             dtend_utc: None,
             tz: "America/Toronto".into(),
@@ -450,9 +516,11 @@ mod tests {
         assert_eq!(document["language"], "fr");
         // As Python wrote it: one-space indent, the poster last.
         assert!(text.contains(
-            "\n   \"carousel_requested_at\": null,\n   \"poster_file\": \"posters/17.jpg\"\n"
+            "\n   \"carousel_requested_at\": null,\n   \"source_post\": null,\n   \"poster_file\": \"posters/17.jpg\"\n"
         ));
-        assert!(text.contains("\n   \"carousel_requested_at\": null,\n   \"poster_file\": null\n"));
+        assert!(text.contains(
+            "\n   \"carousel_requested_at\": null,\n   \"source_post\": null,\n   \"poster_file\": null\n"
+        ));
     }
 
     #[test]

@@ -59,6 +59,9 @@ pub struct Candidate {
     pub food: Option<Value>,
     pub registration: bool,
     pub carousel_requested_at: Option<DateTime<Utc>>,
+    /// The Instagram post the event was read from; one post can describe a
+    /// whole week of events.
+    pub source_url: Option<String>,
     #[sqlx(skip)]
     pub dtstart_utc: DateTime<Utc>,
     #[sqlx(skip)]
@@ -71,7 +74,7 @@ pub struct Candidate {
 /// The columns a candidate reads (`_EVENT_COLUMNS`).
 const EVENT_COLUMNS: &str = "e.id::int8 AS id, e.title, e.description, e.location, e.club, \
      e.ig_handle, e.source_image_url, e.category, e.employers_on_campus, \
-     to_jsonb(e.price) AS price, e.food, e.registration, e.carousel_requested_at";
+     to_jsonb(e.price) AS price, e.food, e.registration, e.carousel_requested_at, e.source_url";
 
 fn timestamp(value: &Option<DateTime<Utc>>) -> Value {
     value
@@ -124,6 +127,10 @@ impl Candidate {
         ]
         .into_iter()
         .map(|field| (field.to_owned(), full[field].clone()))
+        .chain([(
+            "source_post".to_owned(),
+            self.source_url.clone().map_or(Value::Null, Value::from),
+        )])
         .collect()
     }
 
@@ -603,6 +610,7 @@ mod tests {
             food: Some(json!([])),
             registration: false,
             carousel_requested_at: None,
+            source_url: None,
             dtstart_utc: Utc.with_ymd_and_hms(2026, 9, 29, 22, 0, 0).unwrap(),
             dtend_utc: None,
             tz: "America/Toronto".into(),
@@ -628,7 +636,8 @@ mod tests {
                 "price",
                 "food",
                 "registration",
-                "carousel_requested_at"
+                "carousel_requested_at",
+                "source_post"
             ]
         );
         assert_eq!(summary["dtstart_utc"], "2026-09-29T22:00:00+00:00");

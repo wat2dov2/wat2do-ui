@@ -44,6 +44,7 @@ Career, academic and professional events rank below every good social, sports, c
 
 The carousel should show the whole range of what is happening, so a student with any interest finds something for them. Excitement still ranks the events; variety decides between events that rank about the same.
 - Spread picks across kinds of events, using `category` and what the event actually is: a party, a game, a show, a career event with a big company, a cultural night, a trip. Three formals or three hackathons read as one event repeated.
+- Pick at most two events with the same `source_post`, never more: one post that lists a week of events is still one post, and a carousel filled from it reads as an ad for one club. The answer is refused otherwise.
 - Pick at most one event per club, unless a club's second event is clearly among the very best in the packet or the slides cannot be filled otherwise.
 - Spread picks across days in the window when you can, so the carousel is useful all week rather than for one night.
 - Reach different crowds: different faculties, cultures, interests and years, not only the largest or loudest clubs. Pick at most one cultural night for the same culture or region (two South Asian chai nights read as one event).
