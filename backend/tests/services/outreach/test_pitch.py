@@ -89,7 +89,7 @@ def test_a_pitch_that_breaks_the_rules_is_refused(changes):
 def test_the_prompt_names_the_school_payout_and_sender_but_leaves_both_links():
     prompt = pitch._prompt(LEAD)
     assert "University of Waterloo" in prompt
-    assert "$4 for every student" in prompt
+    assert "$3 for every student" in prompt
     assert pitch.CONTROL.sender_name in prompt
     assert "{{claim_url}}" in prompt and "{{payout_terms_url}}" in prompt
     assert "{{" not in prompt.replace("{{claim_url}}", "").replace("{{payout_terms_url}}", "")
@@ -102,10 +102,10 @@ def test_the_script_and_email_name_points_the_claimed_club_list_has():
     points = [line.split(".", 1)[0] for line in claimed.splitlines() if line[:1].isdigit()]
     assert points == [str(number) for number in range(1, 9)]
     assert "points 1 to 5" in prompt and "points 6 to 8" in prompt
-    assert "$4 for every student it checks in" in claimed
+    assert "$3 for every student it checks in" in claimed
 
 
-@pytest.mark.parametrize(("cents", "said"), [(400, "$4"), (250, "$2.50"), (405, "$4.05")])
+@pytest.mark.parametrize(("cents", "said"), [(300, "$3"), (250, "$2.50"), (405, "$4.05")])
 def test_the_payout_reads_as_dollars(monkeypatch, cents, said):
     monkeypatch.setattr(pitch, "PAYOUTS", SimpleNamespace(rate_cents=cents))
     assert pitch._payout_per_scan() == said
