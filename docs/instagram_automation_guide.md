@@ -536,6 +536,8 @@ An emulator error discards the edit and leaves the batch `pending`; it is tried 
 The admin drawer shows the outcome and links the live post.
 
 The emulator is kept running by the `io.wat2do.instagram-emulator` LaunchAgent (`scripts/instagram_emulator.py install-schedule`), which boots the virtual device in `controlbox/instagram_emulator.json` whenever adb cannot see it.
+It also stops the emulator, to boot it again, once Android has answered no `adb shell` command for `unresponsive_restart_seconds`: after long uptimes Android hangs while adb still lists the device, and on 2026-11-18 that left it hung from 06:30 to 19:50 with no notification, carousel song or story getting through.
+Every restart, the worker's or this one, is logged with its reason in `~/.local/state/wat2do/instagram-emulator-restarts.log`.
 Every job that drives the emulator holds its lock (`exclusive()` in `services/instagram_emulator/device.py`), so a story repost and a music edit never tap at once.
 Screens are read by `ScreenReader.java`, which is `uiautomator dump` kept running: `uiautomator dump` starts a Java runtime and connects to Android's accessibility service on every read (about 2.5 s), while the reader connects once per hold and prints the same XML for the same active window in a few hundredths of a second.
 It reads once the screen has gone `screen_settle_milliseconds` without a change, but a screen that never settles, such as a playing video, is read as it is after `screen_settle_wait_seconds`.

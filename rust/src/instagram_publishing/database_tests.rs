@@ -672,6 +672,58 @@ async fn the_morning_publish_leaves_thin_and_unclaimable_drafts() {
     );
 }
 
+#[tokio::test]
+async fn the_morning_publish_waits_for_the_emulator_to_finish_each_carousel() {
+    let Some(db) = database() else { return };
+    let (school, slug) = school(&db).await;
+    let id = batch(&db, school, &slug, unique_day(), "published", &[]).await;
+    sqlx::query(
+        "UPDATE public.instagram_publish_batches \
+         SET music_status = 'pending', story_status = 'pending' WHERE id = $1",
+    )
+    .bind(id)
+    .execute(&db)
+    .await
+    .unwrap();
+    let settings = settings("");
+    let (storage, _) = recording::storage("media", "https://media.test");
+    let publisher = Publisher::new(&db, &settings, &storage).with_graph("http://unused.test");
+
+    // A carousel the emulator has not finished in time.
+    let impatient = publisher.with_follow_up_wait(std::time::Duration::ZERO);
+    assert!(!impatient.followed_up(id).await.unwrap());
+
+    // The worker adds the song first and shares the story after; only both end the wait.
+    let worker = db.clone();
+    tokio::spawn(async move {
+        for column in ["music_status = 'added'", "story_status = 'posted'"] {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            sqlx::query(&format!(
+                "UPDATE public.instagram_publish_batches SET {column} WHERE id = $1"
+            ))
+            .bind(id)
+            .execute(&worker)
+            .await
+            .unwrap();
+        }
+    });
+    let patient = Publisher::new(&db, &settings, &storage)
+        .with_graph("http://unused.test")
+        .with_follow_up_wait(std::time::Duration::from_secs(10));
+    assert!(patient.followed_up(id).await.unwrap());
+    let (music, story): (Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT music_status, story_status FROM public.instagram_publish_batches WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    assert_eq!(
+        (music.as_deref(), story.as_deref()),
+        (Some("added"), Some("posted"))
+    );
+}
+
 async fn due(db: &PgPool, account_key: &str) -> DueAccount {
     sqlx::query_as(
         "SELECT account_key, instagram_user_id, encrypted_access_token \

@@ -224,6 +224,7 @@ person (`run_instagram_worker.py resume-dms` once checked) and is never retried,
 may already have reached Instagram; the worker's other steps go on.
 A story repost waits, without accepting or answering the thread, while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
+The emulator's keep-alive LaunchAgent (`scripts/instagram_emulator.py`, `io.wat2do.instagram-emulator`) boots it whenever adb cannot see it and stops it to boot again once Android has answered no `adb shell` command for `controlbox/instagram_emulator.json` `unresponsive_restart_seconds`, since a hung Android still shows in adb (2026-11-18: hung 13 hours, every notification and carousel follow-up lost).
 Once a day, from `reclaim_hour` (before the morning's carousels publish), the worker
 deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the
@@ -255,6 +256,7 @@ The public API is served by `wat2do-api` (`rust/src/api`), which listens on port
 Porting a router means writing its handlers with the shared extractors, errors and validation in `rust/src/api`, registering them in `rust_routes()`, regenerating `backend/core/rust_openapi.json`, proving parity with `backend/scripts/api_parity.py` against production read-only, and deleting the Python router, service, schemas and tests in the same change.
 `docs/rust_api.md` is the step-by-step guide.
 The admin's carousel routes are Rust (`rust/src/api/routes/instagram_publishing`), and so are the carousel jobs (`rust/src/instagram_publishing`, binary `wat2do-instagram`): Claude's daily drafts (`curate`, LaunchAgent `io.wat2do.instagram.curate`), the 9:35 publish (`publish`, `io.wat2do.instagram.publish`), both installed by `wat2do-instagram install-schedule` and run with `cargo run --release` against the installing checkout, and the daily token refresh and account stats (`stats`, the Mac mini's `io.wat2do.instagram-account-stats` timer, from the deployed release).
+The morning publish waits after each school's carousel, up to `controlbox/instagram_publishing.json` `follow_up_wait_minutes`, until the emulator worker has liked, reposted, commented on, tagged, set the song of and shared the story for it, so each post gets them in its first minutes before the next school posts; once one is not finished in time, it posts the rest without waiting.
 A posted carousel's story is left to the emulator worker: the job marks its `story_status` pending (`controlbox/instagram_publishing.json` `share_event_posts_to_story` turns that off), and the API never posts to stories.
 The Publish button claims the batch in Rust, then starts `wat2do-instagram publish-batch <id>`, the binary beside `wat2do-api`, as a detached process from the API's working directory, and a process that cannot start or crashes marks the batch failed.
 Liking, reposting, adding music, tagging clubs and sharing the story of a published carousel stay in the Python emulator worker (`services/instagram_publishing/music.py`, `stories.py`).

@@ -46,6 +46,9 @@ _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 # Touched after each reclaim; the caches it deletes refill as the app is used, so
 # clearing them on every visit only keeps the disk busy.
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
+# One line per emulator restart the worker or the keep-alive asks for, with why; their
+# own output goes nowhere, and a restart costs every school's pushes while it is down.
+RESTART_LOG = Path.home() / ".local/state/wat2do/instagram-emulator-restarts.log"
 _held = threading.local()
 # Every device's screen reader; the end of each hold on the emulator stops them, so
 # Android's accessibility service is connected only while a job drives the app.
@@ -188,6 +191,15 @@ class EmulatorDevice:
             return self.adb("get-state").strip() == "device"
         except EmulatorError:
             return False
+
+    def answers(self) -> bool:
+        """Whether Android runs a shell command. A hung Android still shows in adb as a
+        device while every shell command times out, so only this tells it is alive."""
+        try:
+            self.adb("shell", "true")
+        except EmulatorError:
+            return False
+        return True
 
     def adb(self, *args: str) -> str:
         try:
@@ -678,6 +690,17 @@ class EmulatorDevice:
                 CONTROL.instagram_package,
             ]
         self.adb("shell", "am", "start", "--user", str(user), *target)
+
+
+def log_restart(reason: str) -> None:
+    """Append why the emulator is being restarted to ``RESTART_LOG``."""
+    line = f"{datetime.now().astimezone().isoformat(timespec='seconds')} restart after: {reason}"
+    try:
+        RESTART_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with RESTART_LOG.open("a") as handle:
+            handle.write(line.replace("\n", " ")[:2000] + "\n")
+    except OSError:
+        log.exception("Could not write the emulator restart log")
 
 
 def reclaim_due(now: datetime | None = None) -> bool:

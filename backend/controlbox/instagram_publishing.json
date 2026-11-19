@@ -37,6 +37,8 @@
   "gif_comments": true,
   "gif_recent_searches": 40,
   "music_retry_minutes": 10,
+  "follow_up_wait_minutes": 15,
+  "follow_up_poll_seconds": 10,
   "share_event_posts_to_story": true,
   "story_max_age_hours": 12,
   "stats_media_limit": 25,

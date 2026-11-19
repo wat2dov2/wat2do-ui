@@ -337,6 +337,10 @@ pub struct InstagramPublishing {
     pub gif_comments: bool,
     pub gif_recent_searches: usize,
     pub music_retry_minutes: i64,
+    /// The morning publish waits this long, checking this often, for the
+    /// emulator to finish each carousel before posting the next school's.
+    pub follow_up_wait_minutes: u64,
+    pub follow_up_poll_seconds: u64,
     /// After a carousel publishes, the emulator worker shares each of its
     /// events' original posts to the account's story, in slide order.
     pub share_event_posts_to_story: bool,

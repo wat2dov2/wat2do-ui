@@ -17,6 +17,7 @@
     "4"
   ],
   "keep_alive_check_seconds": 60,
+  "unresponsive_restart_seconds": 600,
   "android_user_by_school": {
     "yorku": 0,
     "uwaterloo": 0,
