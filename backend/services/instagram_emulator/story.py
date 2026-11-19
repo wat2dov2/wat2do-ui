@@ -9,6 +9,7 @@ post's top-right corner (``sticker``): a gallery photo added as a photo sticker.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from services.instagram_emulator.device import (
@@ -37,9 +38,10 @@ _GALLERY_PHOTO = labels("gallery_sticker_grid_item_thumbnail")
 _GALLERY_OR_PERMISSION = re.compile(f"{_GALLERY_PHOTO.pattern}|{_PERMISSION.pattern}")
 # Every item on the story, the shared post first, reads this way.
 _ON_STORY = labels("Sticker. Touch and hold to reposition")
-# Where the sticker's middle goes from the post's top-right corner: over its top edge,
-# inside its right edge. The sticker's picture is ~300 px wide on the 1080 px screen.
-_STICKER_FROM_CORNER = (-160, 40)
+# Where the sticker's middle goes from the post's top-right corner: on the corner,
+# hanging over both edges. The sticker's pill is ~300 px wide on the 1080 px screen, so
+# it stops short of the screen's right edge.
+_STICKER_FROM_CORNER = (-70, 10)
 _STICKER_TOLERANCE = 60
 # A drag can leave the sticker short of the corner; the next one starts where it stopped.
 _DRAGS = 3
@@ -110,12 +112,21 @@ def _place_sticker(device: EmulatorDevice) -> None:
     if placed is None:
         raise EmulatorError("The photo sticker never showed on the story")
     target = (post.bounds[2] + _STICKER_FROM_CORNER[0], post.bounds[1] + _STICKER_FROM_CORNER[1])
+    # The screen clips the sticker's bounds past its right edge, so its place is read
+    # from its left and top edges and the size it was added at.
+    width, height = placed.bounds[2] - placed.bounds[0], placed.bounds[3] - placed.bounds[1]
     for _ in range(_DRAGS):
         device.drag(placed, target)
-        nodes = device.screen()
-        if _placed_at(nodes, post, target) is not None:
+        moved = _added(device.screen(), post)
+        if moved is None:
+            break
+        x1, y1 = moved.bounds[:2]
+        placed = replace(moved, bounds=(x1, y1, x1 + width, y1 + height))
+        if (
+            max(abs(x1 + width // 2 - target[0]), abs(y1 + height // 2 - target[1]))
+            <= _STICKER_TOLERANCE
+        ):
             return
-        placed = _added(nodes, post) or placed
     raise EmulatorError("The photo sticker did not move to the post's corner")
 
 
@@ -124,12 +135,3 @@ def _added(nodes: list[Node], post: Node) -> Node | None:
         (node for node in nodes if node.labelled(_ON_STORY) and node.bounds != post.bounds),
         None,
     )
-
-
-def _placed_at(nodes: list[Node], post: Node, target: tuple[int, int]) -> Node | None:
-    node = _added(nodes, post)
-    if node is None:
-        return None
-    x1, y1, x2, y2 = node.bounds
-    off = max(abs((x1 + x2) // 2 - target[0]), abs((y1 + y2) // 2 - target[1]))
-    return node if off <= _STICKER_TOLERANCE else None

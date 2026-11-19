@@ -121,7 +121,8 @@ GALLERY = [Node("Photo", "", (24, 599, 348, 1211), "gallery_sticker_grid_item_th
 
 def test_the_featured_sticker_goes_on_the_post_corner_before_posting(screens) -> None:
     added = Node(PLACED, "", (270, 905, 810, 1271))
-    moved = Node(PLACED, "", (542, 371, 1082, 737))
+    # Past the screen's right edge, its bounds are cut off there.
+    moved = Node(PLACED, "", (632, 341, 1080, 707))
     device = screens(
         HOME,
         POST_PAGE,
@@ -145,8 +146,8 @@ def test_the_featured_sticker_goes_on_the_post_corner_before_posting(screens) ->
         "Photo",
         "Your story",
     ]
-    # The post's top-right corner (972, 514), moved in and down.
-    assert device.drags == [((270, 905, 810, 1271), (812, 554))]
+    # On the post's top-right corner (972, 514).
+    assert device.drags == [((270, 905, 810, 1271), (902, 524))]
 
 
 def test_a_sticker_that_does_not_reach_the_corner_stops_the_share(screens) -> None:
