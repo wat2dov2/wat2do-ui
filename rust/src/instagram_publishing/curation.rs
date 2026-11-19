@@ -189,7 +189,34 @@ fn selection_from_answer(packet: &Packet, answer: &Map<String, Value>) -> Result
         ))
         .into());
     }
+    if let Some(label) = unlisted_sticker(&selection) {
+        return Err(Refused(format!(
+            "Sticker \"{label}\" is not in packet.json's sticker_labels; \
+             copy sticker labels exactly from that list"
+        ))
+        .into());
+    }
     Ok(selection)
+}
+
+/// The fixed sticker list for a school language; English when it has none.
+fn sticker_labels(language: Option<&str>) -> &'static [String] {
+    let labels = &INSTAGRAM_PUBLISHING.sticker_labels;
+    language
+        .and_then(|language| labels.get(language))
+        .or_else(|| labels.get("en"))
+        .map_or(&[], Vec::as_slice)
+}
+
+/// A picked sticker label outside every language's fixed list.
+fn unlisted_sticker(selection: &DraftSelection) -> Option<&str> {
+    let lists = &INSTAGRAM_PUBLISHING.sticker_labels;
+    selection
+        .picks
+        .iter()
+        .flat_map(|pick| &pick.sticker_labels)
+        .find(|label| !lists.values().flatten().any(|listed| listed == *label))
+        .map(String::as_str)
 }
 
 /// A post more than `maximum_slides_per_post` of the picks were read from:
@@ -258,11 +285,13 @@ fn packet_document(
             Value::Object(summary)
         })
         .collect();
+    let stickers = sticker_labels(language.as_str());
     let content = json!({
         "school": packet.account_key,
         "language": language,
         "default_caption_intro": open.caption_intro,
         "event_slides": INSTAGRAM_PUBLISHING.maximum_event_slides,
+        "sticker_labels": stickers,
         "events": events,
         "excluded_clubs": open.excluded_clubs,
     });
@@ -514,6 +543,7 @@ mod tests {
         assert_eq!(events[0]["poster_file"], "posters/17.jpg");
         assert_eq!(events[1]["poster_file"], Value::Null);
         assert_eq!(document["language"], "fr");
+        assert_eq!(document["sticker_labels"][0], "Gratuit");
         // As Python wrote it: one-space indent, the poster last.
         assert!(text.contains(
             "\n   \"carousel_requested_at\": null,\n   \"source_post\": null,\n   \"poster_file\": \"posters/17.jpg\"\n"
@@ -521,6 +551,25 @@ mod tests {
         assert!(text.contains(
             "\n   \"carousel_requested_at\": null,\n   \"source_post\": null,\n   \"poster_file\": null\n"
         ));
+    }
+
+    #[test]
+    fn stickers_come_only_from_the_fixed_list() {
+        assert!(
+            selection_from_answer(&packet(), &answer(&["Free Pizza", "Reg. Required"])).is_ok()
+        );
+        let refused =
+            selection_from_answer(&packet(), &answer(&["Free Pizza", "Cozy Vibes"])).unwrap_err();
+        assert!(refused.to_string().contains("\"Cozy Vibes\" is not in"));
+        assert_eq!(sticker_labels(None)[0], "Free");
+        for labels in INSTAGRAM_PUBLISHING.sticker_labels.values() {
+            assert_eq!(
+                crate::instagram_publishing::selection::validate_labels(labels)
+                    .as_deref()
+                    .ok(),
+                Some(labels.as_slice())
+            );
+        }
     }
 
     #[test]

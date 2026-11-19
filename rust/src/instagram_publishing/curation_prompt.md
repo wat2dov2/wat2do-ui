@@ -56,15 +56,13 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Stickers
 
-Write original sticker labels in the school's language, aiming for three or four distinct benefits or practical details per event, and never more than four.
+Pick each event's sticker labels only from `sticker_labels` in `packet.json`, copied exactly; never write a label of your own. Aim for three or four labels per event that the event's details support, and never more than four.
 - Prioritize price, included or explicitly free food, prizes, learning, networking and entry requirements over generic hype.
-- Use `Free` (French: `Gratuit`) as the price label unless the event states a cost.
+- Use `Free` (French: `Gratuit`) unless the event states a cost; then use `Paid Entry` (French: `Entrée Payante`).
 - Use `Reg. Required` (French: `Inscription Requise`) when registration is required.
-- Capitalize the first letter of every word, keeping acronyms.
-- Each label must fit at most two lines of at most twelve characters, wrapping on spaces only. Abbreviate naturally; never invent or truncate facts.
+- Use `Free Pizza` instead of `Free Food` only when the event says pizza, and never both on one event.
 - Every label on one event must say something different.
-- Never invent perks to reach three; fewer is fine when the event says less.
-- No relative dates such as "Tonight" or "This Friday"; the draft may wait before it is published.
+- Never pick a label the event's title, description or poster does not support; fewer is fine when the event says less.
 
 ## Cover and caption
 

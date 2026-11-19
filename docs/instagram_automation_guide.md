@@ -425,7 +425,7 @@ Unconnected drafts keep `instagram_user_id` null, never a fabricated account ID.
 When an account is connected later, the publishing claim validates its credentials and binds the identity atomically before any media is uploaded.
 Candidate packets expose `publishing_connected` so the agent can distinguish missing accounts from reauthorization failures without blocking editorial work.
 There is no embedded OpenAI API call or GitHub draft-generation workflow.
-The publishing controlbox retains artwork bounds, eligibility windows, and publishing limits; there is no preset sticker catalog.
+The publishing controlbox retains artwork bounds, eligibility windows, publishing limits and the fixed sticker list (`sticker_labels`, by school language).
 The service validates event IDs, distinct labels, capitalization, and text bounds before writing a draft.
 Draft selection has no event-count quota, but it is selective.
 It favors cool, exciting, high-status events students would brag about attending: formals, galas, parties, concerts, big shows, varsity games, trips, prestigious speakers or companies, and events with polished artwork.
@@ -442,7 +442,7 @@ The publishing limit applies only when the admin publishes the final carousel.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
 Migration `20261002010000_instagram_sticker_copy.sql` converts retired preset IDs into readable labels without changing published images.
-Claude writes original sticker text in the school's configured language, aiming for three to four distinct benefits or practical details per event.
+Claude picks sticker labels only from the controlbox's fixed `sticker_labels` list for the school's language (given in `packet.json`), aiming for three to four distinct benefits or practical details per event; curation refuses any other label, so stickers stay consistent instead of reading as one-off AI copy. Admin edits in the carousel drawer are not limited to the list.
 Prioritize price, included or explicitly free food, prizes, learning, networking and entry requirements over generic hype.
 Use `Free` as the default price label unless the event states a cost, as requested by the human; this editorial default does not change the event's stored price.
 Use `Reg. Required` for required registration and capitalize each word, preserving acronyms.
