@@ -567,6 +567,9 @@ class InstagramPublishingControl(_ControlModel):
     sticker_line_character_limit: int = Field(ge=8, le=12)
     sticker_maximum_lines: int = Field(ge=1, le=2)
     sticker_shape_count: int = Field(ge=10, le=10)
+    # Curation picks every slide sticker from this fixed list, by school language, so the
+    # stickers stay consistent instead of reading as one-off AI copy.
+    sticker_labels: dict[Literal["en", "fr"], list[str]]
 
     graph_api_version: str = Field(pattern=r"^v[0-9]+\.[0-9]+$")
     generation_timezone: str = Field(min_length=1)

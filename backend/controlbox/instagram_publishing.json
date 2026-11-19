@@ -19,6 +19,10 @@
   "sticker_line_character_limit": 12,
   "sticker_maximum_lines": 2,
   "sticker_shape_count": 10,
+  "sticker_labels": {
+    "en": ["Free", "Paid Entry", "Reg. Required", "Limited Spots", "Free Food", "Free Pizza", "Snacks", "Drinks", "Prizes", "Giveaways", "Networking", "Meet People", "Open To All", "Beginners Welcome", "Learn Skills", "Live Music", "Games", "Varsity Game", "19+ Only", "18+ Only"],
+    "fr": ["Gratuit", "Entrée Payante", "Inscription Requise", "Places Limitées", "Nourriture Gratuite", "Pizza Gratuite", "Collations", "Boissons", "Prix À Gagner", "Cadeaux", "Réseautage", "Rencontres", "Ouvert À Tous", "Débutants Bienvenus", "Atelier Pratique", "Musique Live", "Jeux", "Match Sportif", "18+ Seulement"]
+  },
   "curation_model": "claude-haiku-5-5",
   "curation_parallel_agents": 6,
   "curation_attempts": 2,

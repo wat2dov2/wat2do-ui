@@ -320,6 +320,8 @@ pub struct InstagramPublishing {
     pub sticker_line_character_limit: usize,
     pub sticker_maximum_lines: usize,
     pub sticker_shape_count: usize,
+    /// The only sticker labels curation may put on a slide, by school language.
+    pub sticker_labels: HashMap<String, Vec<String>>,
     pub curation_model: String,
     pub curation_parallel_agents: usize,
     pub curation_attempts: u32,
