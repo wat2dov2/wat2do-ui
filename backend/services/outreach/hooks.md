@@ -14,7 +14,7 @@ What every hook here has to be, and what to check before adding one:
 - Paid off: the rest of the video answers whatever the hook opens.
 - Safe for a club inbox: no shock bait, fake urgency, money flexing, looks, dating, politics or religion.
 - No "stop scrolling" or "don't scroll": the video arrives by email, not in a feed.
-- `<club>` and `<event>` stand for the club's name and one of its real events (its upcoming one, when it has one), which Claude fills in; `{{school_name}}` and `{{payout_per_scan}}` (the club payout per scanned student, such as "$4") are filled in like the prompt's own, and no other `{{` key works here.
+- `<club>` and `<event>` stand for the club's name and one of its real events (its upcoming one, when it has one), which Claude fills in; `{{school_name}}` and `{{payout_per_scan}}` (the club payout per scanned student, such as "$3") are filled in like the prompt's own, and no other `{{` key works here.
 
 ### Identity call
 

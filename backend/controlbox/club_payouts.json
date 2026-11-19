@@ -1,5 +1,5 @@
 {
-  "rate_cents": 400,
+  "rate_cents": 300,
   "currency": "cad",
   "schools": [
     "uwaterloo"
@@ -15,5 +15,5 @@
   "clawback_days": 90,
   "change_notice_days": 30,
   "liability_floor_cents": 10000,
-  "terms_effective_date": "2026-11-18"
+  "terms_effective_date": "2026-11-19"
 }
