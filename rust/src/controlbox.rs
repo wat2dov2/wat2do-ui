@@ -306,6 +306,8 @@ pub struct InstagramPublishing {
     pub minimum_lead_hours: i64,
     pub maximum_lead_days: i64,
     pub maximum_event_slides: usize,
+    /// A carousel shows at most this many events read from one Instagram post.
+    pub maximum_slides_per_post: usize,
     pub minimum_event_slides: usize,
     pub status_poll_interval_seconds: f64,
     pub meta_poll_attempts: u32,

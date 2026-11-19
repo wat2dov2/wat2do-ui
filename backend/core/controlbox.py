@@ -578,6 +578,9 @@ class InstagramPublishingControl(_ControlModel):
     maximum_event_slides: int = Field(gt=0, le=8)
     # A carousel with fewer event slides is never published.
     minimum_event_slides: int = Field(ge=1, le=8)
+    # Curation refuses a carousel with more events than this read from one Instagram post
+    # (a club's one post listing a week of events filled Berkeley's 11-18 carousel 7 of 8).
+    maximum_slides_per_post: int = Field(ge=1, le=8)
     status_poll_interval_seconds: float = Field(gt=0, le=60)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)

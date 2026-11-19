@@ -168,6 +168,7 @@ listed from the shared post; a post not listed yet is queued in `public.ingestio
 with the request, and the ingestion agent marks the events it describes.
 Daily carousel drafts always consider requested events, however long ago they were
 added, and rank them first.
+A carousel shows at most `controlbox/instagram_publishing.json` `maximum_slides_per_post` events read from one Instagram post (the curation agent sees each event's `source_post`, and code refuses an answer over the cap so the agent picks again): one club post listing a week of events filled Berkeley's 2026-11-18 carousel 7 of 8.
 A correction queues the club's words as a `dm` row in `public.ingestion_items`, and the
 ingestion agent corrects only the listings it clearly refers to.
 An opt-out adds the sender to `public.instagram_excluded_clubs`.
