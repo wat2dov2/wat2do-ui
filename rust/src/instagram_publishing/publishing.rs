@@ -2,6 +2,13 @@
 //! school's ready draft for today, and the admin's Publish button posts one
 //! batch the API claimed.
 //!
+//! The morning publish waits after each school's carousel until the emulator
+//! worker has liked, reposted, commented on, tagged, set the song of and
+//! shared the stories for it, so every carousel gets them in its first
+//! minutes, before the next school posts. A carousel the worker has not
+//! finished within `follow_up_wait_minutes` means the emulator is not keeping
+//! up, and the rest are posted without waiting.
+//!
 //! The slides are drawn from the events' live data at this moment, uploaded,
 //! and handed to Meta as one carousel. Once posted, the batch keeps the
 //! images it posted, and the emulator worker adds the carousel's song, tags
@@ -44,6 +51,8 @@ pub struct Publisher<'a> {
     encryption_key: String,
     graph_host: String,
     poll_interval: Option<Duration>,
+    follow_up_poll: Duration,
+    follow_up_wait: Duration,
     renderer: Renderer<'a>,
 }
 
@@ -54,6 +63,8 @@ impl<'a> Publisher<'a> {
             encryption_key: settings.instagram_token_encryption_key.clone(),
             graph_host: GRAPH_HOST.to_owned(),
             poll_interval: None,
+            follow_up_poll: Duration::from_secs(INSTAGRAM_PUBLISHING.follow_up_poll_seconds),
+            follow_up_wait: Duration::from_secs(INSTAGRAM_PUBLISHING.follow_up_wait_minutes * 60),
             renderer: Renderer::new(settings, storage),
         }
     }
@@ -63,6 +74,14 @@ impl<'a> Publisher<'a> {
     pub fn with_graph(mut self, host: &str) -> Self {
         self.graph_host = host.to_owned();
         self.poll_interval = Some(Duration::ZERO);
+        self.follow_up_poll = Duration::ZERO;
+        self
+    }
+
+    /// Wait at most this long for the emulator to finish each carousel.
+    #[cfg(test)]
+    pub fn with_follow_up_wait(mut self, wait: Duration) -> Self {
+        self.follow_up_wait = wait;
         self
     }
 
@@ -112,6 +131,7 @@ impl<'a> Publisher<'a> {
         .fetch_all(self.db)
         .await?;
         let mut outcomes: BTreeMap<String, i64> = BTreeMap::new();
+        let mut paced = true;
         for (batch_id, account_key, version, slides) in rows {
             if slides < INSTAGRAM_PUBLISHING.minimum_event_slides as i64 {
                 *outcomes.entry("too_few_events".into()).or_default() += 1;
@@ -137,9 +157,39 @@ impl<'a> Publisher<'a> {
                 .map_err(job_error)?
                 .row
                 .status;
+            if paced && status == STATUS_PUBLISHED && !self.followed_up(batch_id).await? {
+                tracing::warn!(
+                    "The emulator did not finish {account_key}'s carousel in time; \
+                     posting the rest without waiting"
+                );
+                paced = false;
+            }
             *outcomes.entry(status).or_default() += 1;
         }
         Ok(outcomes)
+    }
+
+    /// Wait until the emulator worker has finished the carousel's song (with
+    /// its like, repost, comment and tags) and its story, at most
+    /// `follow_up_wait_minutes`; whether it did.
+    pub(super) async fn followed_up(&self, batch_id: Uuid) -> Result<bool> {
+        let deadline = tokio::time::Instant::now() + self.follow_up_wait;
+        loop {
+            let (music, story): (Option<String>, Option<String>) = sqlx::query_as(
+                "SELECT music_status, story_status FROM public.instagram_publish_batches \
+                 WHERE id = $1",
+            )
+            .bind(batch_id)
+            .fetch_one(self.db)
+            .await?;
+            if music.as_deref() != Some(MUSIC_PENDING) && story.as_deref() != Some(STORY_PENDING) {
+                return Ok(true);
+            }
+            if tokio::time::Instant::now() >= deadline {
+                return Ok(false);
+            }
+            tokio::time::sleep(self.follow_up_poll).await;
+        }
     }
 
     /// `publish_claimed_batch`: post a claimed batch; any failure marks it

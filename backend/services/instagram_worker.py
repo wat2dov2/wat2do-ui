@@ -31,7 +31,6 @@ import time
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from itertools import groupby
-from pathlib import Path
 
 from core.controlbox import controlbox
 from services.instagram_accounts import school_account_username
@@ -42,6 +41,7 @@ from services.instagram_emulator.device import (
     EmulatorDevice,
     EmulatorError,
     exclusive,
+    log_restart,
     reclaim_due,
 )
 from services.instagram_follow import candidates, crawl, follows, scoring
@@ -216,10 +216,6 @@ _switch_rested_until: dict[str, datetime] = {}
 _switch_failures = 0
 # Why each failed switch in the current run of failures failed, for the restart log.
 _switch_errors: list[str] = []
-# One line per emulator restart the worker asks for, with the switches that led to it;
-# the worker's own output goes nowhere, and a restart costs every school's pushes for
-# the minutes the emulator is down.
-RESTART_LOG = Path.home() / ".local/state/wat2do/instagram-emulator-restarts.log"
 
 
 def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
@@ -244,24 +240,13 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
         _switch_errors.append(f"{school} (Android user {user}): {exc}")
         if _switch_failures >= CONTROL.switch_failures_before_restart:
             _switch_failures = 0
-            _log_restart(now, _switch_errors)
+            log_restart(" | ".join(_switch_errors))
             _switch_errors.clear()
             _step("emulator restart", device.restart)
         return False
     _switch_failures = 0
     _switch_errors.clear()
     return True
-
-
-def _log_restart(now: datetime, errors: list[str]) -> None:
-    """Append why the worker is restarting the emulator to ``RESTART_LOG``."""
-    line = f"{now.astimezone().isoformat(timespec='seconds')} restart after: {' | '.join(errors)}"
-    try:
-        RESTART_LOG.parent.mkdir(parents=True, exist_ok=True)
-        with RESTART_LOG.open("a") as handle:
-            handle.write(line.replace("\n", " ")[:2000] + "\n")
-    except OSError:
-        log.exception("Could not write the emulator restart log")
 
 
 def _score_in_background() -> None:

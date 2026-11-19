@@ -609,6 +609,12 @@ class InstagramPublishingControl(_ControlModel):
     # The GIF scene picker is shown this many of the latest searches, so it never repeats one.
     gif_recent_searches: int = Field(ge=1, le=200)
     music_retry_minutes: int = Field(ge=1, le=720)
+    # The morning publish waits up to follow_up_wait_minutes, checking every
+    # follow_up_poll_seconds, for the emulator to finish each carousel (like, repost,
+    # comment, tags, song, story) before posting the next school's; once one is not
+    # finished in time, it posts the rest without waiting.
+    follow_up_wait_minutes: int = Field(ge=1, le=120)
+    follow_up_poll_seconds: int = Field(ge=1, le=300)
     # After a carousel publishes, the emulator worker shares each of its events' original
     # posts to the account's story, in slide order, during action hours and only while the
     # carousel is at most story_max_age_hours old.
@@ -1199,6 +1205,9 @@ class InstagramEmulatorControl(_ControlModel):
     avd_name: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
     emulator_arguments: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...]
     keep_alive_check_seconds: int = Field(ge=10, le=3600)
+    # An emulator whose Android has answered no shell command for this long is hung
+    # and is stopped, to boot again. It must cover a boot, during which nothing answers.
+    unresponsive_restart_seconds: int = Field(ge=300, le=7200)
     # The Instagram app holds at most ten accounts per Android user, so school
     # accounts are spread across the emulator's users.
     android_user_by_school: dict[
