@@ -168,6 +168,7 @@ pub struct Ingestion {
     pub quiet_school_lanes: usize,
     pub quiet_school_read_delay_seconds: f64,
     pub quiet_school_reread_hours: u64,
+    pub quiet_school_relist_minutes: u64,
     pub quiet_school_post_days: i64,
     pub quiet_school_active_days: i32,
     pub quiet_school_new_follow_days: i32,

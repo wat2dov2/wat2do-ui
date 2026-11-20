@@ -1077,6 +1077,9 @@ class IngestionControl(_ControlModel):
     quiet_school_lanes: int = Field(ge=0, le=8)
     quiet_school_read_delay_seconds: float = Field(ge=0, le=600, allow_inf_nan=False)
     quiet_school_reread_hours: int = Field(ge=1, le=168)
+    # The list of clubs to read is built again this often, so a school that goes quiet
+    # joins it (and one notified again leaves it) without waiting for the list to run out.
+    quiet_school_relist_minutes: int = Field(ge=1, le=1440)
     quiet_school_post_days: int = Field(ge=1, le=14)
     # Only clubs with an event added within the active days, or followed within the new
     # follow days (too new to have events), are read.
