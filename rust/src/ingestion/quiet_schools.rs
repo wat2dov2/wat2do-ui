@@ -13,7 +13,10 @@
 //! `quiet_school_new_follow_days`, are read, one per lane at a time,
 //! `quiet_school_read_delay_seconds` apart. Quiet schools take turns, one club each, so
 //! every one of them is covered early; within a school the newest events go first.
-//! A handle is read again only after `quiet_school_reread_hours`.
+//! A handle is read again only after `quiet_school_reread_hours`. The list is built
+//! again every `quiet_school_relist_minutes`, so a school that goes quiet joins it
+//! without waiting behind the clubs listed before, and a refused read is given back
+//! to be read first once reads resume.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -27,6 +30,13 @@ use super::club_logos::normalize_handle;
 use super::fetch::{GridPost, fetch_profile_posts, profile_renderer};
 use super::items::queue_instagram;
 use crate::controlbox::INGESTION;
+
+/// A handle taken to read, with when it was last read before, to give it back.
+pub struct Taken {
+    pub handle: String,
+    pub school: String,
+    previous: Option<f64>,
+}
 
 pub struct QuietSchools {
     state_path: PathBuf,
@@ -61,7 +71,7 @@ impl QuietSchools {
 
     /// The next handle to read and its school, marked as read now so another lane
     /// (and a refused read) moves on; None when no quiet school has one due.
-    pub async fn take_next(&mut self, pool: &PgPool) -> Result<Option<(String, String)>> {
+    pub async fn take_next(&mut self, pool: &PgPool) -> Result<Option<Taken>> {
         if !profile_renderer().is_file() {
             if !self.renderer_missing_logged {
                 tracing::warn!(renderer = %profile_renderer().display(), "quiet school reads wait: the profile renderer is not installed");
@@ -70,11 +80,10 @@ impl QuietSchools {
             return Ok(None);
         }
         let backoff = Duration::from_secs(INGESTION.retry_backoff_seconds);
-        if self.waiting.is_empty()
-            && self
-                .listed_at
-                .is_none_or(|listed| listed.elapsed() >= backoff)
-        {
+        let relist = Duration::from_secs(INGESTION.quiet_school_relist_minutes * 60);
+        if self.listed_at.is_none_or(|listed| {
+            listed.elapsed() >= relist || (self.waiting.is_empty() && listed.elapsed() >= backoff)
+        }) {
             self.listed_at = Some(Instant::now());
             let due_before = epoch_seconds() - (INGESTION.quiet_school_reread_hours * 3600) as f64;
             self.waiting = quiet_school_handles(pool)
@@ -89,9 +98,23 @@ impl QuietSchools {
         let Some((handle, school)) = self.waiting.shift_remove_index(0) else {
             return Ok(None);
         };
-        self.read_at.insert(handle.clone(), epoch_seconds());
+        let previous = self.read_at.insert(handle.clone(), epoch_seconds());
         self.save()?;
-        Ok(Some((handle, school)))
+        Ok(Some(Taken {
+            handle,
+            school,
+            previous,
+        }))
+    }
+
+    /// Instagram refused the read: the handle goes back to the front, due as before.
+    pub fn give_back(&mut self, taken: Taken) -> Result<()> {
+        match taken.previous {
+            Some(read_at) => self.read_at.insert(taken.handle.clone(), read_at),
+            None => self.read_at.remove(&taken.handle),
+        };
+        self.waiting.shift_insert(0, taken.handle, taken.school);
+        self.save()
     }
 
     fn save(&self) -> Result<()> {
@@ -215,6 +238,27 @@ mod tests {
                 "https://www.instagram.com/p/EDGE/",
             ]
         );
+    }
+
+    #[test]
+    fn a_refused_read_goes_back_first_and_due_as_before() {
+        let path = std::env::temp_dir().join(format!("quiet-schools-{}.json", std::process::id()));
+        let mut quiet = QuietSchools::new(path.clone());
+        quiet.read_at.insert("readbefore".into(), 5.0);
+        quiet.waiting.insert("other".into(), "mit".into());
+        for (handle, previous) in [("readbefore", Some(5.0)), ("never", None)] {
+            quiet
+                .give_back(Taken {
+                    handle: handle.into(),
+                    school: "carleton".into(),
+                    previous,
+                })
+                .unwrap();
+            assert_eq!(quiet.waiting.get_index(0).unwrap().0, handle);
+            assert_eq!(quiet.read_at.get(handle).copied(), previous);
+        }
+        assert_eq!(quiet.waiting.len(), 3);
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]

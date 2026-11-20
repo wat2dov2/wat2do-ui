@@ -203,10 +203,11 @@ impl Processor {
             .await
             .take_next(&self.pool)
             .await?;
-        let Some((handle, school)) = next else {
+        let Some(taken) = next else {
             return Ok(false);
         };
-        match quiet_schools::read_handle(&self.pool, &handle, &school).await {
+        let (handle, school) = (&taken.handle, &taken.school);
+        match quiet_schools::read_handle(&self.pool, handle, school).await {
             Ok(queued) => {
                 self.count("quiet_school_read").await;
                 if queued > 0 {
@@ -220,6 +221,7 @@ impl Processor {
             Err(error) => {
                 if let Some(blocked) = is_blocked(&error) {
                     self.pause_fetches(blocked).await;
+                    self.quiet_schools.lock().await.give_back(taken)?;
                     return Ok(false);
                 }
                 return Err(error);

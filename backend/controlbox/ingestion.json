@@ -33,6 +33,7 @@
   "quiet_school_lanes": 1,
   "quiet_school_read_delay_seconds": 20,
   "quiet_school_reread_hours": 20,
+  "quiet_school_relist_minutes": 30,
   "quiet_school_post_days": 2,
   "quiet_school_active_days": 180,
   "quiet_school_new_follow_days": 30,
