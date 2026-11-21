@@ -2,20 +2,20 @@
 
 Every emulator job is a step of a visit to one school account. The worker picks the
 account with the most urgent work, switches the app to it once, and does everything
-that account needs before moving on: the song, like and repost for its new carousels,
-its DMs, and its unfollows and follows.
+that account needs before moving on.
 
-A new carousel gets its song as soon as possible, at any hour: while any account's
-carousel waits, visits do nothing but songs, and unfollows and follows stop between
-profiles for one, or for the daily reclaim, which restarts the emulator before the
-morning's carousels publish.
-Replies happen only during the control box's action hours, follows only during its
-follow hours. The emulator's lock is held for one visit at a time, and one failing
-step never stops the others. An account the app cannot switch to rests while the
-others go on, and so do an account's follows once its profiles keep failing; switches
-failing in a row restart the emulator, whose Android stalls after long uptimes. A
-visit that fails outright, such as while the emulator restarts, is tried again after a
-short wait, so the worker itself never stops.
+The most urgent work is a sitting (``services/instagram_sessions/sitting.py``): from the
+morning start time, each school account's daily turn, in which a Claude session posts
+its carousel and right away likes, reposts, sets the song, tags and shares the story
+for it, then drafts its DM replies; and any carousel an admin posted outside a sitting.
+While a sitting is due, unfollows and follows stop between profiles for it, and for the
+daily reclaim, which restarts the emulator before the morning's sittings.
+Follows happen only during the control box's follow hours. The emulator's lock is held
+for one visit at a time, and one failing step never stops the others. An account the
+app cannot switch to rests while the others go on, and so do an account's follows once
+its profiles keep failing; switches failing in a row restart the emulator, whose
+Android stalls after long uptimes. A visit that fails outright, such as while the
+emulator restarts, is tried again after a short wait, so the worker itself never stops.
 
 The same process runs the follow crawl in its own thread (``crawl.run_forever``). It
 never touches the emulator: the Brave worker reads the Following lists, and the
@@ -34,7 +34,6 @@ from itertools import groupby
 
 from core.controlbox import controlbox
 from services.instagram_accounts import school_account_username
-from services.instagram_dms import sweep
 from services.instagram_emulator.device import (
     CONTROL,
     AccountNotSwitched,
@@ -45,7 +44,7 @@ from services.instagram_emulator.device import (
     reclaim_due,
 )
 from services.instagram_follow import candidates, crawl, follows, scoring
-from services.instagram_publishing import music, stories
+from services.instagram_sessions import sitting
 
 log = logging.getLogger(__name__)
 FOLLOW = controlbox.instagram_follow
@@ -85,7 +84,6 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     never waits on the database questions about follows.
     """
     moment = (now or datetime.now(timezone.utc)).astimezone()
-    acting = acting_hours(moment)
     following = following_hours(moment)
     order = [
         school
@@ -93,13 +91,7 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         if _switch_rested_until.get(school, moment) <= moment
     ]
 
-    def carousels() -> list[str]:
-        waiting = _carousels_waiting(moment)
-        return [school for school in order if school in waiting]
-
-    tiers: list[Callable[[], list[str]]] = [carousels]
-    if acting:
-        tiers.append(lambda: [school for school in order if sweep.due(school, moment)])
+    tiers: list[Callable[[], list[str]]] = [lambda: _sittings_due(moment)]
     if following:
         tiers.append(
             lambda: [
@@ -112,7 +104,7 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     for due in tiers:
         schools = due()
         if schools:
-            visit(device, schools[0], acting=acting, following=following, now=moment)
+            visit(device, schools[0], following=following, now=moment)
             return True
     return False
 
@@ -121,7 +113,6 @@ def visit(
     device: EmulatorDevice,
     school: str,
     *,
-    acting: bool,
     following: bool,
     now: datetime,
 ) -> None:
@@ -131,17 +122,13 @@ def visit(
         device.reclaim_data()
         if not _switched(device, school, now):
             return
-        waiting = _carousels_waiting(now)
-        if school in waiting:
-            _step(f"music {school}", lambda: music.finish_due(device, school, now))
-            if acting:
-                _step(f"stories {school}", lambda: stories.share_due(device, school, now))
-        # Other accounts' carousels waiting for their songs or stories come before anything
-        # else here.
-        if waiting - {school}:
+        sittings = _sittings_due(now)
+        if school in sittings:
+            _step(f"sitting {school}", lambda: sitting.run(device, school, now))
             return
-        if acting and sweep.due(school, now):
-            _step(f"dms {school}", lambda: sweep.answer(device, school))
+        # Another account's sitting comes before anything else here.
+        if sittings:
+            return
         interrupt = _Interrupt()
         if following and _follows_rested_until.get(school, now) <= now:
             limit = CONTROL.follows_per_visit
@@ -174,34 +161,26 @@ def _follows_stuck(visits: list[object]) -> bool:
     )
 
 
-def _carousels_waiting(now: datetime) -> set[str]:
-    """Schools whose new carousel waits for its song, or (in action hours) for its events'
-    posts on the story, leaving out any account the app could not switch to, so one
-    unreachable account never holds up the others' work."""
-    due = set(music.schools_due(now))
-    if acting_hours(now.astimezone()):
-        due.update(stories.schools_due(now))
-    return {school for school in due if _switch_rested_until.get(school, now) <= now}
+def _sittings_due(now: datetime) -> list[str]:
+    """Schools whose sitting is due, leaving out any account the app could not switch
+    to, so one unreachable account never holds up the others' work."""
+    return [school for school in sitting.due(now) if _switch_rested_until.get(school, now) <= now]
 
 
 class _Interrupt:
     """True once the emulator is needed for something more urgent than the visit's long
-    steps: a carousel waiting for its song or story, or the daily reclaim and restart. Unfollows
-    and follows ask it between profiles and stop for it."""
+    steps: a sitting that is due, or the daily reclaim and restart. Unfollows and follows
+    ask it between profiles and stop for it."""
 
     def __init__(self) -> None:
         self.seen = False
 
     def __call__(self) -> bool:
         try:
-            self.seen = bool(_carousels_waiting(datetime.now(timezone.utc))) or reclaim_due()
+            self.seen = bool(_sittings_due(datetime.now(timezone.utc))) or reclaim_due()
         except Exception:
-            log.exception("Could not check for carousels waiting for a song")
+            log.exception("Could not check for a sitting that is due")
         return self.seen
-
-
-def acting_hours(moment: datetime) -> bool:
-    return CONTROL.action_start_hour <= moment.hour < CONTROL.action_end_hour
 
 
 def following_hours(moment: datetime) -> bool:

@@ -100,8 +100,9 @@ def run_agent(
 
 
 def claude_environment() -> dict[str, str]:
-    """Only what Claude Code itself needs; no application secrets."""
-    inherited = ("PATH", "HOME", "USER", "LOGNAME", "LANG", "TMPDIR")
+    """Only what Claude Code itself needs; no application secrets. An agent started
+    inside a Claude sitting keeps the sitting's login (``CLAUDE_CONFIG_DIR``)."""
+    inherited = ("PATH", "HOME", "USER", "LOGNAME", "LANG", "TMPDIR", "CLAUDE_CONFIG_DIR")
     return {name: os.environ[name] for name in inherited if name in os.environ}
 
 

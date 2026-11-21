@@ -1,215 +1,20 @@
 import pytest
 
-from services.instagram_accounts import BrowserEngagementUncertain, BrowserSessionError
-from services.instagram_dms.decide import DmDecision
 from services.instagram_emulator import direct as module
 from services.instagram_emulator.device import Node
-from services.instagram_emulator.inbox import InboxRow
 
 POST = "https://www.instagram.com/p/ABC123/"
-# The executor tests swap in _Reader; the reader's own tests use the real one.
-THREAD_READER = module._ThreadReader
-CLUB = "club"
-THREAD = [
-    {
-        "from": "them",
-        "type": "media_share",
-        "text": "",
-        "shared_url": POST,
-        "sender": CLUB,
-        "shared_owner": CLUB,
-    },
-    {
-        "from": "them",
-        "type": "text",
-        "text": "could you add this to your story?",
-        "shared_url": None,
-        "sender": CLUB,
-        "shared_owner": None,
-    },
-]
+THREAD_READER = module.ThreadReader
 
 
-class _Device:
-    free = 5000
-
-    def __init__(self):
-        self.users = []
-
-    def free_data_megabytes(self):
-        return _Device.free
-
-    def wake(self):
-        pass
-
-    def use_android_user(self, user):
-        self.users.append(user)
-
-    def use_account(self, user, username):
-        pass
-
-
-class _Reader:
-    sent: list[str] = []
-    fail_read = False
-    fail_send = False
-    stale = False
-
-    def __init__(self, device, opener):
-        pass
-
-    def read(self):
-        if _Reader.fail_read:
-            raise module.EmulatorError("no thread")
-        return THREAD
-
-    def send(self, text):
-        if _Reader.fail_send:
-            raise module.EmulatorError("no confirmation")
-        _Reader.sent.append(text)
-
-
-@pytest.fixture(autouse=True)
-def emulator(monkeypatch):
-    _Reader.sent = []
-    _Reader.fail_read = _Reader.fail_send = _Reader.stale = False
-    _Device.free = 5000
-    monkeypatch.setattr(module, "_ThreadReader", _Reader)
-
-
-@pytest.fixture
-def queued(monkeypatch):
-    """Everything the executor records for later: carousel requests, corrections, opt-outs."""
-    calls = []
-    monkeypatch.setattr(
-        module.items,
-        "request_carousel",
-        lambda url, *, school: calls.append(("carousel", url, school)),
+def _newest_is_ours(nodes, text):
+    """Whether our message is the newest one read off the screen."""
+    messages = module._messages(nodes)
+    return (
+        bool(messages)
+        and messages[-1]["from"] == "us"
+        and module._as_typed(messages[-1]["text"]) == module._as_typed(text)
     )
-    monkeypatch.setattr(
-        module.items,
-        "queue_dm",
-        lambda text, *, school, sender: calls.append(("correction", text, school, sender)),
-    )
-    monkeypatch.setattr(
-        module, "exclude_club", lambda handle, *, reason: calls.append(("opt_out", handle))
-    )
-    return calls
-
-
-@pytest.fixture
-def stories(monkeypatch):
-    shared = []
-    monkeypatch.setattr(module, "share_to_story", lambda *args: shared.append(args))
-    return shared
-
-
-@pytest.fixture
-def accepted(monkeypatch):
-    calls = []
-    monkeypatch.setattr(module, "accept_request", lambda device: calls.append(device))
-    return calls
-
-
-def _handle(monkeypatch, decision, *, dry_run, request=False):
-    monkeypatch.setattr(module, "decide", lambda thread, **_: decision)
-    row = InboxRow("Club", "Could you share this?", 0.1, unread=True, request=request)
-    return module.EmulatorDirectExecutor(_Device()).handle(
-        row,
-        account_username="wat2do.ubc",
-        school="ubc",
-        school_name="UBC",
-        dry_run=dry_run,
-    )
-
-
-def test_dry_run_decides_without_replying_reposting_or_queueing(
-    monkeypatch, queued, stories
-) -> None:
-    result = _handle(monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=True)
-    assert result["status"] == "decided"
-    assert _Reader.sent == [] and stories == [] and queued == []
-
-
-def test_a_carousel_request_is_recorded_then_replied_to_once(monkeypatch, queued) -> None:
-    result = _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
-    assert result["status"] == "replied"
-    assert queued == [("carousel", POST, "ubc")]
-    assert _Reader.sent == ["Sure!"]
-
-
-def test_a_correction_hands_their_words_to_the_ingestion_agent(monkeypatch, queued) -> None:
-    decision = DmDecision("correction", reply="thanks, we'll update it")
-    _handle(monkeypatch, decision, dry_run=False)
-    assert queued == [("correction", "could you add this to your story?", "ubc", CLUB)]
-    assert _Reader.sent == ["thanks, we'll update it"]
-
-
-def test_an_opt_out_leaves_the_senders_club_out_of_carousels(monkeypatch, queued) -> None:
-    _handle(monkeypatch, DmDecision("opt_out", reply="got it, we'll stop"), dry_run=False)
-    assert queued == [("opt_out", CLUB)]
-
-
-def test_a_story_request_is_reposted_before_its_reply(monkeypatch, queued, stories) -> None:
-    decision = DmDecision("story_repost", POST, "just shared it!")
-    result = _handle(monkeypatch, decision, dry_run=False)
-    assert result["status"] == "reposted"
-    assert [args[1:] for args in stories] == [("ubc", POST)]
-    assert _Reader.sent == ["just shared it!"]
-    # A story repost also puts the event in an upcoming carousel.
-    assert queued == [("carousel", POST, "ubc")]
-
-
-def test_a_plain_reply_is_sent_without_queueing_or_reposting(
-    monkeypatch, queued, stories, accepted
-) -> None:
-    decision = DmDecision("reply", reply="send us the post here and we'll take a look")
-    result = _handle(monkeypatch, decision, dry_run=False, request=True)
-    assert result["status"] == "replied"
-    assert _Reader.sent == ["send us the post here and we'll take a look"]
-    assert stories == [] and queued == [] and len(accepted) == 1
-
-
-def test_a_failed_story_repost_pauses_without_replying(monkeypatch, queued) -> None:
-    def fail(*_args):
-        raise RuntimeError("emulator offline")
-
-    monkeypatch.setattr(module, "share_to_story", fail)
-    with pytest.raises(BrowserEngagementUncertain, match="story repost"):
-        _handle(monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=False)
-    assert _Reader.sent == []
-
-
-def test_an_unconfirmed_reply_pauses_for_a_person(monkeypatch, queued) -> None:
-    _Reader.fail_send = True
-    with pytest.raises(BrowserEngagementUncertain, match="reply"):
-        _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
-
-
-def test_an_unreadable_thread_fails_without_pausing(monkeypatch, queued) -> None:
-    _Reader.fail_read = True
-    with pytest.raises(BrowserSessionError, match="could not be read") as raised:
-        _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
-    assert not isinstance(raised.value, BrowserEngagementUncertain)
-    assert queued == []
-
-
-def test_ignored_threads_get_no_reply(monkeypatch, queued, stories) -> None:
-    result = _handle(monkeypatch, DmDecision("ignore"), dry_run=False)
-    assert result["status"] == "decided"
-    assert _Reader.sent == [] and stories == [] and queued == []
-
-
-def test_a_request_is_accepted_only_when_we_answer_it(monkeypatch, queued, accepted) -> None:
-    _handle(monkeypatch, DmDecision("ignore"), dry_run=False, request=True)
-    assert accepted == []
-    _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False, request=True)
-    assert len(accepted) == 1 and _Reader.sent == ["Sure!"]
-
-
-def test_an_inbox_thread_is_never_accepted(monkeypatch, queued, accepted) -> None:
-    _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
-    assert accepted == []
 
 
 def _node(text, bounds, resource_id="", description=""):
@@ -268,7 +73,7 @@ def test_a_personal_chat_takes_the_username_and_tells_our_side_apart() -> None:
         ("them", "text", None),
         ("us", "text", None),
     ]
-    assert module._newest_is_ours(PERSONAL_CHAT, "Sure!")
+    assert _newest_is_ours(PERSONAL_CHAT, "Sure!")
 
 
 def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -> None:
@@ -285,7 +90,7 @@ def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -
         ("them", "Hey! Could you share it to your story?"),
         ("us", "Sure thing!"),
     ]
-    assert module._newest_is_ours(chat, "Sure thing!")
+    assert _newest_is_ours(chat, "Sure thing!")
 
 
 def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
@@ -297,41 +102,66 @@ def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
         _node("Wat2Do | Campus Events", (454, 714, 881, 761), "caption_title"),
         _node(reply, (298, 930, 1059, 1344), "direct_text_message_text_view"),
     ]
-    assert module._newest_is_ours(chat, reply)
+    assert _newest_is_ours(chat, reply)
 
 
-class _ThreadDevice:
-    """Serves screens in order, the last one forever, and records what was typed."""
+class _DraftDevice:
+    """A thread whose composer shows whatever was typed; records every key and tap."""
 
-    def __init__(self, screens):
-        self.screens = screens
-        self.typed = []
+    def __init__(self, *, request=False, echo=True):
+        self.request = request
+        self.echo = echo
+        self.typed = ""
+        self.taps = []
+        self.backs = 0
+        self.accepted = False
 
     def screen(self):
-        return self.screens.pop(0) if len(self.screens) > 1 else self.screens[0]
+        thread = [_node("", (0, 275, 1080, 1431), "message_list")]
+        if not self.request or self.accepted:
+            shown = self.typed if self.echo else ""
+            thread.append(_node(shown, (158, 1365, 621, 1496), "row_thread_composer_edittext"))
+        return thread
 
-    def find(self, pattern, nodes):
-        return next((node for node in nodes if node.labelled(pattern)), None)
+    def find(self, pattern, nodes=None):
+        return next((node for node in nodes or self.screen() if node.labelled(pattern)), None)
 
     def tap(self, node):
-        pass
+        self.taps.append(node.resource_id or node.label)
 
-    def tap_when(self, pattern):
-        pass
-
-    def watch(self, look, *, seconds=None):
-        """Looks at each screen in turn; the last one is the last look."""
-        while True:
-            last = len(self.screens) == 1
-            seen = look(self.screen())
-            if seen or last:
-                return seen
+    def clear_field(self):
+        self.typed = ""
 
     def type_text(self, text):
-        self.typed.append(text)
+        self.typed += text
 
-    def pause(self):
-        pass
+    def back(self):
+        self.backs += 1
+
+
+def test_a_draft_is_typed_and_left_unsent() -> None:
+    device = _DraftDevice()
+    THREAD_READER(device, lambda: None).draft("just shared it, good luck with the event!")
+    assert device.typed == "just shared it, good luck with the event!"
+    # Only the composer is touched; the keyboard and then the thread are closed.
+    assert device.taps == ["row_thread_composer_edittext"]
+    assert device.backs == 2
+
+
+def test_a_request_is_accepted_to_show_its_composer(monkeypatch) -> None:
+    device = _DraftDevice(request=True)
+
+    def accept(dev):
+        dev.accepted = True
+
+    monkeypatch.setattr(module, "accept_request", accept)
+    THREAD_READER(device, lambda: None).draft("sure, send it here")
+    assert device.accepted and device.typed == "sure, send it here"
+
+
+def test_a_draft_that_does_not_show_in_the_composer_fails() -> None:
+    with pytest.raises(module.EmulatorError, match="did not show"):
+        THREAD_READER(_DraftDevice(echo=False), lambda: None).draft("hi")
 
 
 def _thread(*messages):
@@ -339,30 +169,11 @@ def _thread(*messages):
     return [_node("", (0, 275, 1080, 1431), "message_list"), *messages, composer]
 
 
-def test_a_reply_is_confirmed_even_when_older_messages_scroll_away() -> None:
-    older = _node("Sure!", (850, 400, 1040, 450))
-    request = _node("could you share our post?", (179, 600, 882, 700))
-    # The keyboard capitalized the first letter.
-    sent = _node("Just shared it!", (700, 1200, 1040, 1250))
-    device = _ThreadDevice([_thread(older, request), _thread(request), _thread(request, sent)])
-    THREAD_READER(device, lambda: None).send("just shared it!")
-    assert device.typed == ["just shared it!"]
-
-
-def test_a_reply_slow_to_appear_is_still_confirmed() -> None:
-    request = _node("could you share our post?", (179, 600, 882, 700))
-    sent = _node("Just shared it!", (700, 1200, 1040, 1250))
-    # The reply shows only after several reads, as it can on a slow connection.
-    device = _ThreadDevice([_thread(request)] * 7 + [_thread(request, sent)])
-    THREAD_READER(device, lambda: None).send("just shared it!")
-    assert device.typed == ["just shared it!"]
-
-
 def test_a_hint_under_our_reply_is_not_a_message() -> None:
     request = _node("could you share our post?", (179, 600, 882, 700))
     sent = _node("Just shared it!", (700, 1200, 1040, 1250))
     hint = _node("Tap and hold to imagine with AI. Try it", (600, 1270, 1040, 1310))
-    assert module._newest_is_ours(_thread(request, sent, hint), "just shared it!")
+    assert _newest_is_ours(_thread(request, sent, hint), "just shared it!")
 
 
 def test_a_banner_over_the_thread_is_not_a_message() -> None:
@@ -372,14 +183,7 @@ def test_a_banner_over_the_thread_is_not_a_message() -> None:
     banner = _node("Your notifications are off.", (364, 1238, 716, 1280))
     turn_on = _node("Turn on", (487, 1291, 593, 1333))
     chat = _thread(request, sent, tray, banner, turn_on)
-    assert module._newest_is_ours(chat, "sure, send it here!")
-
-
-def test_a_reply_that_never_appears_is_not_confirmed() -> None:
-    request = _node("could you share our post?", (179, 600, 882, 700))
-    device = _ThreadDevice([_thread(request)])
-    with pytest.raises(module.EmulatorError, match="did not appear"):
-        THREAD_READER(device, lambda: None).send("just shared it!")
+    assert _newest_is_ours(chat, "sure, send it here!")
 
 
 def test_a_display_name_alone_is_not_taken_as_a_username() -> None:
@@ -415,17 +219,6 @@ def test_a_reel_drawn_as_a_bare_card_is_a_shared_post_with_its_forward_button() 
     assert forward is not None and forward.resource_id == "forwarding_shortcut_button"
 
 
-def test_a_thread_whose_newest_message_is_over_a_week_old_is_left_alone(
-    monkeypatch, queued, stories
-) -> None:
-    _Reader.stale = True
-    result = _handle(
-        monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=False
-    )
-    assert (result["status"], result["outcome"]) == ("decided", "ignore")
-    assert _Reader.sent == [] and stories == [] and queued == []
-
-
 def test_dates_tell_a_week_old_thread_from_a_recent_one() -> None:
     assert not module._newest_message_is_old(BUSINESS_CHAT)  # "MON 11:36 PM"
     assert module._newest_message_is_old(PERSONAL_CHAT)  # "OCT 4, 11:43 PM"
@@ -439,17 +232,6 @@ def test_an_online_sender_is_named_by_their_header_avatar() -> None:
         _node("", (178, 154, 273, 249), "header_avatar", "Open story of utscafterhours"),
     ]
     assert module._sender(chat) == "utscafterhours"
-
-
-def test_a_story_request_waits_while_the_emulator_is_low_on_storage(
-    monkeypatch, queued, stories, accepted
-) -> None:
-    _Device.free = 100
-    decision = DmDecision("story_repost", POST, "just shared it!")
-    with pytest.raises(BrowserSessionError, match="low on storage") as raised:
-        _handle(monkeypatch, decision, dry_run=False, request=True)
-    assert not isinstance(raised.value, BrowserEngagementUncertain)
-    assert stories == [] and accepted == [] and _Reader.sent == []
 
 
 # Laurier Audiology Association's chat: their post bubble cut off at the top of the

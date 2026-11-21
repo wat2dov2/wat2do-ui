@@ -881,11 +881,18 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
         load_controlbox(directory)
 
 
-def test_instagram_dms_send_nothing_without_review_and_check_at_random_gaps() -> None:
-    # Tony 2026-11-21: no reply goes out before he has reviewed it.
-    control = load_controlbox().instagram_dms
-    assert control.dry_run is True
-    assert control.sweep_gap_min_minutes <= control.sweep_gap_max_minutes
+def test_sittings_start_inside_action_hours_on_their_own_claude_login() -> None:
+    control = load_controlbox()
+    sessions = control.instagram_sessions
+    emulator = control.instagram_emulator
+    assert emulator.action_start_hour <= sessions.start_hour < emulator.action_end_hour
+    # After the morning's first curation run has drafted the day's carousels.
+    assert (sessions.start_hour, sessions.start_minute) > (
+        min(control.instagram_publishing.curation_hours),
+        control.instagram_publishing.curation_minute,
+    )
+    # Never the login ingestion runs on.
+    assert sessions.claude_config_dir not in ("~/.claude", "")
 
 
 def test_the_emulator_worker_acts_only_in_waking_hours() -> None:
@@ -896,11 +903,6 @@ def test_the_emulator_worker_acts_only_in_waking_hours() -> None:
 @pytest.mark.parametrize(
     ("feature", "change", "message"),
     [
-        (
-            "instagram_dms",
-            {"sweep_gap_min_minutes": 300, "sweep_gap_max_minutes": 60},
-            "sweep_gap_min_minutes",
-        ),
         (
             "instagram_emulator",
             {"action_start_hour": 22, "action_end_hour": 9},

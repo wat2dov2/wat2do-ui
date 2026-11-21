@@ -599,15 +599,12 @@ class InstagramPublishingControl(_ControlModel):
     # Later runs draft only schools still missing today's draft, so one failed run is retried.
     curation_hours: tuple[Annotated[int, Field(ge=0, le=23)], ...] = Field(min_length=1)
     curation_minute: int = Field(ge=0, le=59)
-    # Every ready draft for today is published at this Toronto time, after the first curation run.
-    auto_publish_hour: int = Field(ge=0, le=23)
-    auto_publish_minute: int = Field(ge=0, le=59)
     poster_timeout_seconds: float = Field(gt=0, le=120)
-    # Some minutes after a carousel publishes, the Mac's emulator likes, reposts and adds
-    # a song to it, waiting music_retry_minutes after a failed try.
+    # Right after a sitting posts a carousel, the Mac's emulator likes, reposts and adds a
+    # song to it; a carousel posted outside a sitting is tried again music_retry_minutes
+    # after a failed try, up to music_attempts tries within music_max_age_hours.
     music_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     music_agent_timeout_seconds: int = Field(gt=0, le=600)
-    music_delay_minutes: int = Field(ge=1, le=120)
     music_max_age_hours: int = Field(ge=1, le=72)
     music_attempts: int = Field(ge=1, le=10)
     # On a carousel's first song try, also comment a fitting movie or show GIF.
@@ -615,12 +612,6 @@ class InstagramPublishingControl(_ControlModel):
     # The GIF scene picker is shown this many of the latest searches, so it never repeats one.
     gif_recent_searches: int = Field(ge=1, le=200)
     music_retry_minutes: int = Field(ge=1, le=720)
-    # The morning publish waits up to follow_up_wait_minutes, checking every
-    # follow_up_poll_seconds, for the emulator to finish each carousel (like, repost,
-    # comment, tags, song, story) before posting the next school's; every school waits,
-    # even after one was not finished in time.
-    follow_up_wait_minutes: int = Field(ge=1, le=120)
-    follow_up_poll_seconds: int = Field(ge=1, le=300)
     # After a carousel publishes, the emulator worker shares each of its events' original
     # posts to the account's story, in slide order, during action hours and only while the
     # carousel is at most story_max_age_hours old.
@@ -1185,30 +1176,32 @@ class InstagramFollowControl(_ControlModel):
 
 
 class InstagramDmsControl(_ControlModel):
-    # Dry run reads, decides and logs each DM without replying or queueing anything.
-    dry_run: bool
-    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
-    agent_timeout_seconds: int = Field(gt=0, le=600)
+    # What a sitting reads of a DM thread and the replies it may draft.
     thread_item_limit: int = Field(ge=1, le=50)
-    # The model writes each reply; code refuses any longer than this.
+    # Code refuses to type a drafted reply longer than this.
     reply_max_characters: int = Field(ge=20, le=1000)
-    # The one email address a reply may give, for anything the model cannot answer.
+    # The one email address a reply may give, for anything Claude cannot answer.
     contact_email: str = Field(pattern=r"^[a-z0-9._-]+@wat2do\.io$")
-
-    # The inbox sweep: a LaunchAgent checks this often, and a sweep runs once a random
-    # gap in this window has passed since the last one, only between these local hours.
-    sweep_gap_min_minutes: int = Field(ge=10, le=1440)
-    sweep_gap_max_minutes: int = Field(ge=10, le=1440)
     # Threads whose newest message is older than this are left alone: the event is
     # likely over. The inbox is scrolled at most this many screens to find them.
     max_thread_age_days: int = Field(ge=1, le=60)
     inbox_scrolls: int = Field(ge=0, le=10)
 
-    @model_validator(mode="after")
-    def validate_windows(self) -> "InstagramDmsControl":
-        if self.sweep_gap_min_minutes > self.sweep_gap_max_minutes:
-            raise ValueError("sweep_gap_min_minutes cannot exceed sweep_gap_max_minutes")
-        return self
+
+class InstagramSessionsControl(_ControlModel):
+    # Each school account's daily sitting starts from this Toronto time, after the
+    # morning's first curation run has drafted its carousel.
+    start_hour: int = Field(ge=0, le=23)
+    start_minute: int = Field(ge=0, le=59)
+    # The Claude model that runs a sitting, and the Claude Code login it runs on, kept
+    # apart from the one ingestion uses so sittings never spend its usage.
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    claude_config_dir: str = Field(pattern=r"^~?/[A-Za-z0-9._/-]+$")
+    sitting_timeout_minutes: int = Field(ge=10, le=240)
+    # A sitting that breaks off is tried again, up to this many sittings a day; Claude's
+    # usage limit instead pauses every sitting this long.
+    sitting_attempts: int = Field(ge=1, le=5)
+    limit_pause_minutes: int = Field(ge=5, le=720)
 
 
 class InstagramEmulatorControl(_ControlModel):
@@ -1696,6 +1689,7 @@ class ControlBox(_ControlModel):
     legal: LegalControl
     instagram_follow: InstagramFollowControl
     instagram_dms: InstagramDmsControl
+    instagram_sessions: InstagramSessionsControl
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl

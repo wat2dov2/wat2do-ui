@@ -53,6 +53,8 @@ _held = threading.local()
 # Every device's screen reader; the end of each hold on the emulator stops them, so
 # Android's accessibility service is connected only while a job drives the app.
 _readers: weakref.WeakSet[ScreenReader] = weakref.WeakSet()
+# Set to "1" in a child process whose parent holds the emulator's lock for it.
+EMULATOR_HELD = "WAT2DO_EMULATOR_HELD"
 _RESTART_POLL_SECONDS = 5
 # How often a wait reads the screen again; a read of a screen that has gone still is
 # almost free, and one still changing waits for it to settle first.
@@ -566,6 +568,11 @@ class EmulatorDevice:
         self.restart()
         return self.free_data_megabytes()
 
+    def release_screen(self) -> None:
+        """Stop this process's screen reader, so another process on the emulator can
+        read the screen (only one UI automation connection is allowed at a time)."""
+        self._reader.stop()
+
     def restart(self) -> None:
         """Stop the emulator and wait for the ``run`` LaunchAgent to boot a fresh one.
 
@@ -780,15 +787,21 @@ def reclaim_due(now: datetime | None = None) -> bool:
 def exclusive() -> Iterator[None]:
     """Hold the emulator for one job; another job waits until this one is done.
 
-    A job may nest it, such as a DM job around the story repost it triggers; only
-    the outermost hold takes the lock, and its end stops the screen readers.
+    A job may nest it, such as a move inside the step that made it; only the outermost
+    hold takes the lock, and its end stops the screen readers. A Claude sitting's moves
+    run as child processes of the worker, which holds the lock for the whole sitting and
+    says so in ``EMULATOR_HELD``; they hold it as if nested.
     """
-    if getattr(_held, "depth", 0):
+    if getattr(_held, "depth", 0) or os.environ.get(EMULATOR_HELD) == "1":
+        _held.depth = getattr(_held, "depth", 0)
         _held.depth += 1
         try:
             yield
         finally:
             _held.depth -= 1
+            if not _held.depth:
+                for reader in list(_readers):
+                    reader.stop()
         return
     _LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with _LOCK_PATH.open("a") as handle:

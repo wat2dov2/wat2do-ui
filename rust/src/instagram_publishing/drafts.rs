@@ -671,7 +671,6 @@ mod tests {
 
     #[test]
     fn drafts_are_dated_in_toronto() {
-        // test_publish_ready_drafts_publishes_todays_drafts_one_by_one
         let at = Utc.with_ymd_and_hms(2026, 11, 6, 14, 35, 0).unwrap();
         assert_eq!(local_date(at).to_string(), "2026-11-06");
         let late = Utc.with_ymd_and_hms(2026, 11, 7, 3, 0, 0).unwrap();

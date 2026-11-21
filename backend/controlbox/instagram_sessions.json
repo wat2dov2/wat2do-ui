@@ -1,0 +1,9 @@
+{
+  "start_hour": 9,
+  "start_minute": 35,
+  "model": "claude-sonnet-5-5",
+  "claude_config_dir": "~/.claude-second",
+  "sitting_timeout_minutes": 90,
+  "sitting_attempts": 2,
+  "limit_pause_minutes": 30
+}
