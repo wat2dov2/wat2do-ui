@@ -5,9 +5,9 @@
 //! The morning publish waits after each school's carousel until the emulator
 //! worker has liked, reposted, commented on, tagged, set the song of and
 //! shared the stories for it, so every carousel gets them in its first
-//! minutes, before the next school posts. A carousel the worker has not
-//! finished within `follow_up_wait_minutes` means the emulator is not keeping
-//! up, and the rest are posted without waiting.
+//! minutes, before the next school posts. Every school waits, up to
+//! `follow_up_wait_minutes` each: one the worker has not finished in time is
+//! logged, and the next school still waits for its own.
 //!
 //! The slides are drawn from the events' live data at this moment, uploaded,
 //! and handed to Meta as one carousel. Once posted, the batch keeps the
@@ -131,7 +131,6 @@ impl<'a> Publisher<'a> {
         .fetch_all(self.db)
         .await?;
         let mut outcomes: BTreeMap<String, i64> = BTreeMap::new();
-        let mut paced = true;
         for (batch_id, account_key, version, slides) in rows {
             if slides < INSTAGRAM_PUBLISHING.minimum_event_slides as i64 {
                 *outcomes.entry("too_few_events".into()).or_default() += 1;
@@ -157,12 +156,11 @@ impl<'a> Publisher<'a> {
                 .map_err(job_error)?
                 .row
                 .status;
-            if paced && status == STATUS_PUBLISHED && !self.followed_up(batch_id).await? {
+            if status == STATUS_PUBLISHED && !self.followed_up(batch_id).await? {
                 tracing::warn!(
                     "The emulator did not finish {account_key}'s carousel in time; \
-                     posting the rest without waiting"
+                     the next school still waits for its own"
                 );
-                paced = false;
             }
             *outcomes.entry(status).or_default() += 1;
         }

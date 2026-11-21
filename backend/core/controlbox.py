@@ -617,8 +617,8 @@ class InstagramPublishingControl(_ControlModel):
     music_retry_minutes: int = Field(ge=1, le=720)
     # The morning publish waits up to follow_up_wait_minutes, checking every
     # follow_up_poll_seconds, for the emulator to finish each carousel (like, repost,
-    # comment, tags, song, story) before posting the next school's; once one is not
-    # finished in time, it posts the rest without waiting.
+    # comment, tags, song, story) before posting the next school's; every school waits,
+    # even after one was not finished in time.
     follow_up_wait_minutes: int = Field(ge=1, le=120)
     follow_up_poll_seconds: int = Field(ge=1, le=300)
     # After a carousel publishes, the emulator worker shares each of its events' original
