@@ -5,7 +5,7 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { CircleUser, HelpCircle, MoreHorizontal, Shapes, Ticket, Users } from "lucide-react";
+import { ChevronDown, CircleUser, HelpCircle, Menu, Plus, Shapes, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -17,6 +17,12 @@ import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import {
   Drawer,
   DrawerContent,
@@ -86,10 +92,58 @@ const PRIMARY_NAV_ITEMS = [
   { labelKey: "navigation.about", href: ROUTES.ABOUT, Icon: HelpCircle },
 ] as const;
 
-/** A signed-in visitor's own page: their avatar opens it on a wide screen, and the side menu lists it on a phone. */
+/** A signed-in visitor's own page: their avatar opens it on a wide screen, and the side menu lists it on a narrower one. */
 const PROFILE_NAV_ITEM = { labelKey: "navigation.profile", href: ROUTES.PROFILE, Icon: CircleUser } as const;
 
 type NavigationItem = (typeof PRIMARY_NAV_ITEMS)[number] | typeof PROFILE_NAV_ITEM;
+
+/**
+ * Every submission form, which the Submit menu and the footer list. Each is
+ * open to everyone, signed in or not, and asks for sign-in itself at submit.
+ */
+export const SUBMISSION_FORMS = [
+  { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket },
+  { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users },
+  { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE, Icon: Shapes },
+] as const;
+
+interface SubmitMenuProps {
+  size: "sm" | "navigation";
+  onNavigate?: () => void;
+}
+
+/** The way into every submission form: a menu of what to submit. */
+function SubmitMenu({ size, onNavigate }: SubmitMenuProps) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const active = SUBMISSION_FORMS.some(({ href }) => isRouteActive(pathname, href));
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant={active ? "outline" : "ghost"} size={size}>
+          {size === "navigation" ? <Plus /> : null}
+          <span className="min-w-0 flex-1 truncate text-start">{t("navigation.submit")}</span>
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {SUBMISSION_FORMS.map(({ labelKey, href, Icon }) => (
+          <DropdownMenuItem
+            key={href}
+            onSelect={() => {
+              onNavigate?.();
+              router.push(href);
+            }}
+          >
+            <Icon />
+            {t(labelKey)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 interface NavigationLinkProps {
   item: NavigationItem;
@@ -213,10 +267,11 @@ export function TopNav() {
       </div>
 
       {/*
-        Signed in or out, a wide screen's bar holds the same pages, language
-        and theme. Only what follows differs: Sign in, or the visitor's bell and
-        avatar, which opens their profile. A phone's bar has room only for the
-        bell and a button that opens the side menu: the avatar, or "...". The
+        From the `nav` breakpoint up (`--breakpoint-nav` in index.css), signed
+        in or out, the bar holds the same pages, Submit, language and theme.
+        Only what follows differs: Sign in, or the visitor's bell and avatar,
+        which opens their profile. Below it the bar has room only for the bell
+        and a button that opens the side menu: the avatar, or the menu icon. The
         server cannot know who is visiting, so those are SessionView looks: the
         bar a signed-in visitor first sees is already their own, never Sign in
         turning into an avatar once the page wakes up.
@@ -224,14 +279,15 @@ export function TopNav() {
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <nav
           aria-label={t("navigation.primary")}
-          className="hidden items-center gap-0.5 md:flex"
+          className="hidden items-center gap-0.5 nav:flex"
         >
           {PRIMARY_NAV_ITEMS.map((item) => (
             <NavigationLink key={item.href} item={item} size="sm" />
           ))}
+          <SubmitMenu size="sm" />
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 nav:flex">
           <Separator
             orientation="vertical"
             data-nav-preferences-divider
@@ -245,7 +301,7 @@ export function TopNav() {
           signedIn={
             <>
               <NotificationBell />
-              <Button asChild variant="avatar" size="icon-sm" className="hidden md:inline-flex">
+              <Button asChild variant="avatar" size="icon-sm" className="hidden nav:inline-flex">
                 <NextLink
                   href={ROUTES.PROFILE}
                   aria-label={t("navigation.profile")}
@@ -257,7 +313,7 @@ export function TopNav() {
               <Button
                 variant="avatar"
                 size="icon-sm"
-                className="md:hidden"
+                className="nav:hidden"
                 aria-label={t("navigation.openMenu")}
                 aria-haspopup="dialog"
                 aria-expanded={navigationOpen}
@@ -273,7 +329,7 @@ export function TopNav() {
                 <TooltipTrigger asChild>
                   <Button
                     size="sm"
-                    className="hidden md:inline-flex"
+                    className="hidden nav:inline-flex"
                     onPointerEnter={prefetchSignIn}
                     onFocus={prefetchSignIn}
                     onTouchStart={prefetchSignIn}
@@ -289,19 +345,19 @@ export function TopNav() {
               <Button
                 variant="outline"
                 size="icon-sm"
-                className="md:hidden"
+                className="nav:hidden"
                 aria-label={t("navigation.openMenu")}
                 aria-haspopup="dialog"
                 aria-expanded={navigationOpen}
                 onClick={openNavigation}
               >
-                <MoreHorizontal className="size-4" />
+                <Menu />
               </Button>
             </>
           }
         />
 
-        {/* A phone's side menu: the pages its bar has no room for, and the visitor's profile. */}
+        {/* The side menu below the `nav` breakpoint: the pages and Submit its bar has no room for, and the visitor's profile. */}
         <Drawer
           open={navigationOpen}
           onOpenChange={setNavigationOpen}
@@ -347,6 +403,7 @@ export function TopNav() {
                 {PRIMARY_NAV_ITEMS.map((item) => (
                   <NavigationLink key={item.href} item={item} size="navigation" onNavigate={closeNavigation} />
                 ))}
+                <SubmitMenu size="navigation" onNavigate={closeNavigation} />
                 {isAuthenticated && (
                   <NavigationLink item={PROFILE_NAV_ITEM} size="navigation" onNavigate={closeNavigation} />
                 )}

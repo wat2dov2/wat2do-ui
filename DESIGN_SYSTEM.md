@@ -211,7 +211,9 @@ Top nav:
 
 - Logo button on left.
 - School selector nearby.
-- Admin/organization/language/theme/auth controls on right.
+- On the right: Events, Positions, Clubs, About, Submit (a menu of the submission forms), language and theme, then Sign in, or the notification bell and the avatar that opens the profile.
+- The bar has one breakpoint, `--breakpoint-nav` in `frontend/src/index.css` (Tailwind's lg, 1024px), used as `nav:`.
+  Below it the pages, Submit, language and theme move into the side menu, which the avatar or a three-line menu button opens.
 - Controls are compact and mostly icon-forward on small screens.
 
 Floating dock:

@@ -4,6 +4,7 @@ import Image from "next/image";
 import navLogo from "@/assets/wat2do-logo-nav.webp";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
+import { SUBMISSION_FORMS } from "@/app/TopNav";
 import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { EXTERNAL_LINKS, schoolInstagramHandle, schoolInstagramUrl } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
@@ -17,10 +18,7 @@ const FOOTER_LINK_GROUPS = [
       { labelKey: "navigation.events", href: ROUTES.EVENTS },
       { labelKey: "navigation.clubs", href: ROUTES.CLUBS },
       { labelKey: "navigation.positions", href: ROUTES.POSITIONS },
-      // The submission forms are open to everyone, signed in or not.
-      { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT },
-      { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT },
-      { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE },
+      ...SUBMISSION_FORMS,
     ],
   },
   {

@@ -615,7 +615,8 @@ test.describe("Loading shells", () => {
         await page.goto(`${BASE}${listing.path}`, { waitUntil: "commit" });
         await expect.poll(() => requested).toBe(true);
         await expect(page.getByRole("banner").getByRole("link", { name: "About", exact: true }).first()).toBeVisible();
-        await expect(page.getByRole("button", { name: "Open navigation menu", exact: true })).toBeVisible();
+        // A wide bar's avatar opens the profile; only a narrow bar's opens the side menu.
+        await expect(page.getByRole("banner").getByRole("link", { name: "Profile", exact: true })).toBeVisible();
         const shell = page.locator('[data-slot="discovery-loading"]');
         await expect(shell).toBeVisible();
         if (listing.resource === "events") {
@@ -929,7 +930,7 @@ test.describe("Auth Page", () => {
     await setSignedInCookie(page, "1");
     await page.goto(BASE);
 
-    await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
+    await expect(page.getByRole("banner").getByRole("link", { name: "Profile", exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(
       (key) => window.localStorage.getItem(key), STORAGE_KEYS.USER_EMAIL,
     )).toBe(JSON.stringify(TEST_EMAIL));
@@ -5153,6 +5154,30 @@ test.describe("Standalone submission pages", () => {
     await expect(moreFilters).toBeInViewport();
   });
 
+  test("the Submit menu opens every submission form, from the bar and from the side menu", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE);
+    const bar = page.getByRole("banner").getByRole("navigation", { name: "Primary navigation" });
+    await bar.getByRole("button", { name: "Submit", exact: true }).click();
+    for (const name of ["Add event", "Add position", "Add club"]) {
+      await expect(page.getByRole("menuitem", { name, exact: true })).toBeVisible();
+    }
+    await page.getByRole("menuitem", { name: "Add club", exact: true }).click();
+    await expect(page).toHaveURL(/\/clubs\/new$/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE);
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await navigation.getByRole("button", { name: "Submit", exact: true }).click();
+    for (const name of ["Add event", "Add position", "Add club"]) {
+      await expect(page.getByRole("menuitem", { name, exact: true })).toBeVisible();
+    }
+    await page.getByRole("menuitem", { name: "Add position", exact: true }).click();
+    await expect(page).toHaveURL(/\/positions\/submit$/);
+    await expect(navigation).toHaveCount(0);
+  });
+
   test("the profile lists what the user submitted in each kind's own tab", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -5772,6 +5797,29 @@ test.describe("Navigation", () => {
     ).toBeVisible();
   });
 
+  test("the bar holds every page and Submit from 1024px up, and below that a menu button opens them", async ({ page }) => {
+    const topNavigation = page.getByRole("banner");
+    const barPages = topNavigation.getByRole("navigation", { name: "Primary navigation" });
+    const menuButton = topNavigation.getByRole("button", { name: "Open navigation menu" });
+    await page.setViewportSize({ width: 1023, height: 900 });
+    await page.goto(BASE);
+    await expect(barPages).toBeHidden();
+    await expect(topNavigation.getByRole("button", { name: "Sign In", exact: true })).toBeHidden();
+    await expect(menuButton).toBeVisible();
+    // A three-line menu icon, not an ellipsis.
+    await expect(menuButton.locator("svg.lucide-menu")).toBeVisible();
+
+    await page.setViewportSize({ width: 1024, height: 900 });
+    await expect(barPages.getByRole("link")).toHaveText(["Events", "Positions", "Clubs", "About"]);
+    await expect(barPages.getByRole("button", { name: "Submit", exact: true })).toBeVisible();
+    await expect(topNavigation.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+    await expect(topNavigation.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
+    await expect(menuButton).toBeHidden();
+    // The bar still leaves the school's whole name room.
+    const schoolName = topNavigation.getByRole("button", { name: "University of Waterloo" }).locator('[data-slot="highlighter"]');
+    expect(await schoolName.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  });
+
   test("a signed-in bar keeps every page, the bell and the avatar, and a phone's menu adds the profile", async ({ page, next }) => {
     await seedAuthenticatedSession(page, next);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -5783,11 +5831,17 @@ test.describe("Navigation", () => {
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
     const menu = drawer.locator('[data-slot="drawer-body"]');
-    // The menu opens on the logo, language and theme, then lists the pages and the visitor's profile, and nothing else.
+    // The menu opens on the logo, language and theme, then lists the pages, Submit and the visitor's profile, and nothing else.
     await expect(drawer.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
     const pages = menu.getByRole("navigation");
     await expect(pages.getByRole("link")).toHaveText(["Events", "Positions", "Clubs", "About", "Profile"]);
-    for (const name of ["Submit", "Log out", "Admin", "Club Panel"]) {
+    await expect(pages.getByRole("button")).toHaveText(["Submit"]);
+    const aboutBox = await pages.getByRole("link", { name: "About", exact: true }).boundingBox();
+    const submitBox = await pages.getByRole("button", { name: "Submit", exact: true }).boundingBox();
+    const profileBox = await pages.getByRole("link", { name: "Profile", exact: true }).boundingBox();
+    expect(aboutBox!.y).toBeLessThan(submitBox!.y);
+    expect(submitBox!.y).toBeLessThan(profileBox!.y);
+    for (const name of ["Log out", "Admin", "Club Panel"]) {
       await expect(drawer.getByRole("button", { name, exact: true })).toHaveCount(0);
     }
     for (const name of ["My tickets", "Settings"]) {
@@ -5798,10 +5852,10 @@ test.describe("Navigation", () => {
     await expect(drawer).toHaveCount(0);
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    // A wide screen's bar shows a signed-in visitor the same pages, language and theme as everyone, then the bell and the avatar.
+    // A wide screen's bar shows a signed-in visitor the same pages, Submit, language and theme as everyone, then the bell and the avatar.
     const barPages = topNavigation.getByRole("navigation", { name: "Primary navigation" });
     await expect(barPages.getByRole("link")).toHaveText(["Events", "Positions", "Clubs", "About"]);
-    await expect(barPages.getByRole("button", { name: "Submit", exact: true })).toHaveCount(0);
+    await expect(barPages.getByRole("button", { name: "Submit", exact: true })).toBeVisible();
     await expect(topNavigation.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
     await expect(topNavigation.getByRole("button", { name: "Sign In", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "Open navigation menu" })).toBeHidden();

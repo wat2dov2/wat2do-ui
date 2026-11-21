@@ -91,6 +91,7 @@
   },
   "navigation": {
     "events": "События",
+    "submit": "Отправить",
     "clubs": "Организации",
     "positions": "Должности",
     "myEvents": "Мои события",
