@@ -158,6 +158,7 @@ Claude decides each thread from the facts about Wat2Do its prompt lists: sharing
 No direct message is ever sent by the automation: `ig draft` types our reply into its thread and leaves it there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
 A draft lives in its thread on the emulator only, which has no window: `backend/scripts/review_dm_drafts.py <school>` waits for the worker's current job, opens that account's inbox and shows the emulator in a scrcpy window, holding the emulator until the window closes.
 A thread where a club asked us to repost, share or feature its post also gets the claim-link message (`ig draft --claim <their username>`): its club's own claim link, from its outreach lead (one is made if the unclaimed club has none), typed straight into the thread and never printed or logged.
+A sitting reads every claim link as `[claim link]`, and `ig draft` leaves a thread that already holds an unsent claim link as it is until a person sends it.
 Clubs want story reposts and carousel spots, so replies never ask about adding things
 to the site.
 A story repost or carousel request sets `events.carousel_requested_at` on the events

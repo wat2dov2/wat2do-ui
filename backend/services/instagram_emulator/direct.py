@@ -26,6 +26,8 @@ from services.instagram_emulator.inbox import accept_request, raise_if_messaging
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
+# A club's claim link, which carries its claim token.
+CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/\S+", re.IGNORECASE)
 _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
 _POST_LINK = re.compile(r"^https://www\.instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)/")
@@ -58,6 +60,10 @@ _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
 # Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
 _REVEAL_SCROLLS = 4
+
+
+class DraftWaiting(EmulatorError):
+    """The thread already holds an unsent claim-link draft that a person has yet to send."""
 
 
 class ThreadReader:
@@ -98,13 +104,20 @@ class ThreadReader:
 
         A message request shows its composer only once accepted. The draft is confirmed
         in the composer, then the keyboard and the thread are closed; Instagram keeps a
-        thread's unsent text as its draft.
+        thread's unsent text as its draft. A thread already holding an unsent claim link
+        is left untouched until a person has read and sent it.
         """
         nodes = self._screen_in_thread()
         if self._device.find(_COMPOSER, nodes) is None:
             accept_request(self._device)
             nodes = self._screen_in_thread()
-        self._device.tap(_required(self._device.find(_COMPOSER, nodes)))
+        composer = _required(self._device.find(_COMPOSER, nodes))
+        if CLAIM_LINK.search(composer.text):
+            raise DraftWaiting(
+                "This thread already holds an unsent claim-link draft waiting for a person, "
+                "so it was left as it is"
+            )
+        self._device.tap(composer)
         self._device.clear_field()
         self._device.type_text(text)
         typed = _required(self._device.find(_COMPOSER)).text
