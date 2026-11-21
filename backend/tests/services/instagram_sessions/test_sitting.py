@@ -149,3 +149,30 @@ def test_a_waiting_carousel_is_retried_only_after_the_retry_gap(monkeypatch):
     ]
     monkeypatch.setattr(sitting, "get_sb", lambda: SimpleNamespace(table=lambda name: _Table(rows)))
     assert sitting._waiting_carousels(moment) == ["ubc", "sfu"]
+
+
+def test_claudes_usage_limit_pauses_every_sitting(monkeypatch, state):
+    def limited(prompt, **options):
+        raise ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(sitting, "run_agent", limited)
+    monkeypatch.setattr(sitting.school_service, "get_school", lambda slug: None)
+    state["ready"] = ["uwo"]
+    assert sitting.due(MORNING)
+    sitting.run(_Device(), "uwo", MORNING)
+    assert sitting.due(MORNING) == []
+    later = MORNING + timedelta(minutes=sitting.CONTROL.limit_pause_minutes)
+    assert sitting.due(later)[0] == "uwo"
+
+
+def test_a_sitting_that_breaks_off_is_tried_again_then_given_up(monkeypatch, state):
+    def broken(prompt, **options):
+        raise sitting.ClaudeCodeError("failed (exit 1)")
+
+    monkeypatch.setattr(sitting, "run_agent", broken)
+    monkeypatch.setattr(sitting.school_service, "get_school", lambda slug: None)
+    for attempt in range(1, sitting.CONTROL.sitting_attempts + 1):
+        assert "uwo" in sitting.due(MORNING)
+        report = sitting.run(_Device(), "uwo", MORNING)
+        assert "did not finish" in report["problems"]
+    assert "uwo" not in sitting.due(MORNING)

@@ -69,6 +69,9 @@ def due(now: datetime | None = None) -> list[str]:
     moment = (now or datetime.now(timezone.utc)).astimezone(TORONTO)
     if not EMULATOR.action_start_hour <= moment.hour < EMULATOR.action_end_hour:
         return []
+    if _paused_until() > moment:
+        # Claude's usage limit turned the last sitting away; every sitting waits it out.
+        return []
     schools = [
         school for school in _waiting_carousels(moment) if school in EMULATOR.android_user_by_school
     ]
@@ -102,12 +105,18 @@ def run(device: EmulatorDevice, school: str, now: datetime | None = None) -> dic
             env=_environment(school, workdir),
         )
     except ClaudeLimited as exc:
-        # Nothing was decided; the sitting waits for Claude's limit to reset.
+        # Nothing was decided; every sitting waits for Claude's limit to reset.
         log.warning("Sitting for %s waits: %s", school, exc)
+        _pause(moment + timedelta(minutes=CONTROL.limit_pause_minutes))
         return None
     except ClaudeCodeError as exc:
-        report = {"problems": f"The sitting did not finish: {exc}"}
         log.error("Sitting for %s did not finish: %s", school, exc)
+        report = {"problems": f"The sitting did not finish: {exc}"}
+        _log_report(school, report)
+        # A sitting that broke off is tried again, at most `sitting_attempts` times a day.
+        if _tried(school, moment.date()) >= CONTROL.sitting_attempts:
+            _mark_sat(school, moment.date())
+        return report
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
     _mark_sat(school, moment.date())
@@ -186,27 +195,54 @@ def _ready_drafts(day: date) -> set[str]:
     return {school_service.with_school_slug(row)["school"] for row in rows}
 
 
-def _sat_on(day: date) -> list[str]:
+def _state() -> dict[str, Any]:
     try:
         state = json.loads(STATE_PATH.read_text())
     except (OSError, ValueError):
-        return []
-    return list(state.get(day.isoformat(), []))
+        return {}
+    return state if isinstance(state, dict) else {}
+
+
+def _save(state: dict[str, Any], day: date) -> None:
+    """Keep only the last week of days, and the pause."""
+    keep = {(day - timedelta(days=offset)).isoformat() for offset in range(7)} | {"paused_until"}
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    STATE_PATH.write_text(json.dumps({key: value for key, value in state.items() if key in keep}))
+
+
+def _sat_on(day: date) -> list[str]:
+    return list(_state().get(day.isoformat(), {}).get("sat", []))
 
 
 def _mark_sat(school: str, day: date) -> None:
-    """Record the school's sitting for the day; only the last week is kept."""
-    try:
-        state = json.loads(STATE_PATH.read_text())
-    except (OSError, ValueError):
-        state = {}
-    sat = state.setdefault(day.isoformat(), [])
+    state = _state()
+    sat = state.setdefault(day.isoformat(), {}).setdefault("sat", [])
     if school not in sat:
         sat.append(school)
-    keep = {(day - timedelta(days=offset)).isoformat() for offset in range(7)}
-    state = {key: value for key, value in state.items() if key in keep}
-    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state))
+    _save(state, day)
+
+
+def _tried(school: str, day: date) -> int:
+    """Count one more sitting for the school today that broke off; the count so far."""
+    state = _state()
+    tries = state.setdefault(day.isoformat(), {}).setdefault("tries", {})
+    tries[school] = tries.get(school, 0) + 1
+    _save(state, day)
+    return int(tries[school])
+
+
+def _pause(until: datetime) -> None:
+    state = _state()
+    state["paused_until"] = until.isoformat()
+    _save(state, until.astimezone(TORONTO).date())
+
+
+def _paused_until() -> datetime:
+    value = _state().get("paused_until")
+    try:
+        return datetime.fromisoformat(value) if value else datetime.min.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
 
 
 def _log_report(school: str, report: dict[str, Any]) -> None:

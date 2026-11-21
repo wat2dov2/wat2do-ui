@@ -1198,6 +1198,10 @@ class InstagramSessionsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     claude_config_dir: str = Field(pattern=r"^~?/[A-Za-z0-9._/-]+$")
     sitting_timeout_minutes: int = Field(ge=10, le=240)
+    # A sitting that breaks off is tried again, up to this many sittings a day; Claude's
+    # usage limit instead pauses every sitting this long.
+    sitting_attempts: int = Field(ge=1, le=5)
+    limit_pause_minutes: int = Field(ge=5, le=720)
 
 
 class InstagramEmulatorControl(_ControlModel):
