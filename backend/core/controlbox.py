@@ -1066,6 +1066,12 @@ class IngestionControl(_ControlModel):
     # Club logo profile reads share the Mac's IP with post fetches, so they are spaced out.
     club_logo_read_delay_seconds: float = Field(ge=0, le=3600, allow_inf_nan=False)
     club_logo_retry_days: int = Field(gt=0, le=365)
+    # A profile Lightpanda did not render (timed out or failed) is read again after this many
+    # hours instead of the retry days.
+    club_logo_failed_retry_hours: int = Field(ge=1, le=720)
+    # The list of handles to read is built again this often, so a club that is new or just got
+    # a handle is read without waiting for the list to run out.
+    club_logo_relist_minutes: int = Field(ge=1, le=1440)
     # Lightpanda, relative to the home folder; it renders club profiles logged out.
     profile_renderer: str = Field(min_length=1, max_length=200)
     profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)

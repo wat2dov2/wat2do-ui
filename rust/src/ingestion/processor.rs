@@ -25,7 +25,7 @@ use sqlx::PgPool;
 use tokio::sync::{Mutex, Notify};
 use tokio::time::Instant;
 
-use super::club_logos::{ClubLogos, is_blocked};
+use super::club_logos::{self, ClubLogos, Read, is_blocked};
 use super::fetch::{FetchBlocked, fetch_post};
 use super::items::{self, Item, Stage};
 use super::quiet_schools::{self, QuietSchools};
@@ -166,22 +166,32 @@ impl Processor {
         }
     }
 
+    /// Read the profile of one club that needs a logo or a real name (`club_logos`);
+    /// refused reads pause with post fetches, and a page that did not render is read again soon.
     async fn fill_club_logo_next(&self) -> Result<bool> {
         if self.paused(&self.fetch_paused_until).await {
             return Ok(false);
         }
-        match self.club_logos.lock().await.fill_next(&self.pool).await {
-            Ok(false) => return Ok(false),
-            Ok(true) => {}
+        let next = self.club_logos.lock().await.take_next(&self.pool).await?;
+        let Some(taken) = next else {
+            return Ok(false);
+        };
+        match club_logos::read_handle(&self.pool, &taken).await {
+            Ok(Read::Done) => self.count("club_logo_read").await,
+            Ok(Read::NoPublicProfile) => self.count("club_logo_no_public_profile").await,
+            Ok(Read::NotRendered) => {
+                self.count("club_logo_not_rendered").await;
+                self.club_logos.lock().await.retry_soon(taken)?;
+            }
             Err(error) => {
                 if let Some(blocked) = is_blocked(&error) {
                     self.pause_fetches(blocked).await;
+                    self.club_logos.lock().await.give_back(taken)?;
                     return Ok(false);
                 }
                 return Err(error);
             }
         }
-        self.count("club_logo_read").await;
         // Club logos are background work: space the reads out behind the post fetches.
         self.stopping
             .sleep(Duration::from_secs_f64(

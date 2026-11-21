@@ -27,6 +27,8 @@
   "fetch_timeout_seconds": 30,
   "club_logo_read_delay_seconds": 20,
   "club_logo_retry_days": 30,
+  "club_logo_failed_retry_hours": 3,
+  "club_logo_relist_minutes": 30,
   "profile_renderer": ".local/libexec/wat2do/lightpanda",
   "profile_render_timeout_seconds": 45,
   "quiet_school_hours": 18,

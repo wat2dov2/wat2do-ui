@@ -162,6 +162,8 @@ pub struct Ingestion {
     pub fetch_timeout_seconds: f64,
     pub club_logo_read_delay_seconds: f64,
     pub club_logo_retry_days: u64,
+    pub club_logo_failed_retry_hours: u64,
+    pub club_logo_relist_minutes: u64,
     pub profile_renderer: String,
     pub profile_render_timeout_seconds: f64,
     pub quiet_school_hours: u64,

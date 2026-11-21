@@ -113,17 +113,18 @@ pub fn profile_renderer() -> std::path::PathBuf {
     crate::launch_agents::home().join(&INGESTION.profile_renderer)
 }
 
-/// `fetch_profile`: an empty profile when it is renamed, deleted or did not render.
+/// `fetch_profile`: the profile, empty when it is renamed or deleted, or None when
+/// Lightpanda did not render the page (it timed out or failed), so nothing is known.
 ///
 /// Instagram stopped serving profile embeds in November 2026 (every `/embed/` page
 /// is an error page now), and a plain request gets only the app shell, so the
 /// public profile page is rendered logged out by Lightpanda, which fills in the
 /// same `og:title` and `og:image` tags a browser sees. No cookie is involved.
-pub async fn fetch_profile(handle: &str) -> Result<Profile, FetchBlocked> {
+pub async fn fetch_profile(handle: &str) -> Result<Option<Profile>, FetchBlocked> {
     let Some(html) = render_profile(handle).await else {
-        return Ok(Profile::default());
+        return Ok(None);
     };
-    rendered_profile(&html, handle)
+    rendered_profile(&html, handle).map(Some)
 }
 
 /// The public profile page as Lightpanda renders it logged out, or None when it did not.
