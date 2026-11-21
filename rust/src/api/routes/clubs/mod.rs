@@ -964,6 +964,48 @@ pub struct SubmissionUpdate {
     rejection_reason: Option<String>,
 }
 
+/// The 409 answer when the school already lists a club with the sent Instagram handle.
+#[allow(dead_code)]
+#[derive(ToSchema)]
+pub struct ClubExistsResponse {
+    detail: String,
+    club_id: i32,
+    club_name: String,
+}
+
+/// Refuse an Instagram handle another club at the school already has: one club per
+/// account and school (`clubs_school_handle_key`, compared by `club_handle_key`).
+/// The answer names that club, so the sender can open it and claim it instead.
+async fn ensure_handle_free(
+    db: &sqlx::PgPool,
+    school_slug: &str,
+    ig: Option<&str>,
+    except: Option<i64>,
+) -> Result<(), ApiError> {
+    let Some(ig) = ig else {
+        return Ok(());
+    };
+    let existing: Option<(i32, String)> = read_with_retry(|| {
+        sqlx::query_as(
+            "SELECT c.id, c.club_name FROM public.clubs c \
+             JOIN public.schools s ON s.id = c.school_id \
+             WHERE s.slug = $1 AND public.club_handle_key($2) <> '' \
+               AND public.club_handle_key(c.ig) = public.club_handle_key($2) \
+               AND c.id IS DISTINCT FROM $3::bigint \
+             LIMIT 1",
+        )
+        .bind(school_slug)
+        .bind(ig)
+        .bind(except)
+        .fetch_optional(db)
+    })
+    .await?;
+    match existing {
+        Some((club_id, club_name)) => Err(ApiError::ClubExists { club_id, club_name }),
+        None => Ok(()),
+    }
+}
+
 /// `ClubResponse` columns of the row a write returned (`RETURNING`), for clubs `c`.
 fn returned_club_sql(school: &str) -> String {
     format!("{CLUB_FIELDS}, {school} AS school, 0::bigint AS event_count")
@@ -979,6 +1021,7 @@ fn returned_club_sql(school: &str) -> String {
     request_body = ClubCreate,
     responses(
         (status = 201, description = "Successful Response", body = ClubResponse),
+        (status = 409, description = "The school already lists this Instagram account's club", body = ClubExistsResponse),
         (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
     )
 )]
@@ -1002,6 +1045,13 @@ pub async fn create_club(
     };
     let auto_approve = db_user.as_ref().is_some_and(User::is_admin);
     let school_slug = normalize_slug(fields.school.clone().value().as_deref().unwrap_or_default());
+    ensure_handle_free(
+        &state.db,
+        &school_slug,
+        fields.ig.clone().value().as_deref(),
+        None,
+    )
+    .await?;
     // Insert and read back in one statement; a new club has no events yet.
     let sql = format!(
         "WITH school AS (SELECT id, slug FROM public.schools WHERE slug = $1 AND $1 <> '' LIMIT 1), \
@@ -1141,6 +1191,7 @@ pub async fn review_club(
     request_body = ClubUpdate,
     responses(
         (status = 200, description = "Successful Response", body = ClubResponse),
+        (status = 409, description = "The school already lists this Instagram account's club", body = ClubExistsResponse),
         (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
     )
 )]
@@ -1199,6 +1250,19 @@ async fn apply_update(
     existing: &ClubResponse,
     fields: ClubFields,
 ) -> Result<ClubResponse, ApiError> {
+    if fields.ig.is_set() || fields.school.is_set() {
+        let school = if fields.school.is_set() {
+            normalize_slug(fields.school.clone().value().as_deref().unwrap_or_default())
+        } else {
+            existing.school.clone().unwrap_or_default()
+        };
+        let ig = if fields.ig.is_set() {
+            fields.ig.clone().value()
+        } else {
+            existing.ig.clone()
+        };
+        ensure_handle_free(db, &school, ig.as_deref(), Some(id)).await?;
+    }
     let mut assignments: Vec<String> = Vec::new();
     let mut args: Vec<Arg> = Vec::new();
     let mut assign = |column: &str, arg: Arg, args: &mut Vec<Arg>| {

@@ -18,7 +18,7 @@ use crate::api::pagination::Pagination;
 use crate::constants::{CLUB_TYPE_INDEPENDENT, MAX_CLUB_NAME_LENGTH};
 use crate::db::read_with_retry;
 use crate::revalidation::revalidate_schools;
-use crate::text::{casefold, python_strip};
+use crate::text::python_strip;
 
 pub const APPROVED: &str = "approved";
 pub const REJECTED: &str = "rejected";
@@ -106,11 +106,6 @@ pub struct DecisionCounts {
     pub rejected: i64,
 }
 
-/// A handle as clubs store it, compared casefolded (`lookup_club_by_school_and_ig`).
-fn handle_key(handle: &str) -> String {
-    casefold(python_strip(handle).trim_start_matches('@'))
-}
-
 /// `_club_for`: the club the row was found for (given the account when it has
 /// none), else the school's one club with this handle, else a new approved club.
 async fn club_for(db: &PgPool, candidate: &Candidate) -> Result<i32, ApiError> {
@@ -120,6 +115,8 @@ async fn club_for(db: &PgPool, candidate: &Candidate) -> Result<i32, ApiError> {
                   filled AS ( \
                       UPDATE public.clubs SET ig = $3 \
                       WHERE id IN (SELECT id FROM linked) AND coalesce(btrim(ig), '') = '' \
+                        AND NOT EXISTS (SELECT 1 FROM public.clubs other WHERE other.school_id = $2 \
+                            AND public.club_handle_key(other.ig) = public.club_handle_key($3)) \
                       RETURNING id) \
              SELECT id, EXISTS (SELECT 1 FROM filled) FROM linked",
         )
@@ -140,20 +137,19 @@ async fn club_for(db: &PgPool, candidate: &Candidate) -> Result<i32, ApiError> {
             return Ok(id);
         }
     }
-    let clubs: Vec<(i32, Option<String>)> = read_with_retry(|| {
-        sqlx::query_as("SELECT id, ig FROM public.clubs WHERE school_id = $1 ORDER BY id")
-            .bind(candidate.school_id)
-            .fetch_all(db)
+    // At most one: `clubs_school_handle_key` keeps one club per handle and school.
+    let existing: Option<i32> = read_with_retry(|| {
+        sqlx::query_scalar(
+            "SELECT id FROM public.clubs WHERE school_id = $1 \
+             AND public.club_handle_key(ig) = public.club_handle_key($2)",
+        )
+        .bind(candidate.school_id)
+        .bind(&candidate.handle)
+        .fetch_optional(db)
     })
     .await?;
-    let target = handle_key(&candidate.handle);
-    let matches: Vec<i32> = clubs
-        .into_iter()
-        .filter(|(_, ig)| handle_key(ig.as_deref().unwrap_or_default()) == target)
-        .map(|(id, _)| id)
-        .collect();
-    if let [id] = matches.as_slice() {
-        return Ok(*id);
+    if let Some(id) = existing {
+        return Ok(id);
     }
     // `ClubCreate`: the account's name (else its handle), stripped and non-blank.
     let name = candidate
@@ -230,13 +226,6 @@ pub async fn decide(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn handles_match_clubs_however_they_were_typed() {
-        assert_eq!(handle_key(" @UTMahjong "), "utmahjong");
-        assert_eq!(handle_key("utmahjong"), handle_key("@UTMAHJONG"));
-        assert_eq!(handle_key(""), "");
-    }
 
     #[test]
     fn candidates_serialize_in_the_response_model_order() {

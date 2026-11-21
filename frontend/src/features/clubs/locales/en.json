@@ -89,6 +89,11 @@
       "submitted": "Request sent",
       "submittedDesc": "An admin will check your request to join \"{{name}}\" and add you to its team.",
       "failed": "Couldn't send your request. You may have already sent one for this club."
+    },
+    "exists": {
+      "title": "This club is already on Wat2Do",
+      "description": "{{club}} already has this Instagram account on Wat2Do, so it can't be added again. Open its page to claim it or join its team.",
+      "open": "Open club page"
     }
   },
   "inviteLanding": {

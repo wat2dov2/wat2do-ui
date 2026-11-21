@@ -3260,6 +3260,16 @@
               }
             }
           },
+          "409": {
+            "description": "The school already lists this Instagram account's club",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubExistsResponse"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -3734,6 +3744,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClubResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The school already lists this Instagram account's club",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubExistsResponse"
                 }
               }
             }
@@ -9104,6 +9124,27 @@
             "type": "integer",
             "format": "int64",
             "description": "Holders waiting for the club to refund or decline."
+          }
+        }
+      },
+      "ClubExistsResponse": {
+        "type": "object",
+        "description": "The 409 answer when the school already lists a club with the sent Instagram handle.",
+        "required": [
+          "detail",
+          "club_id",
+          "club_name"
+        ],
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "club_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "club_name": {
+            "type": "string"
           }
         }
       },

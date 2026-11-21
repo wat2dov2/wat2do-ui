@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { api } from "../src/shared/services/apiClient";
+import { ApiError, api } from "../src/shared/services/apiClient";
 import { submitEventForReview } from "../src/features/events/api/events.api";
 import { submitPosition } from "../src/features/positions/api/positions.api";
-import { createClubAPI } from "../src/features/clubs/api/clubs.api";
+import { createClubAPI, existingClubFromError } from "../src/features/clubs/api/clubs.api";
 import { saveUserEmail } from "../src/features/auth/api/userRepository";
 import type { EventFormData } from "../src/shared/types";
 
@@ -43,5 +43,25 @@ test("submissions carry the signed-in account's email without inventing ownershi
   } finally {
     api.post = original;
     saveUserEmail(null, false);
+  }
+});
+
+// A school lists one club per Instagram account: submitting a listed account names that club.
+test("a club the school already lists comes back as that club", async () => {
+  const original = api.post;
+  const listed = { detail: "This club is already on Wat2Do", club_id: 42, club_name: "Right to Play UofA" };
+  api.post = async () => {
+    throw new ApiError(409, listed);
+  };
+  try {
+    const error = await createClubAPI({
+      club_name: "Right To Play", school: "ualberta", categories: ["Community Service"],
+      club_page: "", ig: "rtp_uofa", discord: null, club_type: "independent",
+    }).catch((caught: unknown) => caught);
+    expect(existingClubFromError(error)).toEqual(listed);
+    expect(existingClubFromError(new ApiError(409, { detail: "Conflict" }))).toBeNull();
+    expect(existingClubFromError(new Error("offline"))).toBeNull();
+  } finally {
+    api.post = original;
   }
 });

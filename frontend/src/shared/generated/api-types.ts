@@ -2581,6 +2581,13 @@ export interface components {
              */
             refund_requests: number;
         };
+        /** @description The 409 answer when the school already lists a club with the sent Instagram handle. */
+        ClubExistsResponse: {
+            detail: string;
+            /** Format: int32 */
+            club_id: number;
+            club_name: string;
+        };
         ClubInvitationCreate: {
             /** @description Email to invite */
             email: string;
@@ -7296,6 +7303,15 @@ export interface operations {
                     "application/json": components["schemas"]["ClubResponse"];
                 };
             };
+            /** @description The school already lists this Instagram account's club */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubExistsResponse"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -7523,6 +7539,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description The school already lists this Instagram account's club */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubExistsResponse"];
                 };
             };
             /** @description Validation Error */

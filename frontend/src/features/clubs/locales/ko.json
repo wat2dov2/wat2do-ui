@@ -89,6 +89,11 @@
       "submitted": "요청을 보냈어요",
       "submittedDesc": "관리자가 \"{{name}}\" 가입 요청을 확인한 뒤 팀에 추가해 드려요.",
       "failed": "요청을 보내지 못했어요. 이 동아리에 이미 요청을 보냈을 수 있어요."
+    },
+    "exists": {
+      "title": "이 클럽은 이미 Wat2Do에 있어요",
+      "description": "{{club}}은(는) 이미 이 Instagram 계정으로 Wat2Do에 있어서 다시 추가할 수 없어요. 페이지를 열어 소유권을 신청하거나 팀에 합류하세요.",
+      "open": "클럽 페이지 열기"
     }
   },
   "inviteLanding": {

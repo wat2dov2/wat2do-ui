@@ -92,6 +92,11 @@
       "submitted": "Anfrage gesendet",
       "submittedDesc": "Ein Admin prüft deine Anfrage, \"{{name}}\" beizutreten, und fügt dich zum Team hinzu.",
       "failed": "Deine Anfrage konnte nicht gesendet werden. Vielleicht hast du für diese Organisation schon eine gesendet."
+    },
+    "exists": {
+      "title": "Dieser Club ist schon auf Wat2Do",
+      "description": "{{club}} hat dieses Instagram-Konto schon auf Wat2Do, deshalb kann er nicht noch einmal hinzugefügt werden. Öffne seine Seite, um ihn zu beanspruchen oder seinem Team beizutreten.",
+      "open": "Club-Seite öffnen"
     }
   },
   "inviteLanding": {

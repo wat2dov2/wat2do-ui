@@ -4,8 +4,13 @@
  */
 
 import type { Club } from "@/shared/types";
-import type { ApiClubClaimLinkResponse, ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
-import { api } from "@/shared/services/apiClient";
+import type {
+  ApiClubClaimLinkResponse,
+  ApiClubExistsResponse,
+  ApiClubResponse,
+  ApiPaginatedClubsResponse,
+} from "@/shared/generated";
+import { api, isApiError } from "@/shared/services/apiClient";
 import { normalizeClub } from "@/features/clubs/api/clubService";
 import { getSessionEmail } from "@/features/auth/api/auth.api";
 import { queryOptions } from "@tanstack/react-query";
@@ -62,6 +67,13 @@ export async function createClubAPI(
     submitted_by_email: getSessionEmail(),
   });
   return normalizeClub(raw);
+}
+
+/** The club a create or edit was refused for: the school already lists a club with that Instagram account. */
+export function existingClubFromError(error: unknown): ApiClubExistsResponse | null {
+  if (!isApiError(error) || error.status !== 409) return null;
+  const body = error.body as Partial<ApiClubExistsResponse> | null;
+  return typeof body?.club_id === "number" ? (body as ApiClubExistsResponse) : null;
 }
 
 export async function updateClubAPI(

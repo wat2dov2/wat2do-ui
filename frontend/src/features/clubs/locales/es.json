@@ -95,6 +95,11 @@
       "submitted": "Solicitud enviada",
       "submittedDesc": "Un administrador revisará tu solicitud para unirte a \"{{name}}\" y te agregará a su equipo.",
       "failed": "No se pudo enviar tu solicitud. Puede que ya hayas enviado una para esta organización."
+    },
+    "exists": {
+      "title": "Este club ya está en Wat2Do",
+      "description": "{{club}} ya tiene esta cuenta de Instagram en Wat2Do, así que no se puede agregar de nuevo. Abre su página para reclamarlo o unirte a su equipo.",
+      "open": "Abrir la página del club"
     }
   },
   "inviteLanding": {

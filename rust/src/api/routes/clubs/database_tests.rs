@@ -6,7 +6,7 @@ use axum::body::Body as HttpBody;
 use axum::extract::Request;
 use axum::http::{StatusCode, header};
 use http_body_util::BodyExt;
-use serde_json::Value;
+use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -38,13 +38,30 @@ async fn user(db: &PgPool, role: &str) -> (Uuid, String, String) {
 }
 
 async fn get(state: &AppState, path: &str, token: Option<&str>) -> (StatusCode, Value) {
+    send(state, "GET", path, token, None).await
+}
+
+async fn send(
+    state: &AppState,
+    method: &str,
+    path: &str,
+    token: Option<&str>,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
     let mut builder = Request::builder()
+        .method(method)
         .uri(path)
         .header(header::HOST, "testserver");
     if let Some(token) = token {
         builder = builder.header(header::AUTHORIZATION, format!("Bearer {token}"));
     }
-    let mut request = builder.body(HttpBody::empty()).unwrap();
+    let mut request = match body {
+        Some(body) => builder
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(HttpBody::from(body.to_string()))
+            .unwrap(),
+        None => builder.body(HttpBody::empty()).unwrap(),
+    };
     request.extensions_mut().insert(Peer(peer()));
     let response = crate::api::app(router(state.clone()))
         .oneshot(request)
@@ -254,4 +271,99 @@ async fn a_clubs_team_reads_its_upcoming_events_open_positions_and_members() {
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     let (status, _) = get(&state, "/clubs/2147483647/counts", Some(&admin_token)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn a_school_lists_one_club_per_instagram_account() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let (member, _, token) = user(&db, "user").await;
+    let handle = format!("club{}", &Uuid::new_v4().simple().to_string()[..12]);
+    let (listed, _) = club(&db, &format!("Listed {handle}")).await;
+    sqlx::query("UPDATE public.clubs SET ig = $2 WHERE id = $1")
+        .bind(listed)
+        .bind(format!("@{}", handle.to_uppercase()))
+        .execute(&db)
+        .await
+        .unwrap();
+
+    // Submitting the account again, however it is written, names the listed club.
+    let (status, body) = send(
+        &state,
+        "POST",
+        "/clubs/",
+        Some(&token),
+        Some(json!({
+            "club_name": "Same club, new name",
+            "categories": ["Business"],
+            "ig": format!("https://www.instagram.com/{handle}/"),
+            "school": "uwaterloo",
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(body["club_id"], listed, "{body}");
+    assert!(
+        body["club_name"]
+            .as_str()
+            .unwrap()
+            .starts_with(&format!("Listed {handle}")),
+        "{body}"
+    );
+    let (count,): (i64,) =
+        sqlx::query_as("SELECT count(*) FROM public.clubs WHERE public.club_handle_key(ig) = $1")
+            .bind(&handle)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    assert_eq!(count, 1);
+
+    // A club its team edits cannot take the account either, but keeps its own.
+    let (own, _) = club(&db, &format!("Own {handle}")).await;
+    sqlx::query("INSERT INTO public.club_members (club_id, user_id) VALUES ($1, $2)")
+        .bind(own)
+        .bind(member)
+        .execute(&db)
+        .await
+        .unwrap();
+    let path = format!("/clubs/{own}");
+    let (status, body) = send(
+        &state,
+        "PATCH",
+        &path,
+        Some(&token),
+        Some(json!({"ig": handle})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(body["club_id"], listed, "{body}");
+    let own_handle = format!("{handle}own");
+    let (status, body) = send(
+        &state,
+        "PATCH",
+        &path,
+        Some(&token),
+        Some(json!({"ig": own_handle})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) = send(
+        &state,
+        "PATCH",
+        &path,
+        Some(&token),
+        Some(json!({"ig": format!("@{own_handle}")})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+
+    // The database holds the same line for every other writer.
+    let duplicate = sqlx::query(
+        "INSERT INTO public.clubs (club_name, ig, school_id) \
+         SELECT 'Duplicate', $1, id FROM public.schools WHERE slug = 'uwaterloo'",
+    )
+    .bind(handle.as_str())
+    .execute(&db)
+    .await;
+    assert!(duplicate.is_err());
 }

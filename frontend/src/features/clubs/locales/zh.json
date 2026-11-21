@@ -89,6 +89,11 @@
       "submitted": "请求已发送",
       "submittedDesc": "管理员会审核你加入“{{name}}”的请求，并把你加入团队。",
       "failed": "请求发送失败。你可能已经为这个社团发送过请求。"
+    },
+    "exists": {
+      "title": "这个社团已经在 Wat2Do 上了",
+      "description": "{{club}} 已经在 Wat2Do 上使用这个 Instagram 账号，所以不能再添加一次。打开它的页面来认领，或加入它的团队。",
+      "open": "打开社团页面"
     }
   },
   "inviteLanding": {
