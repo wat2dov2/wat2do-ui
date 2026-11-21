@@ -114,9 +114,10 @@
     },
     "localUniversity": "вашего университета",
     "partnerEvent": {
-      "message": "Поп-ап {{partner}}: {{when}}, {{venue}}. Скидка {{discount}} по промокоду {{code}}.",
-      "messageWithoutVenue": "Поп-ап {{partner}}: {{when}}. Скидка {{discount}} по промокоду {{code}}.",
-      "cta": "Открыть событие"
+      "message": "Поп-ап <partnerLink>{{partner}}</partnerLink>: {{when}}, {{venue}}. Скидка {{discount}} по промокоду {{code}}.",
+      "messageWithoutVenue": "Поп-ап <partnerLink>{{partner}}</partnerLink>: {{when}}. Скидка {{discount}} по промокоду {{code}}.",
+      "cta": "Открыть публикацию",
+      "ctaWithoutPost": "Открыть событие"
     }
   },
   "modals": {

@@ -105,9 +105,10 @@
     },
     "localUniversity": "你的大学",
     "partnerEvent": {
-      "message": "{{partner}} 快闪店：{{when}}，地点：{{venue}}。使用优惠码 {{code}} 立省 {{discount}}。",
-      "messageWithoutVenue": "{{partner}} 快闪店：{{when}}。使用优惠码 {{code}} 立省 {{discount}}。",
-      "cta": "查看活动"
+      "message": "<partnerLink>{{partner}}</partnerLink> 快闪店：{{when}}，地点：{{venue}}。使用优惠码 {{code}} 立省 {{discount}}。",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> 快闪店：{{when}}。使用优惠码 {{code}} 立省 {{discount}}。",
+      "cta": "查看帖子",
+      "ctaWithoutPost": "查看活动"
     }
   },
   "modals": {

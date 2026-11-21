@@ -108,9 +108,10 @@
     },
     "localUniversity": "आपके विश्वविद्यालय",
     "partnerEvent": {
-      "message": "{{partner}} पॉप-अप: {{when}}, {{venue}}। कोड {{code}} से {{discount}} की छूट।",
-      "messageWithoutVenue": "{{partner}} पॉप-अप: {{when}}। कोड {{code}} से {{discount}} की छूट।",
-      "cta": "इवेंट देखें"
+      "message": "<partnerLink>{{partner}}</partnerLink> पॉप-अप: {{when}}, {{venue}}। कोड {{code}} से {{discount}} की छूट।",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> पॉप-अप: {{when}}। कोड {{code}} से {{discount}} की छूट।",
+      "cta": "पोस्ट देखें",
+      "ctaWithoutPost": "इवेंट देखें"
     }
   },
   "modals": {

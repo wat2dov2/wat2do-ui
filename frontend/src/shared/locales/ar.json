@@ -120,9 +120,10 @@
     },
     "localUniversity": "جامعتك",
     "partnerEvent": {
-      "message": "متجر {{partner}} المؤقت: {{when}}، في {{venue}}. خصم {{discount}} باستخدام الرمز {{code}}.",
-      "messageWithoutVenue": "متجر {{partner}} المؤقت: {{when}}. خصم {{discount}} باستخدام الرمز {{code}}.",
-      "cta": "عرض الفعالية"
+      "message": "متجر <partnerLink>{{partner}}</partnerLink> المؤقت: {{when}}، في {{venue}}. خصم {{discount}} باستخدام الرمز {{code}}.",
+      "messageWithoutVenue": "متجر <partnerLink>{{partner}}</partnerLink> المؤقت: {{when}}. خصم {{discount}} باستخدام الرمز {{code}}.",
+      "cta": "عرض المنشور",
+      "ctaWithoutPost": "عرض الفعالية"
     }
   },
   "modals": {

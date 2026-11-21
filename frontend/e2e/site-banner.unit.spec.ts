@@ -7,7 +7,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import type { components } from "../src/shared/generated/api-types";
 import type { SiteBannerContent } from "../src/app/SiteBannerStrip";
-import type { PartnerEventBanner } from "../src/features/events/lib/partnerEventBanner";
+import type { PartnerEventBanner, PartnerEventLink } from "../src/features/events/lib/partnerEventBanner";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import frenchCopy from "../src/shared/locales/fr.json" with { type: "json" };
 
@@ -33,11 +33,12 @@ bannerModule.exports = { ...bannerApi, getSiteBanner: async () => banner };
 const feedApi = require("../src/features/events/api/eventFeed.server");
 const feedModule = require.cache[require.resolve("../src/features/events/api/eventFeed.server")]!;
 // Dip & Drink's Saturday at the bazaar, 11 AM-8 PM Toronto time, in a year it is never today.
+const post = "https://www.instagram.com/p/Df-NENRThhG/";
 const popUp: PartnerEventBanner = {
   partnerName: "Dip & Drink",
   discountPercent: 20,
   discountCode: "WAT2DO",
-  eventId: 47001,
+  link: { kind: "instagramPost", href: post },
   venue: "Victoria Park Hub",
   occurrence: { dtstart_utc: "2030-11-23T16:00:00Z", dtend_utc: "2030-11-24T01:00:00Z" },
 };
@@ -53,6 +54,7 @@ feedModule.exports = {
 
 require("../src/app/english-locale");
 const i18n: typeof import("../src/shared/lib/i18n").default = require("../src/shared/lib/i18n").default;
+const { Trans }: typeof import("react-i18next") = require("react-i18next");
 const { SiteBanner }: typeof import("../src/app/SiteBanner") = require("../src/app/SiteBanner");
 
 // Playwright's JSX transform creates browser component-test descriptors, so the
@@ -69,10 +71,18 @@ runInNewContext(outputText, {
     if (id === "react") return { ...require("react"), useLayoutEffect: require("react").useEffect };
     if (id === "next/navigation") return { usePathname: () => "/events", useRouter: () => ({}) };
     // The app's own i18n instance, with its real English and French copy.
-    if (id === "react-i18next") return { useTranslation: () => ({ t: i18n.t.bind(i18n), i18n }) };
+    if (id === "react-i18next") {
+      return {
+        useTranslation: () => ({ t: i18n.t.bind(i18n), i18n }),
+        Trans: (props: object) => createElement(Trans, { ...props, i18n }),
+      };
+    }
     if (id === "@/app/hooks/useAppNavigation") return { prefetchPublicPage() {} };
     if (id === "@/shared/ui/link") {
-      return { Link: ({ href, children }: { href: string; children: ReactNode }) => createElement("a", { href }, children) };
+      return {
+        Link: ({ href, target, rel, children }: { href: string; target?: string; rel?: string; children: ReactNode }) =>
+          createElement("a", { href, target, rel }, children),
+      };
     }
     if (id.startsWith("@/")) return require(new URL(`../src/${id.slice(2)}`, import.meta.url).pathname);
     return require(id);
@@ -141,7 +151,14 @@ test("a partner's event due at the school takes the global banner's place until 
       venue: "Victoria Park Hub",
       occurrence: popUp.occurrence,
       timeZone: "America/Toronto",
+      linksTo: "instagramPost",
     },
+    ctaHref: post,
+  });
+  // An event read from anywhere but an Instagram post links to its page here.
+  partnerEvent = { ...popUp, link: { kind: "eventPage", href: "/events/47001" } };
+  expect((await SiteBanner({ school: tmu }))?.props).toMatchObject({
+    content: { kind: "partnerEvent", linksTo: "eventPage" },
     ctaHref: "/events/47001",
   });
   partnerEvent = null;
@@ -152,9 +169,12 @@ test("a partner's event due at the school takes the global banner's place until 
   expect((await SiteBanner({ school: tmu }))?.props.content.kind).toBe("partnerEvent");
 });
 
-const renderStrip = (content: SiteBannerContent) =>
-  renderToStaticMarkup(createElement(SiteBannerStrip, { content, ctaHref: "/events/47001" }));
-const partnerStrip = (venue: string | null): SiteBannerContent => ({
+const renderStrip = (content: SiteBannerContent, ctaHref = post) =>
+  renderToStaticMarkup(createElement(SiteBannerStrip, { content, ctaHref }));
+const partnerStrip = (
+  venue: string | null,
+  linksTo: PartnerEventLink["kind"] = "instagramPost",
+): SiteBannerContent => ({
   kind: "partnerEvent",
   partnerName: popUp.partnerName,
   discountPercent: popUp.discountPercent,
@@ -162,17 +182,32 @@ const partnerStrip = (venue: string | null): SiteBannerContent => ({
   venue,
   occurrence: popUp.occurrence,
   timeZone: "America/Toronto",
+  linksTo,
+});
+/** A link to the partner's post, which opens in a new tab without telling Instagram where it came from. */
+const postLink = (text: string) => `<a href="${post}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+
+test("the partner strip names the date, the venue alone and the code, and links the partner's name to its post", () => {
+  expect(renderStrip(partnerStrip("Victoria Park Hub"))).toContain(
+    `<p>${postLink("Dip &amp; Drink")} pop-up: Saturday, Nov 23, 11:00 AM-8:00 PM at Victoria Park Hub. 20% off with code WAT2DO. ${postLink("See the post")}</p>`,
+  );
+  expect(renderStrip(partnerStrip(null))).toContain(
+    `<p>${postLink("Dip &amp; Drink")} pop-up: Saturday, Nov 23, 11:00 AM-8:00 PM. 20% off with code WAT2DO. ${postLink("See the post")}</p>`,
+  );
 });
 
-test("the partner strip names the date, the venue alone and the code, with a link to the event", () => {
-  const markup = renderStrip(partnerStrip("Victoria Park Hub"));
+test("without a post on Instagram, the partner's name and the call to action open the event's page here", () => {
+  expect(renderStrip(partnerStrip("Victoria Park Hub", "eventPage"), "/events/47001")).toContain(
+    '<p><a href="/events/47001">Dip &amp; Drink</a> pop-up: Saturday, Nov 23, 11:00 AM-8:00 PM at Victoria Park Hub. 20% off with code WAT2DO. <a href="/events/47001">See the event</a></p>',
+  );
+});
+
+test("a venue read from a post shows as its own text and never adds markup", () => {
+  const markup = renderStrip(partnerStrip('<partnerLink href="https://evil.test">Free</partnerLink> & <b>more</b>'));
   expect(markup).toContain(
-    "Dip &amp; Drink pop-up: Saturday, Nov 23, 11:00 AM-8:00 PM at Victoria Park Hub. 20% off with code WAT2DO.",
+    "at &lt;partnerLink href=&quot;https://evil.test&quot;&gt;Free&lt;/partnerLink&gt; &amp; &lt;b&gt;more&lt;/b&gt;. 20% off",
   );
-  expect(markup).toMatch(/<a [^>]*href="\/events\/47001"[^>]*>See the event<\/a>/);
-  expect(renderStrip(partnerStrip(null))).toContain(
-    "Dip &amp; Drink pop-up: Saturday, Nov 23, 11:00 AM-8:00 PM. 20% off with code WAT2DO.",
-  );
+  expect(markup.match(/<a /g)).toHaveLength(2);
 });
 
 test("the partner strip follows the visitor's language and its date and number formats", async () => {
@@ -180,7 +215,6 @@ test("the partner strip follows the visitor's language and its date and number f
   await i18n.changeLanguage("fr");
   const markup = renderStrip(partnerStrip("Victoria Park Hub")).replace(/[\u00a0\u202f]/g, " ");
   expect(markup).toContain(
-    "Pop-up Dip &amp; Drink : samedi 23 nov., 11:00-20:00, Victoria Park Hub. 20 % de réduction avec le code WAT2DO.",
+    `Pop-up ${postLink("Dip &amp; Drink")} : samedi 23 nov., 11:00-20:00, Victoria Park Hub. 20 % de réduction avec le code WAT2DO. ${postLink("Voir la publication")}`,
   );
-  expect(markup).toContain(">Voir l&#x27;événement</a>");
 });

@@ -111,9 +111,10 @@
     },
     "localUniversity": "sua universidade",
     "partnerEvent": {
-      "message": "Pop-up {{partner}}: {{when}}, {{venue}}. {{discount}} de desconto com o código {{code}}.",
-      "messageWithoutVenue": "Pop-up {{partner}}: {{when}}. {{discount}} de desconto com o código {{code}}.",
-      "cta": "Ver o evento"
+      "message": "Pop-up <partnerLink>{{partner}}</partnerLink>: {{when}}, {{venue}}. {{discount}} de desconto com o código {{code}}.",
+      "messageWithoutVenue": "Pop-up <partnerLink>{{partner}}</partnerLink>: {{when}}. {{discount}} de desconto com o código {{code}}.",
+      "cta": "Ver a publicação",
+      "ctaWithoutPost": "Ver o evento"
     }
   },
   "modals": {

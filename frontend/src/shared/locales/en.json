@@ -105,9 +105,10 @@
     },
     "localUniversity": "your university",
     "partnerEvent": {
-      "message": "{{partner}} pop-up: {{when}} at {{venue}}. {{discount}} off with code {{code}}.",
-      "messageWithoutVenue": "{{partner}} pop-up: {{when}}. {{discount}} off with code {{code}}.",
-      "cta": "See the event"
+      "message": "<partnerLink>{{partner}}</partnerLink> pop-up: {{when}} at {{venue}}. {{discount}} off with code {{code}}.",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> pop-up: {{when}}. {{discount}} off with code {{code}}.",
+      "cta": "See the post",
+      "ctaWithoutPost": "See the event"
     }
   },
   "modals": {

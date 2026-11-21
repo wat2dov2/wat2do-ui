@@ -1,10 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, type ReactElement, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
+import type { PartnerEventLink } from "@/features/events/lib/partnerEventBanner";
 import { ROUTES } from "@/shared/constants/routes";
 import { Link } from "@/shared/ui/link";
 import { formatOccurrence, type Occurrence } from "@/shared/utils/date";
@@ -30,6 +31,8 @@ export type SiteBannerContent =
       occurrence: Occurrence;
       /** The school's clock, which the rest of its site shows event times in. */
       timeZone: string;
+      /** What the partner's name and the call to action open. */
+      linksTo: PartnerEventLink["kind"];
     };
 
 interface SiteBannerStripProps {
@@ -37,8 +40,14 @@ interface SiteBannerStripProps {
   ctaHref: string;
 }
 
-/** The strip's words in the visitor's language, or null while an announcement's copy is missing. */
-function useStripCopy(content: SiteBannerContent): { message: string; ctaLabel: string } | null {
+/**
+ * The strip's words in the visitor's language, with a partner's name inside
+ * `nameLink`, or null while an announcement's copy is missing.
+ */
+function useStripCopy(
+  content: SiteBannerContent,
+  nameLink: ReactElement,
+): { message: ReactNode; ctaLabel: string } | null {
   const { t, i18n } = useTranslation();
   if (content.kind === "announcement") {
     // A stale banner snapshot must not expose untranslated internal keys.
@@ -61,19 +70,56 @@ function useStripCopy(content: SiteBannerContent): { message: string; ctaLabel: 
     code: content.discountCode,
   };
   return {
-    message: content.venue
-      ? t("siteBanner.partnerEvent.message", { ...values, venue: content.venue })
-      : t("siteBanner.partnerEvent.messageWithoutVenue", values),
-    ctaLabel: t("siteBanner.partnerEvent.cta"),
+    // The values are escaped while Trans reads the copy's tags, so a venue
+    // taken from a post can never add markup, and unescaped again for display.
+    message: (
+      <Trans
+        t={t}
+        i18nKey={content.venue ? "siteBanner.partnerEvent.message" : "siteBanner.partnerEvent.messageWithoutVenue"}
+        values={content.venue ? { ...values, venue: content.venue } : values}
+        tOptions={{ interpolation: { escapeValue: true } }}
+        shouldUnescape
+        components={{ partnerLink: nameLink }}
+      />
+    ),
+    ctaLabel:
+      content.linksTo === "instagramPost"
+        ? t("siteBanner.partnerEvent.cta")
+        : t("siteBanner.partnerEvent.ctaWithoutPost"),
   };
+}
+
+interface StripLinkProps {
+  href: string;
+  /** A post on Instagram, which opens in a new tab like every link off the site. */
+  offSite: boolean;
+  children?: ReactNode;
+}
+
+/** One of the strip's links; a page here is warmed as soon as the visitor reaches for it. */
+function StripLink({ href, offSite, children }: StripLinkProps) {
+  const router = useRouter();
+  const warm = () => prefetchPublicPage(router, href);
+  return (
+    <Link
+      variant="announcement"
+      href={href}
+      prefetch={false}
+      {...(offSite
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : { onPointerEnter: warm, onFocus: warm, onTouchStart: warm })}
+    >
+      {children}
+    </Link>
+  );
 }
 
 /** The persistent announcement strip, with navigation offset by its measured height. */
 export function SiteBannerStrip({ content, ctaHref }: SiteBannerStripProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const strip = useRef<HTMLDivElement>(null);
-  const stripCopy = useStripCopy(content);
+  const offSite = content.kind === "partnerEvent" && content.linksTo === "instagramPost";
+  const stripCopy = useStripCopy(content, <StripLink href={ctaHref} offSite={offSite} />);
   const copy = BANNER_ROUTES.has(pathname.replace(/\/$/, "") || "/") ? stripCopy : null;
   const isVisible = copy !== null;
 
@@ -106,16 +152,9 @@ export function SiteBannerStrip({ content, ctaHref }: SiteBannerStripProps) {
     >
       <p>
         {copy.message}{" "}
-        <Link
-          variant="announcement"
-          href={ctaHref}
-          prefetch={false}
-          onPointerEnter={() => prefetchPublicPage(router, ctaHref)}
-          onFocus={() => prefetchPublicPage(router, ctaHref)}
-          onTouchStart={() => prefetchPublicPage(router, ctaHref)}
-        >
+        <StripLink href={ctaHref} offSite={offSite}>
           {copy.ctaLabel}
-        </Link>
+        </StripLink>
       </p>
     </div>
   );

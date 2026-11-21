@@ -1,6 +1,5 @@
 import { SiteBannerStrip } from "@/app/SiteBannerStrip";
 import { getSchoolPartnerEventBanner } from "@/features/events/api/eventFeed.server";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
 import type { SchoolSummary } from "@/shared/api/schools.api";
 import { getSiteBanner } from "@/shared/api/siteBanner.server";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -21,7 +20,8 @@ function resolveCtaHref(href: string): string {
 /**
  * The site-wide announcement strip, pinned above the navigation on every page.
  * While a partner business's event at this school is on or coming up
- * (`backend/controlbox/partners.json`), the strip promotes it instead.
+ * (`backend/controlbox/partners.json`), the strip promotes it instead, linking
+ * to the partner's Instagram post about it.
  *
  * A server component, so the copy is part of the first paint rather than
  * appearing after hydration. The database stores stable translation keys while
@@ -43,8 +43,9 @@ export async function SiteBanner({ school }: { school?: SchoolSummary }) {
           venue: partnerEvent.venue,
           occurrence: partnerEvent.occurrence,
           timeZone: school.timezone,
+          linksTo: partnerEvent.link.kind,
         }}
-        ctaHref={eventPagePath(partnerEvent.eventId)}
+        ctaHref={partnerEvent.link.href}
       />
     );
   }

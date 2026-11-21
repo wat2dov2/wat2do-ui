@@ -9,11 +9,13 @@ const DAY = 24 * HOUR;
 // Dip & Drink's booth at the bazaar: Nov 20 1-8 PM and Nov 21 11 AM-8 PM, Toronto time.
 const friday = { dtstart_utc: "2026-11-20T18:00:00Z", dtend_utc: "2026-11-21T01:00:00Z" };
 const saturday = { dtstart_utc: "2026-11-21T16:00:00Z", dtend_utc: "2026-11-22T01:00:00Z" };
+const post = "https://www.instagram.com/p/Df-NENRThhG/";
 const popUp = {
   id: 47001,
   school: "tmu",
   title: "Dip & Drink at the 3rd Annual Bazaar",
   ig_handle: "dipanddrink.offical",
+  source_url: post,
   location: "Victoria Park Hub, 1527 Victoria Park Ave, 2nd Floor, Scarborough",
   map_location: "Victoria Park Hub, 1527 Victoria Park Ave, Scarborough, ON",
   cancelled: false,
@@ -27,7 +29,7 @@ test("the banner shows the date on now, then the next, and nothing once the last
     partnerName: "Dip & Drink",
     discountPercent: 20,
     discountCode: "WAT2DO",
-    eventId: 47001,
+    link: { kind: "instagramPost", href: post },
     venue: "Victoria Park Hub",
     occurrence: friday,
   });
@@ -39,7 +41,7 @@ test("the banner shows the date on now, then the next, and nothing once the last
 test("an event shows from banner_lead_days before it starts", () => {
   const lead = partners.banner_lead_days * DAY;
   const start = at(friday.dtstart_utc);
-  expect(findPartnerEventBanner([popUp], "tmu", start - lead)?.eventId).toBe(47001);
+  expect(findPartnerEventBanner([popUp], "tmu", start - lead)?.link.href).toBe(post);
   expect(findPartnerEventBanner([popUp], "tmu", start - lead - 1)).toBeNull();
 });
 
@@ -51,15 +53,44 @@ test("only a partner's own events that are not cancelled, at its own schools", (
   expect(findPartnerEventBanner([{ ...popUp, school: "uwaterloo" } as Event], "uwaterloo", now)).toBeNull();
   // Older rows can keep the handle's "@" or its capitals.
   expect(
-    findPartnerEventBanner([{ ...popUp, ig_handle: " @DipAndDrink.offical " } as Event], "tmu", now)?.eventId,
-  ).toBe(47001);
+    findPartnerEventBanner([{ ...popUp, ig_handle: " @DipAndDrink.offical " } as Event], "tmu", now)?.link.href,
+  ).toBe(post);
 });
 
 test("of several partner events, the soonest wins", () => {
-  const later = { ...popUp, id: 47003, occurrences: [{ dtstart_utc: "2026-11-25T18:00:00Z", dtend_utc: null }] } as Event;
+  const laterPost = "https://www.instagram.com/p/DgLaterPost1/";
+  const later = {
+    ...popUp,
+    id: 47003,
+    source_url: laterPost,
+    occurrences: [{ dtstart_utc: "2026-11-25T18:00:00Z", dtend_utc: null }],
+  } as Event;
   const now = at("2026-11-19T12:00:00Z");
-  expect(findPartnerEventBanner([later, popUp], "tmu", now)?.eventId).toBe(47001);
-  expect(findPartnerEventBanner([later, popUp], "tmu", at("2026-11-22T02:00:00Z"))?.eventId).toBe(47003);
+  expect(findPartnerEventBanner([later, popUp], "tmu", now)?.link.href).toBe(post);
+  expect(findPartnerEventBanner([later, popUp], "tmu", at("2026-11-22T02:00:00Z"))?.link.href).toBe(laterPost);
+});
+
+test("the banner links to the partner's Instagram post, or to the event's page here without one", () => {
+  const now = at("2026-11-20T20:00:00Z");
+  const link = (sourceUrl: string | null) =>
+    findPartnerEventBanner([{ ...popUp, source_url: sourceUrl } as Event], "tmu", now)?.link;
+  expect(link(post)).toEqual({ kind: "instagramPost", href: post });
+  // A reel, or a post shared with a tracker, under the account's name or over http, links as its plain address.
+  expect(link("https://instagram.com/reel/DfReel_123/?igsh=MWQ1ZGUxMzBkMA==")).toEqual({
+    kind: "instagramPost",
+    href: "https://www.instagram.com/reel/DfReel_123/",
+  });
+  expect(link(" http://www.instagram.com/dipanddrink.offical/p/Df-NENRThhG ")).toEqual({ kind: "instagramPost", href: post });
+  // Anything but a post on Instagram itself opens the event's page here.
+  for (const sourceUrl of [
+    null,
+    "https://dipanddrink.ca/events/bazaar",
+    "https://www.instagram.com/dipanddrink.offical/",
+    "https://instagram.com.evil.test/p/Df-NENRThhG/",
+    "javascript:alert(1)//www.instagram.com/p/Df-NENRThhG/",
+  ]) {
+    expect(link(sourceUrl)).toEqual({ kind: "eventPage", href: "/events/47001" });
+  }
 });
 
 test("the venue is the map location's name alone, or none", () => {

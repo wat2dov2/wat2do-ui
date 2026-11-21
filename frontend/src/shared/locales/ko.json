@@ -105,9 +105,10 @@
     },
     "localUniversity": "여러분의 대학교",
     "partnerEvent": {
-      "message": "{{partner}} 팝업: {{when}}, {{venue}}. 할인 코드 {{code}} 사용 시 {{discount}} 할인.",
-      "messageWithoutVenue": "{{partner}} 팝업: {{when}}. 할인 코드 {{code}} 사용 시 {{discount}} 할인.",
-      "cta": "이벤트 보기"
+      "message": "<partnerLink>{{partner}}</partnerLink> 팝업: {{when}}, {{venue}}. 할인 코드 {{code}} 사용 시 {{discount}} 할인.",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> 팝업: {{when}}. 할인 코드 {{code}} 사용 시 {{discount}} 할인.",
+      "cta": "게시물 보기",
+      "ctaWithoutPost": "이벤트 보기"
     }
   },
   "modals": {
