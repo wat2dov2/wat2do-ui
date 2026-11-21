@@ -112,7 +112,12 @@
       "message": "Chcemy wesprzeć firmę w pobliżu {{schoolName}}, reklamując ją tutaj za darmo.",
       "cta": "Wypełnij formularz"
     },
-    "localUniversity": "Twojej uczelni"
+    "localUniversity": "Twojej uczelni",
+    "partnerEvent": {
+      "message": "Pop-up {{partner}}: {{when}}, {{venue}}. {{discount}} zniżki z kodem {{code}}.",
+      "messageWithoutVenue": "Pop-up {{partner}}: {{when}}. {{discount}} zniżki z kodem {{code}}.",
+      "cta": "Zobacz wydarzenie"
+    }
   },
   "modals": {
     "welcome": {

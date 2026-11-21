@@ -112,7 +112,12 @@
       "message": "Мы хотим поддержать бизнес рядом с {{schoolName}}, разместив здесь его рекламу бесплатно.",
       "cta": "Заполнить форму"
     },
-    "localUniversity": "вашего университета"
+    "localUniversity": "вашего университета",
+    "partnerEvent": {
+      "message": "Поп-ап {{partner}}: {{when}}, {{venue}}. Скидка {{discount}} по промокоду {{code}}.",
+      "messageWithoutVenue": "Поп-ап {{partner}}: {{when}}. Скидка {{discount}} по промокоду {{code}}.",
+      "cta": "Открыть событие"
+    }
   },
   "modals": {
     "welcome": {

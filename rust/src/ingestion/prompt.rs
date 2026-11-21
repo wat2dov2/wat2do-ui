@@ -7,7 +7,9 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::constants::EVENT_CATEGORIES;
-use crate::schools::{School, building_code_prompt, campus_season_prompt, lists_university_events};
+use crate::schools::{
+    School, building_code_prompt, campus_season_prompt, lists_university_events, partner_accounts,
+};
 
 const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
 
@@ -161,6 +163,7 @@ pub fn render(source: &Source) -> String {
             "lists_university_events",
             lists_university_events(&source.school.slug).to_owned(),
         ),
+        ("partner_accounts", partner_accounts(&source.school.slug)),
         ("school_id", source.school.id.to_string()),
         ("timezone", timezone.name().to_owned()),
         ("today", now.format("%A %Y-%m-%d").to_string()),
@@ -203,19 +206,18 @@ pub fn render(source: &Source) -> String {
 mod tests {
     use super::*;
 
-    #[test]
-    fn every_placeholder_is_filled() {
+    fn render_at(slug: &str, name: &str) -> String {
         let school = School {
             id: 1,
-            slug: "uwaterloo".into(),
-            name: "University of Waterloo".into(),
+            slug: slug.into(),
+            name: name.into(),
             timezone: "America/Toronto".into(),
             semester_start: None,
             semester_end: None,
             recipient_id: None,
         };
         let post = serde_json::json!({"url": "https://www.instagram.com/p/ABC/"});
-        let rendered = render(&Source {
+        render(&Source {
             post: &post,
             source: "instagram",
             school: &school,
@@ -230,10 +232,27 @@ mod tests {
             coauthors: &[],
             posted_at: None,
             now: Utc::now(),
-        });
+        })
+    }
+
+    #[test]
+    fn every_placeholder_is_filled() {
+        let rendered = render_at("uwaterloo", "University of Waterloo");
         assert!(!rendered.contains("{{"), "unfilled placeholder");
         assert!(rendered.contains("poster reference `pending:t0k3n/image-0`"));
         assert!(rendered.contains("carousel_requested_at = now()"));
         assert!(rendered.contains("- competition:"));
+        assert!(
+            rendered.contains("Businesses wat2do partners with at University of Waterloo: none.")
+        );
+    }
+
+    #[test]
+    fn a_school_names_its_partner_businesses() {
+        let rendered = render_at("tmu", "Toronto Metropolitan University");
+        assert!(rendered.contains(
+            "Businesses wat2do partners with at Toronto Metropolitan University: \
+             @dipanddrink.offical (Dip & Drink)."
+        ));
     }
 }

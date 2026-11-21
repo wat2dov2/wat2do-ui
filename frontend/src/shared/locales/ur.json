@@ -106,7 +106,12 @@
       "message": "ہم {{schoolName}} کے قریب ایک کاروبار کی یہاں مفت تشہیر کرکے مدد کرنا چاہتے ہیں۔",
       "cta": "فارم جمع کریں"
     },
-    "localUniversity": "آپ کی یونیورسٹی"
+    "localUniversity": "آپ کی یونیورسٹی",
+    "partnerEvent": {
+      "message": "{{partner}} پاپ اپ: {{when}}، {{venue}}۔ کوڈ {{code}} استعمال کرنے پر {{discount}} رعایت۔",
+      "messageWithoutVenue": "{{partner}} پاپ اپ: {{when}}۔ کوڈ {{code}} استعمال کرنے پر {{discount}} رعایت۔",
+      "cta": "ایونٹ دیکھیں"
+    }
   },
   "modals": {
     "welcome": {

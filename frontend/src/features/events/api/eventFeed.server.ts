@@ -8,6 +8,11 @@ import {
   type EventFeedFirstScreen,
 } from "@/features/events/lib/eventFeedFirstScreen";
 import {
+  findPartnerEventBanner,
+  hasPartnersAt,
+  type PartnerEventBanner,
+} from "@/features/events/lib/partnerEventBanner";
+import {
   buildSchoolShareCard,
   buildSchoolShareImage,
 } from "@/features/events/lib/schoolShareCard";
@@ -119,6 +124,22 @@ export async function getSchoolShareImage(school: School | null): Promise<SeoIma
   } catch (error) {
     console.error("School share image feed fetch failed:", error);
     return BRAND_SHARE_IMAGE;
+  }
+}
+
+/**
+ * The partner event a school's banner promotes, drawn from this feed, or null
+ * when none is due or the feed cannot be read. A school with no partner never
+ * reads its feed for it.
+ */
+export async function getSchoolPartnerEventBanner(school: string): Promise<PartnerEventBanner | null> {
+  if (!hasPartnersAt(school)) return null;
+  try {
+    const feed = await getSchoolBrowseSnapshot(school);
+    return findPartnerEventBanner(feed.items, school, Date.now());
+  } catch (error) {
+    console.error("Partner event banner feed fetch failed:", error);
+    return null;
   }
 }
 

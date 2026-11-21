@@ -103,7 +103,12 @@
       "message": "我哋想透過喺呢度免費宣傳，支持{{schoolName}}附近嘅商戶。",
       "cta": "填寫表格"
     },
-    "localUniversity": "你嘅大學"
+    "localUniversity": "你嘅大學",
+    "partnerEvent": {
+      "message": "{{partner}} 快閃店：{{when}}，地點：{{venue}}。用優惠碼 {{code}} 即慳 {{discount}}。",
+      "messageWithoutVenue": "{{partner}} 快閃店：{{when}}。用優惠碼 {{code}} 即慳 {{discount}}。",
+      "cta": "睇活動"
+    }
   },
   "modals": {
     "welcome": {

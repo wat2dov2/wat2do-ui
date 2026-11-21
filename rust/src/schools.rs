@@ -8,7 +8,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::PgPool;
 use url::Url;
 
-use crate::controlbox::{EVENT_DISCOVERY, INGESTION};
+use crate::controlbox::{EVENT_DISCOVERY, INGESTION, PARTNERS};
 use crate::time_zones::Tz;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -171,6 +171,22 @@ pub fn lists_university_events(slug: &str) -> &'static str {
     }
 }
 
+/// `partner_accounts`: the businesses Wat2Do partners with at the school
+/// (`partners.json`), as "@handle (name)", or "none".
+pub fn partner_accounts(slug: &str) -> String {
+    let accounts: Vec<String> = PARTNERS
+        .partners
+        .iter()
+        .filter(|partner| partner.schools.iter().any(|school| school == slug))
+        .map(|partner| format!("@{} ({})", partner.instagram_handle, partner.name))
+        .collect();
+    if accounts.is_empty() {
+        "none".to_owned()
+    } else {
+        accounts.join(", ")
+    }
+}
+
 /// `campus_season_prompt`: one school's season classification guidance.
 pub fn campus_season_prompt(slug: &str) -> String {
     let configuration = &EVENT_DISCOVERY.campus_seasons;
@@ -226,7 +242,16 @@ pub fn building_code_prompt(slug: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{frontend_url, name_pattern, normalize_slug};
+    use super::{frontend_url, name_pattern, normalize_slug, partner_accounts};
+
+    #[test]
+    fn partners_are_named_only_at_their_schools() {
+        assert_eq!(
+            partner_accounts("tmu"),
+            "@dipanddrink.offical (Dip & Drink)"
+        );
+        assert_eq!(partner_accounts("uwaterloo"), "none");
+    }
 
     #[test]
     fn slugs_and_name_patterns_follow_python() {

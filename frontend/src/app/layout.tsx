@@ -156,7 +156,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           initialSchool={initialSchool}
           initialSchools={initialSchools}
         >
-          <SiteBanner schoolName={school?.name} />
+          <SiteBanner school={school} />
           <AppShell hostnameSchoolStatus={hostnameSchoolStatus}>{children}</AppShell>
         </ClientProviders>
         {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? (

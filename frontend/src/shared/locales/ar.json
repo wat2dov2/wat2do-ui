@@ -118,7 +118,12 @@
       "message": "نريد دعم مشروع بالقرب من {{schoolName}} عبر الإعلان عنه هنا مجانًا.",
       "cta": "إرسال نموذج"
     },
-    "localUniversity": "جامعتك"
+    "localUniversity": "جامعتك",
+    "partnerEvent": {
+      "message": "متجر {{partner}} المؤقت: {{when}}، في {{venue}}. خصم {{discount}} باستخدام الرمز {{code}}.",
+      "messageWithoutVenue": "متجر {{partner}} المؤقت: {{when}}. خصم {{discount}} باستخدام الرمز {{code}}.",
+      "cta": "عرض الفعالية"
+    }
   },
   "modals": {
     "welcome": {

@@ -1,0 +1,14 @@
+{
+  "banner_lead_days": 7,
+  "partners": [
+    {
+      "instagram_handle": "dipanddrink.offical",
+      "name": "Dip & Drink",
+      "discount_percent": 20,
+      "discount_code": "WAT2DO",
+      "schools": [
+        "tmu"
+      ]
+    }
+  ]
+}

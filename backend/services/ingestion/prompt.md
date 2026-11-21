@@ -63,6 +63,10 @@ Read the text and every image, then decide which of these it is (it can be sever
    Whether {{school_name}} also lists the university's own events: {{lists_university_events}}.
    When that is yes, the university's events are listed too: exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals, info sessions, and drop-in activities with food, games, crafts or conversation (weekly ones included), whenever current students can attend.
    Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and one-on-one services by appointment such as office hours, tutoring, advising or counselling.
+   Businesses wat2do partners with at {{school_name}}: {{partner_accounts}}.
+   They are the only businesses whose events are listed: an event one of these accounts runs that students can attend (a pop-up, a booth at a market or bazaar, a tasting) is listed like a club's, on campus or off.
+   Give it `club_id` NULL, `club` set to the partner's name above and `ig_handle` set to the partner's handle without "@", and write its `map_location` as for any event, starting with the venue's own name, since the site promotes the event with that name alone.
+   Never list a position for a partner, and every other rule here still applies to its posts.
 
 7. Another school's: the publishing account is followed for {{school_name}}, but a follow can be wrong.
    When the source shows the club or event belongs to another university or campus (its name, its city, its buildings or rooms, or a program only that school has), it is not {{school_name}}'s, even when the handle seems to name it: "UW" is also the University of Washington, Wisconsin, Winnipeg and Windsor, so a "UW" club meeting in Thomson Hall (THO) or Moore Hall (MOR) in Seattle is the University of Washington's, not Waterloo's.
