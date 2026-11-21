@@ -139,6 +139,13 @@
   --default-transition-duration: var(--motion-fast);
   --default-transition-timing-function: var(--ease-out-ui);
 
+  /* The top bar's one breakpoint (`nav:`): from this width up the bar holds
+     every page, Submit, language and theme; below it they move into the side
+     menu that the avatar or menu button opens (TopNav). Tailwind's lg: in
+     English the bar takes about 730px besides the school's name, which leaves
+     room for the longest name (about 250px). */
+  --breakpoint-nav: 64rem;
+
   /* Z-index scale */
   --z-index-sidebar: 30;
   --z-index-nav: 40;

@@ -88,6 +88,7 @@
   },
   "navigation": {
     "events": "Eventi",
+    "submit": "Invia",
     "clubs": "Organizzazioni",
     "positions": "Posizioni",
     "myEvents": "I miei eventi",
