@@ -65,6 +65,7 @@ _PROMPTS_PER_WAIT = 5
 _DRAG_STEPS = 8
 _DRAG_REST_SECONDS = 0.08
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
+_END_OF_TEXT = ("113", "123")  # KEYCODE_CTRL_LEFT + KEYCODE_MOVE_END
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
 _MARKED_DARK_SHARE = 0.2
 
@@ -410,6 +411,15 @@ class EmulatorDevice:
     def clear_field(self) -> None:
         self.adb("shell", "input", "keycombination", *_SELECT_ALL)
         self.adb("shell", "input", "keyevent", "KEYCODE_DEL")
+
+    def move_to_end(self) -> None:
+        """Put the cursor after the focused field's last character."""
+        self.adb("shell", "input", "keycombination", *_END_OF_TEXT)
+
+    def delete_backward(self, count: int) -> None:
+        """Delete the ``count`` characters before the cursor."""
+        if count:
+            self.adb("shell", "input", "keyevent", *["KEYCODE_DEL"] * count)
 
     def back(self) -> None:
         self.pause()
