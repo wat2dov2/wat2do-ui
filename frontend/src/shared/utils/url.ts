@@ -62,3 +62,21 @@ export function sanitizeHref(url: string | null | undefined): string {
   if (!trimmed) return "";
   return isSafeUrl(trimmed) ? trimmed : "";
 }
+
+/** A post's path on Instagram (a post, reel or video), under its account's name or not. */
+const INSTAGRAM_POST_PATH = /^\/(?:[A-Za-z0-9_.]{1,30}\/)?(p|reels?|tv)\/([A-Za-z0-9_-]+)\/?$/;
+
+/**
+ * The plain address of the Instagram post `url` points to
+ * (`https://www.instagram.com/p/<code>/`), or null when it points anywhere
+ * else. Only Instagram's own host passes, and the address is rebuilt from the
+ * post's kind and code, so nothing else the link carried (a share tracker, a
+ * lookalike host, a script) reaches the page.
+ */
+export function instagramPostUrl(url: string | null | undefined): string | null {
+  const href = sanitizeHref(url);
+  if (!href) return null;
+  const { hostname, pathname } = new URL(href);
+  const post = /^(?:www\.)?instagram\.com$/.test(hostname) ? INSTAGRAM_POST_PATH.exec(pathname) : null;
+  return post ? `https://www.instagram.com/${post[1]}/${post[2]}/` : null;
+}

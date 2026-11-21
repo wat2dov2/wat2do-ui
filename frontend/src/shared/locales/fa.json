@@ -108,9 +108,10 @@
     },
     "localUniversity": "دانشگاه شما",
     "partnerEvent": {
-      "message": "فروشگاه موقت {{partner}}: {{when}}، {{venue}}. {{discount}} تخفیف با کد {{code}}.",
-      "messageWithoutVenue": "فروشگاه موقت {{partner}}: {{when}}. {{discount}} تخفیف با کد {{code}}.",
-      "cta": "مشاهده رویداد"
+      "message": "فروشگاه موقت <partnerLink>{{partner}}</partnerLink>: {{when}}، {{venue}}. {{discount}} تخفیف با کد {{code}}.",
+      "messageWithoutVenue": "فروشگاه موقت <partnerLink>{{partner}}</partnerLink>: {{when}}. {{discount}} تخفیف با کد {{code}}.",
+      "cta": "مشاهده پست",
+      "ctaWithoutPost": "مشاهده رویداد"
     }
   },
   "modals": {

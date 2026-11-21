@@ -108,9 +108,10 @@
     },
     "localUniversity": "ਤੁਹਾਡੀ ਯੂਨੀਵਰਸਿਟੀ",
     "partnerEvent": {
-      "message": "{{partner}} ਪੌਪ-ਅੱਪ: {{when}}, {{venue}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
-      "messageWithoutVenue": "{{partner}} ਪੌਪ-ਅੱਪ: {{when}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
-      "cta": "ਇਵੈਂਟ ਦੇਖੋ"
+      "message": "<partnerLink>{{partner}}</partnerLink> ਪੌਪ-ਅੱਪ: {{when}}, {{venue}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> ਪੌਪ-ਅੱਪ: {{when}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
+      "cta": "ਪੋਸਟ ਦੇਖੋ",
+      "ctaWithoutPost": "ਇਵੈਂਟ ਦੇਖੋ"
     }
   },
   "modals": {

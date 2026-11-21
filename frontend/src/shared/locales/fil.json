@@ -108,9 +108,10 @@
     },
     "localUniversity": "iyong unibersidad",
     "partnerEvent": {
-      "message": "Pop-up ng {{partner}}: {{when}}, sa {{venue}}. {{discount}} diskwento gamit ang code na {{code}}.",
-      "messageWithoutVenue": "Pop-up ng {{partner}}: {{when}}. {{discount}} diskwento gamit ang code na {{code}}.",
-      "cta": "Tingnan ang kaganapan"
+      "message": "Pop-up ng <partnerLink>{{partner}}</partnerLink>: {{when}}, sa {{venue}}. {{discount}} diskwento gamit ang code na {{code}}.",
+      "messageWithoutVenue": "Pop-up ng <partnerLink>{{partner}}</partnerLink>: {{when}}. {{discount}} diskwento gamit ang code na {{code}}.",
+      "cta": "Tingnan ang post",
+      "ctaWithoutPost": "Tingnan ang kaganapan"
     }
   },
   "modals": {

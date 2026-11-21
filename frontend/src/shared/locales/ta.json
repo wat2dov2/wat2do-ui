@@ -108,9 +108,10 @@
     },
     "localUniversity": "உங்கள் பல்கலைக்கழகம்",
     "partnerEvent": {
-      "message": "{{partner}} பாப்-அப்: {{when}}, {{venue}}. {{code}} குறியீட்டைப் பயன்படுத்தினால் {{discount}} தள்ளுபடி.",
-      "messageWithoutVenue": "{{partner}} பாப்-அப்: {{when}}. {{code}} குறியீட்டைப் பயன்படுத்தினால் {{discount}} தள்ளுபடி.",
-      "cta": "நிகழ்வைப் பார்க்கவும்"
+      "message": "<partnerLink>{{partner}}</partnerLink> பாப்-அப்: {{when}}, {{venue}}. {{code}} குறியீட்டைப் பயன்படுத்தினால் {{discount}} தள்ளுபடி.",
+      "messageWithoutVenue": "<partnerLink>{{partner}}</partnerLink> பாப்-அப்: {{when}}. {{code}} குறியீட்டைப் பயன்படுத்தினால் {{discount}} தள்ளுபடி.",
+      "cta": "இடுகையைப் பார்க்கவும்",
+      "ctaWithoutPost": "நிகழ்வைப் பார்க்கவும்"
     }
   },
   "modals": {
