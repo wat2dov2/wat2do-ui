@@ -594,7 +594,7 @@ Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carr
 The workflow's `route` job ends them, like every category but `post` and `subscription_daily_digest`, with a notice naming only the category, so no later step ever holds a message: each school's daily sitting reads its inbox instead.
 
 Nothing sends a direct message for Wat2Do: replies are typed into their thread and left there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
-A draft stays in its thread after leaving it and after Instagram is restarted, and only that emulator shows it, so review drafts on the emulator with the worker paused.
+A draft stays in its thread after leaving it and after Instagram is restarted, and only that emulator shows it: run `.venv/bin/python scripts/review_dm_drafts.py <school>` from `backend/` (after `brew install scrcpy`) to see that account's inbox in a window, read each draft and send it; the worker waits until the window closes.
 
 In the sitting, Claude works as the school in the Instagram app on the Mac's Android emulator, never in Brave, while the worker holds the emulator's lock for the whole sitting:
 

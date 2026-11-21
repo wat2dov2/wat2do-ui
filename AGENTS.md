@@ -155,6 +155,7 @@ In a sitting, `ig inbox` lists the main inbox and message requests, and `ig read
 A message request is accepted only when a draft is typed in it, or when reading a post it shares needs the composer.
 Claude decides each thread from the facts about Wat2Do its prompt lists: sharing a post or reel to our story (any account's, if it is appropriate and not out of date, `ig share`), featuring it in an upcoming carousel (`ig feature`), correcting a listing the club says is wrong (`ig correction`), leaving a club that asks out of carousels (`ig opt-out`), a plain reply (questions, an event already over), or nothing (traps, spam, "thanks").
 No direct message is ever sent by the automation: `ig draft` types our reply into its thread and leaves it there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
+A draft lives in its thread on the emulator only, which has no window: `backend/scripts/review_dm_drafts.py <school>` waits for the worker's current job, opens that account's inbox and shows the emulator in a scrcpy window, holding the emulator until the window closes.
 A thread where a club asked us to repost, share or feature its post also gets the claim-link message (`ig draft --claim <their username>`): its club's own claim link, from its outreach lead (one is made if the unclaimed club has none), typed straight into the thread and never printed or logged.
 Clubs want story reposts and carousel spots, so replies never ask about adding things
 to the site.
