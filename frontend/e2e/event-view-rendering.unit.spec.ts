@@ -429,6 +429,36 @@ test("a first screen of the feed lays out like the start of the complete list", 
   expect(render({ events: [], totalCount: listed.length })).not.toContain("events.noEventsScheduled");
 });
 
+test("the landing grid lists the school's events still on soonest first, whatever the snapshot's order", () => {
+  const nowMs = Date.now();
+  const hourMs = 3_600_000;
+  const at = (id: number, sessions: [number, number | null][]) => ({
+    ...event, id, school: "uwaterloo",
+    occurrences: sessions.map(([startsInHours, endsInHours]) => ({
+      dtstart_utc: new Date(nowMs + startsInHours * hourMs).toISOString(),
+      dtend_utc: endsInHours === null ? null : new Date(nowMs + endsInHours * hourMs).toISOString(),
+    })),
+  }) as Event;
+  // The snapshot leads with a weekly event by a session already over (its next is a week
+  // away), and still holds one that has ended.
+  const items = [at(1, [[-4, -2], [164, 166]]), at(2, [[1, 2]]), at(3, [[-1, 1]]), at(4, [[-30, -29]])];
+  const { LandingEventViews } = loadComponent("features/landing/components/LandingEventViews", {
+    "@tanstack/react-query": { useQuery: () => ({ data: { items }, isError: false }) },
+    "@/app/client-providers": { useRequestSchool: () => "uwaterloo" },
+    "@/features/events": {
+      EventsBrowseViews: ({ events }: { events: Event[] }) =>
+        createElement("div", null, events.map((card) => createElement("article", { key: card.id, "data-card": card.id }))),
+      eventFeedQueryOptions: () => ({}),
+      useCurrentTime: () => nowMs,
+    },
+    "@/shared/hooks/useIntersectionObserver": { useIntersectionObserver: () => ({ ref: null, hasIntersected: true }) },
+    "@/shared/hooks/useWhenIdle": { useWhenIdle: () => true },
+  }) as typeof import("../src/features/landing/components/LandingEventViews");
+
+  const html = renderToStaticMarkup(createElement(LandingEventViews, { view: "grid" }));
+  expect([...html.matchAll(/data-card="(\d+)"/g)].map((match) => match[1])).toEqual(["3", "2", "1"]);
+});
+
 test("an empty search offers past events beside Clear filters, and a start before now ends the list with them", () => {
   const { EventList } = loadComponent("features/events/components/EventList", {
     "@/features/events/components/EventCard": { EventCard: ({ event: card }: { event: Event }) => createElement("article", { "data-card": card.id }) },

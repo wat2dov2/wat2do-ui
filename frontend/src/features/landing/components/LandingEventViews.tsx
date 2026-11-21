@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useRequestSchool } from "@/app/client-providers";
 import { EventsBrowseViews, eventFeedQueryOptions, useCurrentTime } from "@/features/events";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { EMPTY_FILTER_STATE } from "@/features/search/api/filterService";
+import { sortEvents } from "@/features/search/api/searchService";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { useWhenIdle } from "@/shared/hooks/useWhenIdle";
 import type { Event } from "@/shared/types";
@@ -35,8 +37,13 @@ export function LandingEventViews({ view }: { view: LandingEventView }) {
   const ready = useWhenIdle(near, VIEWS_IDLE_TIMEOUT_MS);
   const { data: feed, isError } = useQuery({ ...eventFeedQueryOptions(school), enabled: ready });
   const currentTimeMs = useCurrentTime();
+  // Soonest first, in the events page's default order. The snapshot's own order goes by
+  // each event's first session still on when the day began, which may be over by now.
   const events = useMemo(
-    () => (currentTimeMs === null ? [] : (feed?.items ?? []).filter((event) => hasActiveEventOccurrence(event, currentTimeMs))),
+    () => (currentTimeMs === null ? [] : sortEvents(
+      (feed?.items ?? []).filter((event) => hasActiveEventOccurrence(event, currentTimeMs)),
+      EMPTY_FILTER_STATE,
+    )),
     [currentTimeMs, feed],
   );
   const openEvent = useCallback((event: Event) => router.push(eventPagePath(event.id)), [router]);
