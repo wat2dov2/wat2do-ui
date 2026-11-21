@@ -3,7 +3,27 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/shared/lib/utils"
 
-const TooltipProvider = TooltipPrimitive.Provider
+/** How long a pointer rests on a trigger before the first tooltip shows. */
+const FIRST_TOOLTIP_DELAY_MS = 600
+/** Within this long of one tooltip closing, the next trigger the pointer reaches shows its tooltip at once. */
+const NEXT_TOOLTIP_WINDOW_MS = 300
+
+/**
+ * Times every tooltip in the app. Only the first one waits, so a pointer
+ * crossing a row of triggers doesn't flash a tooltip on each; once one has
+ * shown, moving to the next trigger shows its tooltip straight away. Focus
+ * and taps show a tooltip at once.
+ */
+function TooltipProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <TooltipPrimitive.Provider
+      delayDuration={FIRST_TOOLTIP_DELAY_MS}
+      skipDelayDuration={NEXT_TOOLTIP_WINDOW_MS}
+    >
+      {children}
+    </TooltipPrimitive.Provider>
+  )
+}
 
 const Tooltip = TooltipPrimitive.Root
 
@@ -19,7 +39,7 @@ const TooltipContent = React.forwardRef<
       data-slot="tooltip-content"
       sideOffset={sideOffset}
       className={cn(
-        "z-toast origin-(--radix-tooltip-content-transform-origin) overflow-hidden rounded-xl bg-surface-elevated px-3 py-1.5 text-xs text-foreground border border-border shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-toast origin-(--radix-tooltip-content-transform-origin) overflow-hidden rounded-xl bg-surface-elevated px-3 py-1.5 text-xs text-foreground border border-border shadow-md animate-in fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
       )}
       {...props}

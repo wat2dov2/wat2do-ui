@@ -18,6 +18,26 @@ function subscribeToDarkMode(onStoreChange: () => void): () => void {
   return () => observer.disconnect();
 }
 
+/** Turns every transition off (index.css); the first paint uses it too (app/layout.tsx). */
+const NO_TRANSITIONS_CLASS = "no-transitions";
+let restoreTransitionsFrame = 0;
+
+/**
+ * Switches the theme with transitions off. Every colour on the page changes at
+ * once, so each element's own colour transition would otherwise fire together
+ * and the page would smear through a blend of both themes. They come back two
+ * frames later, once the new theme has been drawn.
+ */
+function switchTheme(nextIsDarkMode: boolean) {
+  const root = document.documentElement;
+  root.classList.add(NO_TRANSITIONS_CLASS);
+  root.classList.toggle("dark", nextIsDarkMode);
+  cancelAnimationFrame(restoreTransitionsFrame);
+  restoreTransitionsFrame = requestAnimationFrame(() => {
+    restoreTransitionsFrame = requestAnimationFrame(() => root.classList.remove(NO_TRANSITIONS_CLASS));
+  });
+}
+
 export function useDarkMode() {
   const isDarkMode = useSyncExternalStore(
     subscribeToDarkMode,
@@ -26,7 +46,7 @@ export function useDarkMode() {
   );
 
   const setDarkMode = useCallback((nextIsDarkMode: boolean) => {
-    document.documentElement.classList.toggle("dark", nextIsDarkMode);
+    switchTheme(nextIsDarkMode);
     saveTheme(nextIsDarkMode ? "dark" : "light");
   }, []);
 

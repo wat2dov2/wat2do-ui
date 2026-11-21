@@ -91,6 +91,8 @@ export function EmailOtpForm({
   const emailId = `${fieldId}-email`;
   const otpId = `${fieldId}-otp`;
   const isBusy = flow.isLoading || isCompletingAction;
+  // Absent rather than false while nothing is refused, so the attributes stay off the DOM.
+  const refused = flow.isRefused || undefined;
   useEffect(() => {
     if (!flow.emailSent || flow.otpToken.length !== 6) {
       submittedOtpRef.current = null;
@@ -153,8 +155,9 @@ export function EmailOtpForm({
       {...props}
     >
       <FieldSet disabled={disabled || isBusy} className="gap-4">
+        {/* A refused email or code turns its field red and shakes it once. */}
         {!flow.emailSent ? (
-          <Field>
+          <Field data-invalid={refused}>
             <FieldLabel htmlFor={emailId}>{t("auth.emailLabel")}</FieldLabel>
             <Input
               id={emailId}
@@ -168,10 +171,12 @@ export function EmailOtpForm({
               autoComplete="email"
               autoFocus={autoFocusFields}
               required
+              aria-invalid={refused}
+              className={cn(refused && "animate-shake")}
             />
           </Field>
         ) : (
-          <Field>
+          <Field data-invalid={refused}>
             <FieldLabel htmlFor={otpId}>{t("auth.otpLabel")}</FieldLabel>
             <FieldDescription>
               {t("auth.otpDescription", { email: flow.email.trim() })}
@@ -186,10 +191,11 @@ export function EmailOtpForm({
                 autoComplete="one-time-code"
                 aria-label={t("auth.otpLabel")}
                 autoFocus={autoFocusFields}
+                aria-invalid={refused}
               >
-                <InputOTPGroup>
+                <InputOTPGroup className={cn(refused && "animate-shake")}>
                   {Array.from({ length: 6 }, (_, index) => (
-                    <InputOTPSlot key={index} index={index} />
+                    <InputOTPSlot key={index} index={index} aria-invalid={refused} />
                   ))}
                 </InputOTPGroup>
               </InputOTP>

@@ -365,13 +365,22 @@ Its tokens live once, in `frontend/src/styles/motion.css`:
 | `--ease-out-ui` | `cubic-bezier(0.22, 1, 0.36, 1)` | Anything entering or answering a press (Tailwind's `ease-out` and default easing) |
 | `--ease-in-ui` | `cubic-bezier(0.55, 0, 1, 0.45)` | Anything leaving (Tailwind's `ease-in`) |
 | `--ease-in-out-ui` | `cubic-bezier(0.65, 0, 0.35, 1)` | A move that starts and ends on screen (Tailwind's `ease-in-out`) |
+| `--motion-enter-scale` | `0.97` | The size something grows from as it appears, and shrinks back to as it leaves (menus, popovers, selects, tooltips, dialogs get it by `data-slot`) |
 
 Rules:
 
 - Interface motion runs at 300ms or less, most of it 150 to 200ms; exits run about 20% shorter than entrances.
 - Nothing that moves runs at a linear speed; only endless loops (a spinner, a shine) may.
 - Every animation stops under `prefers-reduced-motion: reduce`, either in `motion.css` or with `motion-reduce:`.
+- Something appearing grows from 0.97 of its size as it fades in (`--motion-enter-scale`), never from 0.
+- Things move by transform (`translate`, `scale`), never by `top`, `left`, `width` or `height`, so the browser moves what it has already drawn.
 - Buttons shrink to 0.97 while pressed (`Button`), and cards shrink to 0.98 (`press-feedback`), so a press visibly lands before what it opens; a press on a control inside a card moves only that control.
+- A refused value (a wrong sign-in code, an email that cannot sign in) turns its field red and shakes it once (`animate-shake`), so the refusal cannot be missed.
+- A stepper slides the next step in from the side the person is heading and the last one out the other side (`StepTransition`); steps never crossfade.
+- A disclosure opens by growing its height to its content's (`interpolate-size: allow-keywords` is on for the whole page); `<details>` does this by itself.
+- Switching theme turns every transition off for the frames that change it (`useDarkMode`), so the colours swap at once instead of all transitioning together.
+- Only the first tooltip waits (600ms); once one has shown, the next trigger the pointer reaches shows its tooltip at once (`TooltipProvider`).
+- A row dragged past either end stretches by less the further it is pulled, like a rubber band, and when let go it springs back carrying the speed it was let go at (`useHorizontalScrollFade`).
 - Turning a toggle on (Save, Follow, Notify me) pops its icon or badge once (`animate-success-pulse`), only when the person turned it on there (`useTurnOnPop`), never when it loads already on.
 - Toggles change at once and send their request after, putting it back with a toast if it fails; they never dim or disable while the request runs.
 - Frequent controls never move: a toggle keeps one size in both states (`IconSwap`), and loading states hold the same boxes as what they stand for.

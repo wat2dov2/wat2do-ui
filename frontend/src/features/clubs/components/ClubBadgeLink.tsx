@@ -93,7 +93,8 @@ export function ClubBadgeLink({
       asChild
       variant="plain"
       size="inline"
-      className={`${CLUB_BADGE_CLASS} transition-[background-color,transform] hover:bg-surface-hover active:scale-95`}
+      // Pressed like a Button: it eases down to 0.97 (scale-* sets the scale property, so that is what transitions).
+      className={`${CLUB_BADGE_CLASS} transition-[background-color,scale] hover:bg-surface-hover active:scale-[0.97]`}
     >
       <Link
         variant="navigation"

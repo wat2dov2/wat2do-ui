@@ -7,6 +7,19 @@ import { ApiError, isApiError } from "@/shared/services/apiClient";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Answers that refuse what was typed: a wrong or expired code (401), or an
+ * email this school does not sign in (403). Any other failure is not the
+ * field's fault.
+ */
+const REFUSED_STATUSES = new Set([401, 403]);
+
+interface FlowError {
+  message: string;
+  /** The server refused the typed email or code, so that field is marked too. */
+  refused: boolean;
+}
+
 function sanitizeAuthError(err: ApiError, t: TFunction): string {
   // Allow domain-restriction messages (403) through - they don't
   // reveal whether an individual account exists, only school eligibility.
@@ -39,7 +52,7 @@ export function useEmailOtpFlow({
   const [otpToken, setOtpToken] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FlowError | null>(null);
   const authRequestInFlightRef = useRef(false);
   const isEmailValid = EMAIL_PATTERN.test(email.trim());
   const isFormValid = emailSent
@@ -61,8 +74,8 @@ export function useEmailOtpFlow({
       console.error(context, err);
       setError(
         isApiError(err)
-          ? sanitizeAuthError(err, t)
-          : t("auth.genericError"),
+          ? { message: sanitizeAuthError(err, t), refused: REFUSED_STATUSES.has(err.status) }
+          : { message: t("auth.genericError"), refused: false },
       );
     },
     [t],
@@ -127,7 +140,9 @@ export function useEmailOtpFlow({
     emailSent,
     isFormValid,
     isLoading,
-    error,
+    error: error?.message ?? null,
+    /** Cleared by the next edit or attempt, so each refusal marks the field afresh. */
+    isRefused: error?.refused ?? false,
     onEmailChange: handleEmailChange,
     onOtpChange: handleOtpChange,
     onSubmit: handleSubmit,

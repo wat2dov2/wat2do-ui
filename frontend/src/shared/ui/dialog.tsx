@@ -110,7 +110,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-modal w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] duration-100",
+          "text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-modal w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] duration-100",
           dialogVariantClasses[variant],
           // A dialog holding a DialogBody never outgrows the screen: it becomes a
           // capped column and the body scrolls inside it.

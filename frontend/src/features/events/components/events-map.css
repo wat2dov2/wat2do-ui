@@ -124,7 +124,7 @@
   to { --event-map-featured-angle: 360deg; }
 }
 @keyframes event-map-fan-enter {
-  from { transform: translateY(0.25rem) scale(0.94); opacity: 0; }
+  from { transform: translateY(0.25rem) scale(var(--motion-enter-scale)); opacity: 0; }
   to { transform: translate(var(--poster-x, 0), var(--poster-y, 0)) rotate(var(--poster-tilt, 0deg)); opacity: 1; }
 }
 .event-map-marker-count {

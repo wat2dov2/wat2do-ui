@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
+import { LazyMotion, domAnimation } from "framer-motion";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
 import { useOnboardingSchool } from "../hooks/useOnboardingSchool";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
@@ -14,17 +14,10 @@ import { GooseDialogue } from "../components/GooseDialogue";
 import { OnboardingFrame } from "../components/OnboardingFrame";
 import { OnboardingYearStep } from "../components/OnboardingYearStep";
 import { MultiSelect } from "@/shared/ui/multi-select";
+import { StepTransition } from "@/shared/ui/step-transition";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-
-// Steps overlap: the next one arrives while the last one leaves (popLayout),
-// easing out on the way in and leaving 20% faster, easing in.
-const stepVariants = {
-  enter: { opacity: 0, y: 20 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.24, ease: "easeIn" } },
-} as const;
 
 const GOOSE_MESSAGE_KEYS: Record<number, string> = {
   0: "onboarding.gooseStep0",
@@ -154,18 +147,9 @@ export function OnboardingPage() {
           />
         }
       >
-        <AnimatePresence mode="popLayout">
-          <m.div
-            key={flow.currentStep}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="w-full"
-          >
-            {stepContent[flow.currentStep]}
-          </m.div>
-        </AnimatePresence>
+        <StepTransition step={flow.currentStep}>
+          {stepContent[flow.currentStep]}
+        </StepTransition>
       </OnboardingFrame>
     </LazyMotion>
   );

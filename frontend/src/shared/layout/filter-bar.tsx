@@ -63,7 +63,8 @@ export function FilterBar({ children, trailing, refreshKey, appliedQueryKey, dis
   return (
     <fieldset ref={barRef} data-skeleton-key="filter-bar" data-activation="click" disabled={unavailable} aria-busy={unavailable} className="min-w-0 border-0 p-0 disabled:pointer-events-none">
       <Stack direction="horizontal" align="center" gap={2}>
-        <div className="relative min-w-0 flex-1">
+        {/* Clips sideways only: a row stretched past an end by a drag slides under its own edges. */}
+        <div className="relative min-w-0 flex-1 overflow-x-clip">
           <HorizontalScrollFade
             ref={scrollRef}
             visible={showScrollFade}
