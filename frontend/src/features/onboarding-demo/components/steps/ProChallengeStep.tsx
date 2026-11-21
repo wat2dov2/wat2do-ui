@@ -40,8 +40,10 @@ export function ProChallengeStep({ flow }: ProChallengeStepProps) {
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-[width] duration-300"
-              style={{ width: `${Math.min((progress / total) * 100, 100)}%` }}
+              // A full-width fill slides in from the bar's start (the right in a right-to-left
+              // page) instead of growing, so it moves without the page laying out again.
+              className="h-full w-full bg-primary rounded-full transition-transform duration-300 [--fill-from:-1] rtl:[--fill-from:1]"
+              style={{ translate: `calc(var(--fill-from) * ${100 - Math.min((progress / total) * 100, 100)}%) 0` }}
               role="progressbar"
               aria-valuenow={progress}
               aria-valuemin={0}

@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
+import { LazyMotion, domAnimation } from "framer-motion";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { Button } from "@/shared/ui/button";
+import { StepTransition } from "@/shared/ui/step-transition";
 import { OnboardingDemoProgress } from "../components/OnboardingDemoProgress";
 import { OnboardingDemoFooter } from "../components/OnboardingDemoFooter";
 import { useOnboardingDemoFlow } from "../hooks/useOnboardingDemoFlow";
@@ -15,14 +16,6 @@ import { BuildMyWeekStep } from "../components/steps/BuildMyWeekStep";
 import { ProUnlockStep } from "../components/steps/ProUnlockStep";
 import { ProChallengeStep } from "../components/steps/ProChallengeStep";
 import { HomeLandingStep } from "../components/steps/HomeLandingStep";
-
-// Steps overlap: the next one arrives while the last one leaves (popLayout),
-// easing out on the way in and leaving 20% faster, easing in.
-const stepVariants = {
-  enter: { opacity: 0, y: 20 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.24, ease: "easeIn" } },
-} as const;
 
 const NEXT_LABEL_KEYS: Record<string, string> = {
   build_week: "onboardingDemo.actions.showMyWeek",
@@ -88,18 +81,7 @@ export function OnboardingDemoPage() {
 
       <div className="flex-1 min-h-0 flex flex-col px-4 sm:px-6 py-6 sm:py-8 overflow-y-auto">
         <div className="relative w-full max-w-6xl mx-auto flex-1 flex flex-col justify-center min-h-0">
-          <AnimatePresence mode="popLayout">
-            <m.div
-              key={flow.currentStep}
-              variants={stepVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="w-full"
-            >
-              {stepContent}
-            </m.div>
-          </AnimatePresence>
+          <StepTransition step={flow.stepIndex}>{stepContent}</StepTransition>
         </div>
       </div>
 

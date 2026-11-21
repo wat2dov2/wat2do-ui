@@ -175,7 +175,7 @@ export function ClientProviders({
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
-        <TooltipProvider delayDuration={0}>
+        <TooltipProvider>
           <RequestSchoolContext.Provider value={initialSchool}>
             <AuthReadyContext.Provider value={authReady}>
               <Suspense fallback={null}>

@@ -1,7 +1,7 @@
 /*
  * App-wide motion rules and tokens. Floating surfaces (menus, popovers,
- * selects, tooltips, dialogs) get their timing here by data-slot, so no call
- * site sets its own durations.
+ * selects, tooltips, dialogs) get their timing and the size they grow from
+ * here by data-slot, so no call site sets its own.
  *
  *   Interface motion stays at 300ms or less: a press answers in 150ms, a state
  *   change in 200ms, and nothing a person waits on runs longer than 300ms.
@@ -9,13 +9,17 @@
  *   easing are these same curves (index.css), so a bare `transition` eases
  *   out; nothing that moves runs at a linear speed.
  *   Entrances ease out; exits ease in and run about 20% shorter.
+ *   Something appearing grows from 97% of its size as it fades in, never from
+ *   nothing, and shrinks back to 97% as it leaves.
  *   Menus and popovers open in 200ms and close in 160ms.
  *   Dialogs open in 250ms and close in 200ms.
  *   Menu rows stagger in 30ms apart.
  *   Moves that start and end on screen ease in and out.
+ *   Things move by transform (translate, scale), never by top, left, width or
+ *   height, so the browser moves pixels it has already drawn.
  *
- * Scale-from-0.95 and transform-origin-at-the-trigger come from each
- * primitive's own classes (zoom-in-95 and origin-(--radix-…-transform-origin)).
+ * The transform origin at the trigger comes from each primitive's own classes
+ * (origin-(--radix-…-transform-origin)).
  */
 :root {
   --ease-out-ui: cubic-bezier(0.22, 1, 0.36, 1);
@@ -30,6 +34,21 @@
   --motion-dialog-in: var(--motion-slow);
   --motion-dialog-out: var(--motion-base);
   --motion-row-stagger: 30ms;
+  --motion-enter-scale: 0.97;
+  /* Sizes animate to and from auto as well as between lengths, so a
+     disclosure's height opens from 0 to its content's instead of snapping. */
+  interpolate-size: allow-keywords;
+}
+
+:is(
+    [data-slot="dropdown-menu-content"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="tooltip-content"],
+    [data-slot="dialog-content"]
+  ) {
+  --tw-enter-scale: var(--motion-enter-scale);
+  --tw-exit-scale: var(--motion-enter-scale);
 }
 
 :is(
@@ -125,9 +144,37 @@
   animation: success-pulse 360ms var(--ease-out-ui);
 }
 
+/* A field whose value was just refused (a wrong sign-in code) shakes once as it
+   turns red, so the refusal can't be missed. Its colour comes from aria-invalid. */
+@keyframes shake {
+  0%, 100% { translate: 0; }
+  16.667% { translate: -10px; }
+  33.333% { translate: 10px; }
+  50% { translate: -6px; }
+  66.667% { translate: 6px; }
+  83.333% { translate: -3px; }
+}
+.animate-shake {
+  animation: shake 360ms var(--ease-in-out-ui);
+}
+
+/* A disclosure (<details>) slides open and shut instead of snapping. Its
+   content stays drawn until the close has finished (allow-discrete). */
+details::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height var(--motion-slow) var(--ease-in-out-ui),
+    content-visibility var(--motion-slow) allow-discrete;
+}
+details[open]::details-content {
+  height: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :is([data-slot="dropdown-menu-item"], [data-slot="select-item"]),
   .animate-success-pulse,
+  .animate-shake,
   .animate-pulse-live {
     animation: none !important;
   }
@@ -137,5 +184,9 @@
   }
   .press-feedback:active {
     scale: none !important;
+  }
+  /* On its own: a browser without ::details-content drops only this rule. */
+  details::details-content {
+    transition: none !important;
   }
 }

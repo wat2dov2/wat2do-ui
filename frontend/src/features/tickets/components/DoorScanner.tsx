@@ -234,7 +234,7 @@ function ScanResult({ result, onDismiss }: { result: ApiTicketCheckInResponse; o
     <button
       type="button"
       onClick={onDismiss}
-      className="size-full cursor-pointer rounded-2xl bg-background outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95"
+      className="size-full cursor-pointer rounded-2xl bg-background outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-(--motion-enter-scale)"
     >
       <Stack
         gap={3}

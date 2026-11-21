@@ -29,7 +29,6 @@ export function ThemeToggle() {
 
     const root = document.documentElement;
     animatingRef.current = true;
-    root.classList.add("no-transitions");
 
     try {
       await document.startViewTransition(() => {
@@ -61,7 +60,6 @@ export function ThemeToggle() {
       await animation.finished;
     } finally {
       animatingRef.current = false;
-      root.classList.remove("no-transitions");
     }
   }, [isDarkMode, setDarkMode]);
 
