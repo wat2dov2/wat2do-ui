@@ -106,7 +106,12 @@
       "message": "می‌خواهیم با تبلیغ رایگان در اینجا از کسب‌وکاری نزدیک {{schoolName}} حمایت کنیم.",
       "cta": "ارسال فرم"
     },
-    "localUniversity": "دانشگاه شما"
+    "localUniversity": "دانشگاه شما",
+    "partnerEvent": {
+      "message": "فروشگاه موقت {{partner}}: {{when}}، {{venue}}. {{discount}} تخفیف با کد {{code}}.",
+      "messageWithoutVenue": "فروشگاه موقت {{partner}}: {{when}}. {{discount}} تخفیف با کد {{code}}.",
+      "cta": "مشاهده رویداد"
+    }
   },
   "modals": {
     "welcome": {

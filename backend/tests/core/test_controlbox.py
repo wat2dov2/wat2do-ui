@@ -1049,6 +1049,57 @@ def test_legal_controls_reject_an_unusable_contact_or_date(tmp_path: Path, patch
         load_controlbox(path)
 
 
+def test_dip_and_drink_is_a_tmu_partner_with_a_week_of_banner() -> None:
+    control = load_controlbox().partners
+    assert control.banner_lead_days == 7
+    (partner,) = control.partners
+    # Instagram spells the account "offical", and events store it that way.
+    assert partner.instagram_handle == "dipanddrink.offical"
+    assert (partner.name, partner.discount_percent, partner.discount_code) == (
+        "Dip & Drink",
+        20,
+        "WAT2DO",
+    )
+    assert partner.schools == ["tmu"]
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"banner_lead_days": 0},
+        {"instagram_handle": "@dipanddrink.offical"},
+        {"instagram_handle": "DipAndDrink.offical"},
+        {"name": ""},
+        {"discount_percent": 0},
+        {"discount_percent": 101},
+        {"discount_code": "wat2do"},
+        {"schools": []},
+        {"schools": ["tmu", "tmu"]},
+        {"schools": ["TMU"]},
+    ],
+)
+def test_partners_reject_unusable_settings(tmp_path: Path, patch: dict) -> None:
+    def mutate(payload: dict) -> None:
+        if "banner_lead_days" in patch:
+            payload.update(patch)
+        else:
+            payload["partners"][0].update(patch)
+
+    path = _write_control(tmp_path, "partners", mutate)
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
+def test_a_partner_is_listed_once(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "partners",
+        lambda payload: payload["partners"].append(dict(payload["partners"][0])),
+    )
+    with pytest.raises(ValidationError, match="listed once"):
+        load_controlbox(path)
+
+
 @pytest.mark.parametrize(
     "patch",
     [

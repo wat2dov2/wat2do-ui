@@ -575,6 +575,22 @@ pub struct Outreach {
     pub payout_terms_url_template: String,
 }
 
+/// The businesses in `controlbox/partners.json` (Python's `PartnersControl`
+/// validates it; the fields the ingestion prompt reads are here).
+#[derive(Debug, Deserialize)]
+pub struct Partners {
+    pub partners: Vec<Partner>,
+}
+
+/// A business whose events are listed at its `schools` although a business runs them.
+#[derive(Debug, Deserialize)]
+pub struct Partner {
+    /// Lower case, without "@", as `events.ig_handle` stores it.
+    pub instagram_handle: String,
+    pub name: String,
+    pub schools: Vec<String>,
+}
+
 /// `controlbox/positions.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -811,6 +827,12 @@ pub static OUTREACH: LazyLock<Outreach> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/outreach.json"),
     )
 });
+pub static PARTNERS: LazyLock<Partners> = LazyLock::new(|| {
+    parse(
+        "partners",
+        include_str!("../../backend/controlbox/partners.json"),
+    )
+});
 pub static POSITIONS: LazyLock<Positions> = LazyLock::new(|| {
     parse(
         "positions",
@@ -983,6 +1005,12 @@ mod tests {
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
         assert!(TICKETING.maximum_tickets_per_order > 0);
         assert!(POSITIONS.undated_visibility_months > 0);
+        assert!(
+            PARTNERS
+                .partners
+                .iter()
+                .all(|partner| !partner.schools.is_empty())
+        );
         assert!(OUTREACH.club_url_template.contains("{club_id}"));
         assert!(OUTREACH.payout_terms_url_template.contains("{school}"));
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));

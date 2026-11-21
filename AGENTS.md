@@ -77,6 +77,9 @@ Every such account its school has no follow candidate row for, and no club names
 wat2do lists only student-led clubs, events and positions (clubs, societies, student unions and governments, student media and groups) plus varsity teams and their games.
 Anything the university itself runs (departments, faculties, offices, services, centres, libraries, alumni, admissions, the university's own accounts) is never listed or followed: the directory prompt, the ingestion prompt and the follow scoring prompt each leave it out.
 The one exception is the schools in `controlbox/ingestion.json` `university_event_schools` (OCAD University, whose clubs post too few events): there the university's own events students can attend are listed and its accounts followed too, through each prompt's `{{lists_university_events}}`.
+Businesses are never listed either, except the partners in `controlbox/partners.json` (Dip & Drink at TMU, from 2026-11-21): the ingestion prompt lists their events (never their positions) at their schools through `{{partner_accounts}}`, attributed to the partner's handle.
+While a partner's event at a school is on or starts within `banner_lead_days`, that school's browse pages show it in the site banner's strip in place of the global banner, with the partner's discount code, until it ends (`frontend/src/features/events/lib/partnerEventBanner.ts`, read from the school's cached events feed).
+Partner banners are data only: a person adds a partner to `partners.json`, and no agent ever writes code or settings for a post, since the ingestion agent reads untrusted Instagram posts (Tony, 2026-11-21).
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the

@@ -106,7 +106,12 @@
       "message": "Gusto naming suportahan ang isang negosyo malapit sa {{schoolName}} sa pamamagitan ng libreng pag-advertise rito.",
       "cta": "Magsumite ng form"
     },
-    "localUniversity": "iyong unibersidad"
+    "localUniversity": "iyong unibersidad",
+    "partnerEvent": {
+      "message": "Pop-up ng {{partner}}: {{when}}, sa {{venue}}. {{discount}} diskwento gamit ang code na {{code}}.",
+      "messageWithoutVenue": "Pop-up ng {{partner}}: {{when}}. {{discount}} diskwento gamit ang code na {{code}}.",
+      "cta": "Tingnan ang kaganapan"
+    }
   },
   "modals": {
     "welcome": {

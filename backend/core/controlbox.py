@@ -1396,6 +1396,45 @@ class LegalControl(_ControlModel):
     data_policy_effective_date: date
 
 
+class PartnerControl(_ControlModel):
+    """A business Wat2Do has a deal with at some schools.
+
+    The ingestion prompt lists its events at those schools although a business runs
+    them ({{partner_accounts}}), and their sites' banner promotes its next one with
+    its discount (frontend/src/features/events/lib/partnerEventBanner.ts).
+    """
+
+    # Its Instagram account, as events.ig_handle stores it: lower case, no "@".
+    instagram_handle: str = Field(pattern=r"^[a-z0-9._]{1,30}$")
+    # How the banner names it.
+    name: str = Field(min_length=1, max_length=60)
+    discount_percent: int = Field(ge=1, le=100)
+    discount_code: str = Field(pattern=r"^[A-Z0-9]{1,30}$")
+    schools: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _validate_schools(self) -> "PartnerControl":
+        if len(set(self.schools)) != len(self.schools) or not all(
+            re.fullmatch(r"[a-z0-9-]{1,80}", school) for school in self.schools
+        ):
+            raise ValueError("partner schools must be unique school slugs")
+        return self
+
+
+class PartnersControl(_ControlModel):
+    # A partner event shows in its school's banner from this many days before it starts
+    # until it ends.
+    banner_lead_days: int = Field(ge=1, le=60)
+    partners: list[PartnerControl] = Field(max_length=100)
+
+    @model_validator(mode="after")
+    def _validate_partners(self) -> "PartnersControl":
+        handles = [partner.instagram_handle for partner in self.partners]
+        if len(set(handles)) != len(handles):
+            raise ValueError("each partner's Instagram handle must be listed once")
+        return self
+
+
 class OutreachControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
@@ -1687,6 +1726,7 @@ class ControlBox(_ControlModel):
     outreach: OutreachControl
     club_payouts: ClubPayoutsControl
     legal: LegalControl
+    partners: PartnersControl
     instagram_follow: InstagramFollowControl
     instagram_dms: InstagramDmsControl
     instagram_sessions: InstagramSessionsControl

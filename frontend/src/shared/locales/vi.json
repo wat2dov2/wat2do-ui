@@ -103,7 +103,12 @@
       "message": "Chúng tôi muốn hỗ trợ một doanh nghiệp gần {{schoolName}} bằng cách quảng bá miễn phí tại đây.",
       "cta": "Gửi biểu mẫu"
     },
-    "localUniversity": "trường đại học của bạn"
+    "localUniversity": "trường đại học của bạn",
+    "partnerEvent": {
+      "message": "Pop-up của {{partner}}: {{when}}, tại {{venue}}. Giảm {{discount}} với mã {{code}}.",
+      "messageWithoutVenue": "Pop-up của {{partner}}: {{when}}. Giảm {{discount}} với mã {{code}}.",
+      "cta": "Xem sự kiện"
+    }
   },
   "modals": {
     "welcome": {

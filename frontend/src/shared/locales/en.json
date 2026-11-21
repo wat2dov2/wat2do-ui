@@ -103,7 +103,12 @@
       "message": "We want to support a business near {{schoolName}} by advertising it here for free.",
       "cta": "Submit a form"
     },
-    "localUniversity": "your university"
+    "localUniversity": "your university",
+    "partnerEvent": {
+      "message": "{{partner}} pop-up: {{when}} at {{venue}}. {{discount}} off with code {{code}}.",
+      "messageWithoutVenue": "{{partner}} pop-up: {{when}}. {{discount}} off with code {{code}}.",
+      "cta": "See the event"
+    }
   },
   "modals": {
     "welcome": {

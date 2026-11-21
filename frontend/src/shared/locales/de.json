@@ -106,7 +106,12 @@
       "message": "Wir möchten ein Unternehmen in der Nähe von {{schoolName}} unterstützen, indem wir hier kostenlos dafür werben.",
       "cta": "Formular ausfüllen"
     },
-    "localUniversity": "deiner Universität"
+    "localUniversity": "deiner Universität",
+    "partnerEvent": {
+      "message": "Pop-up von {{partner}}: {{when}}, {{venue}}. {{discount}} Rabatt mit dem Code {{code}}.",
+      "messageWithoutVenue": "Pop-up von {{partner}}: {{when}}. {{discount}} Rabatt mit dem Code {{code}}.",
+      "cta": "Veranstaltung ansehen"
+    }
   },
   "modals": {
     "welcome": {

@@ -109,7 +109,12 @@
       "message": "Queremos apoiar um negócio perto de {{schoolName}} divulgando-o aqui gratuitamente.",
       "cta": "Enviar um formulário"
     },
-    "localUniversity": "sua universidade"
+    "localUniversity": "sua universidade",
+    "partnerEvent": {
+      "message": "Pop-up {{partner}}: {{when}}, {{venue}}. {{discount}} de desconto com o código {{code}}.",
+      "messageWithoutVenue": "Pop-up {{partner}}: {{when}}. {{discount}} de desconto com o código {{code}}.",
+      "cta": "Ver o evento"
+    }
   },
   "modals": {
     "welcome": {

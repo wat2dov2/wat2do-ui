@@ -109,7 +109,12 @@
       "message": "Vogliamo sostenere un’attività vicino a {{schoolName}} pubblicizzandola qui gratuitamente.",
       "cta": "Compila un modulo"
     },
-    "localUniversity": "la tua università"
+    "localUniversity": "la tua università",
+    "partnerEvent": {
+      "message": "Pop-up di {{partner}}: {{when}}, presso {{venue}}. {{discount}} di sconto con il codice {{code}}.",
+      "messageWithoutVenue": "Pop-up di {{partner}}: {{when}}. {{discount}} di sconto con il codice {{code}}.",
+      "cta": "Vedi l'evento"
+    }
   },
   "modals": {
     "welcome": {

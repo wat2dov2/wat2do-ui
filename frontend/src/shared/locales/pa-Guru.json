@@ -106,7 +106,12 @@
       "message": "ਅਸੀਂ {{schoolName}} ਨੇੜੇ ਕਿਸੇ ਕਾਰੋਬਾਰ ਦੀ ਇੱਥੇ ਮੁਫ਼ਤ ਮਸ਼ਹੂਰੀ ਕਰਕੇ ਮਦਦ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹਾਂ।",
       "cta": "ਫਾਰਮ ਜਮ੍ਹਾਂ ਕਰੋ"
     },
-    "localUniversity": "ਤੁਹਾਡੀ ਯੂਨੀਵਰਸਿਟੀ"
+    "localUniversity": "ਤੁਹਾਡੀ ਯੂਨੀਵਰਸਿਟੀ",
+    "partnerEvent": {
+      "message": "{{partner}} ਪੌਪ-ਅੱਪ: {{when}}, {{venue}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
+      "messageWithoutVenue": "{{partner}} ਪੌਪ-ਅੱਪ: {{when}}। ਕੋਡ {{code}} ਨਾਲ {{discount}} ਛੋਟ।",
+      "cta": "ਇਵੈਂਟ ਦੇਖੋ"
+    }
   },
   "modals": {
     "welcome": {
