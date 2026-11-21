@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import re
 import subprocess
@@ -543,6 +544,8 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Claude reads only the move's JSON answer, not the libraries' request logs.
+    logging.disable(logging.INFO)
     args = parser().parse_args(argv)
     started = datetime.now(timezone.utc)
     entry: dict[str, Any] = {"school": school(), "move": args.move, "started": started.isoformat()}
