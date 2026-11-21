@@ -3,7 +3,8 @@
 //!
 //! Every route is admin-only. Publishing claims the batch here and hands the
 //! rendering and posting to `wat2do-instagram publish-batch`
-//! (`batches::publish_in_background`), the code the scheduled publish runs.
+//! (`batches::publish_in_background`), the code that also posts each school's
+//! daily draft (`publish-draft`).
 
 pub mod accounts;
 pub mod batches;

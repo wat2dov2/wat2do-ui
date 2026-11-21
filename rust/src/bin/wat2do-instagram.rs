@@ -1,10 +1,12 @@
 //! `wat2do-instagram`: the daily Instagram carousels' background jobs.
 //!
-//! `curate` has Claude draft every school's carousel; `publish` posts every
-//! ready draft for today; `publish-batch` posts one batch the API already
-//! claimed (the admin's Publish button starts it); `stats` refreshes expiring
-//! tokens and reads every account's followers and posts; `install-schedule`
-//! runs curate and publish daily through macOS LaunchAgents that keep no logs.
+//! `curate` has Claude draft every school's carousel; `publish-draft` posts
+//! one school's ready draft for today (the emulator worker's Claude sitting
+//! runs it when it is that school's turn); `publish-batch` posts one batch the
+//! API already claimed (the admin's Publish button starts it); `stats`
+//! refreshes expiring tokens and reads every account's followers and posts;
+//! `install-schedule` runs curate daily through a macOS LaunchAgent that keeps
+//! no logs.
 
 use std::fs::OpenOptions;
 use std::path::PathBuf;
@@ -38,15 +40,15 @@ enum Command {
     Save { selection_file: PathBuf },
     /// Have Claude draft every school's carousel for today
     Curate,
-    /// Publish every school's ready draft for today
-    Publish,
+    /// Publish one school's ready draft for today
+    PublishDraft { school: String },
     /// Publish one batch the API claimed for publishing
     PublishBatch { batch_id: uuid::Uuid },
     /// Refresh expiring tokens, then read every account's followers and posts
     Stats,
     /// Validate and store the account_key=token lines of a private file
     ImportTokens { token_file: PathBuf },
-    /// Run curate and publish daily through LaunchAgents
+    /// Run curate daily through a LaunchAgent
     InstallSchedule,
 }
 
@@ -115,14 +117,15 @@ async fn main() -> anyhow::Result<ExitCode> {
             print_json(&json!(outcomes));
             has(&outcomes, "failed")
         }
-        Command::Publish => {
+        Command::PublishDraft { school } => {
+            // Like publish-batch: what happened is printed; a nonzero exit means a crash.
             let _lock = carousel_lock().await?;
             let storage = wat2do::storage::shared()?;
-            let outcomes = Publisher::new(&db, settings, storage)
-                .publish_ready_drafts(Utc::now())
+            let outcome = Publisher::new(&db, settings, storage)
+                .publish_draft(&school, Utc::now())
                 .await?;
-            print_json(&json!(outcomes));
-            has(&outcomes, "failed") || has(&outcomes, "skipped")
+            print_json(&outcome.to_json());
+            false
         }
         Command::PublishBatch { batch_id } => {
             // A failed publish is recorded on the batch; a nonzero exit means a crash.

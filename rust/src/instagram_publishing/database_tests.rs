@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 use super::drafts::{self, Outcome};
 use super::fake_http::{Reply, json_reply, serve};
-use super::publishing::Publisher;
+use super::publishing::{DraftOutcome, Publisher};
 use super::selection::DraftSelection;
 use super::tokens::{DueAccount, refresh_account};
 use super::{Refused, stats};
@@ -616,13 +616,34 @@ async fn a_failed_post_is_recorded_on_the_batch() {
     assert_eq!(message.as_deref(), Some("Invalid image"));
 }
 
+/// A moment on `day` in Toronto, when its drafts are today's.
+fn during(day: NaiveDate) -> DateTime<Utc> {
+    Utc.from_local_datetime(&day.and_hms_opt(16, 0, 0).unwrap())
+        .unwrap()
+}
+
+async fn batch_status(db: &PgPool, batch_id: Uuid) -> String {
+    sqlx::query_scalar("SELECT status FROM public.instagram_publish_batches WHERE id = $1")
+        .bind(batch_id)
+        .fetch_one(db)
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
-async fn the_morning_publish_leaves_thin_and_unclaimable_drafts() {
-    // test_a_carousel_under_three_events_is_never_published and
-    // test_publish_ready_drafts_publishes_todays_drafts_one_by_one
+async fn a_thin_or_unclaimable_school_draft_stays_in_review() {
+    // test_a_carousel_under_three_events_is_never_published
     let Some(db) = database() else { return };
     let day = unique_day();
+    let settings = settings("");
+    let (storage, _) = recording::storage("media", "https://media.test");
+    let publisher = Publisher::new(&db, &settings, &storage);
+
     let (thin_school, thin) = school(&db).await;
+    assert_eq!(
+        publisher.publish_draft(&thin, during(day)).await.unwrap(),
+        DraftOutcome::NoDraft
+    );
     let only = event(
         &db,
         thin_school,
@@ -632,7 +653,14 @@ async fn the_morning_publish_leaves_thin_and_unclaimable_drafts() {
         Some("Health"),
     )
     .await;
-    batch(&db, thin_school, &thin, day, "ready_for_review", &[only]).await;
+    let thin_draft = batch(&db, thin_school, &thin, day, "ready_for_review", &[only]).await;
+    assert_eq!(
+        publisher.publish_draft(&thin, during(day)).await.unwrap(),
+        DraftOutcome::TooFewEvents {
+            batch_id: thin_draft
+        }
+    );
+
     // An account that needs reauthorization cannot be claimed.
     let (locked_school, locked) = school(&db).await;
     connect(&db, locked_school, &locked, Duration::days(30)).await;
@@ -655,73 +683,81 @@ async fn the_morning_publish_leaves_thin_and_unclaimable_drafts() {
             .await,
         );
     }
-    batch(&db, locked_school, &locked, day, "ready_for_review", &ids).await;
-
-    let settings = settings("");
-    let (storage, _) = recording::storage("media", "https://media.test");
-    let now = Utc
-        .from_local_datetime(&day.and_hms_opt(16, 0, 0).unwrap())
-        .unwrap();
-    let outcomes = Publisher::new(&db, &settings, &storage)
-        .publish_ready_drafts(now)
-        .await
-        .unwrap();
+    let locked_draft = batch(&db, locked_school, &locked, day, "ready_for_review", &ids).await;
     assert_eq!(
-        outcomes,
-        BTreeMap::from([("skipped".into(), 1), ("too_few_events".into(), 1)])
+        publisher.publish_draft(&locked, during(day)).await.unwrap(),
+        DraftOutcome::Skipped {
+            error: "Instagram account requires reauthorization".into()
+        }
     );
+
+    for draft in [thin_draft, locked_draft] {
+        assert_eq!(batch_status(&db, draft).await, "ready_for_review");
+    }
 }
 
 #[tokio::test]
-async fn the_morning_publish_waits_for_the_emulator_to_finish_each_carousel() {
+async fn a_school_draft_is_posted_on_its_own_day_once() {
     let Some(db) = database() else { return };
     let (school, slug) = school(&db).await;
-    let id = batch(&db, school, &slug, unique_day(), "published", &[]).await;
-    sqlx::query(
-        "UPDATE public.instagram_publish_batches \
-         SET music_status = 'pending', story_status = 'pending' WHERE id = $1",
+    connect(&db, school, &slug, Duration::days(30)).await;
+    let user_id = account_user_id(&db, &slug).await;
+    let mut ids = Vec::new();
+    for title in ["Mahjong Night", "Pancake Breakfast", "Open Mic"] {
+        ids.push(
+            event(
+                &db,
+                school,
+                title,
+                -Duration::hours(1),
+                Duration::days(2),
+                Some("Health"),
+            )
+            .await,
+        );
+    }
+    let day = unique_day();
+    let draft = batch(&db, school, &slug, day, "ready_for_review", &ids).await;
+    let tomorrows = batch(
+        &db,
+        school,
+        &slug,
+        day + Duration::days(1),
+        "ready_for_review",
+        &ids,
     )
-    .bind(id)
-    .execute(&db)
-    .await
-    .unwrap();
-    let settings = settings("");
+    .await;
+
+    let image = jpeg();
+    let site = serve(move |_| (200, "image/jpeg", image.clone())).await;
+    let graph = serve(move |request| graph_reply(request, &user_id)).await;
+    let settings = settings(&site.url);
     let (storage, _) = recording::storage("media", "https://media.test");
-    let publisher = Publisher::new(&db, &settings, &storage).with_graph("http://unused.test");
+    let publisher = Publisher::new(&db, &settings, &storage).with_graph(&graph.url);
 
-    // A carousel the emulator has not finished in time.
-    let impatient = publisher.with_follow_up_wait(std::time::Duration::ZERO);
-    assert!(!impatient.followed_up(id).await.unwrap());
-
-    // The worker adds the song first and shares the story after; only both end the wait.
-    let worker = db.clone();
-    tokio::spawn(async move {
-        for column in ["music_status = 'added'", "story_status = 'posted'"] {
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-            sqlx::query(&format!(
-                "UPDATE public.instagram_publish_batches SET {column} WHERE id = $1"
-            ))
-            .bind(id)
-            .execute(&worker)
-            .await
-            .unwrap();
-        }
-    });
-    let patient = Publisher::new(&db, &settings, &storage)
-        .with_graph("http://unused.test")
-        .with_follow_up_wait(std::time::Duration::from_secs(10));
-    assert!(patient.followed_up(id).await.unwrap());
-    let (music, story): (Option<String>, Option<String>) = sqlx::query_as(
-        "SELECT music_status, story_status FROM public.instagram_publish_batches WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_one(&db)
-    .await
-    .unwrap();
     assert_eq!(
-        (music.as_deref(), story.as_deref()),
-        (Some("added"), Some("posted"))
+        publisher.publish_draft(&slug, during(day)).await.unwrap(),
+        DraftOutcome::Posted {
+            status: "published".into(),
+            batch_id: draft,
+            permalink: Some("https://www.instagram.com/p/ABC123/".into()),
+        }
     );
+    // Posted, it is no draft anymore: a second run posts nothing, and
+    // tomorrow's draft waits for its own day.
+    assert_eq!(
+        publisher.publish_draft(&slug, during(day)).await.unwrap(),
+        DraftOutcome::NoDraft
+    );
+    assert_eq!(
+        graph
+            .recorded()
+            .iter()
+            .filter(|request| request.target.ends_with("/media_publish"))
+            .count(),
+        1
+    );
+    assert_eq!(batch_status(&db, tomorrows).await, "ready_for_review");
 }
 
 async fn due(db: &PgPool, account_key: &str) -> DueAccount {

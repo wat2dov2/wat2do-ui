@@ -1,27 +1,21 @@
-//! Posting a claimed carousel (`service.py`): the morning publish posts every
-//! school's ready draft for today, and the admin's Publish button posts one
-//! batch the API claimed.
-//!
-//! The morning publish waits after each school's carousel until the emulator
-//! worker has liked, reposted, commented on, tagged, set the song of and
-//! shared the stories for it, so every carousel gets them in its first
-//! minutes, before the next school posts. Every school waits, up to
-//! `follow_up_wait_minutes` each: one the worker has not finished in time is
-//! logged, and the next school still waits for its own.
+//! Posting a claimed carousel (`service.py`). The emulator worker's Claude
+//! sitting posts each school's ready draft for today when it is that
+//! school's turn (`publish-draft`), then does everything after the post
+//! itself: the like, repost, comment, song, club tags and the story of each
+//! event's original post. The admin's Publish button still posts one batch
+//! the API claimed (`publish-batch`).
 //!
 //! The slides are drawn from the events' live data at this moment, uploaded,
 //! and handed to Meta as one carousel. Once posted, the batch keeps the
-//! images it posted, and the emulator worker adds the carousel's song, tags
-//! each slide's club and shares each event's original post to the account's
-//! story. A failed carousel is recorded on the batch, which an admin can
-//! publish again.
+//! images it posted, and its song and story wait for the emulator worker. A
+//! failed carousel is recorded on the batch, which an admin can publish
+//! again.
 
-use std::collections::BTreeMap;
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
-use serde_json::Value;
+use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -51,8 +45,6 @@ pub struct Publisher<'a> {
     encryption_key: String,
     graph_host: String,
     poll_interval: Option<Duration>,
-    follow_up_poll: Duration,
-    follow_up_wait: Duration,
     renderer: Renderer<'a>,
 }
 
@@ -63,8 +55,6 @@ impl<'a> Publisher<'a> {
             encryption_key: settings.instagram_token_encryption_key.clone(),
             graph_host: GRAPH_HOST.to_owned(),
             poll_interval: None,
-            follow_up_poll: Duration::from_secs(INSTAGRAM_PUBLISHING.follow_up_poll_seconds),
-            follow_up_wait: Duration::from_secs(INSTAGRAM_PUBLISHING.follow_up_wait_minutes * 60),
             renderer: Renderer::new(settings, storage),
         }
     }
@@ -74,14 +64,6 @@ impl<'a> Publisher<'a> {
     pub fn with_graph(mut self, host: &str) -> Self {
         self.graph_host = host.to_owned();
         self.poll_interval = Some(Duration::ZERO);
-        self.follow_up_poll = Duration::ZERO;
-        self
-    }
-
-    /// Wait at most this long for the emulator to finish each carousel.
-    #[cfg(test)]
-    pub fn with_follow_up_wait(mut self, wait: Duration) -> Self {
-        self.follow_up_wait = wait;
         self
     }
 
@@ -114,80 +96,50 @@ impl<'a> Publisher<'a> {
             .status)
     }
 
-    /// `publish_ready_drafts`: post every school's ready events draft for
-    /// today, one school at a time. A draft with too few slides stays in
-    /// review; one an admin changed meanwhile is skipped.
-    pub async fn publish_ready_drafts(&self, now: DateTime<Utc>) -> Result<BTreeMap<String, i64>> {
-        let rows: Vec<(Uuid, String, i32, i64)> = sqlx::query_as(
-            "SELECT b.id, b.account_key, b.version, \
+    /// `publish-draft`: post the school's events draft for today if it is
+    /// still in review (a school's drafts are kept under its slug). A draft
+    /// with too few slides stays in review; one that cannot be claimed (an
+    /// admin changed it meanwhile, or its account cannot post) is skipped.
+    pub async fn publish_draft(&self, school: &str, now: DateTime<Utc>) -> Result<DraftOutcome> {
+        let draft: Option<(Uuid, i32, i64)> = sqlx::query_as(
+            "SELECT b.id, b.version, \
                  (SELECT count(*) FROM public.instagram_publish_items i WHERE i.batch_id = b.id) \
              FROM public.instagram_publish_batches b \
-             WHERE b.batch_kind = $1 AND b.local_date = $2 AND b.status = $3 \
-             ORDER BY b.account_key",
+             WHERE b.account_key = $1 AND b.batch_kind = $2 AND b.local_date = $3 \
+               AND b.status = $4",
         )
+        .bind(school)
         .bind(KIND_EVENTS)
         .bind(super::drafts::local_date(now))
         .bind(STATUS_READY_FOR_REVIEW)
-        .fetch_all(self.db)
+        .fetch_optional(self.db)
         .await?;
-        let mut outcomes: BTreeMap<String, i64> = BTreeMap::new();
-        for (batch_id, account_key, version, slides) in rows {
-            if slides < INSTAGRAM_PUBLISHING.minimum_event_slides as i64 {
-                *outcomes.entry("too_few_events".into()).or_default() += 1;
-                continue;
-            }
-            let claimed =
-                batches::claim_batch(self.db, &self.encryption_key, batch_id, i64::from(version))
-                    .await;
-            let batch = match claimed {
-                Ok(batch) => batch,
-                Err(error) => {
-                    tracing::error!(
-                        "Instagram draft {account_key} could not be claimed: {:#}",
-                        job_error(error)
-                    );
-                    *outcomes.entry("skipped".into()).or_default() += 1;
-                    continue;
-                }
-            };
-            self.publish_claimed(batch).await?;
-            let status = batches::get_batch(self.db, batch_id)
-                .await
-                .map_err(job_error)?
-                .row
-                .status;
-            if status == STATUS_PUBLISHED && !self.followed_up(batch_id).await? {
-                tracing::warn!(
-                    "The emulator did not finish {account_key}'s carousel in time; \
-                     the next school still waits for its own"
-                );
-            }
-            *outcomes.entry(status).or_default() += 1;
+        let Some((batch_id, version, slides)) = draft else {
+            return Ok(DraftOutcome::NoDraft);
+        };
+        if slides < INSTAGRAM_PUBLISHING.minimum_event_slides as i64 {
+            return Ok(DraftOutcome::TooFewEvents { batch_id });
         }
-        Ok(outcomes)
-    }
-
-    /// Wait until the emulator worker has finished the carousel's song (with
-    /// its like, repost, comment and tags) and its story, at most
-    /// `follow_up_wait_minutes`; whether it did.
-    pub(super) async fn followed_up(&self, batch_id: Uuid) -> Result<bool> {
-        let deadline = tokio::time::Instant::now() + self.follow_up_wait;
-        loop {
-            let (music, story): (Option<String>, Option<String>) = sqlx::query_as(
-                "SELECT music_status, story_status FROM public.instagram_publish_batches \
-                 WHERE id = $1",
-            )
-            .bind(batch_id)
-            .fetch_one(self.db)
-            .await?;
-            if music.as_deref() != Some(MUSIC_PENDING) && story.as_deref() != Some(STORY_PENDING) {
-                return Ok(true);
+        let claimed =
+            batches::claim_batch(self.db, &self.encryption_key, batch_id, i64::from(version)).await;
+        let batch = match claimed {
+            Ok(batch) => batch,
+            Err(error) => {
+                return Ok(DraftOutcome::Skipped {
+                    error: error_message(&job_error(error)),
+                });
             }
-            if tokio::time::Instant::now() >= deadline {
-                return Ok(false);
-            }
-            tokio::time::sleep(self.follow_up_poll).await;
-        }
+        };
+        self.publish_claimed(batch).await?;
+        let posted = batches::get_batch(self.db, batch_id)
+            .await
+            .map_err(job_error)?
+            .row;
+        Ok(DraftOutcome::Posted {
+            status: posted.status,
+            batch_id,
+            permalink: posted.permalink,
+        })
     }
 
     /// `publish_claimed_batch`: post a claimed batch; any failure marks it
@@ -412,6 +364,42 @@ impl<'a> Publisher<'a> {
     }
 }
 
+/// What `publish_draft` did with a school's draft for today.
+#[derive(Debug, PartialEq, Eq)]
+pub enum DraftOutcome {
+    /// The school has no draft for today in review.
+    NoDraft,
+    /// Too few slides to post: the draft stays in review.
+    TooFewEvents { batch_id: Uuid },
+    /// The draft could not be claimed, for this reason.
+    Skipped { error: String },
+    /// Claimed and posted: the batch's status after (`published`, or
+    /// `failed` with the reason recorded on it) and the post's link.
+    Posted {
+        status: String,
+        batch_id: Uuid,
+        permalink: Option<String>,
+    },
+}
+
+impl DraftOutcome {
+    /// The line `wat2do-instagram publish-draft` prints.
+    pub fn to_json(&self) -> Value {
+        match self {
+            Self::NoDraft => json!({"status": "none"}),
+            Self::TooFewEvents { batch_id } => {
+                json!({"status": "too_few_events", "batch_id": batch_id})
+            }
+            Self::Skipped { error } => json!({"status": "skipped", "error": error}),
+            Self::Posted {
+                status,
+                batch_id,
+                permalink,
+            } => json!({"status": status, "batch_id": batch_id, "permalink": permalink}),
+        }
+    }
+}
+
 /// What Instagram now shows for a batch.
 struct PostedCarousel {
     media_id: String,
@@ -449,4 +437,44 @@ pub async fn slide_payload(db: &PgPool, event: &Event) -> Result<serde_json::Map
         .map_err(job_error)?;
     payload.insert("tz".into(), tz.into());
     Ok(payload)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pyjson::dumps_sorted;
+
+    #[test]
+    fn publish_draft_prints_one_line_of_what_it_did() {
+        let batch_id = Uuid::nil();
+        let printed = |outcome: DraftOutcome| dumps_sorted(&outcome.to_json(), None);
+        assert_eq!(printed(DraftOutcome::NoDraft), r#"{"status": "none"}"#);
+        assert_eq!(
+            printed(DraftOutcome::TooFewEvents { batch_id }),
+            r#"{"batch_id": "00000000-0000-0000-0000-000000000000", "status": "too_few_events"}"#
+        );
+        assert_eq!(
+            printed(DraftOutcome::Skipped {
+                error: "Instagram account requires reauthorization".into()
+            }),
+            r#"{"error": "Instagram account requires reauthorization", "status": "skipped"}"#
+        );
+        assert_eq!(
+            printed(DraftOutcome::Posted {
+                status: "published".into(),
+                batch_id,
+                permalink: Some("https://www.instagram.com/p/ABC123/".into()),
+            }),
+            r#"{"batch_id": "00000000-0000-0000-0000-000000000000", "permalink": "https://www.instagram.com/p/ABC123/", "status": "published"}"#
+        );
+        // A post that failed is recorded on the batch, which has no link.
+        assert_eq!(
+            printed(DraftOutcome::Posted {
+                status: "failed".into(),
+                batch_id,
+                permalink: None,
+            }),
+            r#"{"batch_id": "00000000-0000-0000-0000-000000000000", "permalink": null, "status": "failed"}"#
+        );
+    }
 }

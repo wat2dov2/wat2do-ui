@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
 
 from services.instagram_emulator.device import EmulatorError
 from services.instagram_publishing import stories
-
-NOW = datetime(2026, 11, 17, 15, tzinfo=timezone.utc)
 
 
 class _Table:
@@ -43,9 +40,7 @@ class _Device:
 @pytest.fixture
 def database(monkeypatch):
     tables = {
-        "instagram_publish_batches": [
-            {"id": "batch-1", "published_at": NOW.isoformat(), "school_record": {"slug": "uwo"}}
-        ],
+        "instagram_publish_batches": [],
         "instagram_publish_items": [
             {"position": 1, "event": {"source_url": "https://www.instagram.com/p/AAA/?igsh=x"}},
             {"position": 2, "event": {"source_url": "https://uwo.ca/events/board-games"}},
@@ -83,7 +78,7 @@ def _updates(calls):
 
 
 def test_each_event_post_goes_to_the_story_once_in_slide_order(database, shared):
-    stories.share_due(_Device(), "uwo", NOW)
+    assert stories.share(_Device(), "uwo", "batch-1") == (3, 3)
     assert shared == [
         ("uwo", "https://www.instagram.com/p/AAA/"),
         ("uwo", "https://www.instagram.com/reel/BBB/"),
@@ -94,14 +89,11 @@ def test_each_event_post_goes_to_the_story_once_in_slide_order(database, shared)
         {"story_status": "failed", "story_error": "Stopped while sharing"},
         {"story_status": "posted", "story_error": None},
     ]
-    oldest = (NOW - timedelta(hours=stories._CONTROL.story_max_age_hours)).isoformat()
-    assert ("gte", ("published_at", oldest), {}) in database.calls
-    assert ("eq", ("story_status", "pending"), {}) in database.calls
 
 
 def test_a_post_that_cannot_be_shared_is_left_out_and_the_rest_go_on(database, shared):
     device = _Device(refused={"https://www.instagram.com/reel/BBB/"})
-    stories.share_due(device, "uwo", NOW)
+    assert stories.share(device, "uwo", "batch-1") == (2, 3)
     assert [url for _, url in shared] == [
         "https://www.instagram.com/p/AAA/",
         "https://www.instagram.com/p/CCC/",
@@ -117,22 +109,17 @@ def test_nothing_shared_is_a_failed_story(database, shared):
     database.tables["instagram_publish_items"] = [
         {"position": 1, "event": {"source_url": "https://www.instagram.com/p/AAA/"}}
     ]
-    stories.share_due(_Device(refused={"https://www.instagram.com/p/AAA/"}), "uwo", NOW)
+    assert stories.share(
+        _Device(refused={"https://www.instagram.com/p/AAA/"}), "uwo", "batch-1"
+    ) == (0, 1)
     assert _updates(database.calls)[-1] == {
         "story_status": "failed",
         "story_error": "0 of 1 posts shared",
     }
 
 
-def test_another_schools_carousel_and_low_storage_wait(database, shared):
-    stories.share_due(_Device(), "ubc", NOW)
-    stories.share_due(_Device(free=10), "uwo", NOW)
+def test_low_storage_waits_without_marking_the_story(database, shared):
+    with pytest.raises(EmulatorError, match="low on storage"):
+        stories.share(_Device(free=10), "uwo", "batch-1")
     assert shared == []
     assert _updates(database.calls) == []
-
-
-def test_schools_due_lists_each_school_once(database):
-    database.tables["instagram_publish_batches"].append(
-        {"id": "batch-2", "published_at": NOW.isoformat(), "school_record": {"slug": "uwo"}}
-    )
-    assert stories.schools_due(NOW) == ["uwo"]

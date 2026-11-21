@@ -1,12 +1,9 @@
-"""Read and answer one school account's DM thread in the Instagram app.
+"""Read one school account's DM thread in the Instagram app, and draft our reply in it.
 
-The scheduled inbox sweep opens the thread by tapping its row, and it is read from
-the screen the app draws: who sent each message, its text, and any post or reel
-shared in it. Claude decides the outcome and writes the reply. A message request is
-accepted only once there is something to send. A story repost happens in the same app, and replies are typed into the
-thread at a person's pace, each confirmed on screen before the next step. Anything
-that may already have reached Instagram but cannot be confirmed pauses the worker
-for a person instead of risking a second send.
+A sitting's moves (``services/instagram_sessions/moves.py``) open a thread by tapping
+its inbox row and read it from the screen the app draws: who sent each message, its
+text, and any post or reel shared in it. A reply is typed into the thread at a
+person's pace and left there unsent: a person reads every draft and sends it.
 """
 
 from __future__ import annotations
@@ -18,29 +15,17 @@ from typing import Any
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import INSTAGRAM_EXCLUDED_CLUBS
-from services.ingestion import items
-from services.instagram_accounts import BrowserEngagementUncertain, BrowserSessionError
-from services.instagram_dms.decide import DmDecision, decide, sender, their_latest_words
-from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import (
     EmulatorDevice,
     EmulatorError,
     Node,
     labels,
 )
-from services.instagram_emulator.inbox import (
-    InboxRow,
-    MessagingLimited,
-    accept_request,
-    open_row,
-    raise_if_messaging_limited,
-)
-from services.instagram_emulator.story import share_to_story
+from services.instagram_emulator.inbox import accept_request, raise_if_messaging_limited
 
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
-_SEND = re.compile(r"^Send$")
 _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
 _POST_LINK = re.compile(r"^https://www\.instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)/")
@@ -75,83 +60,7 @@ _SHARES_TO_READ = 2
 _REVEAL_SCROLLS = 4
 
 
-class EmulatorDirectExecutor:
-    """Read a thread, decide with the model, and act at most once per request."""
-
-    def __init__(self, device: EmulatorDevice) -> None:
-        self._device = device
-
-    def handle(
-        self,
-        row: InboxRow,
-        *,
-        account_username: str,
-        school: str,
-        school_name: str,
-        dry_run: bool,
-    ) -> dict[str, Any]:
-        """Answer the inbox row's thread; the caller holds the emulator lock on this account."""
-        user = EMULATOR.android_user_by_school[school]
-        reader = _ThreadReader(self._device, lambda: open_row(self._device, user, row.name))
-        try:
-            thread = reader.read()
-        except MessagingLimited:
-            raise
-        except EmulatorError as exc:
-            raise BrowserSessionError(f"Instagram DM thread could not be read: {exc}") from None
-        decision = (
-            DmDecision("ignore", reason="Newest message is over a week old")
-            if reader.stale
-            else decide(thread, account=account_username, school=school, school_name=school_name)
-        )
-        result: dict[str, Any] = {
-            "outcome": decision.outcome,
-            "reason": decision.reason,
-            "media_url": decision.media_url,
-            "reply": decision.reply,
-            "dry_run": dry_run,
-        }
-        if dry_run or decision.outcome == "ignore":
-            # A request we do not answer stays unaccepted, so its sender never sees it read.
-            return {**result, "status": "decided"}
-        if (
-            decision.outcome == "story_repost"
-            and self._device.free_data_megabytes() < EMULATOR.min_free_data_megabytes
-        ):
-            # A story upload can fail halfway on a full device; wait for space instead.
-            raise BrowserSessionError("The emulator is low on storage; story reposts wait")
-        # What the reply promises is recorded first; each step can safely run again.
-        if decision.outcome in ("story_repost", "feature"):
-            items.request_carousel(decision.media_url, school=school)
-        elif decision.outcome == "correction":
-            items.queue_dm(their_latest_words(thread), school=school, sender=sender(thread))
-        elif decision.outcome == "opt_out":
-            exclude_club(sender(thread), reason=f"Asked in {account_username}'s DMs")
-        if row.request:
-            _confirmed("request accept", lambda: accept_request(self._device))
-        if decision.outcome == "story_repost":
-            # Never promise a repost that might fail: reply only once it is posted.
-            _confirmed(
-                "story repost",
-                lambda: share_to_story(self._device, school, decision.media_url),
-            )
-            _confirmed("reply", lambda: reader.send(decision.reply))
-            return {**result, "status": "reposted"}
-        _confirmed("reply", lambda: reader.send(decision.reply))
-        return {**result, "status": "replied"}
-
-
-def _confirmed(action: str, step: Any) -> None:
-    try:
-        step()
-    except Exception:
-        # Even a failure may have reached Instagram, so a person checks before any retry.
-        raise BrowserEngagementUncertain(
-            f"Instagram DM {action} is uncertain; inspect the thread and story before resuming"
-        ) from None
-
-
-class _ThreadReader:
+class ThreadReader:
     def __init__(self, device: EmulatorDevice, opener: Callable[[], None]) -> None:
         self._device = device
         # Brings the thread back on screen, e.g. after a story repost leaves it.
@@ -184,19 +93,25 @@ class _ThreadReader:
             for message in messages
         ]
 
-    def send(self, text: str) -> None:
+    def draft(self, text: str) -> None:
+        """Type ``text`` into the thread's composer and leave it there unsent.
+
+        A message request shows its composer only once accepted. The draft is confirmed
+        in the composer, then the keyboard and the thread are closed; Instagram keeps a
+        thread's unsent text as its draft.
+        """
         nodes = self._screen_in_thread()
+        if self._device.find(_COMPOSER, nodes) is None:
+            accept_request(self._device)
+            nodes = self._screen_in_thread()
         self._device.tap(_required(self._device.find(_COMPOSER, nodes)))
+        self._device.clear_field()
         self._device.type_text(text)
-        self._device.tap_when(_SEND)
-        # The thread scrolls as the reply lands and older messages leave the screen, so
-        # the reply is confirmed by being the newest message, not by a count. A thread
-        # the app has left is opened again for one last look.
-        if self._device.watch(
-            lambda nodes: _in_thread(nodes) and _newest_is_ours(nodes, text)
-        ) or _newest_is_ours(self._screen_in_thread(), text):
-            return
-        raise EmulatorError("The reply did not appear in the thread")
+        typed = _required(self._device.find(_COMPOSER)).text
+        if _as_typed(typed) != _as_typed(text):
+            raise EmulatorError("The draft did not show in the thread's composer")
+        self._device.back()
+        self._device.back()
 
     def _open(self) -> list[Node]:
         self._opener()
@@ -480,17 +395,6 @@ def _is_separator(node: Node, message_list: Node) -> bool:
 
 def _side(node: Node) -> str:
     return "them" if node.bounds[0] < _THEIR_BUBBLE_MAX_LEFT else "us"
-
-
-def _newest_is_ours(nodes: list[Node], text: str) -> bool:
-    """Whether our reply is the newest message; the keyboard capitalizes sentences on its
-    own, so case and spacing do not count."""
-    messages = _messages(nodes)
-    return (
-        bool(messages)
-        and messages[-1]["from"] == "us"
-        and _as_typed(messages[-1]["text"]) == _as_typed(text)
-    )
 
 
 def _as_typed(text: str) -> str:

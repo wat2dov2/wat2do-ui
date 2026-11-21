@@ -1,14 +1,14 @@
-"""Songs for published carousels, added on the Mac from the Instagram app.
+"""Songs for posted carousels, added on the Mac from the Instagram app.
 
 Admins keep a list of songs, typed loosely, through the API
-(``rust/src/api/routes/instagram_publishing/songs.rs``). Some minutes after a carousel
-publishes, the emulator worker visits its school's account and ``finish_due`` opens
-the live post, likes and reposts it, and tries the songs in the day's rotation order:
-Instagram's music search finds candidates and Claude Haiku picks the track the admin
-meant, or none so the next song is tried. The control box's ``asian_song_schools`` play
-only the songs marked Asian or K-pop, and every other school plays only the rest. Each
-day the rotation moves one song on, so every school in a group gets the same song that
-day. On the first try it also comments a GIF: Haiku names a
+(``rust/src/api/routes/instagram_publishing/songs.rs``). Right after a sitting posts a
+carousel, its ``ig finish`` move (``services/instagram_sessions/moves.py``) calls
+``finish``: it opens the live post, likes and reposts it, and tries the songs in the
+day's rotation order: Instagram's music search finds candidates and Claude Haiku picks
+the track the admin meant, or none so the next song is tried. The control box's
+``asian_song_schools`` play only the songs marked Asian or K-pop, and every other school
+plays only the rest. Each day the rotation moves one song on, so every school in a group
+gets the same song that day. On the first try it also comments a GIF: Haiku names a
 movie or show scene that fits the carousel's first event (or none), and picks a real
 movie or show clip from GIPHY's results (or none, so nothing is commented). The same
 edit tags the post with the school's own place: the first one Instagram's location
@@ -29,13 +29,12 @@ import tempfile
 import unicodedata
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from core.constants import (
-    INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_MUSIC_ADDED,
     INSTAGRAM_MUSIC_FAILED,
     INSTAGRAM_MUSIC_PENDING,
@@ -89,33 +88,6 @@ def list_songs() -> list[dict[str, Any]]:
     return response.data or []
 
 
-def schools_due(now: datetime | None = None) -> list[str]:
-    """Schools with a published carousel waiting for its song, longest waiting first."""
-    if not list_songs():
-        return []
-    schools = [batch["school"] for batch in _pending_batches(now or datetime.now(timezone.utc))]
-    return list(dict.fromkeys(schools))
-
-
-def finish_due(device: EmulatorDevice, school: str, now: datetime | None = None) -> dict[str, int]:
-    """Add a song to each of the school's carousels that has waited long enough.
-
-    The worker calls this with the app already on the school's account.
-    """
-    songs = list_songs()
-    outcomes: dict[str, int] = {}
-    for batch in _pending_batches(now or datetime.now(timezone.utc)):
-        if batch["school"] != school:
-            continue
-        playable = _songs_for(school, songs)
-        if not playable:
-            continue
-        day = _posting_day(batch.get("published_at"), now)
-        outcome = _add_music(device, batch, rotation(playable, day))
-        outcomes[outcome] = outcomes.get(outcome, 0) + 1
-    return outcomes
-
-
 def _songs_for(school: str | None, songs: list[dict[str, Any]]) -> list[str]:
     """Asian campuses play only the Asian and K-pop songs; every other campus the rest."""
     asian_campus = school in _CONTROL.asian_song_schools
@@ -136,39 +108,23 @@ def rotation(songs: Sequence[str], day: date) -> list[str]:
     return ordered[start:] + ordered[:start]
 
 
-def _posting_day(published_at: str | None, now: datetime | None) -> date:
+def _posting_day(published_at: str | None) -> date:
     """The Toronto date the carousel went up, so a retry after midnight keeps its song."""
-    moment = (
-        datetime.fromisoformat(published_at) if published_at else now or datetime.now(timezone.utc)
-    )
+    moment = datetime.fromisoformat(published_at) if published_at else datetime.now(timezone.utc)
     return moment.astimezone(_TORONTO).date()
 
 
-def _pending_batches(now: datetime) -> list[dict[str, Any]]:
-    response = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(
-            f"id,permalink,music_attempts,updated_at,published_at,{school_service.SCHOOL_SLUG_EMBED}"
-        )
-        .eq("status", INSTAGRAM_BATCH_PUBLISHED)
-        .eq("music_status", INSTAGRAM_MUSIC_PENDING)
-        .lte("published_at", (now - timedelta(minutes=_CONTROL.music_delay_minutes)).isoformat())
-        .gte("published_at", (now - timedelta(hours=_CONTROL.music_max_age_hours)).isoformat())
-        .order("published_at")
-        .execute()
-    )
-    # A failed try waits before the next, so one bad spell on the emulator cannot use
-    # up every attempt.
-    retry_after = now - timedelta(minutes=_CONTROL.music_retry_minutes)
-    return [
-        school_service.with_school_slug(row)
-        for row in response.data or []
-        if not row["music_attempts"] or datetime.fromisoformat(row["updated_at"]) <= retry_after
-    ]
+def finish(device: EmulatorDevice, batch: dict[str, Any]) -> str:
+    """Like, repost, comment, tag and set the song of the posted ``batch`` (its ``id``,
+    ``permalink``, ``published_at``, ``music_attempts`` and ``school``); the outcome.
 
-
-def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[str]) -> str:
+    The sitting holds the emulator on the school's account. A failed try counts, and
+    the carousel's song is given up after the control box's ``music_attempts`` tries.
+    """
+    playable = _songs_for(batch["school"], list_songs())
+    if not playable:
+        return "no_songs"
+    songs = rotation(playable, _posting_day(batch.get("published_at")))
     attempts = int(batch["music_attempts"]) + 1
     # Only the first try comments, so a retry never posts a second GIF.
     gif = _gif_scene(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None

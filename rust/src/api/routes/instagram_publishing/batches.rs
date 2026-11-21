@@ -4,9 +4,9 @@
 //!
 //! A batch stores which events are on the carousel, in order, plus the copy
 //! an admin writes; everything a slide shows is read live from the events,
-//! so a draft never shows stale event data. The daily drafts and the
-//! scheduled publish (`crate::instagram_publishing`, binary
-//! `wat2do-instagram`) read and claim batches through these same functions.
+//! so a draft never shows stale event data. The daily drafts and their
+//! publishing (`crate::instagram_publishing`, binary `wat2do-instagram`) read
+//! and claim batches through these same functions.
 
 use std::collections::{HashMap, HashSet};
 use std::process::Stdio;
@@ -59,10 +59,10 @@ const OUTRO_HIDDEN_CATEGORIES: [&str; 2] = ["Politics & Advocacy", "Religion & S
 
 /// The binary that publishes a claimed batch (`wat2do-instagram
 /// publish-batch <id>`): it renders the slides, uploads them and posts the
-/// carousel through Meta's Graph API, the same code the scheduled publish
-/// runs. It sits beside `wat2do-api` (the release's `bin/`, or cargo's
-/// target folder) and starts from the API's working directory (`backend/`),
-/// with the API's environment.
+/// carousel through Meta's Graph API, the same code that posts each school's
+/// daily draft (`publish-draft`). It sits beside `wat2do-api` (the release's
+/// `bin/`, or cargo's target folder) and starts from the API's working
+/// directory (`backend/`), with the API's environment.
 const PUBLISH_BINARY: &str = "wat2do-instagram";
 const PUBLISH_COMMAND: &str = "publish-batch";
 
@@ -823,8 +823,8 @@ fn publish_binary() -> std::io::Result<std::path::PathBuf> {
     Ok(std::env::current_exe()?.with_file_name(PUBLISH_BINARY))
 }
 
-/// Publish a claimed batch from a detached `wat2do-instagram` process, as
-/// the scheduled publish does; the request does not wait for Instagram.
+/// Publish a claimed batch from a detached `wat2do-instagram` process; the
+/// request does not wait for Instagram.
 /// The job records a failed publish on the batch itself; a process that
 /// cannot start, or dies before it could, fails the batch here.
 pub fn publish_in_background(db: PgPool, batch_id: Uuid) {

@@ -1,10 +1,11 @@
-"""Stories for published carousels, shared on the Mac from the Instagram app.
+"""Stories for posted carousels, shared on the Mac from the Instagram app.
 
-After a carousel publishes, the emulator worker visits its school's account and
-``share_due`` shares each of its events' original posts to the account's story, in
-slide order, the way a person adds someone else's post to their story: the story
-shows the club's post and opens it when tapped. A post that cannot be shared (the
-club turned resharing off, or the post is gone) is left out and the rest go on.
+Right after a sitting posts a carousel and sets its song, its ``ig stories`` move
+(``services/instagram_sessions/moves.py``) calls ``share``: each of the carousel's
+events' original posts goes to the account's story, in slide order, the way a person
+adds someone else's post to their story: the story shows the club's post and opens it
+when tapped. A post that cannot be shared (the club turned resharing off, or the post
+is gone) is left out and the rest go on.
 
 Each post is tried once and a carousel's story is never shared again, since a share
 that seemed to fail may already be on the story.
@@ -14,11 +15,8 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 
-from core.constants import INSTAGRAM_BATCH_PUBLISHED
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS
@@ -28,7 +26,6 @@ from services.instagram_emulator.story import share_to_story
 
 log = logging.getLogger(__name__)
 
-_CONTROL = controlbox.instagram_publishing
 EMULATOR = controlbox.instagram_emulator
 STORY_PENDING = "pending"
 STORY_POSTED = "posted"
@@ -47,41 +44,14 @@ _POST_URL = re.compile(
 )
 
 
-def schools_due(now: datetime | None = None) -> list[str]:
-    """Schools with a published carousel whose story waits, longest waiting first."""
-    schools = [batch["school"] for batch in _pending_batches(now or datetime.now(timezone.utc))]
-    return list(dict.fromkeys(schools))
+def share(device: EmulatorDevice, school: str, batch_id: str) -> tuple[int, int]:
+    """Share the carousel's events' original posts to the story; how many of how many.
 
-
-def share_due(device: EmulatorDevice, school: str, now: datetime | None = None) -> None:
-    """Share the original posts of each of the school's carousels whose story waits.
-
-    The worker calls this with the app already on the school's account. Like a DM's
-    story repost, it waits while the emulator is short of free storage.
+    The sitting holds the emulator on the school's account. Like a DM's story share,
+    it waits while the emulator is short of free storage.
     """
     if device.free_data_megabytes() < EMULATOR.min_free_data_megabytes:
-        log.warning("Carousel stories for %s wait for free storage on the emulator", school)
-        return
-    for batch in _pending_batches(now or datetime.now(timezone.utc)):
-        if batch["school"] == school:
-            _share(device, school, batch["id"])
-
-
-def _pending_batches(now: datetime) -> list[dict[str, Any]]:
-    response = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(f"id,published_at,{school_service.SCHOOL_SLUG_EMBED}")
-        .eq("status", INSTAGRAM_BATCH_PUBLISHED)
-        .eq("story_status", STORY_PENDING)
-        .gte("published_at", (now - timedelta(hours=_CONTROL.story_max_age_hours)).isoformat())
-        .order("published_at")
-        .execute()
-    )
-    return [school_service.with_school_slug(row) for row in response.data or []]
-
-
-def _share(device: EmulatorDevice, school: str, batch_id: str) -> None:
+        raise EmulatorError("The emulator is low on storage; the story waits")
     urls = original_posts(batch_id)
     record = school_service.get_school(school)
     sticker = _FEATURED_STICKERS[record.language if record else "en"]
@@ -98,6 +68,7 @@ def _share(device: EmulatorDevice, school: str, batch_id: str) -> None:
     status = STORY_POSTED if shared else STORY_FAILED
     error = None if shared == len(urls) else f"{shared} of {len(urls)} posts shared"
     _record(batch_id, status, error)
+    return shared, len(urls)
 
 
 def original_posts(batch_id: str) -> list[str]:

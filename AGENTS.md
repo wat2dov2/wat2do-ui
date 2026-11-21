@@ -62,7 +62,7 @@ The agent draws each event's `title_svg` from its poster by the rules in `backen
 Each production `wat2do-api` server keeps featured events' drawings complete (`rust/src/ingestion/title_svgs.rs` `run`, with the Mac's Claude Code): every featured event to come (one Wat2Do posted in a carousel, the events feed's featured row) whose drawing is missing, does not spell its title, or would render badly on a card is drawn again, up to `controlbox/ingestion.json` `title_svg_attempts` times, then after `title_svg_retry_hours`; events that are not featured are never drawn again.
 A drawing renders badly (`rust/src/ingestion/title_svg_rendering.rs`, laid out by usvg with the Mac's fonts) when its lettering runs past its view box, a line has no font size or is stretched or squeezed far from its natural width, or dark letters have no light outline; the worker draws again any featured event whose ingestion drawing fails it.
 When Claude's usage limit turns an agent away (HTTP 429), or `controlbox/ingestion.json` `agent_failure_streak` agent runs fail in a row, the row goes back without spending an attempt and every agent waits until the reset Claude names, or for `agent_pause_seconds`, so an outage never fails the queue.
-Every other Claude caller also treats the limit (`claude::Limited`, Python's `ClaudeLimited`) as no answer at all: a directory run stops and the next run starts over, DM threads stay unhandled, a carousel's song keeps waiting, and unscored follow candidates wait for the next run.
+Every other Claude caller also treats the limit (`claude::Limited`, Python's `ClaudeLimited`) as no answer at all: a directory run stops and the next run starts over, a school's sitting stays due, a carousel's song keeps waiting, and unscored follow candidates wait for the next run.
 The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but still needs a logo (rendered by Lightpanda at `controlbox/ingestion.json` `profile_renderer`, since Instagram no longer serves profile embeds) or still carries a placeholder "@handle" name, copies its picture into media storage as the club's logo, and replaces the placeholder name with the account's real one.
 Handles never read go first, newest club first, and the list is rebuilt every `club_logo_relist_minutes`, so a club that is new or just got a handle is read the same day.
 A handle is read again only after `club_logo_retry_days`, or after `club_logo_failed_retry_hours` when Lightpanda did not render its page.
@@ -135,9 +135,13 @@ At most every `ramp_interval_minutes` (kept in the queue across restarts) the la
 Every login's budget check and record happen in one queue transaction, and from the first keystroke of a Lightpanda password on, any failure pauses that account for a person.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
-It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song or, in action hours, its story, then an inbox due a check, then follows), switches the app to it once, and does everything that account needs before moving on.
-Each inbox is checked at random times, a random gap set in `controlbox/instagram_dms.json` after each check.
-Replies, follows and post edits happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`; outside them the worker only reads.
+It visits one school account at a time: it picks the account with the most urgent work (a sitting that is due, then follows), switches the app to it once, and does everything that account needs before moving on.
+A sitting is one school account's whole Instagram turn, done by a Claude session (`backend/services/instagram_sessions/sitting.py`, Tony's decision on 2026-11-21 after carousels waited hours for their likes and songs between the old 9:35 publish job and the worker).
+From `controlbox/instagram_sessions.json` `start_hour`:`start_minute` every school account gets one sitting a day, schools with a carousel ready to post first; a carousel posted outside a sitting (the admin's Publish button) that still waits for its like and song brings its school's sitting forward, retried `music_retry_minutes` after a failed try.
+The worker holds the emulator on the account for the whole sitting and runs Claude Code (`prompt.md`, `controlbox/instagram_sessions.json` `model`, on the second Claude login in `claude_config_dir` so a sitting never spends the login ingestion runs on, at most `sitting_timeout_minutes`) with one tool: the `ig` command (`moves.py`), whose moves run as the worker's children under its hold (`WAT2DO_EMULATOR_HELD`).
+In one go the sitting posts the day's draft (`ig post`, which runs `wat2do-instagram publish-draft <school>`), likes, reposts, comments on, tags and sets the song of the post right away (`ig finish`), shares its events' original posts to the story (`ig stories`), then goes through every DM thread with something new since the day before (unread, or their message newest and under a day old).
+Every move logs when it started and ended and how it went to `~/.local/state/wat2do/instagram-sittings/<date>.jsonl`, never a message's text, and each sitting's report goes to the same file, so every step of every post can be traced afterwards.
+Sittings happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`.
 One failing step never stops the visit's other steps.
 The worker never touches Brave.
 It runs in the official Instagram app on the Mac's Android emulator
@@ -147,23 +151,11 @@ The emulator holds every school account, logged in once outside this automation 
 spread across Android users because the app keeps at most ten accounts each.
 A switcher row whose name Instagram lost (it reads only its activity, "1 chat and 22 more") is tapped, and the inbox title confirms which account it was; a switch the app answered that never reached the account only rests that account, and never restarts the emulator.
 Instagram's "You've been logged out of <account>" dialog, which covers the app until answered, is acknowledged with OK and logged, so the Android user's other accounts go on; the logged-out account needs a person to log in again.
-Each visit holds the emulator's lock and switches to the school's Android user and
-account; the DM step then lists the main inbox and message requests.
-It opens, by tapping its row, each unread thread with a message it has not handled,
-and each read thread it has never handled (a read thread may show who is active
-instead of its latest message), skipping threads whose newest message is over a week
-old, and reads who sent each message, its text and any shared post from the screen
-the app draws.
-A message request is accepted only when we answer it, or when reading a post it shares
-needs the composer.
-It then asks Claude (`backend/services/instagram_dms/prompt.md`) for one outcome and
-writes our reply the way a student running the account would, from the facts about
-Wat2Do the prompt lists.
-The outcomes are sharing a post or reel to our story (any account's, if it is
-appropriate and not out of date), featuring it in an upcoming carousel, correcting a
-listing the club says is wrong, leaving a club that asks out of carousels,
-a plain reply (questions, a story request with no post shared, an event already over),
-or ignoring it with no reply (traps, spam, "thanks").
+In a sitting, `ig inbox` lists the main inbox and message requests, and `ig read` opens a thread by tapping its row and reads who sent each message, its text and any shared post from the screen the app draws.
+A message request is accepted only when a draft is typed in it, or when reading a post it shares needs the composer.
+Claude decides each thread from the facts about Wat2Do its prompt lists: sharing a post or reel to our story (any account's, if it is appropriate and not out of date, `ig share`), featuring it in an upcoming carousel (`ig feature`), correcting a listing the club says is wrong (`ig correction`), leaving a club that asks out of carousels (`ig opt-out`), a plain reply (questions, an event already over), or nothing (traps, spam, "thanks").
+No direct message is ever sent by the automation: `ig draft` types our reply into its thread and leaves it there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
+A thread where a club asked us to repost, share or feature its post also gets the claim-link message (`ig draft --claim <their username>`): its club's own claim link, from its outreach lead (one is made if the unclaimed club has none), typed straight into the thread and never printed or logged.
 Clubs want story reposts and carousel spots, so replies never ask about adding things
 to the site.
 A story repost or carousel request sets `events.carousel_requested_at` on the events
@@ -175,22 +167,20 @@ A carousel shows at most `controlbox/instagram_publishing.json` `maximum_slides_
 A correction queues the club's words as a `dm` row in `public.ingestion_items`, and the
 ingestion agent corrects only the listings it clearly refers to.
 An opt-out adds the sender to `public.instagram_excluded_clubs`.
-A story request is shared first and answered after: the app adds the shared post to
-the school's story, and only then does the thread get the reply.
+A story request is shared first and its reply drafted after.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
 It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`, which builds the notification recorder's `notification-reader.jar` too.
-Each reply is confirmed by seeing it appear in the thread.
-The emulator also likes, reposts and adds music to our own carousels after the API
-publishes them, since the API can do none of these: on the school's next visit the
-worker opens the live post, likes it, reposts it unless the Repost icon already shows its check mark, then
+Each draft is confirmed by seeing it in the thread's composer, and no move can tap Send.
+The emulator also likes, reposts and adds music to our own carousels right after the API
+posts them, since the API can do none of these: the sitting's `ig finish` opens the live post, likes it, reposts it unless the Repost icon already shows its check mark, then
 Edit, Add audio,
-searches the admin's song list in random order, and Claude Haiku picks the matching
-track or none.
+searches the admin's song list in the day's rotation order, and Claude Haiku picks the matching
+track or none (`services/instagram_publishing/music.py` `finish`).
 The same edit tags the post with the school's own place: the first one Instagram's location search lists under the school's exact name (`schools.name`), else the one Claude Haiku recognizes as the school, or none; a place that cannot be tagged never holds up the song.
 It also tags each event slide with its event's club (`events.ig_handle`, never our own accounts) through Tag people: the tagging screen is turned one slide at a time (cover first) and each turn is confirmed by the picture changing, the user search's row with the exact handle is tapped, and a club that lets only accounts it follows tag it ("Can't tag") is left untagged; a post that already has tags is left as it is.
-During action hours, while a carousel is at most `story_max_age_hours` old and its `story_status` is pending, the same visit then shares each event's original Instagram post to the account's story, in slide order, the way a DM's story request is shared, so the story opens the club's own post (`services/instagram_publishing/stories.py`). Each of those stories gets a blue "Featured" sticker (French "En vedette") on the post's top-right corner: `put_photo` makes `services/instagram_emulator/assets/featured_sticker_<language>.png` the gallery's newest photo, the story editor adds it as a photo sticker and `drag` moves it (`story._place_sticker`); the PNGs come from `frontend/scripts/render-featured-story-sticker.mjs`. DM story reposts get no sticker.
+While a carousel is at most `story_max_age_hours` old and its `story_status` is pending, the sitting's `ig stories` then shares each event's original Instagram post to the account's story, in slide order, the way a DM's story request is shared, so the story opens the club's own post (`services/instagram_publishing/stories.py` `share`). Each of those stories gets a blue "Featured" sticker (French "En vedette") on the post's top-right corner: `put_photo` makes `services/instagram_emulator/assets/featured_sticker_<language>.png` the gallery's newest photo, the story editor adds it as a photo sticker and `drag` moves it (`story._place_sticker`); the PNGs come from `frontend/scripts/render-featured-story-sticker.mjs`. DM story reposts get no sticker.
 Each post is tried once and the story is marked before the first share, so it is never shared twice; a post that cannot be shared is left out and recorded in `story_error` ("2 of 3 posts shared"), shown in the admin's carousel drawer.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
@@ -214,29 +204,23 @@ Approving creates the school's club for the handle unless one exists, and queues
 The emulator worker checks `follows_due` from the database, then calls `follow_due` with the emulator on the school's account.
 `follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
-Only the worker taps the emulator, holding its lock for one visit at a time.
+Only the worker taps the emulator, holding its lock for one visit at a time; a sitting's moves run under that hold.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
-Code, not the model, has the final say: the post must be shared in the thread with its
-owner readable, an opt-out needs a readable sender, a reply with a
-tag, a link outside wat2do.io, an email address other than the controlbox's
-`contact_email` or a long number is not sent at all, and nothing is sent when our
-message is already the newest.
-Each inbox's random check time is the reply's human-like delay.
-A reply or story repost that fails or cannot be confirmed pauses every inbox for a
-person (`run_instagram_worker.py resume-dms` once checked) and is never retried, since it
-may already have reached Instagram; the worker's other steps go on.
-A story repost waits, without accepting or answering the thread, while the emulator has
+Code, not the model, has the final say: a post can be shared or featured only when they shared it in the thread with its owner readable, an opt-out needs a readable sender, and a draft with a
+tag, a link outside wat2do.io, an email address other than `controlbox/instagram_dms.json`
+`contact_email` or a long number is not typed at all.
+A sitting stops at "Confirm you're human", a login screen or an action limit and reports it for a person; it never types a code or a password.
+A story share waits while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
 The emulator's keep-alive LaunchAgent (`scripts/instagram_emulator.py`, `io.wat2do.instagram-emulator`) boots it whenever adb cannot see it and stops it to boot again once Android has answered no `adb shell` command for `controlbox/instagram_emulator.json` `unresponsive_restart_seconds`, since a hung Android still shows in adb (2026-11-18: hung 13 hours, every notification and carousel follow-up lost).
-Once a day, from `reclaim_hour` (before the morning's carousels publish), the worker
+Once a day, from `reclaim_hour` (before the morning's sittings), the worker
 deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the
 emulator, whose host process leaks about 3 GB of memory a day.
-Unfollows and follows stop between profiles once a carousel waits for its song or that restart is due.
+Unfollows and follows stop between profiles once a sitting is due or that restart is due.
 A step that fails starts Instagram afresh on that Android user, so nothing it left open covers the next step, and `failures_before_rest` profiles failing in a row rest that account's follows (as that many failed Following reads in a row rest that school's crawl).
 Both stop Instagram with `am force-stop`, which also leaves an app in Android's stopped state, getting nothing in the background until it is opened again, so `pm unstop` follows every one; the reclaim never clears another app's data (clearing Google Play services dropped the Android users' device registration).
-`dry_run` decides and records every DM without replying, reposting or queueing anything; it is on since 2026-11-21, when Tony asked that no reply go out without him reviewing it first.
 Never log DM text.
 
 If serialized browser expansion cannot complete, fail before recording that
@@ -259,11 +243,10 @@ Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo 
 The public API is served by `wat2do-api` (`rust/src/api`), which listens on port 8000, runs the FastAPI app on loopback as its child, answers the routes already ported to Rust and proxies every other request to Python unchanged.
 Porting a router means writing its handlers with the shared extractors, errors and validation in `rust/src/api`, registering them in `rust_routes()`, regenerating `backend/core/rust_openapi.json`, proving parity with `backend/scripts/api_parity.py` against production read-only, and deleting the Python router, service, schemas and tests in the same change.
 `docs/rust_api.md` is the step-by-step guide.
-The admin's carousel routes are Rust (`rust/src/api/routes/instagram_publishing`), and so are the carousel jobs (`rust/src/instagram_publishing`, binary `wat2do-instagram`): Claude's daily drafts (`curate`, LaunchAgent `io.wat2do.instagram.curate`), the 9:35 publish (`publish`, `io.wat2do.instagram.publish`), both installed by `wat2do-instagram install-schedule` and run with `cargo run --release` against the installing checkout, and the daily token refresh and account stats (`stats`, the Mac mini's `io.wat2do.instagram-account-stats` timer, from the deployed release).
-The morning publish waits after each school's carousel, up to `controlbox/instagram_publishing.json` `follow_up_wait_minutes`, until the emulator worker has liked, reposted, commented on, tagged, set the song of and shared the story for it, so each post gets them in its first minutes before the next school posts; every school waits, even after one was not finished in time (2026-11-21: once dalhousie's follow-up ran a few seconds past the wait, it posted the other twelve schools in twenty minutes, and the emulator reached the last of them over two hours late).
-A posted carousel's story is left to the emulator worker: the job marks its `story_status` pending (`controlbox/instagram_publishing.json` `share_event_posts_to_story` turns that off), and the API never posts to stories.
+The admin's carousel routes are Rust (`rust/src/api/routes/instagram_publishing`), and so are the carousel jobs (`rust/src/instagram_publishing`, binary `wat2do-instagram`): Claude's daily drafts (`curate`, LaunchAgent `io.wat2do.instagram.curate`, installed by `wat2do-instagram install-schedule` and run with `cargo run --release` against the installing checkout), posting one school's ready draft for its sitting (`publish-draft <school>`, run the same way by the sitting's `ig post`), and the daily token refresh and account stats (`stats`, the Mac mini's `io.wat2do.instagram-account-stats` timer, from the deployed release).
+A posted carousel's story is left to its sitting: the post marks its `story_status` pending (`controlbox/instagram_publishing.json` `share_event_posts_to_story` turns that off), and the API never posts to stories.
 The Publish button claims the batch in Rust, then starts `wat2do-instagram publish-batch <id>`, the binary beside `wat2do-api`, as a detached process from the API's working directory, and a process that cannot start or crashes marks the batch failed.
-Liking, reposting, adding music, tagging clubs and sharing the story of a published carousel stay in the Python emulator worker (`services/instagram_publishing/music.py`, `stories.py`).
+Liking, reposting, adding music, tagging clubs and sharing the story of a published carousel happen in the sitting's moves on the Python emulator worker (`services/instagram_publishing/music.py`, `stories.py`).
 Each `wat2do-api` server also runs the map location worker (`rust/src/map_locations.rs`), which looks up waiting `map_locations` with Nominatim; `claim_map_location` keeps every server to one lookup at a time between them.
 Uploads (`/uploads` and the `/ai` poster readers) are checked and stored in Cloudflare R2 (with the thumbnail of each poster and raster club logo) by `rust/src/storage.rs`, and posters are read by OpenAI with `backend/services/scraper/extraction_prompt.txt`, the template the vestigial Python extractor renders too; Python's `storage_service` remains only for that pipeline and scripts.
 Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.

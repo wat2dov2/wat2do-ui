@@ -1,6 +1,7 @@
 //! Installing local LaunchAgents without losing a previously working service
-//! (`core/launch_agents.py`, which the still-Python agents keep using), and the
-//! worker binary the Brave LaunchAgents run.
+//! (`core/launch_agents.py`, which the still-Python agents keep using),
+//! removing one a release no longer installs, and the worker binary the Brave
+//! LaunchAgents run.
 //!
 //! The plist is written the way Python's `plistlib.dumps(payload, sort_keys=True)`
 //! writes it, and replacing a loaded agent restores the previous one if any step
@@ -341,6 +342,12 @@ pub fn atomic_write(path: &Path, payload: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
+/// The logged-in user's launchd domain, where LaunchAgents run.
+fn gui_domain() -> String {
+    // SAFETY: getuid has no preconditions and cannot fail.
+    format!("gui/{}", unsafe { libc::getuid() })
+}
+
 /// Validate storage first and restore the previous agent if replacement fails.
 pub fn install_launch_agent(
     path: &Path,
@@ -348,8 +355,7 @@ pub fn install_launch_agent(
     payload: &Plist,
     launchctl: &Launchctl,
 ) -> Result<()> {
-    // SAFETY: getuid has no preconditions and cannot fail.
-    let domain = format!("gui/{}", unsafe { libc::getuid() });
+    let domain = gui_domain();
     let service = format!("{domain}/{label}");
     let timeout = launchctl.timeout.as_secs_f64();
     // Only a missing plist means there is nothing to restore; any other read
@@ -429,6 +435,24 @@ pub fn install_launch_agent(
         .into());
     }
     Err(error)
+}
+
+/// Stop a LaunchAgent a release no longer installs, then delete its plist, so
+/// it never starts again; whether there was one. An agent that does not stop
+/// keeps its plist, so running this again finishes the removal.
+pub fn remove_launch_agent(path: &Path, label: &str, launchctl: &Launchctl) -> Result<bool> {
+    let service = format!("{}/{label}", gui_domain());
+    let timeout = launchctl.timeout.as_secs_f64();
+    let loaded = launchctl.run(&["print", &service], timeout, false)?;
+    if loaded {
+        launchctl.run(&["bootout", &service], timeout, true)?;
+        launchctl.wait_for_unload(&service)?;
+    }
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(loaded),
+        Err(error) => Err(error).context("could not delete the LaunchAgent"),
+    }
 }
 
 #[cfg(test)]
@@ -794,6 +818,46 @@ mod tests {
             std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
             1
         );
+    }
+
+    #[test]
+    fn a_removed_agent_is_stopped_before_its_plist_is_deleted() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = with_previous(folder.path());
+        // The stopped service stays listed for one more print.
+        let (launchd, launchctl) = fake_launchctl(true, &[], 1);
+
+        assert!(remove_launch_agent(&path, "io.wat2do.test", &launchctl).unwrap());
+
+        assert!(!path.exists());
+        assert_eq!(launchd.calls(), ["print", "bootout", "print", "print"]);
+        assert!(launchd.started().is_empty());
+    }
+
+    #[test]
+    fn removing_a_stopped_or_missing_agent_only_deletes_what_is_left() {
+        let folder = tempfile::tempdir().unwrap();
+        // A plist launchd no longer runs is deleted.
+        let path = with_previous(folder.path());
+        let (launchd, launchctl) = fake_launchctl(false, &[], 0);
+
+        assert!(remove_launch_agent(&path, "io.wat2do.test", &launchctl).unwrap());
+        assert!(!path.exists());
+        // Once it is gone, there is nothing left to remove.
+        assert!(!remove_launch_agent(&path, "io.wat2do.test", &launchctl).unwrap());
+        assert_eq!(launchd.calls(), ["print", "print"]);
+    }
+
+    #[test]
+    fn an_agent_that_does_not_stop_keeps_its_plist() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = with_previous(folder.path());
+        let (_, launchctl) = fake_launchctl(true, &[("bootout", 1)], 0);
+
+        let error = remove_launch_agent(&path, "io.wat2do.test", &launchctl).unwrap_err();
+
+        assert_eq!(error.to_string(), "LaunchAgent bootout failed (exit 5)");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "old");
     }
 
     #[test]

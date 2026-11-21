@@ -1,12 +1,7 @@
 {
-  "dry_run": true,
-  "model": "claude-haiku-5-5",
-  "agent_timeout_seconds": 120,
   "thread_item_limit": 12,
   "reply_max_characters": 300,
   "contact_email": "team@wat2do.io",
-  "sweep_gap_min_minutes": 90,
-  "sweep_gap_max_minutes": 240,
   "max_thread_age_days": 7,
   "inbox_scrolls": 3
 }

@@ -297,8 +297,9 @@ pub struct InstagramBrowser {
 }
 
 /// `controlbox/instagram_publishing.json`, every field. The API's carousel
-/// routes read the slide and sticker limits and the stats window; the
-/// daily drafts, publishing and music stay in Python.
+/// routes and the carousel jobs (`instagram_publishing`) read it, and so does
+/// the Python emulator worker, which posts each school's carousel and adds
+/// its song, tags and stories.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InstagramPublishing {
@@ -332,22 +333,15 @@ pub struct InstagramPublishing {
     pub curation_poster_pixels: u32,
     pub curation_hours: Vec<u32>,
     pub curation_minute: u32,
-    pub auto_publish_hour: u32,
-    pub auto_publish_minute: u32,
     pub poster_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
     pub music_model: String,
     pub music_agent_timeout_seconds: f64,
-    pub music_delay_minutes: i64,
     pub music_max_age_hours: i64,
     pub music_attempts: u32,
     pub gif_comments: bool,
     pub gif_recent_searches: usize,
     pub music_retry_minutes: i64,
-    /// The morning publish waits this long, checking this often, for the
-    /// emulator to finish each carousel before posting the next school's.
-    pub follow_up_wait_minutes: u64,
-    pub follow_up_poll_seconds: u64,
     /// After a carousel publishes, the emulator worker shares each of its
     /// events' original posts to the account's story, in slide order.
     pub share_event_posts_to_story: bool,

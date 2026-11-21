@@ -1,0 +1,4 @@
+#!/bin/sh
+# The one command a Claude sitting may run: the moves in moves.py, run from the backend
+# with its own settings, so no secret ever enters the sitting's environment.
+cd "$(dirname "$0")/../.." && exec .venv/bin/python -m services.instagram_sessions.moves "$@"

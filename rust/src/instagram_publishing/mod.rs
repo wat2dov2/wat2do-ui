@@ -1,7 +1,8 @@
 //! The daily Instagram carousels' background jobs (`wat2do-instagram`): Claude
-//! drafts each school's carousel (`curation`), the morning publish and the
-//! admin's Publish button post them (`publishing`), and a daily run refreshes
-//! the accounts' tokens and reads their stats (`tokens`, `stats`).
+//! drafts each school's carousel (`curation`), the emulator worker's Claude
+//! sitting and the admin's Publish button post them (`publishing`), and a
+//! daily run refreshes the accounts' tokens and reads their stats (`tokens`,
+//! `stats`).
 //!
 //! The admin editor's routes (`api::routes::instagram_publishing`) own reading,
 //! editing and claiming a batch; these jobs read and claim batches through the
