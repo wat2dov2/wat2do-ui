@@ -881,9 +881,10 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
         load_controlbox(directory)
 
 
-def test_instagram_dms_answer_live_with_random_gaps_between_checks() -> None:
+def test_instagram_dms_send_nothing_without_review_and_check_at_random_gaps() -> None:
+    # Tony 2026-11-21: no reply goes out before he has reviewed it.
     control = load_controlbox().instagram_dms
-    assert control.dry_run is False
+    assert control.dry_run is True
     assert control.sweep_gap_min_minutes <= control.sweep_gap_max_minutes
 
 
