@@ -604,6 +604,7 @@ In the sitting, Claude works as the school in the Instagram app on the Mac's And
 4. `ig correction` queues what the club wrote since our last message as a ready `dm` row in `public.ingestion_items`; the ingestion agent corrects only the listings it clearly refers to and never creates one from it.
 5. `ig opt-out` adds the sender to `public.instagram_excluded_clubs`.
 6. `ig draft` types the reply into the thread, unsent; `--claim <username>` adds the claim-link message for a club that asked us to repost, share or feature its post, its claim link typed straight into the thread and never printed or logged.
+   A thread already holding an unsent claim link is refused and left as it is, and `ig inbox` and `ig read` show every claim link as `[claim link]`.
 
 When Instagram has limited an account's messages, its threads show "You can't send messages at this time" where the composer would be, and `ig read` refuses them.
 

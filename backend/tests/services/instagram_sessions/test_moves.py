@@ -81,6 +81,26 @@ def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
     assert TOKEN not in json.dumps(result)
 
 
+def test_a_sitting_never_sees_a_claim_link_it_reads(monkeypatch, reader):
+    link = f"https://tmu.wat2do.io/claim/{TOKEN}"
+    reader.thread = [{"from": "us", "text": f"Takes one click: {link} Thank you!"}]
+    row = SimpleNamespace(
+        name="TMU Pre-Vet Club",
+        preview=f"You: Takes one click: {link}",
+        age_days=0.5,
+        unread=False,
+        request=False,
+        ours=True,
+    )
+    monkeypatch.setattr(moves, "read_inbox", lambda device, user, requests: [row])
+    monkeypatch.setattr(moves, "user", lambda: 10)
+    read = moves.read(object(), _args())
+    listed = moves.inbox(object(), _args())
+    assert read["messages"][0]["text"] == "Takes one click: [claim link] Thank you!"
+    assert listed["threads"][0]["preview"] == "You: Takes one click: [claim link]"
+    assert TOKEN not in json.dumps([read, listed])
+
+
 def test_a_draft_needs_something_to_type(reader):
     with pytest.raises(moves.MoveError, match="Nothing to type"):
         moves.draft(object(), _args())

@@ -42,7 +42,7 @@ from services import school_service
 from services.ingestion import items
 from services.instagram_accounts import school_account_username
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, exclusive
-from services.instagram_emulator.direct import ThreadReader, exclude_club
+from services.instagram_emulator.direct import CLAIM_LINK, ThreadReader, exclude_club
 from services.instagram_emulator.inbox import open_row, read_inbox
 from services.instagram_emulator.story import share_to_story
 from services.instagram_publishing import music, stories
@@ -159,7 +159,7 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
         "threads": [
             {
                 "name": row.name,
-                "preview": row.preview,
+                "preview": _without_claim_links(row.preview),
                 "age_days": row.age_days,
                 "unread": row.unread,
                 "request": row.request,
@@ -172,7 +172,9 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
 
 def read(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     reader = _reader(device, args.thread)
-    messages = reader.read()
+    messages = [
+        {**message, "text": _without_claim_links(message["text"])} for message in reader.read()
+    ]
     # Whether its newest dated message is over a week old, known once it is read.
     return {"thread": args.thread, "stale": reader.stale, "messages": messages}
 
@@ -399,6 +401,12 @@ def _handle(value: object) -> str:
 
 def _reader(device: EmulatorDevice, thread: str) -> ThreadReader:
     return ThreadReader(device, lambda: open_row(device, user(), thread))
+
+
+def _without_claim_links(text: str) -> str:
+    """A claim link carries its club's token, which a sitting never needs to see: one we
+    typed shows in its thread and in the inbox once the draft or message is there."""
+    return CLAIM_LINK.sub("[claim link]", text)
 
 
 def _their_share(device: EmulatorDevice, thread: str, url: str) -> str:

@@ -164,6 +164,16 @@ def test_a_draft_that_does_not_show_in_the_composer_fails() -> None:
         THREAD_READER(_DraftDevice(echo=False), lambda: None).draft("hi")
 
 
+def test_a_thread_holding_an_unsent_claim_draft_is_left_as_it_is() -> None:
+    device = _DraftDevice()
+    waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/0f6b3c1e-1234 Thank you!"
+    device.typed = waiting
+    with pytest.raises(module.DraftWaiting):
+        THREAD_READER(device, lambda: None).draft("just shared it!")
+    assert device.typed == waiting
+    assert device.taps == [] and device.backs == 0
+
+
 def _thread(*messages):
     composer = _node("Message…", (158, 1365, 621, 1496), "row_thread_composer_edittext")
     return [_node("", (0, 275, 1080, 1431), "message_list"), *messages, composer]
