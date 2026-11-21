@@ -22,6 +22,7 @@ pub const PG_CODE_TO_HTTP: [(&str, u16, &str); 4] = [
 
 // The clubs, users, schools and positions routes.
 pub const CLUB_NOT_FOUND: &str = "Club not found";
+pub const CLUB_ALREADY_EXISTS: &str = "This club is already on Wat2Do";
 pub const CANNOT_REMOVE_YOURSELF: &str = "You cannot remove yourself from the club";
 pub const MEMBERS_ALWAYS_FOLLOW_CLUB: &str = "Club members always follow their own club";
 pub const SAVED_CLUBS_CAP_REACHED: &str = "Maximum saved clubs limit reached";

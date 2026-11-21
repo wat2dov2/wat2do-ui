@@ -13,7 +13,9 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use serde_json::{Value, json};
 
-use super::messages::{DB_OPERATION_FAILED, INTERNAL_SERVER_ERROR, PG_CODE_TO_HTTP};
+use super::messages::{
+    CLUB_ALREADY_EXISTS, DB_OPERATION_FAILED, INTERNAL_SERVER_ERROR, PG_CODE_TO_HTTP,
+};
 use super::validation::ValidationIssue;
 
 #[derive(Debug)]
@@ -26,6 +28,9 @@ pub enum ApiError {
     Authorization(String),
     /// `ConflictError`: 409.
     Conflict(String),
+    /// 409: the school already has a club with this Instagram handle, which the
+    /// sender can open to claim instead (`ClubExistsResponse`).
+    ClubExists { club_id: i32, club_name: String },
     /// `ValidationError`: 400, with `code` when one is set.
     Validation { detail: String, code: String },
     /// Any other `ServiceError`: 400, logged as a warning.
@@ -198,6 +203,10 @@ impl IntoResponse for ApiError {
                 respond(StatusCode::FORBIDDEN, json!({ "detail": detail }))
             }
             Self::Conflict(detail) => respond(StatusCode::CONFLICT, json!({ "detail": detail })),
+            Self::ClubExists { club_id, club_name } => respond(
+                StatusCode::CONFLICT,
+                json!({ "detail": CLUB_ALREADY_EXISTS, "club_id": club_id, "club_name": club_name }),
+            ),
             Self::Validation { detail, code } => {
                 respond(StatusCode::BAD_REQUEST, detail_body(&detail, &code))
             }
@@ -282,6 +291,16 @@ mod tests {
         assert_eq!(status, StatusCode::FORBIDDEN);
         let (status, _, _) = parts(ApiError::conflict("taken")).await;
         assert_eq!(status, StatusCode::CONFLICT);
+        let (status, _, body) = parts(ApiError::ClubExists {
+            club_id: 7,
+            club_name: "Chess".into(),
+        })
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert_eq!(
+            body,
+            json!({"detail": CLUB_ALREADY_EXISTS, "club_id": 7, "club_name": "Chess"})
+        );
 
         let (status, _, body) = parts(ApiError::validation("bad")).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);

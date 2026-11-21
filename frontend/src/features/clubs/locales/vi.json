@@ -89,6 +89,11 @@
       "submitted": "Đã gửi yêu cầu",
       "submittedDesc": "Quản trị viên sẽ xem xét yêu cầu tham gia \"{{name}}\" của bạn và thêm bạn vào đội ngũ.",
       "failed": "Không thể gửi yêu cầu. Có thể bạn đã gửi yêu cầu cho câu lạc bộ này rồi."
+    },
+    "exists": {
+      "title": "Câu lạc bộ này đã có trên Wat2Do",
+      "description": "{{club}} đã dùng tài khoản Instagram này trên Wat2Do, nên không thể thêm lại. Hãy mở trang của câu lạc bộ để nhận quản lý hoặc tham gia đội ngũ.",
+      "open": "Mở trang câu lạc bộ"
     }
   },
   "inviteLanding": {

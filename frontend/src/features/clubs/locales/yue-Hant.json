@@ -89,6 +89,11 @@
       "submitted": "申請已發送",
       "submittedDesc": "管理員會審核你加入「{{name}}」嘅申請，再將你加入團隊。",
       "failed": "申請發送唔到。你可能已經為呢個學會發送過申請。"
+    },
+    "exists": {
+      "title": "呢個學會已經喺 Wat2Do 度",
+      "description": "{{club}} 已經喺 Wat2Do 用緊呢個 Instagram 帳號，所以唔可以再加多一次。打開佢嘅頁面嚟認領，或者加入佢嘅團隊。",
+      "open": "打開學會頁面"
     }
   },
   "inviteLanding": {

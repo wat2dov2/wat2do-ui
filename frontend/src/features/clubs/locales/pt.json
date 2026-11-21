@@ -95,6 +95,11 @@
       "submitted": "Pedido enviado",
       "submittedDesc": "Um administrador vai analisar seu pedido para entrar em \"{{name}}\" e adicionar você à equipe.",
       "failed": "Não foi possível enviar seu pedido. Talvez você já tenha enviado um para esta organização."
+    },
+    "exists": {
+      "title": "Este clube já está na Wat2Do",
+      "description": "{{club}} já tem esta conta do Instagram na Wat2Do, então não pode ser adicionado de novo. Abra a página dele para reivindicá-lo ou entrar na equipe.",
+      "open": "Abrir página do clube"
     }
   },
   "inviteLanding": {

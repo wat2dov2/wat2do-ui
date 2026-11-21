@@ -98,6 +98,11 @@
       "submitted": "Prośba wysłana",
       "submittedDesc": "Administrator sprawdzi Twoją prośbę o dołączenie do „{{name}}” i doda Cię do zespołu.",
       "failed": "Nie udało się wysłać prośby. Być może wysłano już jedną dla tej organizacji."
+    },
+    "exists": {
+      "title": "Ten klub jest już na Wat2Do",
+      "description": "Organizacja {{club}} ma już to konto Instagram na Wat2Do, więc nie można jej dodać ponownie. Otwórz jej stronę, aby ją przejąć lub dołączyć do jej zespołu.",
+      "open": "Otwórz stronę klubu"
     }
   },
   "inviteLanding": {

@@ -43,6 +43,9 @@ import {
 import { translateCategory } from "@/shared/utils/event";
 import { normalizeInstagramHandle } from "@/shared/utils/url";
 import type { Club } from "@/shared/types";
+import type { ApiClubExistsResponse } from "@/shared/generated";
+import { existingClubFromError } from "@/features/clubs/api/clubs.api";
+import { ClubExistsDialog } from "@/features/clubs/components/ClubExistsDialog";
 
 interface ClubFormData {
   club_name: string;
@@ -81,6 +84,7 @@ export function ClubForm({
   const isEditMode = initialData != null;
   const requireSignIn = useRequireSignIn();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingClub, setExistingClub] = useState<ApiClubExistsResponse | null>(null);
 
   const getDefaults = useCallback(
     () => ({
@@ -180,6 +184,11 @@ export function ClubForm({
       });
       onSaved?.(savedClub);
     } catch (error) {
+      const existing = existingClubFromError(error);
+      if (existing) {
+        setExistingClub(existing);
+        return;
+      }
       console.error("Failed to save club:", error);
       toast({
         title: t("common.error"),
@@ -383,6 +392,7 @@ export function ClubForm({
           </LoadingButton>
         </FormActions>
       )}
+      <ClubExistsDialog club={existingClub} onClose={() => setExistingClub(null)} />
     </FormLayout>
   );
 }
