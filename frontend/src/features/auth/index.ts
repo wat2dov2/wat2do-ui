@@ -17,7 +17,6 @@ export {
   useAuthState,
   useSessionKnown,
   useUserEmail,
-  useUserInterests,
 } from "./hooks/useAuthState";
 export { useRequireSignIn, useSignedInAction } from "./hooks/useSignInGate";
 

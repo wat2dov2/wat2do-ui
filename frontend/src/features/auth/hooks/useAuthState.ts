@@ -26,8 +26,6 @@ export interface AuthState {
   /** Cached ``users.avatar_url``; null when unset or signed out. */
   userAvatarUrl: string | null;
   school: string | null;
-  /** The event categories the reader follows (``users.interests``); empty when signed out. */
-  interests: readonly string[];
   /** Mirrors `isAuthenticated()`: a signed-in session is cached. */
   isAuthenticated: boolean;
   /** Same as `isAuthenticated`; UI gates treat a valid session as "profile ready". */
@@ -50,7 +48,6 @@ const SERVER_AUTH_STATE: AuthState = Object.freeze({
   userFullName: null,
   userAvatarUrl: null,
   school: null,
-  interests: Object.freeze([]),
   isAuthenticated: false,
   profileCompleted: false,
   isAdmin: false,
@@ -99,7 +96,6 @@ function computeSnapshot(): AuthState {
     userFullName: authed ? profile?.fullName ?? null : null,
     userAvatarUrl: authed ? profile?.avatarUrl ?? null : null,
     school: authed ? profile?.school || null : null,
-    interests: authed ? profile?.interests ?? SERVER_AUTH_STATE.interests : SERVER_AUTH_STATE.interests,
     isAuthenticated: authed,
     profileCompleted,
     isAdmin: authed && role === ROLE_ADMIN,
@@ -178,18 +174,6 @@ export function useUserEmail(): string | null {
     subscribe,
     () => getSnapshot().userEmail,
     () => SERVER_AUTH_STATE.userEmail,
-  );
-}
-
-/**
- * The signed-in reader's interests; re-renders only when they change. Empty in the
- * server's HTML and while the page hydrates, so personal ordering comes after mount.
- */
-export function useUserInterests(): readonly string[] {
-  return useSyncExternalStore(
-    subscribe,
-    () => getSnapshot().interests,
-    () => SERVER_AUTH_STATE.interests,
   );
 }
 

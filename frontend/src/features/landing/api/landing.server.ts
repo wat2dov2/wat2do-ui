@@ -1,9 +1,8 @@
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
-import { FREE_FOOD_PREVIEW_COUNT, isFreeFoodEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
+import { FREE_FOOD_PREVIEW_COUNT, isFreeFoodEvent, nicheClubs, upcomingEvents } from "@/features/landing/lib/landingEvents";
 import type { Club, Event } from "@/shared/types";
-import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import { isNetworkingEvent } from "@/shared/utils/event";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -20,7 +19,7 @@ const PREVIEW_CLUBS = 2;
 export interface LandingSnapshot {
   /** Upcoming events at the school. */
   upcomingCount: number | null;
-  /** The free-food events the filters preview shows, in the feed's order. */
+  /** The free-food events the filters preview shows, soonest first, as the Free food filter lists them. */
   freeFoodEvents: Event[];
   /** Upcoming events first added in the last seven days. */
   newThisWeekCount: number | null;
@@ -53,8 +52,7 @@ async function readOrNull<T>(label: string, read: () => Promise<T>): Promise<T |
 export async function getLandingSnapshot(school: string): Promise<LandingSnapshot> {
   const now = Date.now();
   const [events, clubs, positions] = await Promise.all([
-    readOrNull("event feed", async () =>
-      (await getSchoolBrowseSnapshot(school)).items.filter((event) => hasActiveEventOccurrence(event, now))),
+    readOrNull("event feed", async () => upcomingEvents((await getSchoolBrowseSnapshot(school)).items, now)),
     readOrNull("club directory", async () => (await getClubDirectorySnapshot(school)).items),
     readOrNull("position directory", async () => (await getPositionDirectorySnapshot(school)).items),
   ]);

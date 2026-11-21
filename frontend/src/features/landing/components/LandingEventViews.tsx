@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { useRequestSchool } from "@/app/client-providers";
 import { EventsBrowseViews, eventFeedQueryOptions, useCurrentTime } from "@/features/events";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { upcomingEvents } from "@/features/landing/lib/landingEvents";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { useWhenIdle } from "@/shared/hooks/useWhenIdle";
 import type { Event } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
 /** The grid shows a sample of the feed; the map and calendar show all of it. */
 const GRID_EVENT_COUNT = 10;
@@ -36,7 +36,7 @@ export function LandingEventViews({ view }: { view: LandingEventView }) {
   const { data: feed, isError } = useQuery({ ...eventFeedQueryOptions(school), enabled: ready });
   const currentTimeMs = useCurrentTime();
   const events = useMemo(
-    () => (currentTimeMs === null ? [] : (feed?.items ?? []).filter((event) => hasActiveEventOccurrence(event, currentTimeMs))),
+    () => (currentTimeMs === null ? [] : upcomingEvents(feed?.items ?? [], currentTimeMs)),
     [currentTimeMs, feed],
   );
   const openEvent = useCallback((event: Event) => router.push(eventPagePath(event.id)), [router]);

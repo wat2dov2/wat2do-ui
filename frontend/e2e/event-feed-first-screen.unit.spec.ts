@@ -52,6 +52,32 @@ test("a feed shorter than a screen is all there", () => {
   expect(firstScreen.total).toBe(2);
 });
 
+test("the default list is one start-time order, whatever each event's category", () => {
+  // Sessions as [starts, ends] in hours from now; a null end is an event with no end time.
+  const withSessions = (id: number, sessions: [number, number | null][], category = "Arts & Culture") => event(id, 0, {
+    category,
+    occurrences: sessions.map(([startsInHours, endsInHours], index) => ({
+      id: id * 10 + index, event_id: id,
+      dtstart_utc: new Date(NOW_MS + startsInHours * HOUR_MS).toISOString(),
+      dtend_utc: endsInHours === null ? null : new Date(NOW_MS + endsInHours * HOUR_MS).toISOString(),
+    })) as unknown as Event["occurrences"],
+  });
+  const weekHours = 7 * 24;
+  // A Saturday on uwaterloo at 5:10 PM, games and dance mixed: one run by start,
+  // never one category's run and then another's.
+  const items = [
+    withSessions(1, [[-3, 1.5], [21, 25.5]], "Games & Recreation"),
+    withSessions(2, [[0.4, null]], "Games & Recreation"),
+    // A weekly game night goes by tonight's session, not the first of its nine past ones.
+    withSessions(3, Array.from({ length: 10 }, (_, week): [number, number] => [0.8 - (9 - week) * weekHours, 4.8 - (9 - week) * weekHours]), "Games & Recreation"),
+    withSessions(4, [[-8, 25]]),
+    withSessions(5, [[-1, 0.1]]),
+    withSessions(6, [[0.3, 1.3]]),
+  ];
+  const firstScreen = buildEventFeedFirstScreen(feed(items, null), "uwaterloo", timezone, NOW_MS);
+  expect(firstScreen.events.map(item => item.id)).toEqual([4, 1, 5, 6, 2, 3]);
+});
+
 test("the new line falls back to the newest event still on once the feed's latest has ended", () => {
   const finished = event(1, -3, { added_at: new Date(NOW_MS - 600_000).toISOString() });
   const items = [finished, event(2, 4), event(3, 30), event(4, 2)];
