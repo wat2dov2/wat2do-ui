@@ -211,15 +211,49 @@ class ThreadReader:
         # The link is read back through the composer, which a request shows only once
         # accepted; a club that shares its post is almost always asking us to share it.
         accept_request(self._device)
-        self._device.tap(_required(self._device.find(_COMPOSER)))
-        self._device.paste()
-        self._device.pause()
-        pasted = _required(self._device.find(_COMPOSER)).text
-        self._device.clear_field()
+        pasted = self._read_back_link()
         # The keyboard shrinks the thread and hides older messages; put it away.
         self._device.back()
         match = _POST_LINK.match(pasted)
         return f"https://www.instagram.com/p/{match.group(1)}/" if match else None
+
+    def _read_back_link(self) -> str:
+        """Paste the copied link into the composer and read it back.
+
+        An unsent draft already in the composer (one waiting for a person to send) is left
+        exactly as it was: the cursor sits right after what was pasted, so only that is
+        deleted again. An empty composer reads as its hint ("Message…"), which the paste
+        replaces, so it is simply cleared.
+        """
+        composer = _required(self._device.find(_COMPOSER))
+        before = composer.text
+        self._device.tap(composer)
+        self._device.move_to_end()
+        self._device.paste()
+        self._device.pause()
+        after = _required(self._device.find(_COMPOSER)).text
+        pasted = _inserted(before, after)
+        if pasted is None:
+            self._device.clear_field()
+            return after
+        self._device.delete_backward(len(pasted))
+        if _required(self._device.find(_COMPOSER)).text != before:
+            raise EmulatorError("The thread's unsent draft changed while its shared link was read")
+        return pasted
+
+
+def _inserted(before: str, after: str) -> str | None:
+    """The one piece of text added to ``before`` to make ``after``, wherever it went in;
+    None when ``after`` is not ``before`` plus one piece (a hint the paste replaced)."""
+    added = len(after) - len(before)
+    if not before or added <= 0:
+        return None
+    start = 0
+    while start < len(before) and after[start] == before[start]:
+        start += 1
+    if after[start + added :] != before[start:]:
+        return None
+    return after[start : start + added]
 
 
 def _in_thread(nodes: list[Node]) -> bool:

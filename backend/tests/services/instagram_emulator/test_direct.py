@@ -174,6 +174,69 @@ def test_a_thread_holding_an_unsent_claim_draft_is_left_as_it_is() -> None:
     assert device.taps == [] and device.backs == 0
 
 
+class _ComposerDevice:
+    """A thread's composer: its hint while empty, a paste goes in at the cursor."""
+
+    HINT = "Message…"
+
+    def __init__(self, text="", cursor=None, delete_extra=0):
+        self.text = text
+        self.cursor = len(text) if cursor is None else cursor
+        self.delete_extra = delete_extra
+        self.cleared = False
+
+    def find(self, pattern, nodes=None):
+        shown = self.text or self.HINT
+        return _node(shown, (158, 1365, 621, 1496), "row_thread_composer_edittext")
+
+    def tap(self, node):
+        pass
+
+    def move_to_end(self):
+        self.cursor = len(self.text)
+
+    def paste(self):
+        self.text = self.text[: self.cursor] + POST + self.text[self.cursor :]
+        self.cursor += len(POST)
+
+    def pause(self):
+        pass
+
+    def delete_backward(self, count):
+        count += self.delete_extra
+        self.text = self.text[: self.cursor - count] + self.text[self.cursor :]
+        self.cursor -= count
+
+    def clear_field(self):
+        self.text, self.cursor, self.cleared = "", 0, True
+
+
+def test_reading_a_shared_link_leaves_a_waiting_draft_as_it_was() -> None:
+    waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/abc Thank you!"
+    device = _ComposerDevice(waiting)
+    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert device.text == waiting and not device.cleared
+
+
+def test_a_link_pasted_inside_a_draft_is_taken_out_again() -> None:
+    device = _ComposerDevice("Hey there, thanks!", cursor=4)
+    device.move_to_end = lambda: None  # the cursor stays where the tap put it
+    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert device.text == "Hey there, thanks!"
+
+
+def test_an_empty_composer_is_cleared_after_its_hint_was_replaced() -> None:
+    device = _ComposerDevice()
+    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert device.cleared and device.text == ""
+
+
+def test_a_draft_that_changes_while_the_link_is_read_fails_loudly() -> None:
+    device = _ComposerDevice("Thanks for reaching out!", delete_extra=1)
+    with pytest.raises(module.EmulatorError, match="unsent draft changed"):
+        THREAD_READER(device, lambda: None)._read_back_link()
+
+
 def _thread(*messages):
     composer = _node("Message…", (158, 1365, 621, 1496), "row_thread_composer_edittext")
     return [_node("", (0, 275, 1080, 1431), "message_list"), *messages, composer]
