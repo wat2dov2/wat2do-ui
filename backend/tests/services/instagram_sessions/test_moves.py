@@ -188,3 +188,23 @@ def test_a_refused_move_exits_nonzero_with_its_reason(monkeypatch, capsys, reade
     monkeypatch.setattr(moves, "EmulatorDevice", object)
     assert moves.main(["draft", "TMU Pre-Vet Club", "--text", "dm @x"]) == 1
     assert "Refused" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_ig_stories_answers_and_logs_why_each_post_was_not_shared(monkeypatch, tmp_path, capsys):
+    not_shared = {
+        "https://www.instagram.com/p/AAA/": "The photo sticker did not move to the post's corner"
+    }
+    monkeypatch.setattr(moves, "EmulatorDevice", object)
+    monkeypatch.setattr(moves, "_story_carousel", lambda: {"id": "batch-1"})
+    monkeypatch.setattr(
+        moves.stories,
+        "share",
+        lambda device, school, batch_id: moves.stories.Story(shared=2, total=3, failed=not_shared),
+    )
+    assert moves.main(["stories"]) == 0
+    assert json.loads(capsys.readouterr().out) == {"shared": 2, "of": 3, "not_shared": not_shared}
+    (entry,) = [
+        json.loads(line)
+        for line in next((tmp_path / "log").glob("*.jsonl")).read_text().splitlines()
+    ]
+    assert entry["move"] == "stories" and entry["result"]["not_shared"] == not_shared

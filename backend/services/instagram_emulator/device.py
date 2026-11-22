@@ -11,6 +11,7 @@ from __future__ import annotations
 import fcntl
 import io
 import logging
+import math
 import os
 import random
 import re
@@ -61,9 +62,12 @@ _RESTART_POLL_SECONDS = 5
 _POLL_SECONDS = 0.5
 # Dialogs one wait answers before it stops expecting the screen to change for them.
 _PROMPTS_PER_WAIT = 5
-# Finger moves in one ``drag``.
+# Finger moves in one ``drag`` after its first.
 _DRAG_STEPS = 8
 _DRAG_REST_SECONDS = 0.08
+# How far a drag's first move goes: well past Android's touch slop (8 dp, 21 px on the
+# emulator), so the finger is never taken for a long press.
+_DRAG_LEAD = 64
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 _END_OF_TEXT = ("113", "123")  # KEYCODE_CTRL_LEFT + KEYCODE_MOVE_END
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
@@ -478,23 +482,30 @@ class EmulatorDevice:
 
         Sent as a finger going down, moving in even steps and lifting, like ``swipe_left``,
         with a short rest between moves: Instagram's story editor drops moves that come
-        all at once, leaving a sticker part of the way.
+        all at once, leaving a sticker part of the way. The editor moves a sticker only
+        from the first move past Android's touch slop, and takes a finger still inside it
+        when the next ``input`` command starts for a long press that moves nothing (every
+        correction of a few dozen pixels stayed put on 2026-11-21). So the first move
+        leads off ``_DRAG_LEAD`` pixels towards ``to``, and the finger lifts as far past
+        ``to``: the sticker follows the finger from that first move on.
         """
         self.pause()
         x1, y1, x2, y2 = node.bounds
         x, y = (x1 + x2) // 2, (y1 + y2) // 2
+        dx, dy = to[0] - x, to[1] - y
+        length = math.hypot(dx, dy)
+        if not length:
+            return
+        lead_x, lead_y = x + dx * _DRAG_LEAD / length, y + dy * _DRAG_LEAD / length
         moves = [
-            (
-                round(x + (to[0] - x) * step / _DRAG_STEPS),
-                round(y + (to[1] - y) * step / _DRAG_STEPS),
-            )
-            for step in range(1, _DRAG_STEPS + 1)
+            (round(lead_x + dx * step / _DRAG_STEPS), round(lead_y + dy * step / _DRAG_STEPS))
+            for step in range(_DRAG_STEPS + 1)
         ]
         script = f"; sleep {_DRAG_REST_SECONDS}; ".join(
             [
                 f"input motionevent DOWN {x} {y}",
                 *(f"input motionevent MOVE {mx} {my}" for mx, my in moves),
-                f"input motionevent UP {to[0]} {to[1]}",
+                f"input motionevent UP {moves[-1][0]} {moves[-1][1]}",
             ]
         )
         self.adb("shell", script)
