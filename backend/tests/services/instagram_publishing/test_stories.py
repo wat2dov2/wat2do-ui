@@ -78,7 +78,7 @@ def _updates(calls):
 
 
 def test_each_event_post_goes_to_the_story_once_in_slide_order(database, shared):
-    assert stories.share(_Device(), "uwo", "batch-1") == (3, 3)
+    assert stories.share(_Device(), "uwo", "batch-1") == stories.Story(shared=3, total=3, failed={})
     assert shared == [
         ("uwo", "https://www.instagram.com/p/AAA/"),
         ("uwo", "https://www.instagram.com/reel/BBB/"),
@@ -93,15 +93,21 @@ def test_each_event_post_goes_to_the_story_once_in_slide_order(database, shared)
 
 def test_a_post_that_cannot_be_shared_is_left_out_and_the_rest_go_on(database, shared):
     device = _Device(refused={"https://www.instagram.com/reel/BBB/"})
-    assert stories.share(device, "uwo", "batch-1") == (2, 3)
+    story = stories.share(device, "uwo", "batch-1")
+    assert (story.shared, story.total) == (2, 3)
     assert [url for _, url in shared] == [
         "https://www.instagram.com/p/AAA/",
         "https://www.instagram.com/p/CCC/",
     ]
     assert device.resets == [stories.EMULATOR.android_user_by_school["uwo"]]
+    # Each post left out says why, so the next failure can be traced to its step.
+    assert story.failed == {
+        "https://www.instagram.com/reel/BBB/": "Instagram never showed Add to story"
+    }
     assert _updates(database.calls)[-1] == {
         "story_status": "posted",
-        "story_error": "2 of 3 posts shared",
+        "story_error": "2 of 3 posts shared. Not shared: "
+        "https://www.instagram.com/reel/BBB/ Instagram never showed Add to story",
     }
 
 
@@ -109,12 +115,12 @@ def test_nothing_shared_is_a_failed_story(database, shared):
     database.tables["instagram_publish_items"] = [
         {"position": 1, "event": {"source_url": "https://www.instagram.com/p/AAA/"}}
     ]
-    assert stories.share(
-        _Device(refused={"https://www.instagram.com/p/AAA/"}), "uwo", "batch-1"
-    ) == (0, 1)
+    story = stories.share(_Device(refused={"https://www.instagram.com/p/AAA/"}), "uwo", "batch-1")
+    assert (story.shared, story.total) == (0, 1)
     assert _updates(database.calls)[-1] == {
         "story_status": "failed",
-        "story_error": "0 of 1 posts shared",
+        "story_error": "0 of 1 posts shared. Not shared: "
+        "https://www.instagram.com/p/AAA/ Instagram never showed Add to story",
     }
 
 

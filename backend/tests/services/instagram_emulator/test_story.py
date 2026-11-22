@@ -150,6 +150,37 @@ def test_the_featured_sticker_goes_on_the_post_corner_before_posting(screens) ->
     assert device.drags == [((270, 905, 810, 1271), (902, 524))]
 
 
+def test_a_sticker_left_short_of_the_corner_is_dragged_again_from_where_it_stopped(
+    screens,
+) -> None:
+    # 2026-11-21: the first drag stopped short of the screen's right edge, the second did
+    # not move the sticker at all, and the third reached the corner.
+    added = Node(PLACED, "", (270, 905, 810, 1271))
+    short = Node(PLACED, "", (543, 338, 1080, 704))
+    reached = Node(PLACED, "", (594, 338, 1080, 704))
+    device = screens(
+        HOME,
+        POST_PAGE,
+        SHARE_SHEET,
+        _editor(),
+        STICKER_TRAY,
+        GALLERY,
+        _editor(added),
+        _editor(short),
+        _editor(short),
+        _editor(reached),
+        POST_PAGE,
+    )
+    module.share_to_story(device, "uwaterloo", POST, sticker=Path("featured_sticker_en.png"))
+    # The clipped right edge is put back from the size the sticker was added at.
+    assert device.drags == [
+        ((270, 905, 810, 1271), (902, 524)),
+        ((543, 338, 1083, 704), (902, 524)),
+        ((543, 338, 1083, 704), (902, 524)),
+    ]
+    assert device.taps[-1] == "Your story"
+
+
 def test_a_sticker_that_does_not_reach_the_corner_stops_the_share(screens) -> None:
     added = Node(PLACED, "", (270, 905, 810, 1271))
     device = screens(
@@ -159,11 +190,12 @@ def test_a_sticker_that_does_not_reach_the_corner_stops_the_share(screens) -> No
         _editor(),
         STICKER_TRAY,
         GALLERY,
-        _editor(added),
-        _editor(added),
-        _editor(added),
-        _editor(added),
+        *[_editor(added)] * (module._DRAGS + 1),
     )
-    with pytest.raises(EmulatorError, match="did not move"):
+    with pytest.raises(
+        EmulatorError,
+        match=f"did not move to the post's corner: it stopped -362, \\+564 px from it after "
+        f"{module._DRAGS} drags",
+    ):
         module.share_to_story(device, "uwaterloo", POST, sticker=Path("featured_sticker_en.png"))
     assert "Your story" not in device.taps

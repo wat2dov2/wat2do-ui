@@ -626,3 +626,45 @@ def test_a_pager_is_turned_with_one_drag_from_its_right_side_to_its_left() -> No
     assert xs == sorted(xs, reverse=True)
     assert xs[0] > 880 and xs[-1] < 140
     assert all(275 < int(step.split()[4]) < 1355 for step in steps)
+
+
+def _drag_points(command):
+    """Each finger event of a ``drag``: its action and point."""
+    steps = [step for step in command[-1].split("; ") if step.startswith("input motionevent")]
+    return [(step.split()[2], (int(step.split()[3]), int(step.split()[4]))) for step in steps]
+
+
+def test_a_drag_leads_off_past_the_touch_slop_and_lifts_as_far_past_the_target() -> None:
+    # The story editor moves a sticker only from the first move past Android's touch slop
+    # on, so the finger lifts that first move's distance past where the sticker should go.
+    commands = []
+    sticker = module.Node("Sticker. Touch and hold to reposition.", "", (270, 905, 810, 1271))
+    _device([(0, "")], commands).drag(sticker, (540, 1388))
+    points = _drag_points(commands[0])
+    assert points[0] == ("DOWN", (540, 1088))
+    assert points[1] == ("MOVE", (540, 1088 + module._DRAG_LEAD))
+    assert points[-2:] == [
+        ("MOVE", (540, 1388 + module._DRAG_LEAD)),
+        ("UP", (540, 1388 + module._DRAG_LEAD)),
+    ]
+    assert [action for action, _ in points[1:-1]] == ["MOVE"] * (module._DRAG_STEPS + 1)
+
+
+def test_a_short_correction_still_leads_off_past_the_touch_slop() -> None:
+    # On 2026-11-21 every correction whose moves stayed inside the slop left the sticker
+    # where it was, and each story's sticker stopped short of the post's corner.
+    commands = []
+    sticker = module.Node("Sticker. Touch and hold to reposition.", "", (498, 409, 1038, 775))
+    _device([(0, "")], commands).drag(sticker, (798, 592))
+    points = _drag_points(commands[0])
+    assert points[0] == ("DOWN", (768, 592))
+    assert points[1] == ("MOVE", (768 + module._DRAG_LEAD, 592))
+    assert points[-1] == ("UP", (798 + module._DRAG_LEAD, 592))
+    assert module._DRAG_LEAD > 21  # 8 dp at the emulator's 420 dpi
+
+
+def test_a_drag_to_where_the_node_already_is_sends_nothing() -> None:
+    commands = []
+    sticker = module.Node("Sticker", "", (0, 0, 100, 100))
+    _device([], commands).drag(sticker, (50, 50))
+    assert commands == []

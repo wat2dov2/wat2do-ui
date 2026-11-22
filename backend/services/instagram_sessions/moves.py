@@ -144,8 +144,8 @@ def share_stories(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str
     batch = _story_carousel()
     if batch is None:
         raise MoveError("No posted carousel of this school is waiting for its story")
-    shared, total = stories.share(device, school(), batch["id"])
-    return {"shared": shared, "of": total}
+    story = stories.share(device, school(), batch["id"])
+    return {"shared": story.shared, "of": story.total, "not_shared": story.failed}
 
 
 # --- direct messages ---------------------------------------------------------------

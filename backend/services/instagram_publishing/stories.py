@@ -8,13 +8,15 @@ when tapped. A post that cannot be shared (the club turned resharing off, or the
 is gone) is left out and the rest go on.
 
 Each post is tried once and a carousel's story is never shared again, since a share
-that seemed to fail may already be on the story.
+that seemed to fail may already be on the story. Why each post was not shared goes into
+``story_error`` and the move's answer, which the sitting's log keeps.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from core.controlbox import controlbox
@@ -44,8 +46,26 @@ _POST_URL = re.compile(
 )
 
 
-def share(device: EmulatorDevice, school: str, batch_id: str) -> tuple[int, int]:
-    """Share the carousel's events' original posts to the story; how many of how many.
+@dataclass(frozen=True)
+class Story:
+    """How a carousel's story went: how many of its posts were shared, and why each
+    post that was not shared failed, by its link."""
+
+    shared: int
+    total: int
+    failed: dict[str, str]
+
+    @property
+    def error(self) -> str | None:
+        """What ``story_error`` records: the count, then each failed post's reason."""
+        if not self.failed:
+            return None
+        reasons = "; ".join(f"{url} {reason}" for url, reason in self.failed.items())
+        return f"{self.shared} of {self.total} posts shared. Not shared: {reasons}"
+
+
+def share(device: EmulatorDevice, school: str, batch_id: str) -> Story:
+    """Share the carousel's events' original posts to the story.
 
     The sitting holds the emulator on the school's account. Like a DM's story share,
     it waits while the emulator is short of free storage.
@@ -57,18 +77,17 @@ def share(device: EmulatorDevice, school: str, batch_id: str) -> tuple[int, int]
     sticker = _FEATURED_STICKERS[record.language if record else "en"]
     # Recorded before the first share, so a worker stopped halfway never shares twice.
     _record(batch_id, STORY_FAILED, "Stopped while sharing")
-    shared = 0
+    failed = {}
     for url in urls:
         try:
             share_to_story(device, school, url, sticker=sticker)
-            shared += 1
-        except EmulatorError:
+        except EmulatorError as exc:
             log.warning("Could not share %s to %s's story", url, school, exc_info=True)
+            failed[url] = str(exc)
             device.reset_app(EMULATOR.android_user_by_school[school])
-    status = STORY_POSTED if shared else STORY_FAILED
-    error = None if shared == len(urls) else f"{shared} of {len(urls)} posts shared"
-    _record(batch_id, status, error)
-    return shared, len(urls)
+    story = Story(shared=len(urls) - len(failed), total=len(urls), failed=failed)
+    _record(batch_id, STORY_POSTED if story.shared else STORY_FAILED, story.error)
+    return story
 
 
 def original_posts(batch_id: str) -> list[str]:

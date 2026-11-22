@@ -43,8 +43,9 @@ _ON_STORY = labels("Sticker. Touch and hold to reposition")
 # it stops short of the screen's right edge.
 _STICKER_FROM_CORNER = (-70, 10)
 _STICKER_TOLERANCE = 60
-# A drag can leave the sticker short of the corner; the next one starts where it stopped.
-_DRAGS = 3
+# A drag towards the screen's right edge can stop short of the corner, or not move the
+# sticker at all; the next one starts where it stopped.
+_DRAGS = 6
 
 
 def share_to_story(
@@ -119,15 +120,16 @@ def _place_sticker(device: EmulatorDevice) -> None:
         device.drag(placed, target)
         moved = _added(device.screen(), post)
         if moved is None:
-            break
+            raise EmulatorError("The photo sticker was lost from the story while dragged")
         x1, y1 = moved.bounds[:2]
         placed = replace(moved, bounds=(x1, y1, x1 + width, y1 + height))
-        if (
-            max(abs(x1 + width // 2 - target[0]), abs(y1 + height // 2 - target[1]))
-            <= _STICKER_TOLERANCE
-        ):
+        off = (x1 + width // 2 - target[0], y1 + height // 2 - target[1])
+        if max(abs(off[0]), abs(off[1])) <= _STICKER_TOLERANCE:
             return
-    raise EmulatorError("The photo sticker did not move to the post's corner")
+    raise EmulatorError(
+        f"The photo sticker did not move to the post's corner: it stopped {off[0]:+d}, "
+        f"{off[1]:+d} px from it after {_DRAGS} drags"
+    )
 
 
 def _added(nodes: list[Node], post: Node) -> Node | None:
