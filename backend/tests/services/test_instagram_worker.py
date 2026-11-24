@@ -14,10 +14,11 @@ NIGHT = datetime(2026, 10, 28, 3, 0).astimezone()
 
 
 class _Device:
-    def __init__(self, unreachable=(), lost=()):
+    def __init__(self, unreachable=(), lost=(), starting=False):
         self.accounts = []
         self.unreachable = set(unreachable)
         self.lost = set(lost)
+        self.starting = starting
         self.restarts = 0
 
     def adb(self, *args):
@@ -41,6 +42,9 @@ class _Device:
 
     def restart(self):
         self.restarts += 1
+
+    def system_ready(self):
+        return not self.starting
 
 
 def _follow_hours(monkeypatch, start: int, end: int) -> None:
@@ -132,6 +136,25 @@ def test_switches_failing_in_a_row_restart_the_emulator(due, monkeypatch):
     worker.visit_next(device, DAY)
     assert device.accounts == [f"wat2do.{reachable}"]
     assert worker._switch_failures == 0
+
+
+def test_switches_failing_while_android_starts_neither_restart_nor_rest(due, monkeypatch):
+    in_a_row = worker.CONTROL.switch_failures_before_restart
+    schools = sorted(worker.CONTROL.android_user_by_school)[: in_a_row + 1]
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: schools)
+    monkeypatch.setattr(worker.time, "sleep", lambda seconds: None)
+    due.sittings = list(schools)
+    device = _Device(unreachable={f"wat2do.{school}" for school in schools}, starting=True)
+    for _ in range(in_a_row + 1):
+        worker.visit_next(device, DAY)
+    assert device.restarts == 0
+    assert worker._switch_failures == 0
+    assert worker._switch_rested_until == {}
+    # Once Android is up, the first school gets its sitting.
+    device.starting = False
+    device.unreachable.clear()
+    worker.visit_next(device, DAY)
+    assert due.done == [("sitting", schools[0])]
 
 
 def test_an_account_the_app_cannot_reach_never_restarts_the_emulator(due, monkeypatch):
