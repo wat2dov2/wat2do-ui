@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, BellOff, ExternalLink } from "lucide-react";
+import { AlertTriangle, BellOff, ExternalLink, Link as LinkIcon } from "lucide-react";
 import {
   CARD_POST_COUNT,
   engagement,
@@ -17,10 +17,11 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { LazyImage } from "@/shared/ui/lazy-image";
+import { Link } from "@/shared/ui/link";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 
-/** One account card: who it is, charts of how it is growing, and its newest posts side by side. */
+/** One account card: who it is, its bio and link, charts of how it is growing, and its newest posts side by side. */
 export function SocialAccountRow({ account, readAt }: { account: SocialAccount; readAt: number }) {
   const { t, i18n } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
@@ -94,6 +95,17 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
       </CardHeader>
       <CardContent>
         <Stack gap={3}>
+          {account.biography || account.website ? (
+            <Stack gap={1}>
+              {account.biography ? <p className="whitespace-pre-wrap break-words text-sm">{account.biography}</p> : null}
+              {account.website ? (
+                <Link href={account.website} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 text-sm font-semibold">
+                  <LinkIcon className="size-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">{account.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+                </Link>
+              ) : null}
+            </Stack>
+          ) : null}
           {charts.map(chart => <SocialTrendChart key={chart.title} {...chart} />)}
         {account.posts.length ? (
           <FormGrid columns={3} collapse={false} className="gap-3">

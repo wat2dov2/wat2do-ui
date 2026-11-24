@@ -565,10 +565,11 @@ A device moved to another system image keeps its data only if the emulator's reb
 The Mac mini's `io.wat2do.instagram-account-stats` launchd timer (`infra/mac-mini`) runs the deployed release's `wat2do-instagram stats` daily at 6:00 a.m. Toronto.
 It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production settings in `~/wat2do-data/config/backend.env`, so it is also where expiring tokens are refreshed (`rust/src/instagram_publishing/tokens.rs`), before the stats are read.
 A token a person generated is stored with `wat2do-instagram import-tokens <file>`, whose leading lines are `account_key=token`.
-It then reads every account with a working token through the Graph API, using only `instagram_business_basic`: followers, follows and post counts, plus the newest `stats_media_limit` posts with their like and comment counts.
+It then reads every account with a working token through the Graph API, using only `instagram_business_basic`: followers, follows and post counts, the bio and first profile link, plus the newest `stats_media_limit` posts with their like and comment counts.
 `instagram_account_snapshots` keeps one row per account per day, and `instagram_account_media` holds each account's newest posts, replaced on every run.
 Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.
-The admin's Social accounts page shows every account at once, with `stats_history_days` of follower history and the song the emulator added to each carousel wat2do published.
+The admin's Social accounts page shows every account at once, with its bio and profile link as last read, `stats_history_days` of follower history and the song the emulator added to each carousel wat2do published.
+The Graph API returns only an account's first profile link, so the other links in its bio (each school's Add your club, Submit an event and Submit a position pages) are checked on the profile itself.
 It also flags each account whose school has received no Instagram notification for over 36 hours (`QUIET_NOTIFICATION_HOURS` in `frontend/src/features/admin/lib/socialAccounts.ts`), or never one, with a badge showing when the last one arrived, and counts them in the page header.
 Such an account's phone has stopped sending notifications, so nothing new is collected for that school until a person fixes the phone.
 One account's failure never stops the others, but it fails the run, which posts to Discord.
