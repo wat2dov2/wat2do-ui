@@ -12,7 +12,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::credentials::tests::{KEY, TOKEN};
-use super::{accounts, batches, follow_candidates, songs};
+use super::{accounts, batches, follow_candidates, follows, songs};
 use crate::api::errors::ApiError;
 use crate::api::pagination::Pagination;
 use crate::api::test_database::database;
@@ -685,4 +685,123 @@ async fn deleting_a_club_rejects_its_account_so_a_followed_one_is_unfollowed() {
         .execute(&db)
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn automated_follows_of_a_day_come_with_their_newest_posts_and_events() {
+    let Some(db) = database() else { return };
+    let school = uwaterloo(&db).await;
+    // A day of its own, so other tests' follows never fall in the window.
+    let since = unique_day().and_hms_opt(5, 0, 0).unwrap().and_utc();
+    let window = follows::Window {
+        school: Some("uwaterloo".into()),
+        since,
+        until: since + chrono::Duration::days(1),
+    };
+    let suffix = &Uuid::new_v4().simple().to_string()[..12];
+    let follow = async |handle: String, source: &str, hours: i64| -> (Uuid, i32) {
+        let club: i32 = sqlx::query_scalar(
+            "INSERT INTO public.clubs (club_name, ig, club_type, school_id, status) \
+             VALUES ($1, $1, 'independent', $2, 'approved') RETURNING id",
+        )
+        .bind(&handle)
+        .bind(school)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        let id: Uuid = sqlx::query_scalar(
+            "INSERT INTO public.instagram_follow_candidates \
+                 (school_id, handle, source, status, score, verdict, club_id, followed_at, recent_posts) \
+             VALUES ($1, $2, $3, 'followed', 91, 'approve', $4, $5, $6) RETURNING id",
+        )
+        .bind(school)
+        .bind(&handle)
+        .bind(source)
+        .bind(club)
+        .bind(since + chrono::Duration::hours(hours))
+        .bind(serde_json::json!([
+            {"url": format!("https://www.instagram.com/p/old{suffix}/"),
+             "posted_at": "2026-10-01T10:00:00+00:00", "caption": "Old", "image": null},
+        ]))
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        (id, club)
+    };
+    let (newest, newest_club) = follow(format!("newest{suffix}"), "crawl", 20).await;
+    let (directory, _) = follow(format!("directory{suffix}"), "directory", 2).await;
+    let (_, listed_club) = follow(format!("listed{suffix}"), "club", 10).await;
+    let (_, earlier_club) = follow(format!("earlier{suffix}"), "crawl", -5).await;
+    sqlx::query(
+        "INSERT INTO public.ingestion_items (source_url, school_id, source, status, post) \
+         VALUES ($1, $2, 'instagram', 'done', $3)",
+    )
+    .bind(format!("https://www.instagram.com/p/new{suffix}/"))
+    .bind(school)
+    .bind(serde_json::json!({
+        "ownerUsername": format!("newest{suffix}"),
+        "timestamp": "2026-11-20T21:01:41+00:00",
+        "caption": "Games night",
+        "displayUrl": "https://instagram.fykz2-1.fna.fbcdn.net/v/a.jpg?oe=6A000000",
+    }))
+    .execute(&db)
+    .await
+    .unwrap();
+    let page = Pagination {
+        page: 1,
+        page_size: 100,
+    };
+    let (listed, total) = follows::list(&db, &window, page).await.unwrap();
+    // Only the crawl's and the directories' follows within the day, newest first.
+    assert_eq!(total, 2);
+    let ids: Vec<Uuid> = listed.iter().map(|follow| follow.id).collect();
+    assert_eq!(ids, [newest, directory]);
+    let posts: Vec<(&str, &str)> = listed[0]
+        .recent_posts
+        .iter()
+        .map(|post| (post.caption.as_str(), post.url.as_str()))
+        .collect();
+    assert_eq!(posts.len(), 2);
+    assert_eq!(posts[0].0, "Games night");
+    assert_eq!(posts[1].0, "Old");
+    // Its picture link expired in May 2026.
+    assert_eq!(listed[0].recent_posts[0].image, None);
+    assert_eq!(listed[0].score, Some(91));
+
+    for (club, hours, title) in [
+        (newest_club, 21, "Catan night"),
+        (listed_club, 21, "Listed club social"),
+        (earlier_club, 3, "Earlier follow's event"),
+        (newest_club, 30, "Tomorrow's event"),
+    ] {
+        sqlx::query(
+            "INSERT INTO public.events (title, location, club, school_id, club_id, added_at) \
+             VALUES ($1, 'SLC', 'Club', $2, $3, $4)",
+        )
+        .bind(title)
+        .bind(school)
+        .bind(club)
+        .bind(since + chrono::Duration::hours(hours))
+        .execute(&db)
+        .await
+        .unwrap();
+    }
+    let (events, total) = follows::events(&db, &window, page).await.unwrap();
+    let titles: Vec<&str> = events.iter().map(|event| event.title.as_str()).collect();
+    assert_eq!(total, 2);
+    assert_eq!(titles, ["Catan night", "Earlier follow's event"]);
+    assert_eq!(events[0].handle, format!("newest{suffix}"));
+
+    assert!(matches!(
+        follows::list(
+            &db,
+            &follows::Window {
+                school: Some("no-such-school".into()),
+                ..window
+            },
+            page
+        )
+        .await,
+        Err(ApiError::NotFound(_))
+    ));
 }

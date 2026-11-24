@@ -148,8 +148,26 @@ def test_a_read_profile_and_its_score_are_stored(sb):
 
     update = sb.update.call_args.args[0]
     assert update["last_posted_at"] == "2026-10-20T00:00:00+00:00"
+    assert update["recent_posts"] == posts
     assert (update["score"], update["verdict"], update["name"]) == (82, "approve", "UTMAC")
     assert "scored_at" in update
+
+
+def test_stored_posts_keep_a_short_caption(sb, monkeypatch):
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"recent_post_caption_characters": 5})
+    )
+    post = {
+        "url": "https://www.instagram.com/p/NEW/",
+        "posted_at": "2026-10-20T00:00:00+00:00",
+        "caption": "Mahjong night in the SLC",
+        "image": "https://scontent.cdninstagram.com/new.jpg",
+    }
+
+    module.save_profile("c1", {"read": "ok", "posts": [post]}, None)
+
+    [stored] = sb.update.call_args.args[0]["recent_posts"]
+    assert stored == {**post, "caption": "Mahjo"}
 
 
 def test_an_unanswered_score_leaves_the_account_to_score_again(sb):
@@ -157,6 +175,7 @@ def test_an_unanswered_score_leaves_the_account_to_score_again(sb):
 
     update = sb.update.call_args.args[0]
     assert update["read_status"] == "failed"
+    assert update["recent_posts"] == []
     assert "scored_at" not in update
 
 

@@ -28,6 +28,8 @@ import type {
   ApiFollowCandidateDecisionsResponse,
   ApiPaginatedAdminClubsResponse,
   ApiPaginatedFollowCandidateResponse,
+  ApiPaginatedAutomatedFollowResponse,
+  ApiPaginatedFollowedAccountEventResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
   ApiPayoutCsvExportResponse,
@@ -284,6 +286,37 @@ export async function submitFollowDecisions(
   );
 }
 
+export interface AutomatedFollowFilters {
+  /** Every school when empty. */
+  school: string;
+  /** The window's start and end instants, as ISO timestamps. */
+  since: string;
+  until: string;
+  page: number;
+  pageSize: number;
+}
+
+function automatedFollowParams({ school, since, until, page, pageSize }: AutomatedFollowFilters): string {
+  const params = new URLSearchParams({ since, until, page: String(page), page_size: String(pageSize) });
+  if (school) params.set("school", school);
+  return params.toString();
+}
+
+/** Accounts the crawl or a club directory found that school accounts followed in the window, newest first. */
+export async function getAutomatedFollows(filters: AutomatedFollowFilters): Promise<ApiPaginatedAutomatedFollowResponse> {
+  return api.get<ApiPaginatedAutomatedFollowResponse>(
+    `/instagram-publishing/follows/?${automatedFollowParams(filters)}`,
+  );
+}
+
+/** Events added in the window that those accounts host, newest first. */
+export async function getFollowedAccountEvents(
+  filters: AutomatedFollowFilters,
+): Promise<ApiPaginatedFollowedAccountEventResponse> {
+  return api.get<ApiPaginatedFollowedAccountEventResponse>(
+    `/instagram-publishing/follows/events?${automatedFollowParams(filters)}`,
+  );
+}
 
 // ── Admin Clubs API ─────────────────────────────────────────
 

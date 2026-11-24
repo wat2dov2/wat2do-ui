@@ -166,6 +166,11 @@ export const queryKeys = {
     followCandidates: () => [...queryKeys.instagramPublishing.all, "follow-candidates"] as const,
     followCandidatePage: (school: string, status: string, days: number | null, page: number) =>
       [...queryKeys.instagramPublishing.followCandidates(), school, status, days, page] as const,
+    automatedFollows: () => [...queryKeys.instagramPublishing.all, "automated-follows"] as const,
+    automatedFollowPage: (school: string, day: string, page: number) =>
+      [...queryKeys.instagramPublishing.automatedFollows(), "follows", school, day, page] as const,
+    followedAccountEventPage: (school: string, day: string, page: number) =>
+      [...queryKeys.instagramPublishing.automatedFollows(), "events", school, day, page] as const,
   },
   automateLogs: {
     all: ["automateLogs"] as const,

@@ -529,6 +529,29 @@
       "emptyTitle": "Nic do przejrzenia",
       "emptyDescription": "Konta pojawiają się tutaj, gdy wyszukiwanie je znajdzie."
     },
+    "automatedFollows": {
+      "dayLabel": "Dzień",
+      "previousDay": "Poprzedni dzień",
+      "nextDay": "Następny dzień",
+      "followsTitle": "Obserwowane: {{value}}",
+      "followedAt": "Obserwowane {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "Ocena AI: {{value}} na 100",
+      "statuses": {
+        "approved": "Obserwowanie jeszcze niepotwierdzone",
+        "unfollow": "Odrzucone później, czeka na przestanie obserwowania",
+        "rejected": "Odrzucone później, już nieobserwowane"
+      },
+      "noPosts": "Dla tego konta nie zapisano jeszcze postów.",
+      "noCaption": "Brak opisu",
+      "emptyTitle": "Brak automatycznych obserwowań tego dnia",
+      "emptyDescription": "Konta znalezione przez wyszukiwanie lub katalog organizacji pojawiają się tutaj w dniu, w którym konto szkoły zaczyna je obserwować.",
+      "eventsTitle": "Wydarzenia znalezionych kont: {{value}}",
+      "eventsDescription": "Wydarzenia dodane tego dnia, których gospodarzem są konta znalezione przez wyszukiwanie lub katalog, niezależnie od tego, kiedy zaczęto je obserwować.",
+      "eventAdded": "Dodano {{time}}",
+      "eventsEmptyTitle": "Brak wydarzeń tego dnia",
+      "eventsEmptyDescription": "Tego dnia nie dodano żadnych wydarzeń tych kont."
+    },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",
     "noClubSubmissionsDesc": "Nowe zgłoszenia klubów pojawią się tutaj do zatwierdzenia.",
@@ -691,6 +714,7 @@
       "clubId": "ID klubu: {{id}}",
       "ownerId": "ID właściciela: {{id}}"
     },
-    "followCandidatesTab": "Konta do obserwowania"
+    "followCandidatesTab": "Konta do obserwowania",
+    "automatedFollowsTab": "Automatyczne obserwowania"
   }
 }

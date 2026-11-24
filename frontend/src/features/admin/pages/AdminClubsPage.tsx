@@ -7,6 +7,7 @@ import { Building2, ExternalLink, ShieldAlert } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { FollowCandidatesPanel } from "@/features/admin/components/social/FollowCandidatesPanel";
+import { AutomatedFollowsPanel } from "@/features/admin/components/social/AutomatedFollowsPanel";
 import {
   Select,
   SelectContent,
@@ -51,6 +52,9 @@ import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { QP } from "@/shared/constants/queryParams";
 
 const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
+type ClubsTab = "clubs" | "claims" | "submissions" | "followCandidates" | "automatedFollows";
+/** Tabs that own their whole view, filters included. */
+const SELF_CONTAINED_TABS: readonly ClubsTab[] = ["followCandidates", "automatedFollows"];
 
 
 export function AdminClubsPage() {
@@ -79,7 +83,7 @@ export function AdminClubsPage() {
   } = useAdminClubsPage();
 
   const [searchParams] = useMutableSearchParams();
-  const [activeTab, setActiveTab] = useState<"clubs" | "claims" | "submissions" | "followCandidates">(
+  const [activeTab, setActiveTab] = useState<ClubsTab>(
     searchParams.get(QP.TAB) === "claims" ? "claims"
       : searchParams.get(QP.TAB) === "submissions" ? "submissions" : "clubs",
   );
@@ -204,7 +208,7 @@ export function AdminClubsPage() {
     <Tabs
       value={activeTab}
       onValueChange={(value) =>
-        setActiveTab(value as "clubs" | "claims" | "submissions" | "followCandidates")
+        setActiveTab(value as ClubsTab)
       }
       className="space-y-5"
     >
@@ -224,9 +228,12 @@ export function AdminClubsPage() {
           <TabsTrigger value="followCandidates">
             {t("admin.followCandidatesTab")}
           </TabsTrigger>
+          <TabsTrigger value="automatedFollows">
+            {t("admin.automatedFollowsTab")}
+          </TabsTrigger>
         </TabsList>
 
-        {activeTab === "followCandidates" ? null : activeTab === "clubs" ? (
+        {SELF_CONTAINED_TABS.includes(activeTab) ? null : activeTab === "clubs" ? (
           <>
             <div className="flex gap-3">
               <AdminSearchBar
@@ -293,6 +300,8 @@ export function AdminClubsPage() {
 
       {activeTab === "followCandidates" ? (
         <FollowCandidatesPanel />
+      ) : activeTab === "automatedFollows" ? (
+        <AutomatedFollowsPanel />
       ) : activeTab === "submissions" ? (
         <>
           {submissionList.isError && !submissionList.data ? <Button onClick={() => void submissionList.refetch()}>{t("common.tryAgain")}</Button> : submissionList.isPending || submissionList.total > 0 ? (

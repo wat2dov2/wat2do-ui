@@ -529,6 +529,29 @@
       "emptyTitle": "Rien à revoir",
       "emptyDescription": "Les comptes apparaissent ici à mesure que l'exploration les trouve."
     },
+    "automatedFollows": {
+      "dayLabel": "Jour",
+      "previousDay": "Jour précédent",
+      "nextDay": "Jour suivant",
+      "followsTitle": "Comptes suivis : {{value}}",
+      "followedAt": "Suivi {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "Note de l'IA : {{value}} sur 100",
+      "statuses": {
+        "approved": "Abonnement pas encore confirmé",
+        "unfollow": "Retiré plus tard, en attente de désabonnement",
+        "rejected": "Retiré plus tard et désabonné"
+      },
+      "noPosts": "Aucune publication enregistrée pour ce compte.",
+      "noCaption": "Sans légende",
+      "emptyTitle": "Aucun abonnement automatique ce jour-là",
+      "emptyDescription": "Les comptes trouvés par l'exploration ou un répertoire d'organisations apparaissent ici le jour où un compte d'école les suit.",
+      "eventsTitle": "Événements des comptes trouvés : {{value}}",
+      "eventsDescription": "Événements ajoutés ce jour-là et organisés par des comptes trouvés par l'exploration ou un répertoire, quelle que soit la date de l'abonnement.",
+      "eventAdded": "Ajouté {{time}}",
+      "eventsEmptyTitle": "Aucun événement ce jour-là",
+      "eventsEmptyDescription": "Aucun événement de ces comptes n'a été ajouté ce jour-là."
+    },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",
     "noClubSubmissionsDesc": "Les nouvelles soumissions de clubs apparaîtront ici pour approbation.",
@@ -691,6 +714,7 @@
       "clubId": "Identifiant du club : {{id}}",
       "ownerId": "Identifiant du propriétaire : {{id}}"
     },
-    "followCandidatesTab": "Comptes à suivre"
+    "followCandidatesTab": "Comptes à suivre",
+    "automatedFollowsTab": "Abonnements automatiques"
   }
 }

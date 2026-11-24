@@ -1,14 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Check, ExternalLink, X } from "lucide-react";
-import type { FollowDecision } from "@/features/admin/lib/followCandidates";
+import { foundViaLabels, VERDICT_BADGES, type FollowDecision } from "@/features/admin/lib/followCandidates";
 import type { ApiFollowCandidateResponse } from "@/shared/generated";
 import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/ui/card";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
-
-const VERDICT_BADGES = { approve: "success", review: "warning", reject: "muted" } as const;
 
 interface FollowCandidateCardProps {
   candidate: ApiFollowCandidateResponse;
@@ -32,8 +30,7 @@ export function FollowCandidateCard({ candidate, schoolName, decision, onDecide 
       ? t("admin.socialAccounts.lastPost", { time: formatRelativeTimeCompact(candidate.last_posted_at, t) })
       : t(`admin.followCandidates.read.${candidate.read_status ?? "unread"}`),
   ].filter(Boolean);
-  // A crawled account was found through followed accounts; a directory account names its directory.
-  const foundVia = candidate.source === "directory" ? candidate.found_via : candidate.found_via.map((handle) => `@${handle}`);
+  const foundVia = foundViaLabels(candidate);
 
   return (
     <Card>

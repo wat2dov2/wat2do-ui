@@ -260,6 +260,8 @@ The scorer is told the school's full name and city (a same-named school elsewher
 Admins review them on the admin Clubs page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 The tab filters by school, status and how recently each account reached that status (its last 1, 3, 7 or 30 days): pending accounts list best scored first, every other status newest first under a heading per day.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
+The Automated follows tab beside it shows one day at a time (the admin's own days) every crawl and directory account a school account followed, with the scorer's rating out of 100 and its reason, and the account's three newest posts: the ones the scorer read (`recent_posts`, captions cut to `controlbox/instagram_follow.json` `recent_post_caption_characters`) and any ingestion heard about since (`ingestion_items` by the post's owner); a picture whose signed Instagram link has expired is left out (`rust/src/api/routes/instagram_publishing/follows.rs`).
+Below them it lists the events added that day that such accounts host, whenever they were followed.
 The emulator worker checks `follows_due` from the database, then calls `follow_due` with the emulator on the school's account.
 `follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.

@@ -1492,6 +1492,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/follows/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Automated Follows
+         * @description Accounts the crawl or a club directory found that school accounts followed between `since` and `until`, newest first, with the scorer's rating and each account's newest posts.
+         */
+        get: operations["list_automated_follows_instagram_publishing_follows__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follows/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Followed Account Events
+         * @description Events added between `since` and `until` that accounts the crawl or a club directory found host, newest first.
+         */
+        get: operations["list_followed_account_events_instagram_publishing_follows_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notification-preferences": {
         parameters: {
             query?: never;
@@ -2392,6 +2432,37 @@ export interface components {
             payload?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * @description An account a school account followed on its own, with the scorer's rating
+         *     and its newest posts.
+         */
+        AutomatedFollowResponse: {
+            /** Format: uuid */
+            id: string;
+            school: string;
+            handle: string;
+            name?: string | null;
+            /** @enum {string} */
+            source: "crawl" | "directory";
+            /** @enum {string} */
+            status: "approved" | "followed" | "unfollow" | "rejected";
+            /** Format: date-time */
+            followed_at: string;
+            /**
+             * Format: int32
+             * @description The scorer's rating out of 100.
+             */
+            score?: number | null;
+            verdict?: ("approve" | "review" | "reject") | null;
+            /** @description Why the scorer rated it so. */
+            reason?: string | null;
+            /** @description The followed accounts that follow it, or the directory that lists it. */
+            found_via: string[];
+            /** Format: int32 */
+            followers_count?: number | null;
+            /** @description Up to three of its newest posts, newest first. */
+            recent_posts: components["schemas"]["FollowPostResponse"][];
         };
         /** Body_parse_event_image_ai_parse_event_image_post */
         Body_parse_event_image_ai_parse_event_image_post: {
@@ -3469,6 +3540,29 @@ export interface components {
              */
             status_changed_at: string;
         };
+        /** @description One of an account's newest posts. */
+        FollowPostResponse: {
+            url: string;
+            /** Format: date-time */
+            posted_at?: string | null;
+            caption: string;
+            /** @description The post's picture, only while Instagram's signed link is still live. */
+            image?: string | null;
+        };
+        /** @description An event added from an account a school account followed on its own. */
+        FollowedAccountEventResponse: {
+            /** Format: int32 */
+            id: number;
+            school: string;
+            title: string;
+            /** Format: date-time */
+            added_at?: string | null;
+            image_url?: string | null;
+            /** @description The followed account that hosts it, and when it was followed. */
+            handle: string;
+            /** Format: date-time */
+            followed_at: string;
+        };
         FreeTicketCreate: {
             /** Format: uuid */
             event_date_id: string;
@@ -4183,6 +4277,17 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
         };
+        PaginatedResponse_AutomatedFollowResponse_: {
+            items: components["schemas"]["AutomatedFollowResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
         PaginatedResponse_ClubClaimResponse_: {
             items: components["schemas"]["ClubClaimResponse"][];
             /** Format: int64 */
@@ -4273,6 +4378,17 @@ export interface components {
             /** Page Size */
             page_size: number;
             /** Total Pages */
+            total_pages: number;
+        };
+        PaginatedResponse_FollowedAccountEventResponse_: {
+            items: components["schemas"]["FollowedAccountEventResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
             total_pages: number;
         };
         /** PaginatedResponse[InstagramPublishBatchSummaryResponse] */
@@ -8490,6 +8606,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_automated_follows_instagram_publishing_follows__get: {
+        parameters: {
+            query: {
+                school?: string | null;
+                since: string;
+                until: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_AutomatedFollowResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_followed_account_events_instagram_publishing_follows_events_get: {
+        parameters: {
+            query: {
+                school?: string | null;
+                since: string;
+                until: string;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_FollowedAccountEventResponse_"];
                 };
             };
             /** @description Validation Error */

@@ -338,7 +338,8 @@ def unscored(limit: int) -> list[dict[str, Any]]:
 
 
 def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, Any] | None) -> None:
-    """Store what the logged-out read saw and, when the scorer answered, its verdict."""
+    """Store what the logged-out read saw (its newest posts too) and, when the scorer
+    answered, its verdict."""
     posts = profile.get("posts") or []
     now = datetime.now(timezone.utc).isoformat()
     update: dict[str, Any] = {
@@ -347,6 +348,7 @@ def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, An
         "posts_count": profile.get("posts_count"),
         "is_private": profile.get("is_private"),
         "last_posted_at": posts[0]["posted_at"] if posts else None,
+        "recent_posts": [_stored_post(post) for post in posts],
         "updated_at": now,
     }
     if profile.get("name"):
@@ -356,6 +358,16 @@ def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, An
             score=score["score"], verdict=score["verdict"], reason=score["reason"], scored_at=now
         )
     get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()
+
+
+def _stored_post(post: dict[str, Any]) -> dict[str, Any]:
+    """A post as the admin's Automated follows tab shows it, its caption cut short."""
+    return {
+        "url": post["url"],
+        "posted_at": post["posted_at"],
+        "caption": (post.get("caption") or "")[: CONTROL.recent_post_caption_characters],
+        "image": post.get("image"),
+    }
 
 
 def approved(school_id: int, limit: int) -> list[dict[str, Any]]:

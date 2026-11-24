@@ -546,6 +546,8 @@ async fn instagram_publishing_and_preference_routes_need_a_signed_in_user() {
             "/instagram-publishing/follow-candidates/decisions",
             Some(json!({"decisions": []})),
         ),
+        (Method::GET, "/instagram-publishing/follows/", None),
+        (Method::GET, "/instagram-publishing/follows/events", None),
         (Method::GET, "/notification-preferences", None),
         (
             Method::PATCH,

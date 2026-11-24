@@ -529,6 +529,29 @@
       "emptyTitle": "لا شيء للمراجعة",
       "emptyDescription": "تظهر الحسابات هنا عندما يعثر عليها البحث."
     },
+    "automatedFollows": {
+      "dayLabel": "اليوم",
+      "previousDay": "اليوم السابق",
+      "nextDay": "اليوم التالي",
+      "followsTitle": "تمت متابعتها: {{value}}",
+      "followedAt": "تمت المتابعة {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "تقييم الذكاء الاصطناعي: {{value}} من 100",
+      "statuses": {
+        "approved": "لم تتأكد المتابعة بعد",
+        "unfollow": "استُبعد لاحقًا، بانتظار إلغاء المتابعة",
+        "rejected": "استُبعد لاحقًا وأُلغيت المتابعة"
+      },
+      "noPosts": "لا توجد منشورات محفوظة لهذا الحساب بعد.",
+      "noCaption": "بلا تعليق",
+      "emptyTitle": "لا متابعات تلقائية في هذا اليوم",
+      "emptyDescription": "تظهر هنا الحسابات التي وجدها البحث أو دليل المنظمات في اليوم الذي يتابعها فيه حساب المدرسة.",
+      "eventsTitle": "فعاليات الحسابات التي وُجدت: {{value}}",
+      "eventsDescription": "الفعاليات المضافة في هذا اليوم التي تستضيفها حسابات وجدها البحث أو الدليل، أيًا كان وقت متابعتها.",
+      "eventAdded": "أُضيفت {{time}}",
+      "eventsEmptyTitle": "لا فعاليات في هذا اليوم",
+      "eventsEmptyDescription": "لم تُضف أي فعاليات من هذه الحسابات في هذا اليوم."
+    },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",
     "noClubSubmissionsDesc": "ستظهر طلبات الأندية الجديدة هنا للموافقة عليها.",
@@ -691,6 +714,7 @@
       "clubId": "معرّف النادي: {{id}}",
       "ownerId": "معرّف المالك: {{id}}"
     },
-    "followCandidatesTab": "حسابات للمتابعة"
+    "followCandidatesTab": "حسابات للمتابعة",
+    "automatedFollowsTab": "المتابعات التلقائية"
   }
 }

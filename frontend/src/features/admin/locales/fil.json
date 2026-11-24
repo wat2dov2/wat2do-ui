@@ -529,6 +529,29 @@
       "emptyTitle": "Walang ire-review",
       "emptyDescription": "Lumalabas dito ang mga account habang nahahanap sila ng paghahanap."
     },
+    "automatedFollows": {
+      "dayLabel": "Araw",
+      "previousDay": "Nakaraang araw",
+      "nextDay": "Susunod na araw",
+      "followsTitle": "Na-follow: {{value}}",
+      "followedAt": "Na-follow {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "Rating ng AI: {{value}} sa 100",
+      "statuses": {
+        "approved": "Hindi pa kumpirmado ang follow",
+        "unfollow": "Inalis kalaunan, naghihintay ng unfollow",
+        "rejected": "Inalis kalaunan at na-unfollow na"
+      },
+      "noPosts": "Wala pang naka-save na post para sa account na ito.",
+      "noCaption": "Walang caption",
+      "emptyTitle": "Walang awtomatikong follow sa araw na ito",
+      "emptyDescription": "Lumalabas dito ang mga account na nahanap ng paghahanap o ng direktoryo ng organisasyon sa araw na i-follow sila ng account ng paaralan.",
+      "eventsTitle": "Mga event mula sa mga nahanap na account: {{value}}",
+      "eventsDescription": "Mga event na idinagdag sa araw na ito na hino-host ng mga account na nahanap ng paghahanap o ng direktoryo, kahit kailan sila na-follow.",
+      "eventAdded": "Idinagdag {{time}}",
+      "eventsEmptyTitle": "Walang event sa araw na ito",
+      "eventsEmptyDescription": "Walang naidagdag na event mula sa mga account na ito sa araw na ito."
+    },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",
     "noClubSubmissionsDesc": "Lalabas dito ang mga bagong pagsusumite ng club para sa pag-apruba.",
@@ -691,6 +714,7 @@
       "clubId": "ID ng club: {{id}}",
       "ownerId": "ID ng may-ari: {{id}}"
     },
-    "followCandidatesTab": "Mga account na ifa-follow"
+    "followCandidatesTab": "Mga account na ifa-follow",
+    "automatedFollowsTab": "Mga awtomatikong follow"
   }
 }

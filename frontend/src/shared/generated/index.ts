@@ -66,6 +66,15 @@ export type ApiFollowCandidateDecision =
   components["schemas"]["FollowCandidateDecision"];
 export type ApiFollowCandidateDecisionsResponse =
   components["schemas"]["FollowCandidateDecisionsResponse"];
+export type ApiAutomatedFollowResponse =
+  components["schemas"]["AutomatedFollowResponse"];
+export type ApiPaginatedAutomatedFollowResponse =
+  components["schemas"]["PaginatedResponse_AutomatedFollowResponse_"];
+export type ApiFollowPostResponse = components["schemas"]["FollowPostResponse"];
+export type ApiFollowedAccountEventResponse =
+  components["schemas"]["FollowedAccountEventResponse"];
+export type ApiPaginatedFollowedAccountEventResponse =
+  components["schemas"]["PaginatedResponse_FollowedAccountEventResponse_"];
 
 // ── Event Submissions ───────────────────────────────────────────────
 export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];

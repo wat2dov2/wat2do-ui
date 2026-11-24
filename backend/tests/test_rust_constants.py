@@ -16,6 +16,7 @@ from core.constants import (
     DEFAULT_LIST_LIMIT,
     DEFAULT_PAGE_SIZE,
     EVENT_CATEGORIES,
+    FOLLOW_SOURCE_CRAWL,
     FOLLOW_SOURCE_DIRECTORY,
     INBOX_KIND_EVENT_CANCELLED,
     INTEREST_TO_CATEGORIES,
@@ -154,6 +155,7 @@ def test_notification_types_and_statuses_match():
 
 
 def test_follow_sources_match():
+    assert _rust_value("FOLLOW_SOURCE_CRAWL") == f'"{FOLLOW_SOURCE_CRAWL}"'
     assert _rust_value("FOLLOW_SOURCE_DIRECTORY") == f'"{FOLLOW_SOURCE_DIRECTORY}"'
 
 

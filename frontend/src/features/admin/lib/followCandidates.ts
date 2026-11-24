@@ -31,6 +31,14 @@ export function groupByDay(candidates: readonly ApiFollowCandidateResponse[], ti
   return days;
 }
 
+/** The badge a score takes, by the scorer's verdict. */
+export const VERDICT_BADGES = { approve: "success", review: "warning", reject: "muted" } as const;
+
+/** Who led to an account: the followed accounts that follow it, or the club directory that lists it. */
+export function foundViaLabels(account: Pick<ApiFollowCandidateResponse, "source" | "found_via">): string[] {
+  return account.source === "directory" ? account.found_via : account.found_via.map((handle) => `@${handle}`);
+}
+
 /** A strong score the scorer approved starts approved, as on the old review page. */
 export function suggestedDecision(candidate: ApiFollowCandidateResponse): FollowDecision | null {
   return candidate.verdict === "approve" && (candidate.score ?? 0) >= instagramFollowControl.auto_approve_score

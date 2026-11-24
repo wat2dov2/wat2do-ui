@@ -420,6 +420,21 @@ impl Field<'_> {
     /// An optional `AwareDatetime`: a timestamp with a UTC offset.
     pub fn optional_aware_datetime(mut self) -> Option<DateTime<FixedOffset>> {
         let raw = self.raw?;
+        self.parse_aware(raw)
+    }
+
+    /// A required `AwareDatetime`; `None` only when the request fails anyway.
+    pub fn aware_datetime(mut self) -> Option<DateTime<FixedOffset>> {
+        match self.raw {
+            Some(raw) => self.parse_aware(raw),
+            None => {
+                self.missing();
+                None
+            }
+        }
+    }
+
+    fn parse_aware(&mut self, raw: &str) -> Option<DateTime<FixedOffset>> {
         match parse_aware_datetime(raw) {
             Ok(value) => Some(value),
             Err(DatetimeError::Naive) => {

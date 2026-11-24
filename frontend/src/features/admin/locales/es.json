@@ -529,6 +529,29 @@
       "emptyTitle": "Nada que revisar",
       "emptyDescription": "Las cuentas aparecen aquí a medida que la búsqueda las encuentra."
     },
+    "automatedFollows": {
+      "dayLabel": "Día",
+      "previousDay": "Día anterior",
+      "nextDay": "Día siguiente",
+      "followsTitle": "Cuentas seguidas: {{value}}",
+      "followedAt": "Seguida {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "Calificación de la IA: {{value}} de 100",
+      "statuses": {
+        "approved": "Seguimiento aún sin confirmar",
+        "unfollow": "Descartada después, pendiente de dejar de seguir",
+        "rejected": "Descartada después y dejada de seguir"
+      },
+      "noPosts": "Todavía no hay publicaciones guardadas de esta cuenta.",
+      "noCaption": "Sin descripción",
+      "emptyTitle": "No hubo seguimientos automáticos este día",
+      "emptyDescription": "Las cuentas que encuentran la búsqueda o un directorio de organizaciones aparecen aquí el día en que una cuenta escolar las sigue.",
+      "eventsTitle": "Eventos de cuentas encontradas: {{value}}",
+      "eventsDescription": "Eventos añadidos este día que organizan cuentas encontradas por la búsqueda o un directorio, sin importar cuándo se siguieron.",
+      "eventAdded": "Añadido {{time}}",
+      "eventsEmptyTitle": "No hay eventos este día",
+      "eventsEmptyDescription": "No se añadieron eventos de estas cuentas este día."
+    },
     "clubSubmissions": "Solicitudes de clubes",
     "noClubSubmissions": "No hay solicitudes de clubes",
     "noClubSubmissionsDesc": "Las nuevas solicitudes de clubes aparecerán aquí para su aprobación.",
@@ -691,6 +714,7 @@
       "clubId": "ID del club: {{id}}",
       "ownerId": "ID del propietario: {{id}}"
     },
-    "followCandidatesTab": "Cuentas para seguir"
+    "followCandidatesTab": "Cuentas para seguir",
+    "automatedFollowsTab": "Seguimientos automáticos"
   }
 }

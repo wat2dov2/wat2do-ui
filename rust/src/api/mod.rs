@@ -248,6 +248,12 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(
             routes::instagram_publishing::submit_follow_decisions
         ))
+        .routes(routes!(
+            routes::instagram_publishing::list_automated_follows
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::list_followed_account_events
+        ))
         // routers/notification_preferences.py
         .routes(routes!(
             routes::notification_preferences::get_my_preferences,

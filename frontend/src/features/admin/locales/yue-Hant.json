@@ -529,6 +529,29 @@
       "emptyTitle": "冇嘢要審核",
       "emptyDescription": "搜尋搵到帳號之後會喺度顯示。"
     },
+    "automatedFollows": {
+      "dayLabel": "日期",
+      "previousDay": "前一日",
+      "nextDay": "後一日",
+      "followsTitle": "已關注：{{value}}",
+      "followedAt": "關注於 {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI 評分：{{value}}（滿分 100）",
+      "statuses": {
+        "approved": "關注仲未確認",
+        "unfollow": "之後被剔除，等緊取消關注",
+        "rejected": "之後被剔除，已取消關注"
+      },
+      "noPosts": "暫時未儲存呢個帳號嘅帖文。",
+      "noCaption": "冇文字說明",
+      "emptyTitle": "呢日冇自動關注",
+      "emptyDescription": "搜尋或者組織名錄搵到嘅帳號，會喺學校帳號關注佢哋嗰日顯示喺度。",
+      "eventsTitle": "已搵到帳號嘅活動：{{value}}",
+      "eventsDescription": "呢日新增、由搜尋或者名錄搵到嘅帳號主辦嘅活動，唔理幾時關注。",
+      "eventAdded": "加入於 {{time}}",
+      "eventsEmptyTitle": "呢日冇活動",
+      "eventsEmptyDescription": "呢日冇新增呢啲帳號嘅活動。"
+    },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",
     "noClubSubmissionsDesc": "新提交嘅社團會喺呢度顯示，等候批准。",
@@ -691,6 +714,7 @@
       "clubId": "社團 ID：{{id}}",
       "ownerId": "擁有人 ID：{{id}}"
     },
-    "followCandidatesTab": "待追蹤帳號"
+    "followCandidatesTab": "待追蹤帳號",
+    "automatedFollowsTab": "自動關注"
   }
 }

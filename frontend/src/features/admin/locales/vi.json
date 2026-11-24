@@ -529,6 +529,29 @@
       "emptyTitle": "Không có gì để xem xét",
       "emptyDescription": "Tài khoản xuất hiện ở đây khi đợt tìm kiếm tìm thấy chúng."
     },
+    "automatedFollows": {
+      "dayLabel": "Ngày",
+      "previousDay": "Ngày trước",
+      "nextDay": "Ngày sau",
+      "followsTitle": "Đã theo dõi: {{value}}",
+      "followedAt": "Theo dõi {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "Điểm AI: {{value}}/100",
+      "statuses": {
+        "approved": "Chưa xác nhận theo dõi",
+        "unfollow": "Bị loại sau đó, đang chờ bỏ theo dõi",
+        "rejected": "Bị loại sau đó và đã bỏ theo dõi"
+      },
+      "noPosts": "Chưa lưu bài đăng nào của tài khoản này.",
+      "noCaption": "Không có chú thích",
+      "emptyTitle": "Không có lượt theo dõi tự động nào trong ngày này",
+      "emptyDescription": "Các tài khoản do công cụ tìm kiếm hoặc danh bạ tổ chức tìm thấy sẽ hiện ở đây vào ngày tài khoản của trường theo dõi chúng.",
+      "eventsTitle": "Sự kiện từ các tài khoản tìm thấy: {{value}}",
+      "eventsDescription": "Các sự kiện được thêm trong ngày này do tài khoản được tìm kiếm hoặc danh bạ tìm thấy tổ chức, bất kể theo dõi từ khi nào.",
+      "eventAdded": "Đã thêm {{time}}",
+      "eventsEmptyTitle": "Không có sự kiện nào trong ngày này",
+      "eventsEmptyDescription": "Không có sự kiện nào của các tài khoản này được thêm trong ngày này."
+    },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",
     "noClubSubmissionsDesc": "Các đề xuất câu lạc bộ mới sẽ xuất hiện tại đây để phê duyệt.",
@@ -691,6 +714,7 @@
       "clubId": "ID câu lạc bộ: {{id}}",
       "ownerId": "ID chủ sở hữu: {{id}}"
     },
-    "followCandidatesTab": "Tài khoản cần theo dõi"
+    "followCandidatesTab": "Tài khoản cần theo dõi",
+    "automatedFollowsTab": "Theo dõi tự động"
   }
 }
