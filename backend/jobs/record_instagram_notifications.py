@@ -36,7 +36,9 @@ def launch_agent_payload() -> dict:
         # launchd's bare PATH has no gh, which sends the workflow dispatches.
         "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
         "KeepAlive": True,
-        "ProcessType": "Background",
+        # Standard, not Background: launchd runs a Background agent and its children (qemu, adb) at the lowest
+        # CPU priority, beside Spotlight's indexers, and on 2026-11-23 a busy Mac starved Android until it rebooted.
+        "ProcessType": "Standard",
         # run keeps its own rotated log.
         "StandardOutPath": "/dev/null",
         "StandardErrorPath": "/dev/null",

@@ -41,7 +41,9 @@ def launch_agent_payload() -> dict[str, Any]:
         "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), "run"],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
         "KeepAlive": True,
-        "ProcessType": "Background",
+        # Standard, not Background: launchd runs a Background agent and its children (qemu, adb) at the lowest
+        # CPU priority, beside Spotlight's indexers, and on 2026-11-23 a busy Mac starved Android until it rebooted.
+        "ProcessType": "Standard",
         "StandardOutPath": "/dev/null",
         "StandardErrorPath": "/dev/null",
     }
