@@ -14,8 +14,7 @@ use crate::controlbox::INSTAGRAM_PUBLISHING;
 /// Where the Graph API lives; tests point a client at a local stand-in.
 pub const GRAPH_HOST: &str = "https://graph.instagram.com";
 /// Everything `instagram_business_basic` reads about an account.
-pub const PROFILE_FIELDS: &str =
-    "id,username,name,profile_picture_url,followers_count,follows_count,media_count";
+pub const PROFILE_FIELDS: &str = "id,username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count";
 /// Everything it reads about one of the account's posts.
 pub const MEDIA_FIELDS: &str = "id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
 

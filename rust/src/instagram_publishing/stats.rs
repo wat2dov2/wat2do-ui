@@ -97,10 +97,12 @@ pub async fn snapshot_account(
     let mut transaction = db.begin().await?;
     sqlx::query(
         "INSERT INTO public.instagram_account_snapshots (account_key, captured_on, username, \
-             name, profile_picture_url, followers_count, follows_count, media_count, captured_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) \
+             name, biography, website, profile_picture_url, followers_count, follows_count, \
+             media_count, captured_at) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) \
          ON CONFLICT (account_key, captured_on) DO UPDATE SET username = EXCLUDED.username, \
-             name = EXCLUDED.name, profile_picture_url = EXCLUDED.profile_picture_url, \
+             name = EXCLUDED.name, biography = EXCLUDED.biography, website = EXCLUDED.website, \
+             profile_picture_url = EXCLUDED.profile_picture_url, \
              followers_count = EXCLUDED.followers_count, follows_count = EXCLUDED.follows_count, \
              media_count = EXCLUDED.media_count, captured_at = EXCLUDED.captured_at",
     )
@@ -108,6 +110,8 @@ pub async fn snapshot_account(
     .bind(super::drafts::local_date(now))
     .bind(username)
     .bind(text_or_null(profile.get("name")))
+    .bind(text_or_null(profile.get("biography")))
+    .bind(text_or_null(profile.get("website")))
     .bind(text_or_null(profile.get("profile_picture_url")))
     .bind(count(&profile, "followers_count")? as i32)
     .bind(count(&profile, "follows_count")? as i32)

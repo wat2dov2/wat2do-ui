@@ -865,7 +865,8 @@ async fn stats_record_the_day_and_replace_the_newest_posts() {
             json_reply(json!({"data": listed}))
         } else {
             json_reply(
-                json!({"id": profile_id, "username": "wat2do.test", "followers_count": 1200}),
+                json!({"id": profile_id, "username": "wat2do.test", "followers_count": 1200,
+                       "biography": "Official Wat2Do chapter @test", "website": "https://test.wat2do.io/"}),
             )
         }
     })
@@ -874,8 +875,8 @@ async fn stats_record_the_day_and_replace_the_newest_posts() {
     stats::snapshot_account(&db, KEY, &graph.url, &slug, now)
         .await
         .unwrap();
-    let followers: i32 = sqlx::query_scalar(
-        "SELECT followers_count FROM public.instagram_account_snapshots \
+    let (followers, biography, website): (i32, Option<String>, Option<String>) = sqlx::query_as(
+        "SELECT followers_count, biography, website FROM public.instagram_account_snapshots \
          WHERE account_key = $1 AND captured_on = $2",
     )
     .bind(&slug)
@@ -884,6 +885,8 @@ async fn stats_record_the_day_and_replace_the_newest_posts() {
     .await
     .unwrap();
     assert_eq!(followers, 1200);
+    assert_eq!(biography.as_deref(), Some("Official Wat2Do chapter @test"));
+    assert_eq!(website.as_deref(), Some("https://test.wat2do.io/"));
     let images: Vec<(String, Option<String>)> = sqlx::query_as(
         "SELECT media_id, image_url FROM public.instagram_account_media \
          WHERE account_key = $1 ORDER BY posted_at DESC",

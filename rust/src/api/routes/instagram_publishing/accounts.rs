@@ -52,6 +52,8 @@ pub struct AccountStats {
     pub account_key: String,
     pub username: String,
     pub name: Option<String>,
+    pub biography: Option<String>,
+    pub website: Option<String>,
     pub profile_picture_url: Option<String>,
     pub followers_count: Option<i32>,
     pub follows_count: Option<i32>,
@@ -84,6 +86,8 @@ pub struct Snapshot {
     pub captured_on: NaiveDate,
     pub username: String,
     pub name: Option<String>,
+    pub biography: Option<String>,
+    pub website: Option<String>,
     pub profile_picture_url: Option<String>,
     pub followers_count: i32,
     pub follows_count: i32,
@@ -132,6 +136,8 @@ pub fn assemble(
                     .filter(|username| !username.is_empty())
                     .unwrap_or(account.instagram_username),
                 name: latest.as_ref().and_then(|latest| latest.name.clone()),
+                biography: latest.as_ref().and_then(|latest| latest.biography.clone()),
+                website: latest.as_ref().and_then(|latest| latest.website.clone()),
                 profile_picture_url: latest
                     .as_ref()
                     .and_then(|latest| latest.profile_picture_url.clone()),
@@ -176,8 +182,8 @@ pub async fn list(db: &PgPool) -> Result<Vec<AccountStats>, ApiError> {
     .await?;
     let snapshots: Vec<Snapshot> = read_with_retry(|| {
         sqlx::query_as(
-            "SELECT account_key, captured_on, username, name, profile_picture_url, \
-             followers_count, follows_count, media_count, captured_at \
+            "SELECT account_key, captured_on, username, name, biography, website, \
+             profile_picture_url, followers_count, follows_count, media_count, captured_at \
              FROM public.instagram_account_snapshots WHERE captured_on >= $1 \
              ORDER BY captured_on, account_key",
         )
@@ -235,6 +241,8 @@ mod tests {
             captured_on: NaiveDate::from_ymd_opt(2026, 10, day).unwrap(),
             username: "wat2do.uwaterloo".into(),
             name: Some("Wat2Do Waterloo".into()),
+            biography: Some("Connecting events on campus to uwaterloo students".into()),
+            website: Some("https://wat2do.io".into()),
             profile_picture_url: None,
             followers_count: followers,
             follows_count: 10,
@@ -286,6 +294,8 @@ mod tests {
                 "account_key": "queensu",
                 "username": "wat2do.queensu",
                 "name": null,
+                "biography": null,
+                "website": null,
                 "profile_picture_url": null,
                 "followers_count": null,
                 "follows_count": null,
@@ -299,6 +309,11 @@ mod tests {
             })
         );
         assert_eq!(value[1]["followers_count"], 1200);
+        assert_eq!(
+            value[1]["biography"],
+            "Connecting events on campus to uwaterloo students"
+        );
+        assert_eq!(value[1]["website"], "https://wat2do.io");
         assert_eq!(value[1]["captured_at"], "2026-10-24T13:00:00Z");
         assert_eq!(value[1]["last_notification_at"], "2026-10-24T13:00:00Z");
         assert_eq!(

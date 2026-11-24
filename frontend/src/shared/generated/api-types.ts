@@ -3540,6 +3540,10 @@ export interface components {
             username: string;
             /** Name */
             name?: string | null;
+            /** Biography */
+            biography?: string | null;
+            /** Website */
+            website?: string | null;
             /** Profile Picture Url */
             profile_picture_url?: string | null;
             /** Followers Count */
