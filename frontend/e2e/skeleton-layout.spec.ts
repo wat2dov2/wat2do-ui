@@ -94,12 +94,14 @@ function apiPath(url: URL): string | null {
 
 function startTime(index: number) {
   // Every early event shares one date section, so the first screen is one section like the loading grid.
-  // They start at 17:00 UTC (noon or 1 PM in Toronto) on the next UTC day: starting a fixed time from
-  // now made runs between 8 and 10 PM Toronto cross midnight, which split the section and wrapped
-  // the event page's date onto a second line on phones.
-  const base = new Date();
+  // They start at 17:00 UTC (noon or 1 PM in Toronto) on the school's next day, so the event page's
+  // date always reads "Tomorrow". Starting a fixed time from now made runs between 8 and 10 PM Toronto
+  // cross midnight and split the section; starting on the next UTC day made runs after 8 PM Toronto
+  // land two days out, where a long weekday ("Wednesday, November 25") wrapped the date onto a second
+  // line on phones.
+  const schoolToday = new Intl.DateTimeFormat("en-CA", { timeZone: SCHOOL.timezone }).format(new Date());
+  const base = new Date(`${schoolToday}T17:00:00Z`);
   base.setUTCDate(base.getUTCDate() + 1);
-  base.setUTCHours(17, 0, 0, 0);
   return new Date(base.getTime() + index * 60_000).toISOString();
 }
 
