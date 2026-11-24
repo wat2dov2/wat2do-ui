@@ -7,6 +7,7 @@
 export { ClubInput } from "./components/ClubInput";
 export { AddClubModal } from "./components/AddClubModal";
 export { ClubBadgeLink } from "./components/ClubBadgeLink";
+export { ClaimClubNotice } from "./components/ClaimClubNotice";
 
 // API
 export {

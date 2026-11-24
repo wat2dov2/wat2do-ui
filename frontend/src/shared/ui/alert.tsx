@@ -3,8 +3,9 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/shared/lib/utils";
 
+// An alert reads from the start of its line even inside centred content.
 const alertVariants = cva(
-  "relative grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-xl border px-4 py-3 text-sm [&>svg]:mt-0.5 [&>svg]:size-4",
+  "relative grid grid-cols-[auto_1fr] items-start gap-x-3 rounded-xl border px-4 py-3 text-start text-sm [&>svg]:mt-0.5 [&>svg]:size-4",
   {
     variants: {
       variant: {

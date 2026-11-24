@@ -43,6 +43,9 @@ export const QP = {
   /** Tab selection: the profile's settings tab, or a club page's Positions tab */
   TAB: "tab",
 
+  /** Opens a club page with its claim form open (`/clubs/<id>?claim=1`) */
+  CLAIM_CLUB: "claim",
+
   /**
    * Opens the events page on its newly added events, at the list (`/events?new=1`,
    * where the morning email's notification leads: Rust `rendering::new_events_url`)

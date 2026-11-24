@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "组织类型：{{type}}",
     "claimClub": "认领社团",
+    "claimNotice": {
+      "description": "我们注意到 {{club}} 还没有入驻 Wat2Do。如果你是这个社团的成员，欢迎认领。",
+      "action": "认领这个社团"
+    },
     "claimOwnership": "申请负责人或管理人员权限",
     "claimOwnershipDesc": "请管理员验证您在以下社团的负责人或管理人员身份：",
     "executiveRole": "您的执行职位",

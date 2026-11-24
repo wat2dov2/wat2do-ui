@@ -104,28 +104,28 @@ export function EventFormStep({
     [isClubFixed, fixedClubRecord, directoryClubs],
   );
 
-  const selectedClubName = useMemo(() => {
+  const selectedClub = useMemo(() => {
     const id = eventForm.formData.club_id;
-    return id != null ? clubs.find((org) => org.id === id)?.club_name ?? "" : "";
+    return id != null ? clubs.find((org) => org.id === id) : undefined;
   }, [clubs, eventForm.formData.club_id]);
+  const selectedClubName = selectedClub?.club_name ?? "";
 
   // One event, rebuilt as the form changes: the preview column and any host
   // drawing its own preview show the same card, keystroke for keystroke.
   const previewEvent = useMemo(
     () =>
       buildPreviewEvent({
-        school: clubs.find((club) => club.id === eventForm.formData.club_id)?.school ?? previewBase?.school ?? getCurrentSchool(),
+        school: selectedClub?.school ?? previewBase?.school ?? getCurrentSchool(),
         formData: eventForm.formData,
         imagePreview: eventForm.imagePreview,
-        clubName: selectedClubName,
+        club: selectedClub,
         fallbackTitle: t("events.eventTitle"),
         base: previewBase,
       }),
     [
       eventForm.formData,
-      clubs,
       eventForm.imagePreview,
-      selectedClubName,
+      selectedClub,
       previewBase,
       t,
     ],

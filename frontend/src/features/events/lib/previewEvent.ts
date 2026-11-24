@@ -7,7 +7,7 @@
  * the feed shows.
  */
 
-import type { Event, EventFormData } from "@/shared/types";
+import type { Club, Event, EventFormData } from "@/shared/types";
 import { buildEventOccurrence } from "@/shared/api/eventPayload";
 
 /** Stands in for the not-yet-saved event's id on the preview's occurrences. */
@@ -18,8 +18,8 @@ interface PreviewEventOptions {
   formData: EventFormData;
   /** Data URL or stored URL of the poster the form is showing. */
   imagePreview: string;
-  /** Resolved name of the selected club, empty when none is selected. */
-  clubName: string;
+  /** The selected club, absent when none is selected. */
+  club: Club | undefined;
   /** Shown while the title field is empty, so the card never renders blank. */
   fallbackTitle: string;
   /**
@@ -34,7 +34,7 @@ export function buildPreviewEvent({
   school,
   formData,
   imagePreview,
-  clubName,
+  club,
   fallbackTitle,
   base,
 }: PreviewEventOptions): Event {
@@ -65,7 +65,10 @@ export function buildPreviewEvent({
     registration: formData.registration,
     source_image_url: imagePreview || null,
     category: formData.category || null,
-    club: clubName || base?.club || null,
+    club: club?.club_name || base?.club || null,
+    club_id: club?.id ?? base?.club_id ?? null,
+    // The card shows the club's verified check as the feed will.
+    verified: club?.verified ?? base?.verified ?? false,
     cancelled: base?.cancelled ?? false,
     added_at: base?.added_at ?? now,
   };

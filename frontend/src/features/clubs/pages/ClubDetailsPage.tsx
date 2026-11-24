@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus, UserCheck } from "lucide-react";
@@ -17,6 +17,7 @@ import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
+import { isClaimRequested } from "@/features/clubs/lib/claimClub";
 import { ClubVerifiedCheck } from "@/features/clubs/components/ClubVerifiedCheck";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
 import { ClubEventsGrid } from "@/features/events/components/ClubEventsGrid";
@@ -72,7 +73,10 @@ function ClubDetailsContent({
   const { t } = useTranslation();
   const { clubs } = useAuthState();
   // A link to the club's positions (`?tab=positions`, an approved position's notification) opens on them.
-  const openTab = useSearchParams().get(QP.TAB) === "positions" ? "positions" : "events";
+  const searchParams = useSearchParams();
+  const openTab = searchParams.get(QP.TAB) === "positions" ? "positions" : "events";
+  const router = useRouter();
+  const pathname = usePathname();
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedClubsStore(
     (state) => state.toggleSaveClub,
@@ -89,6 +93,15 @@ function ClubDetailsContent({
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
   const signedInAction = useSignedInAction();
+  // A claim link (`?claim=1`, offered after sending an event for this club) opens the claim form.
+  const claimRequested = !preview && !managesClub && isClaimRequested(searchParams);
+  const closeClaimModal = () => {
+    setShowClaimModal(false);
+    if (!claimRequested) return;
+    const rest = new URLSearchParams(searchParams.toString());
+    rest.delete(QP.CLAIM_CLUB);
+    router.replace(rest.size > 0 ? `${pathname}?${rest}` : pathname, { scroll: false });
+  };
 
   return (
     <>
@@ -238,8 +251,8 @@ function ClubDetailsContent({
       </Container>
 
       <ClaimClubModal
-        isOpen={showClaimModal}
-        onClose={() => setShowClaimModal(false)}
+        isOpen={showClaimModal || claimRequested}
+        onClose={closeClaimModal}
         club={club}
       />
     </>
