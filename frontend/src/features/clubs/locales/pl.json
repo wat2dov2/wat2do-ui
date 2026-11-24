@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "Typ organizacji: {{type}}",
     "claimClub": "Przejmij klub",
+    "claimNotice": {
+      "description": "Zauważyliśmy, że klub {{club}} nie dołączył jeszcze do Wat2Do. Jeśli należysz do tego klubu, śmiało go przejmij.",
+      "action": "Przejmij ten klub"
+    },
     "claimOwnership": "Poproś o dostęp właściciela lub członka zarządu",
     "claimOwnershipDesc": "Poproś administratora o potwierdzenie roli właściciela lub członka zarządu w",
     "executiveRole": "Twoja rola wykonawcza",

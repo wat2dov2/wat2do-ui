@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "Organisationstyp: {{type}}",
     "claimClub": "Club beanspruchen",
+    "claimNotice": {
+      "description": "Uns ist aufgefallen, dass {{club}} noch nicht bei Wat2Do ist. Wenn du Mitglied bist, kannst du den Club gern beanspruchen.",
+      "action": "Diesen Club beanspruchen"
+    },
     "claimOwnership": "Zugang als Inhaber oder Vorstandsmitglied beantragen",
     "claimOwnershipDesc": "Bitte einen Administrator, deine Rolle als Inhaber oder Vorstandsmitglied zu bestätigen bei",
     "executiveRole": "Ihre Führungsrolle",

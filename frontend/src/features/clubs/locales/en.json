@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "Club type: {{type}}",
     "claimClub": "Claim club",
+    "claimNotice": {
+      "description": "We noticed {{club}} isn't onboarded to Wat2Do yet. If you're a member of this club, feel free to claim it.",
+      "action": "Claim this club"
+    },
     "claimOwnership": "Claim owner or executive access",
     "claimOwnershipDesc": "Ask an admin to verify your owner or executive role at",
     "executiveRole": "Your Executive Role",

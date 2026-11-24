@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "Tipo de organización: {{type}}",
     "claimClub": "Reclamar club",
+    "claimNotice": {
+      "description": "Notamos que {{club}} todavía no está en Wat2Do. Si eres miembro, no dudes en reclamar el club.",
+      "action": "Reclamar este club"
+    },
     "claimOwnership": "Solicitar acceso de propietario o ejecutivo",
     "claimOwnershipDesc": "Pide a un administrador que verifique tu cargo de propietario o ejecutivo en",
     "executiveRole": "Tu rol ejecutivo",

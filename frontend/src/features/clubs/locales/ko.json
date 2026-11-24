@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "조직 유형: {{type}}",
     "claimClub": "클럽 소유권 신청",
+    "claimNotice": {
+      "description": "{{club}}은(는) 아직 Wat2Do에 합류하지 않았어요. 이 클럽 멤버라면 편하게 소유권을 신청해 주세요.",
+      "action": "이 클럽 소유권 신청"
+    },
     "claimOwnership": "소유자 또는 임원 권한 요청",
     "claimOwnershipDesc": "관리자에게 다음 동아리의 소유자 또는 임원 역할 확인을 요청하세요:",
     "executiveRole": "귀하의 임원 역할",

@@ -2,6 +2,10 @@
   "clubs": {
     "clubType": "Loại tổ chức: {{type}}",
     "claimClub": "Nhận quản lý câu lạc bộ",
+    "claimNotice": {
+      "description": "Chúng tôi thấy {{club}} chưa tham gia Wat2Do. Nếu bạn là thành viên của câu lạc bộ này, cứ thoải mái nhận quản lý nhé.",
+      "action": "Nhận quản lý câu lạc bộ này"
+    },
     "claimOwnership": "Yêu cầu quyền chủ sở hữu hoặc điều hành",
     "claimOwnershipDesc": "Yêu cầu quản trị viên xác minh vai trò chủ sở hữu hoặc điều hành của bạn tại",
     "executiveRole": "Vai trò Điều hành của bạn",

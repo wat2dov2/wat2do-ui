@@ -1,5 +1,6 @@
 import { Check, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ClaimClubNotice } from "@/features/clubs";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
@@ -24,6 +25,10 @@ export function EventSuccessScreen({
   event,
 }: EventSuccessScreenProps) {
   const { t, i18n } = useTranslation();
+  // A club nobody runs on Wat2Do yet is offered to its members to claim.
+  const unclaimedClub = event?.club_id != null && event.club && !event.verified
+    ? { id: event.club_id, school: event.school, club_name: event.club }
+    : null;
 
   const handleDone = () => {
     onClose();
@@ -87,6 +92,8 @@ export function EventSuccessScreen({
               </>
             ) : null}
           </div>
+
+          {unclaimedClub ? <ClaimClubNotice club={unclaimedClub} /> : null}
 
           <div className="flex gap-2 w-full">
             <Button variant="outline" onMouseDown={handleDone} className="flex-1">
