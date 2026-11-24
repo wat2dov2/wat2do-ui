@@ -631,6 +631,12 @@ def test_restart_waits_for_android_to_finish_starting_after_the_boot() -> None:
     assert commands[-2] == ["shell", "input", "keyevent", "KEYCODE_WAKEUP"]
 
 
+def test_uptime_is_read_from_android() -> None:
+    commands = []
+    assert _device([(0, "1234.56 4000.00\n")], commands).uptime_seconds() == 1234.56
+    assert commands[0][-3:] == ["shell", "cat", "/proc/uptime"]
+
+
 def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:
     with pytest.raises(module.EmulatorError, match="did not come back"):
         _restarting_device([(0, "")], [], [0.0]).restart()
