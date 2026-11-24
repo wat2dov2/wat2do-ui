@@ -25,7 +25,7 @@ use unicode_normalization::UnicodeNormalization;
 
 use super::agent::extension;
 use super::title_svg_rendering::rendering_problem;
-use crate::api::events::store::featuring_slides;
+use crate::api::events::store::featured_events;
 use crate::claude::{self, Agent, Limited};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
@@ -242,22 +242,22 @@ fn drawing_key(drawing: &str, title: &str) -> u64 {
     hasher.finish()
 }
 
-/// The featured events to come (an event Wat2Do posted in a carousel, as the
-/// events feed marks it) with a poster but no drawing that spells their title
+/// The featured events to come (posted in a carousel or hosted by a claimed
+/// club, as the events feed marks them, [`featured_events`]) with a poster but no drawing that spells their title
 /// and renders cleanly, soonest first, each with its drawing's md5.
 pub(super) async fn featured_to_draw(
     db: &PgPool,
     checked: &mut Checked,
 ) -> Result<Vec<(Waiting, Option<String>)>> {
     let events: Vec<(i64, String, String, Option<String>)> = sqlx::query_as(concat!(
-        "SELECT e.id::bigint, e.title, e.source_image_url, md5(e.title_svg) FROM public.events e ",
+        "WITH upcoming AS (SELECT e.id, e.title, e.source_image_url, md5(e.title_svg) AS drawing, ",
+        "next.starts FROM public.events e ",
         "JOIN LATERAL (SELECT min(d.dtstart_utc) AS starts FROM public.event_dates d ",
         "WHERE d.event_id = e.id AND coalesce(d.dtend_utc, d.dtstart_utc) >= now()) next ON true ",
-        "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%' ",
-        "AND EXISTS (SELECT 1 ",
-        featuring_slides!(),
-        " AND i.event_id = e.id) ",
-        "ORDER BY next.starts, e.id"
+        "WHERE next.starts IS NOT NULL AND NOT e.cancelled AND e.source_image_url LIKE 'https://%') ",
+        "SELECT id::bigint, title, source_image_url, drawing FROM upcoming WHERE id IN (",
+        featured_events!("ARRAY(SELECT id FROM upcoming)"),
+        ") ORDER BY starts, id"
     ))
     .fetch_all(db)
     .await?;

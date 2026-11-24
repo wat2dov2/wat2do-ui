@@ -323,6 +323,28 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         .execute(&db)
         .await
         .unwrap();
+    // A claimed club's events are featured without a carousel, and drawn.
+    let claimed = event(day * 4, None).await;
+    let owner = Uuid::new_v4();
+    sqlx::query("INSERT INTO public.users (id, email, auth_id) VALUES ($1, $2, $3)")
+        .bind(owner)
+        .bind(format!("owner-{}@example.com", owner.simple()))
+        .bind(owner.to_string())
+        .execute(&db)
+        .await
+        .unwrap();
+    sqlx::query(
+        "WITH club AS (INSERT INTO public.clubs (club_name, school_id, created_by) \
+             VALUES ($2, $3, $4) RETURNING id) \
+         UPDATE public.events SET club_id = (SELECT id FROM club) WHERE id = $1",
+    )
+    .bind(claimed)
+    .bind(format!("Claimed {}", owner.simple()))
+    .bind(school)
+    .bind(owner)
+    .execute(&db)
+    .await
+    .unwrap();
     let carousel: Uuid = sqlx::query_scalar(
         "INSERT INTO public.instagram_publish_batches (account_key, school_id, local_date, \
              window_start, window_end, status, caption_intro, cover_body) \
@@ -380,6 +402,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         opted_out,
         far,
         far_featured,
+        claimed,
     ]
     .map(i64::from);
     let due: Vec<(i64, bool)> = featured_to_draw(&db, &mut Checked::default())
@@ -389,8 +412,9 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         .filter(|(event, _)| ours.contains(&event.id))
         .map(|(event, drawing)| (event.id, drawing.is_some()))
         .collect();
-    // Featured events only, soonest first, each with whether it has a drawing a new
-    // one replaces. The opted-out club's event is not featured, so it is not drawn.
+    // Featured events only (posted or a claimed club's), soonest first, each with whether
+    // it has a drawing a new one replaces. The opted-out club's event is not featured, so
+    // it is not drawn.
     let i = i64::from;
     assert_eq!(
         due,
@@ -398,6 +422,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
             (i(wrong), true),
             (i(undrawn), false),
             (i(unshapely), true),
+            (i(claimed), false),
             (i(far_featured), false),
         ]
     );

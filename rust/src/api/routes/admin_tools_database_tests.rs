@@ -471,16 +471,17 @@ async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
     .fetch_one(&db)
     .await
     .unwrap();
-    let verified = || async {
-        crate::api::events::store::event_by_id(&db, i64::from(event))
+    let verified_and_featured = || async {
+        let event = crate::api::events::store::event_by_id(&db, i64::from(event))
             .await
             .unwrap()
-            .unwrap()
-            .verified
+            .unwrap();
+        (event.verified, event.featured)
     };
-    assert!(
-        !verified().await,
-        "an unclaimed club's event is not verified"
+    assert_eq!(
+        verified_and_featured().await,
+        (false, false),
+        "an unclaimed club's event is neither verified nor featured"
     );
 
     let (status, shown) = call(&db, &first_token, Method::GET, &link, None).await;
@@ -502,7 +503,25 @@ async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
         (owner, members, lead_status.as_str()),
         (Some(first), vec![first], "claimed")
     );
-    assert!(verified().await, "a claimed club's events are verified");
+    assert_eq!(
+        verified_and_featured().await,
+        (true, true),
+        "a claimed club's events are verified and featured"
+    );
+    // Unless the club asked to stay out of carousels: then it is never featured.
+    let handle = format!("claimed{tag}");
+    sqlx::query("UPDATE public.events SET ig_handle = $2 WHERE id = $1")
+        .bind(event)
+        .bind(format!("@{handle}"))
+        .execute(&db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO public.instagram_excluded_clubs (ig_handle) VALUES ($1)")
+        .bind(&handle)
+        .execute(&db)
+        .await
+        .unwrap();
+    assert_eq!(verified_and_featured().await, (true, false));
 
     // Once the club is claimed the link hands over nothing, to anyone.
     for (method, path) in [(Method::GET, &link), (Method::POST, &accept)] {

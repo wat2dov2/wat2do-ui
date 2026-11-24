@@ -2973,7 +2973,7 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
-             * @description Published to Instagram
+             * @description Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club
              * @default false
              */
             featured: boolean;
@@ -3090,7 +3090,7 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
-             * @description Published to Instagram
+             * @description Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club
              * @default false
              */
             featured: boolean;
@@ -3237,7 +3237,7 @@ export interface components {
             cohosts?: components["schemas"]["ClubCohostResponse"][];
             /**
              * Featured
-             * @description Published to Instagram
+             * @description Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club
              * @default false
              */
             featured: boolean;
