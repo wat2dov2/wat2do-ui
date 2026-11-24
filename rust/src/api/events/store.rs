@@ -202,21 +202,33 @@ macro_rules! claimed_club {
 }
 pub(crate) use claimed_club;
 
-/// The carousel slides (`i`, of batch `b`) that make an event featured: Wat2Do
-/// posted it in an Instagram carousel, and its club has not since asked to stay
-/// out of carousels (Hillel's accounts among them).
-macro_rules! featuring_slides {
-    () => {
+/// The ids (`event_id`) of the events Wat2Do features, those whose id is one of
+/// `$ids` (an SQL array): every event it posted in an Instagram carousel, and
+/// every event of a claimed club, whose events are verified (a club that
+/// onboarded is featured from its first listing on). An event whose club has
+/// asked to stay out of carousels (Hillel's accounts among them) is never
+/// featured.
+macro_rules! featured_events {
+    ($ids:literal) => {
         concat!(
-            "FROM public.instagram_publish_items i ",
+            "SELECT i.event_id FROM public.instagram_publish_items i ",
             "JOIN public.instagram_publish_batches b ON b.id = i.batch_id ",
             "JOIN public.events fe ON fe.id = i.event_id ",
-            "WHERE (i.published_at IS NOT NULL OR b.status = 'published') AND NOT ",
+            "WHERE i.event_id = ANY(",
+            $ids,
+            ") AND (i.published_at IS NOT NULL OR b.status = 'published') AND NOT ",
+            $crate::api::events::store::excluded_club!("fe"),
+            " UNION SELECT fe.id FROM public.events fe JOIN public.clubs c ON c.id = fe.club_id ",
+            "WHERE fe.id = ANY(",
+            $ids,
+            ") AND ",
+            $crate::api::events::store::claimed_club!("c"),
+            " AND NOT ",
             $crate::api::events::store::excluded_club!("fe")
         )
     };
 }
-pub(crate) use featuring_slides;
+pub(crate) use featured_events;
 
 /// One hydrated event as JSON (`json_build_object` takes at most 100 arguments).
 const EVENT_OBJECT: &str = concat!(
@@ -258,9 +270,9 @@ const HYDRATE_CTES: &str = concat!(
     ", 'dtend_utc', ",
     micros!("occ.dtend_utc"),
     ", 'duration', occ.duration, 'tz', occ.tz) ORDER BY occ.rn) AS occurrences FROM occ GROUP BY occ.event_id), ",
-    "featured AS (SELECT DISTINCT i.event_id ",
-    featuring_slides!(),
-    " AND i.event_id = ANY(ARRAY(SELECT page.id::int4 FROM page))), ",
+    "featured AS (",
+    featured_events!("ARRAY(SELECT page.id::int4 FROM page)"),
+    "), ",
     "events_json AS (SELECT COALESCE(json_agg(",
 );
 

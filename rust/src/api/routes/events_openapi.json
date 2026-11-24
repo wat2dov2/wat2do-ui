@@ -1984,7 +1984,7 @@
         "featured": {
           "type": "boolean",
           "title": "Featured",
-          "description": "Published to Instagram",
+          "description": "Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club",
           "default": false
         },
         "verified": {
@@ -2320,7 +2320,7 @@
         "featured": {
           "type": "boolean",
           "title": "Featured",
-          "description": "Published to Instagram",
+          "description": "Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club",
           "default": false
         },
         "verified": {
@@ -2717,7 +2717,7 @@
         "featured": {
           "type": "boolean",
           "title": "Featured",
-          "description": "Published to Instagram",
+          "description": "Posted in a Wat2Do Instagram carousel, or hosted by a claimed (verified) club",
           "default": false
         },
         "verified": {
