@@ -222,6 +222,7 @@ tag, a link outside wat2do.io, an email address other than `controlbox/instagram
 A sitting stops at "Confirm you're human", a login screen or an action limit and reports it for a person; it never types a code or a password.
 A story share waits while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
+The emulator's LaunchAgents (the keep-alive, the worker and the notification recorder) are Standard processes, never Background: launchd runs a Background agent and its children at the lowest CPU priority, so a busy Mac (Spotlight re-indexing, a Rust build, ingestion agents) starved Android until it rebooted itself (2026-11-23).
 The emulator's keep-alive LaunchAgent (`scripts/instagram_emulator.py`, `io.wat2do.instagram-emulator`) boots it whenever adb cannot see it and stops it to boot again once Android has answered no `adb shell` command for `controlbox/instagram_emulator.json` `unresponsive_restart_seconds`, since a hung Android still shows in adb (2026-11-18: hung 13 hours, every notification and carousel follow-up lost).
 Once a day, from `reclaim_hour` (before the morning's sittings), the worker
 deletes Instagram's caches on every Android user as root
