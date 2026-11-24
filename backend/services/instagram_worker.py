@@ -210,6 +210,12 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
         device.use_android_user(user)
         device.use_account(user, school_account_username(school))
     except EmulatorError as exc:
+        if not device.system_ready():
+            # Android is still starting: no switch can work yet, the account is not to
+            # blame, and a restart would only start the wait over.
+            log.warning("Android is still starting; %s waits", school)
+            time.sleep(CONTROL.screen_wait_seconds)
+            return False
         log.exception("Could not switch the emulator to %s", school)
         _switch_rested_until[school] = now + timedelta(seconds=CONTROL.switch_rest_seconds)
         if isinstance(exc, AccountNotSwitched):

@@ -370,7 +370,7 @@ def test_reclaiming_deletes_instagram_caches_and_leaves_it_out_of_the_stopped_st
 ) -> None:
     users = sorted(set(module.CONTROL.android_user_by_school.values()))
     commands = []
-    restart = [(0, ""), (1, ""), (0, "1\n"), (0, ""), (0, "")]
+    restart = [(0, ""), (1, ""), (0, "1\n"), (0, "RUNNING_UNLOCKED\n"), (0, ""), (0, "")]
     outputs = [(0, "")] * (2 * len(users)) + restart + [(0, _df(800_000))]
     assert _device(outputs, commands).reclaim_data() == 781
     for index, user in enumerate(users):
@@ -592,7 +592,16 @@ def test_restart_waits_for_the_old_emulator_to_exit_before_trusting_a_boot() -> 
     commands = []
     # kill; the old one still answers and reports booted; then it is gone; then a new
     # one is booting, then booted; then wake.
-    outputs = [(0, ""), (0, "device\n"), (1, ""), (0, "0\n"), (0, "1\n"), (0, ""), (0, "")]
+    outputs = [
+        (0, ""),
+        (0, "device\n"),
+        (1, ""),
+        (0, "0\n"),
+        (0, "1\n"),
+        (0, "RUNNING_UNLOCKED\n"),
+        (0, ""),
+        (0, ""),
+    ]
     _restarting_device(outputs, commands, [0.0]).restart()
     assert commands[0] == ["emu", "kill"]
     assert commands.count(["get-state"]) == 2
@@ -601,6 +610,25 @@ def test_restart_waits_for_the_old_emulator_to_exit_before_trusting_a_boot() -> 
         ["shell", "input", "keyevent", "KEYCODE_WAKEUP"],
         ["shell", "wm", "dismiss-keyguard"],
     ]
+
+
+def test_restart_waits_for_android_to_finish_starting_after_the_boot() -> None:
+    commands = []
+    # kill; the old one is gone; the new one reports booted while its first user is still
+    # booting, then once more with the user running; then wake.
+    outputs = [
+        (0, ""),
+        (1, ""),
+        (0, "1\n"),
+        (0, "BOOTING\n"),
+        (0, "1\n"),
+        (0, "RUNNING_UNLOCKED\n"),
+        (0, ""),
+        (0, ""),
+    ]
+    _restarting_device(outputs, commands, [0.0]).restart()
+    assert commands.count(["shell", "am", "get-started-user-state", "0"]) == 2
+    assert commands[-2] == ["shell", "input", "keyevent", "KEYCODE_WAKEUP"]
 
 
 def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:

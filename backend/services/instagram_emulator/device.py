@@ -609,7 +609,7 @@ class EmulatorDevice:
             # The old emulator answers until it exits; only a new one's boot counts.
             if not stopped:
                 stopped = not self.is_online()
-            elif self.booted():
+            elif self.booted() and self.system_ready():
                 self._sleep(CONTROL.screen_wait_seconds)
                 self.wake()
                 return
@@ -619,6 +619,18 @@ class EmulatorDevice:
     def booted(self) -> bool:
         try:
             return self.adb("shell", "getprop", "sys.boot_completed").strip() == "1"
+        except EmulatorError:
+            return False
+
+    def system_ready(self) -> bool:
+        """Whether Android has finished starting: its first user runs unlocked.
+
+        ``sys.boot_completed`` turns on minutes earlier on a busy Mac, while the activity
+        service is still starting (or starting again), and every user switch fails until
+        then (2026-11-23, after the Mac restarted: the emulator restarted every few minutes).
+        """
+        try:
+            return "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", "0")
         except EmulatorError:
             return False
 
