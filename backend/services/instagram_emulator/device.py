@@ -513,29 +513,41 @@ class EmulatorDevice:
     def put_photo(self, user: int, photo: Path) -> None:
         """Make ``photo`` the newest picture in the Android user's gallery.
 
-        Instagram's photo-sticker picker lists the gallery newest first, so the story
-        editor's first photo is this one. The file is copied as root into the user's
-        Pictures folder with that folder's owner, then Android's media scanner is told.
+        Instagram's photo-sticker picker lists the gallery by when each picture was
+        added, newest first, so the story editor's first photo is this one. Android
+        keeps a picture's added time when its file is overwritten, so a copy over an
+        older one would stay behind any photo added since (one school's French sticker
+        stayed first for every English school on the same Android user). Each copy
+        therefore gets a name of its own, ``<name>-<random hex><suffix>``, and the
+        earlier copies of the photo are deleted from the folder and the gallery. The
+        file is copied as root into the user's Pictures folder with that folder's owner,
+        then Android's media scanner is told about every name that came or went.
         """
         staged = f"/data/local/tmp/{photo.name}"
         pictures = f"/data/media/{user}/Pictures"
-        target = f"{pictures}/{photo.name}"
+        copy = re.compile(rf"{re.escape(photo.stem)}(?:-[0-9a-f]+)?{re.escape(photo.suffix)}")
+        listing = self.adb("shell", "su", "0", "sh", "-c", shlex.quote(f"ls {pictures}"))
+        earlier = [name for name in listing.split() if copy.fullmatch(name)]
+        name = photo.name
+        while name == photo.name or name in earlier:
+            name = f"{photo.stem}-{self._rng.getrandbits(32):08x}{photo.suffix}"
+        target = f"{pictures}/{name}"
         self.adb("push", str(photo), staged)
-        command = (
-            f"cp {staged} {target} && chown $(stat -c %u:%g {pictures}) {target} && touch {target}"
-        )
+        removals = "".join(f"rm -f {pictures}/{old} && " for old in earlier)
+        command = f"{removals}cp {staged} {target} && chown $(stat -c %u:%g {pictures}) {target}"
         self.adb("shell", "su", "0", "sh", "-c", shlex.quote(command))
-        self.adb(
-            "shell",
-            "am",
-            "broadcast",
-            "--user",
-            str(user),
-            "-a",
-            "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
-            "-d",
-            f"file:///storage/emulated/{user}/Pictures/{photo.name}",
-        )
+        for scanned in [*earlier, name]:
+            self.adb(
+                "shell",
+                "am",
+                "broadcast",
+                "--user",
+                str(user),
+                "-a",
+                "android.intent.action.MEDIA_SCANNER_SCAN_FILE",
+                "-d",
+                f"file:///storage/emulated/{user}/Pictures/{scanned}",
+            )
 
     def _swipe(self, *, start: tuple[int, int], end: tuple[int, int]) -> None:
         self.pause()

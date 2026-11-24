@@ -162,6 +162,34 @@ def test_the_current_android_user_is_not_switched_again() -> None:
     assert len(commands) == 1
 
 
+def test_a_photo_goes_into_the_gallery_under_a_new_name_replacing_its_earlier_copies(
+    tmp_path,
+) -> None:
+    """Android keeps an overwritten picture's added time, so a sticker copied over its
+    old file stayed behind the other language's sticker in Instagram's picker; each
+    copy is a new picture, and the earlier copies of that sticker leave the gallery."""
+    photo = tmp_path / "featured_sticker_en.png"
+    photo.write_bytes(b"png")
+    listing = "featured_sticker_en.png\nfeatured_sticker_en-0a1b2c3d.png\nfeatured_sticker_fr.png\n"
+    commands = []
+    device = _device([(0, listing)] + [(0, "")] * 5, commands)
+
+    device.put_photo(10, photo)
+
+    shell = commands[2][-1]
+    new_name = re.search(r"featured_sticker_en-[0-9a-f]{8}\.png", shell.split("cp ")[1]).group()
+    assert new_name not in listing
+    assert "rm -f /data/media/10/Pictures/featured_sticker_en.png" in shell
+    assert "rm -f /data/media/10/Pictures/featured_sticker_en-0a1b2c3d.png" in shell
+    assert "featured_sticker_fr" not in shell
+    scanned = [command[-1] for command in commands[3:]]
+    assert scanned == [
+        "file:///storage/emulated/10/Pictures/featured_sticker_en.png",
+        "file:///storage/emulated/10/Pictures/featured_sticker_en-0a1b2c3d.png",
+        f"file:///storage/emulated/10/Pictures/{new_name}",
+    ]
+
+
 def test_unlabelled_controls_are_found_by_their_resource_id() -> None:
     screen = SCREEN.replace(
         "</hierarchy>",
