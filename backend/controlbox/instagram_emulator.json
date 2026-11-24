@@ -85,6 +85,7 @@
   "restart_timeout_seconds": 900,
   "switch_rest_seconds": 900,
   "switch_failures_before_restart": 2,
+  "restart_min_uptime_seconds": 1800,
   "action_start_hour": 9,
   "action_end_hour": 23,
   "follow_start_hour": 0,

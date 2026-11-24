@@ -223,7 +223,7 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
             return False
         _switch_failures += 1
         _switch_errors.append(f"{school} (Android user {user}): {exc}")
-        if _switch_failures >= CONTROL.switch_failures_before_restart:
+        if _switch_failures >= CONTROL.switch_failures_before_restart and _restart_helps(device):
             _switch_failures = 0
             log_restart(" | ".join(_switch_errors))
             _switch_errors.clear()
@@ -232,6 +232,20 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
     _switch_failures = 0
     _switch_errors.clear()
     return True
+
+
+def _restart_helps(device: EmulatorDevice) -> bool:
+    """Whether Android has been up long enough that failed switches mean it stalled.
+
+    For a while after a boot Android is still starting and its own process can stop
+    answering for minutes, and a restart then only starts that over (2026-11-23, after
+    the Mac restarted: the emulator restarted every 5 to 15 minutes for three hours).
+    """
+    try:
+        return device.uptime_seconds() >= CONTROL.restart_min_uptime_seconds
+    except EmulatorError:
+        # Android answers no command at all: a restart is the one thing left to try.
+        return True
 
 
 def _score_in_background() -> None:

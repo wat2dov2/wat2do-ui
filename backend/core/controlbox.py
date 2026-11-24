@@ -1256,6 +1256,7 @@ class InstagramEmulatorControl(_ControlModel):
     # others; this many failed switches in a row restart the emulator.
     switch_rest_seconds: int = Field(ge=60, le=86_400)
     switch_failures_before_restart: int = Field(ge=1, le=20)
+    restart_min_uptime_seconds: int = Field(ge=0, le=86400)
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
     # follow hours (local time). A visit follows at most this many accounts, and stops

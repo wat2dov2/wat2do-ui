@@ -634,6 +634,10 @@ class EmulatorDevice:
         except EmulatorError:
             return False
 
+    def uptime_seconds(self) -> float:
+        """How long Android has been up since the emulator last booted."""
+        return float(self.adb("shell", "cat", "/proc/uptime").split()[0])
+
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
         self.adb("shell", "wm", "dismiss-keyguard")
