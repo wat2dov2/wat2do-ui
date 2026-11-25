@@ -3,7 +3,9 @@
 A sitting's moves (``services/instagram_sessions/moves.py``) open a thread by tapping
 its inbox row and read it from the screen the app draws: who sent each message, its
 text, and any post or reel shared in it. A reply is typed into the thread at a
-person's pace and left there unsent: a person reads every draft and sends it.
+person's pace and left there unsent: a person reads every draft and sends it. The one
+message that is sent is the claim-link message to a club that asked us to feature it
+(Tony, 2026-11-24).
 """
 
 from __future__ import annotations
@@ -26,6 +28,10 @@ from services.instagram_emulator.inbox import accept_request, raise_if_messaging
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
+# The composer's send button, which shows once the composer holds text.
+_SEND_BUTTON = re.compile(r"^row_thread_composer_send_button_container$")
+# An empty composer reads as a short rotating hint, such as "Message…".
+_COMPOSER_HINT = re.compile(r"^[^.!?\n]{1,40}…$")
 # A club's claim link, which carries its claim token.
 CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/\S+", re.IGNORECASE)
 _SHARE = labels("Send post", "Share")
@@ -64,6 +70,10 @@ _REVEAL_SCROLLS = 4
 
 class DraftWaiting(EmulatorError):
     """The thread already holds an unsent claim-link draft that a person has yet to send."""
+
+
+class ReplyWaiting(EmulatorError):
+    """The thread holds an unsent reply of ours (no claim link) that a person has yet to send."""
 
 
 class ThreadReader:
@@ -125,6 +135,44 @@ class ThreadReader:
             raise EmulatorError("The draft did not show in the thread's composer")
         self._device.back()
         self._device.back()
+
+    def send_claim(self, message: str) -> str:
+        """Send the club its claim-link message, the one DM the automation sends.
+
+        A claim-link draft an earlier sitting typed is sent as it is; an empty composer gets
+        ``message`` typed at a person's pace, confirmed in the composer. A composer holding
+        any other unsent text is a reply waiting for a person and is left alone. Send is
+        tapped after a pause, and the composer must no longer hold the claim link.
+        """
+        nodes = self._screen_in_thread()
+        if self._device.find(_COMPOSER, nodes) is None:
+            accept_request(self._device)
+            nodes = self._screen_in_thread()
+        composer = _required(self._device.find(_COMPOSER, nodes))
+        typed = False
+        if CLAIM_LINK.search(composer.text):
+            outcome = "sent the claim message that was waiting in the thread"
+        elif not composer.text.strip() or _COMPOSER_HINT.match(composer.text.strip()):
+            self._device.tap(composer)
+            self._device.type_text(message)
+            shown = _required(self._device.find(_COMPOSER)).text
+            if _as_typed(shown) != _as_typed(message):
+                raise EmulatorError("The claim message did not show in the thread's composer")
+            typed = True
+            outcome = "typed and sent the claim message"
+        else:
+            raise ReplyWaiting(
+                "This thread holds another unsent reply waiting for a person, so nothing was sent"
+            )
+        self._device.pause()
+        self._device.tap(_required(self._device.find(_SEND_BUTTON)))
+        self._device.pause()
+        if CLAIM_LINK.search(_required(self._device.find(_COMPOSER)).text):
+            raise EmulatorError("The claim message was still in the composer after Send")
+        # The keyboard (when we typed) and then the thread are closed.
+        for _ in range(2 if typed else 1):
+            self._device.back()
+        return outcome
 
     def _open(self) -> list[Node]:
         self._opener()

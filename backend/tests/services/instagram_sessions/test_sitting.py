@@ -85,7 +85,7 @@ def test_a_sitting_runs_claude_with_only_the_ig_command_on_the_second_login(monk
             "finished": True,
             "stories": "3 of 3",
             "drafts": 2,
-            "claim_drafts": 1,
+            "claims_sent": 1,
             "problems": "",
         }
 

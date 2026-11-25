@@ -6,8 +6,9 @@ emulator the worker already holds for it (``WAT2DO_EMULATOR_HELD``), and prints 
 JSON object. Each move appends when it started and ended and how it went to the day's
 sitting log, never a message's text.
 
-No move sends a direct message: replies are typed into their thread and left there
-for a person to read and send.
+Replies are typed into their thread and left there for a person to read and send. The
+one direct message a move sends is the claim-link message (``ig claim``) to a club that
+asked us to repost or feature its post (Tony, 2026-11-24), paced and capped per account.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import re
 import subprocess
 import sys
@@ -59,15 +61,15 @@ POST_TIMEOUT_SECONDS = 2700
 
 CLAIM_MESSAGE = {
     "en": (
-        "Hey! One small ask: we made a dedicated link for you to claim your club on Wat2Do. "
-        "It puts a verified check on your page and events, and it really helps show students "
-        "that real clubs are on board. Takes one click: {link} Thank you!"
+        "Hey! We're happy to keep featuring your events. One small favour: could you claim "
+        "your club on Wat2Do? It adds a verified check to your page and events and really "
+        "helps us build credibility with students. Here's your club's link: {link} Thank you!"
     ),
     "fr": (
-        "Salut ! Petite demande : on a cree un lien juste pour vous afin de reclamer votre club "
-        "sur Wat2Do. Ca ajoute un crochet verifie a votre page et a vos evenements, et ca aide "
-        "vraiment a montrer aux etudiants que de vrais clubs sont avec nous. Un seul clic : "
-        "{link} Merci !"
+        "Salut ! On continue avec plaisir a partager vos evenements. Petite faveur : "
+        "pourriez-vous reclamer votre club sur Wat2Do ? Ca ajoute un crochet verifie a votre "
+        "page et a vos evenements, et ca nous aide vraiment a gagner la confiance des "
+        "etudiants. Voici le lien de votre club : {link} Merci !"
     ),
 }
 
@@ -199,14 +201,54 @@ def draft(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     club = None
     if args.claim:
         club, token = claim_token(args.claim)
-        record = school_service.get_school(school())
-        language = "fr" if record and record.language == "fr" else "en"
-        link = f"https://{school()}.wat2do.io/claim/{token}"
-        parts.append(plain(CLAIM_MESSAGE[language].format(link=link)))
+        parts.append(_claim_message(token))
     if not parts:
         raise MoveError("Nothing to type: give --text, --claim or both")
     _reader(device, args.thread).draft(" ".join(parts))
     return {"thread": args.thread, "claim_for": club, "status": "typed, not sent"}
+
+
+def claim(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Send the club behind ``username`` its claim-link message in the thread.
+
+    The one DM a sitting sends. A claim-link draft already waiting there is sent as it
+    is. Each account sends at most ``claim_sends_per_account_per_day`` a day, each a
+    random ``claim_send_gap_*_seconds`` after its last, so it never sends in a burst.
+    """
+    club, token = claim_token(args.username)
+    sent_today = _claims_sent_today()
+    if len(sent_today) >= DMS.claim_sends_per_account_per_day:
+        raise MoveError("This account sent its claim messages for today; try again tomorrow")
+    if sent_today:
+        gap = random.uniform(DMS.claim_send_gap_min_seconds, DMS.claim_send_gap_max_seconds)
+        wait = gap - (datetime.now(timezone.utc) - max(sent_today)).total_seconds()
+        if wait > 0:
+            time.sleep(wait)
+    outcome = _reader(device, args.thread).send_claim(_claim_message(token))
+    return {"thread": args.thread, "claim_for": club, "status": outcome}
+
+
+def _claim_message(token: str) -> str:
+    record = school_service.get_school(school())
+    language = "fr" if record and record.language == "fr" else "en"
+    link = f"https://{school()}.wat2do.io/claim/{token}"
+    return plain(CLAIM_MESSAGE[language].format(link=link))
+
+
+def _claims_sent_today() -> list[datetime]:
+    """When this account's claim messages went out today, from the sitting log."""
+    path = LOG_DIR / f"{_today()}.jsonl"
+    if not path.exists():
+        return []
+    sent = []
+    for line in path.read_text().splitlines():
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if entry.get("school") == school() and entry.get("move") == "claim" and entry.get("ok"):
+            sent.append(datetime.fromisoformat(entry["ended"]))
+    return sent
 
 
 def share(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
@@ -516,6 +558,7 @@ MOVES: dict[str, Callable[[EmulatorDevice, argparse.Namespace], dict[str, Any]]]
     "inbox": inbox,
     "read": read,
     "draft": draft,
+    "claim": claim,
     "share": share,
     "feature": feature,
     "correction": correction,
@@ -539,6 +582,9 @@ def parser() -> argparse.ArgumentParser:
     reply.add_argument("thread")
     reply.add_argument("--text", required=True)
     reply.add_argument("--claim")
+    send = commands.add_parser("claim")
+    send.add_argument("thread")
+    send.add_argument("username")
     for name in ("share", "feature"):
         action = commands.add_parser(name)
         action.add_argument("thread")
@@ -570,7 +616,7 @@ def main(argv: list[str] | None = None) -> int:
         entry.update(ok=False, error=str(exc)[:200])
         code = 1
     entry["ended"] = datetime.now(timezone.utc).isoformat()
-    if args.move in ("post", "finish", "stories", "share", "draft", "feature"):
+    if args.move in ("post", "finish", "stories", "share", "draft", "claim", "feature"):
         entry["result"] = {k: v for k, v in result.items() if k not in ("messages",)}
     _log(entry)
     print(json.dumps(result, ensure_ascii=False, default=str))

@@ -1186,6 +1186,12 @@ class InstagramDmsControl(_ControlModel):
     # likely over. The inbox is scrolled at most this many screens to find them.
     max_thread_age_days: int = Field(ge=1, le=60)
     inbox_scrolls: int = Field(ge=0, le=10)
+    # The claim-link message is the one DM a sitting sends (Tony, 2026-11-24): at most
+    # this many a day from one account, each a random gap of this many seconds after
+    # the last, so the account never sends in a burst.
+    claim_sends_per_account_per_day: int = Field(ge=0, le=30)
+    claim_send_gap_min_seconds: int = Field(ge=0, le=3600)
+    claim_send_gap_max_seconds: int = Field(ge=0, le=3600)
 
 
 class InstagramSessionsControl(_ControlModel):

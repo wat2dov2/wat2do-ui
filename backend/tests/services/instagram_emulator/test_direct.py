@@ -108,10 +108,12 @@ def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
 class _DraftDevice:
     """A thread whose composer shows whatever was typed; records every key and tap."""
 
-    def __init__(self, *, request=False, echo=True):
+    def __init__(self, *, request=False, echo=True, sends=True):
         self.request = request
         self.echo = echo
+        self.sends = sends
         self.typed = ""
+        self.sent = []
         self.taps = []
         self.backs = 0
         self.accepted = False
@@ -120,7 +122,12 @@ class _DraftDevice:
         thread = [_node("", (0, 275, 1080, 1431), "message_list")]
         if not self.request or self.accepted:
             shown = self.typed if self.echo else ""
-            thread.append(_node(shown, (158, 1365, 621, 1496), "row_thread_composer_edittext"))
+            thread.append(
+                _node(shown or "Message…", (158, 1365, 621, 1496), "row_thread_composer_edittext")
+            )
+            thread.append(
+                _node("", (904, 1400, 1041, 1495), "row_thread_composer_send_button_container")
+            )
         return thread
 
     def find(self, pattern, nodes=None):
@@ -128,6 +135,12 @@ class _DraftDevice:
 
     def tap(self, node):
         self.taps.append(node.resource_id or node.label)
+        if node.resource_id == "row_thread_composer_send_button_container" and self.sends:
+            self.sent.append(self.typed)
+            self.typed = ""
+
+    def pause(self):
+        pass
 
     def clear_field(self):
         self.typed = ""
@@ -157,6 +170,42 @@ def test_a_request_is_accepted_to_show_its_composer(monkeypatch) -> None:
     monkeypatch.setattr(module, "accept_request", accept)
     THREAD_READER(device, lambda: None).draft("sure, send it here")
     assert device.accepted and device.typed == "sure, send it here"
+
+
+CLAIM = "Hey! We're happy to keep featuring your events. https://tmu.wat2do.io/claim/0f6b3c1e-1234 Thank you!"
+SEND = "row_thread_composer_send_button_container"
+
+
+def test_a_claim_message_is_typed_into_an_empty_thread_and_sent() -> None:
+    device = _DraftDevice()
+    outcome = THREAD_READER(device, lambda: None).send_claim(CLAIM)
+    assert device.sent == [CLAIM]
+    assert device.taps == ["row_thread_composer_edittext", SEND]
+    # The keyboard and then the thread are closed.
+    assert device.backs == 2
+    assert outcome == "typed and sent the claim message"
+
+
+def test_a_claim_draft_left_waiting_is_sent_as_it_is() -> None:
+    device = _DraftDevice()
+    device.typed = CLAIM
+    outcome = THREAD_READER(device, lambda: None).send_claim("a different message")
+    assert device.sent == [CLAIM]
+    assert device.taps == [SEND] and device.backs == 1
+    assert outcome == "sent the claim message that was waiting in the thread"
+
+
+def test_a_thread_holding_another_unsent_reply_sends_nothing() -> None:
+    device = _DraftDevice()
+    device.typed = "hey, welcome! could you send the post here?"
+    with pytest.raises(module.ReplyWaiting):
+        THREAD_READER(device, lambda: None).send_claim(CLAIM)
+    assert device.sent == [] and device.taps == []
+
+
+def test_a_claim_still_in_the_composer_after_send_fails_loudly() -> None:
+    with pytest.raises(module.EmulatorError, match="still in the composer"):
+        THREAD_READER(_DraftDevice(sends=False), lambda: None).send_claim(CLAIM)
 
 
 def test_a_draft_that_does_not_show_in_the_composer_fails() -> None:

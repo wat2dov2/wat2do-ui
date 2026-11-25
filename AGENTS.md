@@ -160,10 +160,10 @@ In a sitting, `ig inbox` lists the main inbox and message requests, and `ig read
 A shared post's link is copied and read back through the thread's composer, and only the pasted link is deleted again, so a draft waiting there for a person stays exactly as it was.
 A message request is accepted only when a draft is typed in it, or when reading a post it shares needs the composer.
 Claude decides each thread from the facts about Wat2Do its prompt lists: sharing a post or reel to our story (any account's, if it is appropriate and not out of date, `ig share`), featuring it in an upcoming carousel (`ig feature`), correcting a listing the club says is wrong (`ig correction`), leaving a club that asks out of carousels (`ig opt-out`), a plain reply (questions, an event already over), or nothing (traps, spam, "thanks").
-No direct message is ever sent by the automation: `ig draft` types our reply into its thread and leaves it there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
+The automation sends one kind of direct message only: the claim-link message to a club that asked us to repost, share or feature its post (Tony, 2026-11-24). Every other reply is typed by `ig draft` into its thread and left there unsent, and a person reads every such draft and sends it (Tony, 2026-11-21).
 A draft lives in its thread on the emulator only, which has no window: `backend/scripts/review_dm_drafts.py <school>` waits for the worker's current job, opens that account's inbox and shows the emulator in a scrcpy window, holding the emulator until the window closes.
-A thread where a club asked us to repost, share or feature its post also gets the claim-link message (`ig draft --claim <their username>`): its club's own claim link, from its outreach lead (one is made if the unclaimed club has none), typed straight into the thread and never printed or logged.
-A sitting reads every claim link as `[claim link]`, and `ig draft` leaves a thread that already holds an unsent claim link as it is until a person sends it.
+A thread where a club asked us to repost, share or feature its post gets the claim-link message instead of a drafted reply: `ig claim "<name>" <their username>` types its club's own claim link (from its outreach lead; one is made if the unclaimed club has none) into the thread at a person's pace, confirms it in the composer and sends it, saying we will keep featuring their events and asking them to claim their club; the link is never printed or logged. A claim-link draft an earlier sitting left waiting is sent as it is, a thread holding any other unsent reply is left for a person, and each account sends at most `controlbox/instagram_dms.json` `claim_sends_per_account_per_day` a day, each a random `claim_send_gap_min_seconds` to `claim_send_gap_max_seconds` after its last.
+A sitting reads every claim link as `[claim link]`, and `ig draft` leaves a thread that already holds an unsent claim link as it is (`ig claim` sends it).
 Clubs want story reposts and carousel spots, so replies never ask about adding things
 to the site.
 A story repost or carousel request sets `events.carousel_requested_at` on the events
@@ -180,7 +180,7 @@ The emulator finds every control by its accessibility label, taps at a random po
 inside it after a random pause, types one character at a time, and never types a
 password.
 It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`, which builds the notification recorder's `notification-reader.jar` too.
-Each draft is confirmed by seeing it in the thread's composer, and no move can tap Send.
+Each draft is confirmed by seeing it in the thread's composer, and no move but `ig claim` (which sends only the claim-link message) can tap Send.
 The emulator also likes, reposts and adds music to our own carousels right after the API
 posts them, since the API can do none of these: the sitting's `ig finish` opens the live post, likes it, reposts it unless the Repost icon already shows its check mark, then
 Edit, Add audio,
