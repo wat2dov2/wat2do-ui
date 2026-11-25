@@ -24,6 +24,7 @@ export function FollowCandidateCard({ candidate, schoolName, decision, onDecide 
   const profileUrl = `https://www.instagram.com/${candidate.handle}/`;
   const details = [
     schoolName,
+    t(`admin.followCandidates.statusAt.${candidate.status}`, { time: formatRelativeTimeCompact(candidate.status_changed_at, t) }),
     candidate.followers_count === null || candidate.followers_count === undefined
       ? null
       : t("admin.followCandidates.followers", { value: candidate.followers_count.toLocaleString(i18n.language) }),

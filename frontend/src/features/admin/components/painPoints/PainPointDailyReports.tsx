@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { FileText } from "lucide-react";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { formatCalendarDay } from "@/shared/utils/date";
 
 const PRIORITY_BADGES = { high: "destructive", medium: "warning", low: "muted" } as const;
 
@@ -38,8 +39,7 @@ export function PainPointDailyReports() {
 
 function DailyReportCard({ report }: { report: CompetitorPainPointReport }) {
   const { t, i18n } = useTranslation();
-  // report_date is a calendar day; read it at noon so no time zone moves it.
-  const day = new Date(`${report.report_date}T12:00:00`).toLocaleDateString(i18n.language, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const day = formatCalendarDay(report.report_date, i18n.language);
   return (
     <Card>
       <CardHeader>

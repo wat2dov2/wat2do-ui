@@ -1,4 +1,5 @@
 import type { ApiFollowCandidateDecision, ApiFollowCandidateResponse } from "@/shared/generated";
+import type { DayWindow } from "@/features/admin/lib/dayWindows";
 import instagramFollowControl from "../../../../../backend/controlbox/instagram_follow.json" with { type: "json" };
 
 export type FollowDecision = ApiFollowCandidateDecision["status"];
@@ -6,6 +7,29 @@ export type FollowDecision = ApiFollowCandidateDecision["status"];
 export type StagedDecisions = ReadonlyMap<string, FollowDecision | null>;
 
 export const FOLLOW_CANDIDATE_STATUSES = ["pending", "approved", "followed", "unfollow", "rejected"] as const;
+
+/** "Any time" (null) or the last N days, by when each account reached its status. */
+export const FOLLOW_CANDIDATE_WINDOWS = [1, 3, 7, 30] as const satisfies readonly DayWindow[];
+export type FollowCandidateWindow = (typeof FOLLOW_CANDIDATE_WINDOWS)[number];
+
+export interface FollowCandidateDay {
+  /** The calendar day, YYYY-MM-DD. */
+  day: string;
+  candidates: ApiFollowCandidateResponse[];
+}
+
+/** The candidates in their order (newest first), under the day each reached its status, in `timeZone` (the browser's by default). */
+export function groupByDay(candidates: readonly ApiFollowCandidateResponse[], timeZone?: string): FollowCandidateDay[] {
+  const dayOf = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+  const days: FollowCandidateDay[] = [];
+  for (const candidate of candidates) {
+    const day = dayOf.format(new Date(candidate.status_changed_at));
+    const last = days.at(-1);
+    if (last?.day === day) last.candidates.push(candidate);
+    else days.push({ day, candidates: [candidate] });
+  }
+  return days;
+}
 
 /** A strong score the scorer approved starts approved, as on the old review page. */
 export function suggestedDecision(candidate: ApiFollowCandidateResponse): FollowDecision | null {

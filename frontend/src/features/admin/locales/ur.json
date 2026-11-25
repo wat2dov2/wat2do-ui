@@ -91,6 +91,7 @@
     "approved": "منظور شدہ",
     "rejected": "رد شدہ",
     "yesterday": "کل",
+    "last3Days": "گزشتہ 3 دن",
     "last30Days": "گزشتہ 30 دن",
     "allTime": "تمام وقت",
     "scanLocations": "سکین کے مقامات اور QR کوڈ سکینز",
@@ -513,6 +514,15 @@
         "rejected": "مسترد",
         "unfollow": "مسترد، ان فالو کا منتظر"
       },
+      "statusAt": {
+        "pending": "ملا {{time}}",
+        "approved": "منظور {{time}}",
+        "followed": "فالو کیا گیا {{time}}",
+        "rejected": "مسترد {{time}}",
+        "unfollow": "مسترد {{time}}"
+      },
+      "timeRangeLabel": "وقت کی حد",
+      "anyTime": "کسی بھی وقت",
       "submitFailed": "فیصلے محفوظ نہیں ہو سکے۔ دوبارہ کوشش کریں۔",
       "emptyTitle": "جائزے کے لیے کچھ نہیں",
       "emptyDescription": "تلاش جیسے جیسے اکاؤنٹس ڈھونڈتی ہے وہ یہاں نظر آتے ہیں۔"

@@ -91,6 +91,7 @@
     "approved": "अनुमत",
     "rejected": "अस्वीकार कर दिया",
     "yesterday": "कल",
+    "last3Days": "अंतिम 3 दिन",
     "last30Days": "अंतिम 30 दिन",
     "allTime": "पूरे समय",
     "scanLocations": "स्कैन स्थान और QR कोड स्कैन",
@@ -513,6 +514,15 @@
         "rejected": "अस्वीकृत",
         "unfollow": "अस्वीकृत, अनफ़ॉलो होना बाकी"
       },
+      "statusAt": {
+        "pending": "मिला {{time}}",
+        "approved": "स्वीकृत {{time}}",
+        "followed": "फ़ॉलो किया {{time}}",
+        "rejected": "अस्वीकृत {{time}}",
+        "unfollow": "अस्वीकृत {{time}}"
+      },
+      "timeRangeLabel": "समय सीमा",
+      "anyTime": "कभी भी",
       "submitFailed": "फ़ैसले सहेजे नहीं जा सके। फिर से कोशिश करें।",
       "emptyTitle": "समीक्षा के लिए कुछ नहीं",
       "emptyDescription": "खोज जैसे-जैसे अकाउंट ढूँढती है, वे यहाँ दिखते हैं।"

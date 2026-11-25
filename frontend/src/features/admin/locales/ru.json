@@ -91,6 +91,7 @@
     "approved": "Одобрено",
     "rejected": "Отклонено",
     "yesterday": "Вчера",
+    "last3Days": "Последние 3 дня",
     "last30Days": "Последние 30 дней",
     "allTime": "За всё время",
     "scanLocations": "Места сканирования & QR Сканирование кодов",
@@ -513,6 +514,15 @@
         "rejected": "Отклонён",
         "unfollow": "Отклонён, ожидает отписки"
       },
+      "statusAt": {
+        "pending": "Найден: {{time}}",
+        "approved": "Одобрен: {{time}}",
+        "followed": "Подписка: {{time}}",
+        "rejected": "Отклонён: {{time}}",
+        "unfollow": "Отклонён: {{time}}"
+      },
+      "timeRangeLabel": "Период",
+      "anyTime": "За всё время",
       "submitFailed": "Не удалось сохранить решения. Попробуйте ещё раз.",
       "emptyTitle": "Нечего проверять",
       "emptyDescription": "Аккаунты появляются здесь по мере того, как поиск их находит."

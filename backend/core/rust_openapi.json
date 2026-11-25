@@ -5088,6 +5088,26 @@
             }
           },
           {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only rows that reached their status in the last N days",
+              "title": "Days"
+            },
+            "description": "Only rows that reached their status in the last N days"
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -11757,6 +11777,11 @@
               }
             ],
             "title": "Follow Error"
+          },
+          "status_changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Status Changed At"
           }
         },
         "type": "object",
@@ -11766,7 +11791,8 @@
           "handle",
           "source",
           "found_via",
-          "status"
+          "status",
+          "status_changed_at"
         ],
         "title": "FollowCandidateResponse",
         "description": "An account a school account might follow, with what its newest posts showed."

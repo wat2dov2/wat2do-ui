@@ -91,6 +91,7 @@
     "approved": "已批准",
     "rejected": "已拒绝",
     "yesterday": "昨天",
+    "last3Days": "最近 3 天",
     "last30Days": "最近 30 天",
     "allTime": "全部时间",
     "scanLocations": "扫码位置与二维码扫码量",
@@ -513,6 +514,15 @@
         "rejected": "已拒绝",
         "unfollow": "已拒绝，等待取消关注"
       },
+      "statusAt": {
+        "pending": "发现于 {{time}}",
+        "approved": "批准于 {{time}}",
+        "followed": "关注于 {{time}}",
+        "rejected": "拒绝于 {{time}}",
+        "unfollow": "拒绝于 {{time}}"
+      },
+      "timeRangeLabel": "时间范围",
+      "anyTime": "任何时间",
       "submitFailed": "无法保存决定，请重试。",
       "emptyTitle": "没有需要审核的内容",
       "emptyDescription": "搜索找到账号后会显示在这里。"

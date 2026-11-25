@@ -3448,6 +3448,11 @@ export interface components {
             reason?: string | null;
             /** Follow Error */
             follow_error?: string | null;
+            /**
+             * Status Changed At
+             * Format: date-time
+             */
+            status_changed_at: string;
         };
         FreeTicketCreate: {
             /** Format: uuid */
@@ -8410,6 +8415,8 @@ export interface operations {
             query?: {
                 status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
                 school?: string | null;
+                /** @description Only rows that reached their status in the last N days */
+                days?: number | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */

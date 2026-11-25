@@ -91,6 +91,7 @@
     "approved": "Đã duyệt",
     "rejected": "Bị từ chối",
     "yesterday": "Hôm qua",
+    "last3Days": "Trong 3 ngày qua",
     "last30Days": "Trong 30 ngày qua",
     "allTime": "Tất cả thời gian",
     "scanLocations": "Quét Vị Trí & QR Quét Mã",
@@ -513,6 +514,15 @@
         "rejected": "Đã từ chối",
         "unfollow": "Đã từ chối, đang chờ bỏ theo dõi"
       },
+      "statusAt": {
+        "pending": "Tìm thấy {{time}}",
+        "approved": "Đã duyệt {{time}}",
+        "followed": "Đã theo dõi {{time}}",
+        "rejected": "Đã từ chối {{time}}",
+        "unfollow": "Đã từ chối {{time}}"
+      },
+      "timeRangeLabel": "Khoảng thời gian",
+      "anyTime": "Bất kỳ lúc nào",
       "submitFailed": "Không lưu được quyết định. Hãy thử lại.",
       "emptyTitle": "Không có gì để xem xét",
       "emptyDescription": "Tài khoản xuất hiện ở đây khi đợt tìm kiếm tìm thấy chúng."

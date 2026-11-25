@@ -9,6 +9,7 @@ import {
   decisionFor,
   decisionsToSubmit,
   toggleDecision,
+  type FollowCandidateWindow,
   type FollowDecision,
   type StagedDecisions,
 } from "@/features/admin/lib/followCandidates";
@@ -23,12 +24,13 @@ export function useFollowCandidates() {
   const queryClient = useQueryClient();
   const [school, setSchoolFilter] = useState("");
   const [status, setStatusFilter] = useState<ApiFollowCandidateStatus>("pending");
+  const [days, setDaysFilter] = useState<FollowCandidateWindow | null>(null);
   const [page, setPage] = useState(1);
   const [staged, setStaged] = useState<StagedDecisions>(NO_DECISIONS);
 
   const query = useQuery({
-    queryKey: queryKeys.instagramPublishing.followCandidatePage(school, status, page),
-    queryFn: () => getFollowCandidates({ school, status, page, pageSize: PAGE_SIZE }),
+    queryKey: queryKeys.instagramPublishing.followCandidatePage(school, status, days, page),
+    queryFn: () => getFollowCandidates({ school, status, days, page, pageSize: PAGE_SIZE }),
     placeholderData: (previous) => previous,
   });
   const candidates = query.data?.items ?? [];
@@ -48,6 +50,7 @@ export function useFollowCandidates() {
     candidates,
     school,
     status,
+    days,
     page,
     totalPages: query.data?.total_pages ?? 0,
     total: query.data?.total ?? 0,
@@ -60,6 +63,10 @@ export function useFollowCandidates() {
     },
     setStatus: (value: ApiFollowCandidateStatus) => {
       setStatusFilter(value);
+      setPage(1);
+    },
+    setDays: (value: FollowCandidateWindow | null) => {
+      setDaysFilter(value);
       setPage(1);
     },
     decisionFor: (candidate: ApiFollowCandidateResponse) => decisionFor(candidate, staged),

@@ -1,24 +1,49 @@
 import { useTranslation } from "react-i18next";
 import { UserPlus } from "lucide-react";
 import { useFollowCandidates } from "@/features/admin/hooks/useFollowCandidates";
-import { FOLLOW_CANDIDATE_STATUSES } from "@/features/admin/lib/followCandidates";
+import { DAY_WINDOW_LABEL_KEYS } from "@/features/admin/lib/dayWindows";
+import {
+  FOLLOW_CANDIDATE_STATUSES,
+  FOLLOW_CANDIDATE_WINDOWS,
+  groupByDay,
+  type FollowCandidateWindow,
+} from "@/features/admin/lib/followCandidates";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { FollowCandidateCard } from "@/features/admin/components/social/FollowCandidateCard";
-import { FormGrid, Stack } from "@/shared/layout";
+import { FormGrid, Section, Stack } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Button } from "@/shared/ui/button";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { formatCalendarDay } from "@/shared/utils/date";
+import type { ApiFollowCandidateResponse } from "@/shared/generated";
 
 const ALL_SCHOOLS = "all";
+const ANY_TIME = "any";
 
-/** Accounts found for each school account to follow; decisions stay on the page until submitted. */
+/**
+ * Accounts found for each school account to follow; decisions stay on the page until submitted.
+ * Pending accounts are a review queue, best scored first; every other status lists newest first, day by day.
+ */
 export function FollowCandidatesPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { schools, getSchoolName } = useSchoolDirectory();
   const view = useFollowCandidates();
+  const cards = (candidates: readonly ApiFollowCandidateResponse[]) => (
+    <FormGrid columns="gallery" className="items-stretch">
+      {candidates.map((candidate) => (
+        <FollowCandidateCard
+          key={candidate.id}
+          candidate={candidate}
+          schoolName={getSchoolName(candidate.school)}
+          decision={view.decisionFor(candidate)}
+          onDecide={candidate.status === "pending" ? (decision) => view.decide(candidate, decision) : undefined}
+        />
+      ))}
+    </FormGrid>
+  );
 
   return (
     <Stack gap={4}>
@@ -44,6 +69,18 @@ export function FollowCandidatesPanel() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={view.days ? String(view.days) : ANY_TIME}
+          onValueChange={(value) => view.setDays(value === ANY_TIME ? null : (Number(value) as FollowCandidateWindow))}
+        >
+          <SelectTrigger aria-label={t("admin.followCandidates.timeRangeLabel")}><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ANY_TIME}>{t("admin.followCandidates.anyTime")}</SelectItem>
+            {FOLLOW_CANDIDATE_WINDOWS.map((days) => (
+              <SelectItem key={days} value={String(days)}>{t(DAY_WINDOW_LABEL_KEYS[days])}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </FilterBar>
       {view.submit.isError ? <p className="text-sm text-destructive">{t("admin.followCandidates.submitFailed")}</p> : null}
       {view.query.isError ? (
@@ -53,17 +90,11 @@ export function FollowCandidatesPanel() {
       ) : view.candidates.length ? (
         <>
           <p className="text-sm text-muted-foreground">{t("admin.followCandidates.total", { value: view.total })}</p>
-          <FormGrid columns="gallery" className="items-stretch">
-            {view.candidates.map((candidate) => (
-              <FollowCandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                schoolName={getSchoolName(candidate.school)}
-                decision={view.decisionFor(candidate)}
-                onDecide={candidate.status === "pending" ? (decision) => view.decide(candidate, decision) : undefined}
-              />
-            ))}
-          </FormGrid>
+          {view.status === "pending"
+            ? cards(view.candidates)
+            : groupByDay(view.candidates).map(({ day, candidates }) => (
+                <Section key={day} title={formatCalendarDay(day, i18n.language)}>{cards(candidates)}</Section>
+              ))}
           {view.totalPages > 1 ? <Pagination currentPage={view.page} totalPages={view.totalPages} onPageChange={view.setPage} /> : null}
         </>
       ) : (

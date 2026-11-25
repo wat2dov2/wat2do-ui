@@ -91,6 +91,7 @@
     "approved": "Genehmigt",
     "rejected": "Abgelehnt",
     "yesterday": "Gestern",
+    "last3Days": "Letzte 3 Tage",
     "last30Days": "Letzte 30 Tage",
     "allTime": "Alle Zeiten",
     "scanLocations": "Scan-Standorte & QR Code-Scans",
@@ -513,6 +514,15 @@
         "rejected": "Abgelehnt",
         "unfollow": "Abgelehnt, Entfolgen ausstehend"
       },
+      "statusAt": {
+        "pending": "Gefunden {{time}}",
+        "approved": "Genehmigt {{time}}",
+        "followed": "Gefolgt {{time}}",
+        "rejected": "Abgelehnt {{time}}",
+        "unfollow": "Abgelehnt {{time}}"
+      },
+      "timeRangeLabel": "Zeitraum",
+      "anyTime": "Jederzeit",
       "submitFailed": "Die Entscheidungen konnten nicht gespeichert werden. Versuch es noch einmal.",
       "emptyTitle": "Nichts zu prüfen",
       "emptyDescription": "Konten erscheinen hier, sobald die Suche sie findet."

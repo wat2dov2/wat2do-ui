@@ -91,6 +91,7 @@
     "approved": "Aprobado",
     "rejected": "Rechazado",
     "yesterday": "Ayer",
+    "last3Days": "Últimos 3 días",
     "last30Days": "Últimos 30 días",
     "allTime": "Todo el tiempo",
     "scanLocations": "Ubicaciones de Escaneo y Escaneos de Código QR",
@@ -513,6 +514,15 @@
         "rejected": "Rechazado",
         "unfollow": "Rechazado, pendiente de dejar de seguir"
       },
+      "statusAt": {
+        "pending": "Encontrado {{time}}",
+        "approved": "Aprobado {{time}}",
+        "followed": "Seguido {{time}}",
+        "rejected": "Rechazado {{time}}",
+        "unfollow": "Rechazado {{time}}"
+      },
+      "timeRangeLabel": "Periodo",
+      "anyTime": "Cualquier momento",
       "submitFailed": "No se pudieron guardar las decisiones. Inténtalo de nuevo.",
       "emptyTitle": "Nada que revisar",
       "emptyDescription": "Las cuentas aparecen aquí a medida que la búsqueda las encuentra."

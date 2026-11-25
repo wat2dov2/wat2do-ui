@@ -91,6 +91,7 @@
     "approved": "મંજૂર થયેલ",
     "rejected": "લગાવાયેલ નહોતું",
     "yesterday": "ગયા દિવસ",
+    "last3Days": "છેલ્લા 3 દિવસ",
     "last30Days": "છેલ્લા 30 દિવસ",
     "allTime": "બધી સમયગાળા",
     "scanLocations": "સ્કાન સ્થળો & QR કોડ સ્કાન",
@@ -513,6 +514,15 @@
         "rejected": "નકાર્યું",
         "unfollow": "નકાર્યું, અનફોલો કરવાની રાહ"
       },
+      "statusAt": {
+        "pending": "મળ્યું {{time}}",
+        "approved": "મંજૂર {{time}}",
+        "followed": "ફોલો કર્યું {{time}}",
+        "rejected": "નકાર્યું {{time}}",
+        "unfollow": "નકાર્યું {{time}}"
+      },
+      "timeRangeLabel": "સમય ગાળો",
+      "anyTime": "કોઈપણ સમયે",
       "submitFailed": "નિર્ણયો સાચવી શકાયા નથી. ફરી પ્રયાસ કરો.",
       "emptyTitle": "સમીક્ષા માટે કંઈ નથી",
       "emptyDescription": "શોધ એકાઉન્ટ શોધે તેમ તે અહીં દેખાય છે."

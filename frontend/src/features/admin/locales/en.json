@@ -91,6 +91,7 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "yesterday": "Yesterday",
+    "last3Days": "Last 3 Days",
     "last30Days": "Last 30 Days",
     "allTime": "All Time",
     "scanLocations": "Scan Locations & QR Code Scans",
@@ -513,6 +514,15 @@
         "rejected": "Rejected",
         "unfollow": "Rejected, waiting to unfollow"
       },
+      "statusAt": {
+        "pending": "Found {{time}}",
+        "approved": "Approved {{time}}",
+        "followed": "Followed {{time}}",
+        "rejected": "Rejected {{time}}",
+        "unfollow": "Rejected {{time}}"
+      },
+      "timeRangeLabel": "Time range",
+      "anyTime": "Any time",
       "submitFailed": "Decisions could not be saved. Try again.",
       "emptyTitle": "Nothing to review",
       "emptyDescription": "Accounts appear here as the crawl finds them."
