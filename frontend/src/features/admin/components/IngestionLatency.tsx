@@ -7,6 +7,7 @@ import {
   useIngestionLatency,
   type IngestionLatencyWindow,
 } from "@/features/admin/hooks/useIngestionLatency";
+import { DAY_WINDOW_LABEL_KEYS } from "@/features/admin/lib/dayWindows";
 import { FormGrid, Section, Stack } from "@/shared/layout";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/shared/ui/chart";
@@ -17,12 +18,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type IngestionLatencyReport = components["schemas"]["IngestionLatencyResponse"];
 type LatencyStats = components["schemas"]["LatencyStats"];
-
-const WINDOW_LABEL_KEYS: Record<IngestionLatencyWindow, string> = {
-  1: "admin.diagnostics.latency.last24Hours",
-  7: "qrCode.last7Days",
-  30: "admin.last30Days",
-};
 
 /** Minutes under an hour read as "42 min"; longer delays as "3.1 hr". */
 function formatMinutes(minutes: number | null, language: string) {
@@ -53,7 +48,7 @@ export function IngestionLatency() {
             </SelectTrigger>
             <SelectContent>
               {INGESTION_LATENCY_WINDOWS.map(window => (
-                <SelectItem key={window} value={String(window)}>{t(WINDOW_LABEL_KEYS[window])}</SelectItem>
+                <SelectItem key={window} value={String(window)}>{t(DAY_WINDOW_LABEL_KEYS[window])}</SelectItem>
               ))}
             </SelectContent>
           </Select>

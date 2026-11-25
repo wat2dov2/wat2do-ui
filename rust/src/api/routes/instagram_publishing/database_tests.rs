@@ -358,6 +358,7 @@ async fn approving_a_candidate_lists_its_club_and_rejecting_creates_nothing() {
         &db,
         Some("uwaterloo"),
         "pending",
+        None,
         Pagination {
             page: 1,
             page_size: 100,
@@ -372,6 +373,7 @@ async fn approving_a_candidate_lists_its_club_and_rejecting_creates_nothing() {
             &db,
             Some("no-such-school"),
             "pending",
+            None,
             Pagination {
                 page: 1,
                 page_size: 1
@@ -489,4 +491,61 @@ async fn approving_a_directory_row_gives_its_club_the_account() {
         .await
         .unwrap();
     assert_eq!(made, 1);
+}
+
+#[tokio::test]
+async fn followed_candidates_list_newest_first_and_filter_by_days() {
+    let Some(db) = database() else { return };
+    let school = uwaterloo(&db).await;
+    let suffix = &Uuid::new_v4().simple().to_string()[..12];
+    // Followed an hour ago, two days ago and ten days ago.
+    let mut handles = Vec::new();
+    for (index, hours_ago) in [1, 48, 240].into_iter().enumerate() {
+        let handle = format!("followed{index}{suffix}");
+        sqlx::query(
+            "INSERT INTO public.instagram_follow_candidates \
+             (school_id, handle, source, status, followed_at) \
+             VALUES ($1, $2, 'crawl', 'followed', now() - make_interval(hours => $3))",
+        )
+        .bind(school)
+        .bind(&handle)
+        .bind(hours_ago)
+        .execute(&db)
+        .await
+        .unwrap();
+        handles.push(handle);
+    }
+    let ours = |listed: Vec<follow_candidates::Candidate>| -> Vec<String> {
+        listed
+            .into_iter()
+            .map(|candidate| candidate.handle)
+            .filter(|handle| handle.ends_with(suffix))
+            .collect()
+    };
+    let page = Pagination {
+        page: 1,
+        page_size: 100,
+    };
+    let (every, _) = follow_candidates::list(&db, Some("uwaterloo"), "followed", None, page)
+        .await
+        .unwrap();
+    assert_eq!(ours(every), handles);
+    let (recent, total) =
+        follow_candidates::list(&db, Some("uwaterloo"), "followed", Some(3), page)
+            .await
+            .unwrap();
+    assert!(total >= 2);
+    let recent_handles: Vec<String> = recent.iter().map(|c| c.handle.clone()).collect();
+    assert!(recent_handles.contains(&handles[0]) && recent_handles.contains(&handles[1]));
+    assert!(!recent_handles.contains(&handles[2]));
+    assert!(
+        recent
+            .windows(2)
+            .all(|pair| pair[0].status_changed_at >= pair[1].status_changed_at)
+    );
+    sqlx::query("DELETE FROM public.instagram_follow_candidates WHERE handle LIKE '%' || $1")
+        .bind(suffix)
+        .execute(&db)
+        .await
+        .unwrap();
 }

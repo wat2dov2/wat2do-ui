@@ -91,6 +91,7 @@
     "approved": "موافق عليه",
     "rejected": "مرفوض",
     "yesterday": "أمس",
+    "last3Days": "آخر 3 أيام",
     "last30Days": "آخر 30 أيام",
     "allTime": "كل الوقت",
     "scanLocations": "مواقع المسح وعمليات مسح رموز QR",
@@ -513,6 +514,15 @@
         "rejected": "مرفوض",
         "unfollow": "مرفوض، بانتظار إلغاء المتابعة"
       },
+      "statusAt": {
+        "pending": "عُثر عليه {{time}}",
+        "approved": "تمت الموافقة {{time}}",
+        "followed": "تمت المتابعة {{time}}",
+        "rejected": "رُفض {{time}}",
+        "unfollow": "رُفض {{time}}"
+      },
+      "timeRangeLabel": "النطاق الزمني",
+      "anyTime": "أي وقت",
       "submitFailed": "تعذّر حفظ القرارات. حاول مرة أخرى.",
       "emptyTitle": "لا شيء للمراجعة",
       "emptyDescription": "تظهر الحسابات هنا عندما يعثر عليها البحث."

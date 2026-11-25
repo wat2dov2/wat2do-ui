@@ -91,6 +91,7 @@
     "approved": "ਨੂੰ ਮਨਜ਼ੂਰੀ ਦਿੱਤੀ",
     "rejected": "ਰੱਦ ਕਰ ਦਿੱਤਾ",
     "yesterday": "ਕੱਲ੍ਹ",
+    "last3Days": "ਪਿਛਲੇ 3 ਦਿਨ",
     "last30Days": "ਪਿਛਲੇ 30 ਦਿਨ",
     "allTime": "ਹਰ ਸਮੇਂ",
     "scanLocations": "ਸਕੈਨ ਸਥਾਨ ਅਤੇ QR ਕੋਡ ਸਕੈਨ",
@@ -513,6 +514,15 @@
         "rejected": "ਰੱਦ ਕੀਤਾ",
         "unfollow": "ਰੱਦ ਕੀਤਾ, ਅਨਫਾਲੋ ਦੀ ਉਡੀਕ"
       },
+      "statusAt": {
+        "pending": "ਮਿਲਿਆ {{time}}",
+        "approved": "ਮਨਜ਼ੂਰ {{time}}",
+        "followed": "ਫਾਲੋ ਕੀਤਾ {{time}}",
+        "rejected": "ਰੱਦ ਕੀਤਾ {{time}}",
+        "unfollow": "ਰੱਦ ਕੀਤਾ {{time}}"
+      },
+      "timeRangeLabel": "ਸਮਾਂ ਸੀਮਾ",
+      "anyTime": "ਕਿਸੇ ਵੀ ਸਮੇਂ",
       "submitFailed": "ਫ਼ੈਸਲੇ ਸੰਭਾਲੇ ਨਹੀਂ ਜਾ ਸਕੇ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
       "emptyTitle": "ਸਮੀਖਿਆ ਲਈ ਕੁਝ ਨਹੀਂ",
       "emptyDescription": "ਖੋਜ ਜਿਵੇਂ ਖਾਤੇ ਲੱਭਦੀ ਹੈ, ਉਹ ਇੱਥੇ ਦਿਸਦੇ ਹਨ।"

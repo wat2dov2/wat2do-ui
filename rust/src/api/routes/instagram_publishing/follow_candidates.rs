@@ -46,6 +46,9 @@ pub struct Candidate {
     pub verdict: Option<String>,
     pub reason: Option<String>,
     pub follow_error: Option<String>,
+    /// When the row reached its status: followed, found (pending), or decided.
+    #[serde(serialize_with = "json::datetime")]
+    pub status_changed_at: DateTime<Utc>,
     #[serde(skip)]
     pub school_id: i32,
     /// The school's club the row was found for, when it had no account yet.
@@ -53,15 +56,25 @@ pub struct Candidate {
     pub club_id: Option<i32>,
 }
 
+/// When a row reached its status: followed, found (pending), or decided by the
+/// scorer or an admin (approved, rejected, unfollow).
+const STATUS_CHANGED_AT: &str = "CASE c.status \
+     WHEN 'followed' THEN coalesce(c.followed_at, c.updated_at) \
+     WHEN 'pending' THEN c.created_at \
+     ELSE coalesce(c.decided_at, c.scored_at, c.created_at) END";
+
 const COLUMNS: &str = "c.id, s.slug AS school, c.handle, c.name, c.source, c.found_via, c.status, \
      c.read_status, c.followers_count, c.is_private, c.last_posted_at, c.score, c.verdict, \
      c.reason, c.follow_error, c.school_id, c.club_id";
 
-/// `list_candidates`: best scores first.
+/// `list_candidates`: pending rows best scores first (the review queue), every
+/// other status newest first, optionally only those that reached it in the last
+/// `days` days.
 pub async fn list(
     db: &PgPool,
     school: Option<&str>,
     status: &str,
+    days: Option<i64>,
     pagination: Pagination,
 ) -> Result<(Vec<Candidate>, i64), ApiError> {
     let school_id = match school.filter(|school| !school.is_empty()) {
@@ -72,24 +85,35 @@ pub async fn list(
         ),
         None => None,
     };
-    const FILTER: &str = "c.status = $1 AND ($2::int8 IS NULL OR c.school_id = $2)";
-    let count = format!("SELECT count(*) FROM public.instagram_follow_candidates c WHERE {FILTER}");
+    let filter = format!(
+        "c.status = $1 AND ($2::int8 IS NULL OR c.school_id = $2) \
+         AND ($3::int8 IS NULL OR {STATUS_CHANGED_AT} >= now() - make_interval(days => $3::int4))"
+    );
+    let count = format!("SELECT count(*) FROM public.instagram_follow_candidates c WHERE {filter}");
     let total: i64 = read_with_retry(|| {
         sqlx::query_scalar(&count)
             .bind(status)
             .bind(school_id)
+            .bind(days)
             .fetch_one(db)
     })
     .await?;
+    let order = if status == "pending" {
+        "c.score DESC NULLS LAST, c.handle"
+    } else {
+        "status_changed_at DESC, c.handle"
+    };
     let sql = format!(
-        "SELECT {COLUMNS} FROM public.instagram_follow_candidates c \
-         JOIN public.schools s ON s.id = c.school_id WHERE {FILTER} \
-         ORDER BY c.score DESC NULLS LAST, c.handle LIMIT $3 OFFSET $4"
+        "SELECT {COLUMNS}, {STATUS_CHANGED_AT} AS status_changed_at \
+         FROM public.instagram_follow_candidates c \
+         JOIN public.schools s ON s.id = c.school_id WHERE {filter} \
+         ORDER BY {order} LIMIT $4 OFFSET $5"
     );
     let rows: Vec<Candidate> = read_with_retry(|| {
         sqlx::query_as(&sql)
             .bind(status)
             .bind(school_id)
+            .bind(days)
             .bind(pagination.page_size)
             .bind(pagination.offset())
             .fetch_all(db)
@@ -246,12 +270,13 @@ mod tests {
             verdict: Some("approve".into()),
             reason: Some("Weekly mahjong nights".into()),
             follow_error: None,
+            status_changed_at: DateTime::from_timestamp(1_795_478_400, 0).unwrap(),
             school_id: 7,
             club_id: Some(3),
         };
         assert_eq!(
             serde_json::to_string(&candidate).unwrap(),
-            r#"{"id":"00000000-0000-0000-0000-000000000001","school":"utsg","handle":"utmaclub","name":"UTMAC","source":"crawl","found_via":["rocsaut"],"status":"pending","read_status":"ok","followers_count":436,"is_private":null,"last_posted_at":null,"score":82,"verdict":"approve","reason":"Weekly mahjong nights","follow_error":null}"#
+            r#"{"id":"00000000-0000-0000-0000-000000000001","school":"utsg","handle":"utmaclub","name":"UTMAC","source":"crawl","found_via":["rocsaut"],"status":"pending","read_status":"ok","followers_count":436,"is_private":null,"last_posted_at":null,"score":82,"verdict":"approve","reason":"Weekly mahjong nights","follow_error":null,"status_changed_at":"2026-11-24T00:00:00Z"}"#
         );
     }
 }

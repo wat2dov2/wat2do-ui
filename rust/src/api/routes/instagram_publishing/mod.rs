@@ -327,9 +327,12 @@ pub async fn list_follow_candidates(
     let school = check
         .query(&query, "school")
         .optional_string(Length::default());
+    let days = check
+        .query(&query, "days")
+        .optional_int(Limits::default().ge(1).le(365));
     check.finish()?;
     let (items, total) =
-        follow_candidates::list(&state.db, school.as_deref(), &status, pagination).await?;
+        follow_candidates::list(&state.db, school.as_deref(), &status, days, pagination).await?;
     Ok(Json(Paginated::new(items, total, pagination)).into_response())
 }
 

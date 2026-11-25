@@ -249,21 +249,25 @@ export interface FollowCandidateFilters {
   /** Every school when empty. */
   school: string;
   status: ApiFollowCandidateStatus;
+  /** Only accounts that reached the status in the last N days; any time when null. */
+  days: number | null;
   page: number;
   pageSize: number;
 }
 
 export type ApiFollowCandidateStatus = ApiPaginatedFollowCandidateResponse["items"][number]["status"];
 
-/** Accounts a school account might follow, best scored first. */
+/** Accounts a school account might follow: pending ones best scored first, the rest newest first. */
 export async function getFollowCandidates({
   school,
   status,
+  days,
   page,
   pageSize,
 }: FollowCandidateFilters): Promise<ApiPaginatedFollowCandidateResponse> {
   const params = new URLSearchParams({ status, page: String(page), page_size: String(pageSize) });
   if (school) params.set("school", school);
+  if (days) params.set("days", String(days));
   return api.get<ApiPaginatedFollowCandidateResponse>(
     `/instagram-publishing/follow-candidates/?${params.toString()}`,
   );

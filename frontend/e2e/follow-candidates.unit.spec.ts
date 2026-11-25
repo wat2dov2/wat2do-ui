@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   decisionFor,
   decisionsToSubmit,
+  groupByDay,
   toggleDecision,
   type StagedDecisions,
 } from "../src/features/admin/lib/followCandidates";
@@ -15,6 +16,7 @@ function candidate(id: string, overrides: Partial<ApiFollowCandidateResponse> = 
     source: "crawl",
     found_via: [],
     status: "pending",
+    status_changed_at: "2026-11-24T20:00:00Z",
     recent_posts: [],
     ...overrides,
   };
@@ -52,3 +54,17 @@ test("a cleared suggestion and settled accounts are never sent", () => {
 
   expect(decisionsToSubmit([strong, followed], toggleDecision(NONE, strong, "approved"))).toEqual([]);
 });
+
+test("followed accounts group under the day they were followed, in the admin's time zone, newest first", () => {
+  const late = candidate("late", { status: "followed", status_changed_at: "2026-11-25T02:30:00Z" });
+  const evening = candidate("evening", { status: "followed", status_changed_at: "2026-11-24T23:00:00Z" });
+  const earlier = candidate("earlier", { status: "followed", status_changed_at: "2026-11-22T15:00:00Z" });
+  const days = groupByDay([late, evening, earlier], "America/Toronto");
+  // 02:30 UTC on the 25th is still the evening of the 24th in Toronto.
+  expect(days.map(({ day, candidates }) => [day, candidates.map(({ id }) => id)])).toEqual([
+    ["2026-11-24", ["late", "evening"]],
+    ["2026-11-22", ["earlier"]],
+  ]);
+  expect(groupByDay([late], "UTC")[0].day).toBe("2026-11-25");
+});
+

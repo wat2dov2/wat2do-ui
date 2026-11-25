@@ -428,3 +428,8 @@ export function formatDayOfMonth(day: number, language: string): string {
   const suffix = { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
   return `${day}${suffix}`;
 }
+
+/** A calendar day ("2026-11-24") as "Tuesday, November 24, 2026", read at noon so no time zone moves it. */
+export function formatCalendarDay(day: string, language: string): string {
+  return new Date(`${day}T12:00:00`).toLocaleDateString(language, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}

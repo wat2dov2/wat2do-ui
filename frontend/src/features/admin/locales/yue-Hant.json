@@ -91,6 +91,7 @@
     "approved": "已批准",
     "rejected": "已拒絕",
     "yesterday": "昨天",
+    "last3Days": "過去3天",
     "last30Days": "過去30天",
     "allTime": "全部時間",
     "scanLocations": "掃描地點及 QR 代碼掃描",
@@ -513,6 +514,15 @@
         "rejected": "已拒絕",
         "unfollow": "已拒絕，等緊取消追蹤"
       },
+      "statusAt": {
+        "pending": "搵到 {{time}}",
+        "approved": "已批准 {{time}}",
+        "followed": "已追蹤 {{time}}",
+        "rejected": "已拒絕 {{time}}",
+        "unfollow": "已拒絕 {{time}}"
+      },
+      "timeRangeLabel": "時間範圍",
+      "anyTime": "任何時間",
       "submitFailed": "儲存唔到決定，請再試。",
       "emptyTitle": "冇嘢要審核",
       "emptyDescription": "搜尋搵到帳號之後會喺度顯示。"
