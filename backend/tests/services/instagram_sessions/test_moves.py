@@ -48,6 +48,7 @@ def test_a_safe_reply_is_plain_one_line_ascii():
 
 class _Reader:
     drafts: list[str] = []
+    sent: list[str] = []
     thread: list[dict] = []
 
     def __init__(self, device, opener):
@@ -56,6 +57,10 @@ class _Reader:
     def draft(self, text):
         _Reader.drafts.append(text)
 
+    def send_claim(self, text):
+        _Reader.sent.append(text)
+        return "typed and sent the claim message"
+
     def read(self):
         return _Reader.thread
 
@@ -63,6 +68,7 @@ class _Reader:
 @pytest.fixture
 def reader(monkeypatch):
     _Reader.drafts = []
+    _Reader.sent = []
     _Reader.thread = []
     monkeypatch.setattr(moves, "ThreadReader", _Reader)
     return _Reader
@@ -76,9 +82,60 @@ def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
     monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
     result = moves.draft(object(), _args(text="happy to share it!", claim="tmuprevet"))
     (typed,) = reader.drafts
-    assert typed.startswith("happy to share it! Hey! One small ask")
+    assert typed.startswith("happy to share it! Hey! We're happy to keep featuring your events.")
     assert f"https://tmu.wat2do.io/claim/{TOKEN}" in typed
     assert TOKEN not in json.dumps(result)
+
+
+def test_a_claim_sends_the_clubs_own_link_but_never_prints_it(monkeypatch, reader):
+    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+    result = moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    (sent,) = reader.sent
+    assert "keep featuring your events" in sent and "claim your club" in sent
+    assert f"https://tmu.wat2do.io/claim/{TOKEN}" in sent
+    assert result["status"] == "typed and sent the claim message"
+    assert TOKEN not in json.dumps(result)
+
+
+def _log_claims(count, minutes_ago):
+    moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    ended = moves.datetime.now(moves.timezone.utc) - moves.timedelta(minutes=minutes_ago)
+    with (moves.LOG_DIR / f"{moves._today()}.jsonl").open("a") as log:
+        for _ in range(count):
+            log.write(
+                json.dumps(
+                    {"school": "tmu", "move": "claim", "ok": True, "ended": ended.isoformat()}
+                )
+                + "\n"
+            )
+        # Another school's sends and failed tries never count.
+        log.write(
+            json.dumps({"school": "uwo", "move": "claim", "ok": True, "ended": ended.isoformat()})
+            + "\n"
+        )
+        log.write(
+            json.dumps({"school": "tmu", "move": "claim", "ok": False, "ended": ended.isoformat()})
+            + "\n"
+        )
+
+
+def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader):
+    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+    _log_claims(moves.DMS.claim_sends_per_account_per_day, minutes_ago=60)
+    with pytest.raises(moves.MoveError, match="for today"):
+        moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    assert reader.sent == []
+
+
+def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader):
+    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+    slept = []
+    monkeypatch.setattr(moves.time, "sleep", slept.append)
+    _log_claims(1, minutes_ago=0)
+    moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    (wait,) = slept
+    assert moves.DMS.claim_send_gap_min_seconds - 5 <= wait <= moves.DMS.claim_send_gap_max_seconds
+    assert len(reader.sent) == 1
 
 
 def test_a_sitting_never_sees_a_claim_link_it_reads(monkeypatch, reader):

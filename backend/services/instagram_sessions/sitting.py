@@ -54,10 +54,10 @@ REPORT_SCHEMA: dict[str, Any] = {
         "finished": {"type": "boolean"},
         "stories": {"type": "string"},
         "drafts": {"type": "integer"},
-        "claim_drafts": {"type": "integer"},
+        "claims_sent": {"type": "integer"},
         "problems": {"type": "string"},
     },
-    "required": ["posted", "finished", "stories", "drafts", "claim_drafts", "problems"],
+    "required": ["posted", "finished", "stories", "drafts", "claims_sent", "problems"],
     "additionalProperties": False,
 }
 
