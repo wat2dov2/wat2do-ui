@@ -58,14 +58,24 @@ pub struct Candidate {
 
 /// When a row reached its status: followed, found (pending), or decided by the
 /// scorer or an admin (approved, rejected, unfollow).
-const STATUS_CHANGED_AT: &str = "CASE c.status \
-     WHEN 'followed' THEN coalesce(c.followed_at, c.updated_at) \
-     WHEN 'pending' THEN c.created_at \
-     ELSE coalesce(c.decided_at, c.scored_at, c.created_at) END";
+macro_rules! status_changed_at {
+    () => {
+        "CASE c.status \
+         WHEN 'followed' THEN coalesce(c.followed_at, c.updated_at) \
+         WHEN 'pending' THEN c.created_at \
+         ELSE coalesce(c.decided_at, c.scored_at, c.created_at) END"
+    };
+}
+const STATUS_CHANGED_AT: &str = status_changed_at!();
 
-const COLUMNS: &str = "c.id, s.slug AS school, c.handle, c.name, c.source, c.found_via, c.status, \
+/// Every column of `Candidate`, so each query that reads one selects them all.
+const COLUMNS: &str = concat!(
+    "c.id, s.slug AS school, c.handle, c.name, c.source, c.found_via, c.status, \
      c.read_status, c.followers_count, c.is_private, c.last_posted_at, c.score, c.verdict, \
-     c.reason, c.follow_error, c.school_id, c.club_id";
+     c.reason, c.follow_error, c.school_id, c.club_id, ",
+    status_changed_at!(),
+    " AS status_changed_at"
+);
 
 /// `list_candidates`: pending rows best scores first (the review queue), every
 /// other status newest first, optionally only those that reached it in the last
@@ -104,8 +114,7 @@ pub async fn list(
         "status_changed_at DESC, c.handle"
     };
     let sql = format!(
-        "SELECT {COLUMNS}, {STATUS_CHANGED_AT} AS status_changed_at \
-         FROM public.instagram_follow_candidates c \
+        "SELECT {COLUMNS} FROM public.instagram_follow_candidates c \
          JOIN public.schools s ON s.id = c.school_id WHERE {filter} \
          ORDER BY {order} LIMIT $4 OFFSET $5"
     );
