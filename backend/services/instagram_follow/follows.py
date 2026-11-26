@@ -13,7 +13,10 @@ a follow that fails otherwise stays approved for later, and ``failures_before_re
 failing in a row end the visit so the worker rests the account's follows.
 
 Accounts waiting in ``unfollow`` (rejected, but still followed) are unfollowed the
-same way, from the same daily allowance, before any new follow.
+same way, from the same daily allowance, before any new follow. An unfollow is done
+once Instagram confirms it, or once two looks ``follow_retry_hours`` apart both find no
+follow to undo (the profile shows Follow, or is gone or hidden); a single look is not
+enough, since a renamed account shows nothing under its old handle.
 """
 
 from __future__ import annotations
@@ -54,6 +57,8 @@ PROFILES_PER_FOLLOW = 4
 # Instagram sometimes limits an account without saying so: Follow taps just stop
 # sticking. This many in a row pause the account's follows like "Try again later".
 SILENT_BLOCK_AFTER = 3
+# The first look at an account to unfollow found no follow to undo.
+NOTHING_TO_UNFOLLOW = "Instagram showed no follow to undo"
 
 
 @dataclass(frozen=True)
@@ -113,12 +118,17 @@ def unfollow_due(
                 return _failing(school, unfollowed, confirmed)
             continue
         failed = 0
-        # A profile that is gone or hidden needs no unfollow.
-        candidates.mark_unfollowed(row["id"], tapped=bool(tapped))
         if tapped:
+            candidates.mark_unfollowed(row["id"], tapped=True)
             unfollowed += 1
-        else:
+        elif row["follow_error"] == NOTHING_TO_UNFOLLOW:
+            # A second look, at least follow_retry_hours later, still finds no follow.
+            candidates.mark_unfollowed(row["id"], tapped=False)
             confirmed += 1
+        else:
+            # The profile showed Follow, or is gone or hidden (a renamed account shows
+            # nothing under its old handle): looked at again later before it counts.
+            candidates.mark_follow_failed(row["id"], NOTHING_TO_UNFOLLOW)
     return FollowVisit(unfollowed, confirmed, False)
 
 

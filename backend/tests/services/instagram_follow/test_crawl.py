@@ -87,6 +87,7 @@ class _Brave:
 def world(monkeypatch, tmp_path):
     added = []
     progress = []
+    recorded = []
     monkeypatch.setattr(module, "STATE_DIRECTORY", tmp_path)
     monkeypatch.setattr(module, "_rested_until", {})
     monkeypatch.setattr(module, "_known", {})
@@ -105,6 +106,11 @@ def world(monkeypatch, tmp_path):
         "add_candidate",
         lambda school_id, handle, **kwargs: added.append((handle, kwargs)),
     )
+    monkeypatch.setattr(
+        module.candidates,
+        "record_following",
+        lambda school, followed, public: recorded.append((school, followed, public)),
+    )
     monkeypatch.setattr(module, "_start_crawl", lambda school_id: f"crawl-{len(progress)}")
     monkeypatch.setattr(module, "_record_progress", lambda state, **extra: progress.append(extra))
     monkeypatch.setattr(module, "last_crawl_finished", lambda school: None)
@@ -117,6 +123,7 @@ def world(monkeypatch, tmp_path):
         monkeypatch.setattr(module, "_browser", brave)
         control = {"crawl_miss_streak": 5, **controls}
         monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update=control))
+        brave.recorded = recorded
         return brave, added, progress
 
     return use
@@ -183,6 +190,14 @@ def test_whole_lists_find_named_accounts_and_accounts_three_clubs_follow(world):
     ]
     # The school's own list is read by its Instagram ID; only its public clubs are seeds.
     assert brave.reads[0] == ("wat2do.utm", "12345", None)
+    # Everyone on it is recorded once, with its public accounts, before any club is read.
+    assert brave.recorded == [
+        (
+            "utm",
+            ["utmmsa", "utmchess", "debate", "private.club", "wat2do.utsg"],
+            ["utmmsa", "utmchess", "debate"],
+        )
+    ]
     assert _read_seeds(brave) == ["wat2do.utm", "utmmsa", "utmchess", "debate"]
     assert progress[-1]["status"] == "finished"
     assert not module.crawl_running("utm")

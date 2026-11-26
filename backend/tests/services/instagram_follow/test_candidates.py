@@ -160,7 +160,7 @@ def test_an_unanswered_score_leaves_the_account_to_score_again(sb):
     assert "scored_at" not in update
 
 
-def test_listed_clubs_are_queued_approved_for_their_school_once(sb, monkeypatch):
+def test_listed_clubs_are_queued_for_scoring_for_their_school_once(sb, monkeypatch):
     monkeypatch.setattr(
         module.school_service, "get_school_id", lambda slug: {"utsg": 7, "utm": 8}.get(slug)
     )
@@ -185,7 +185,7 @@ def test_listed_clubs_are_queued_approved_for_their_school_once(sb, monkeypatch)
             "handle": "utmaclub",
             "name": "UTMAC",
             "source": "club",
-            "status": "approved",
+            "status": "pending",
             "club_id": 1,
         }
     ]
@@ -226,7 +226,10 @@ def test_a_follow_that_failed_after_its_tap_is_dated(sb):
     assert "followed_at" not in sb.update.call_args.args[0]
 
 
-def test_a_recently_failed_follow_is_not_offered_again_yet(monkeypatch):
+@pytest.mark.parametrize(
+    ("waiting", "status"), [("approved", "approved"), ("to_unfollow", "unfollow")]
+)
+def test_a_recently_failed_try_is_not_offered_again_yet(monkeypatch, waiting, status):
     from types import SimpleNamespace
 
     calls = []
@@ -243,9 +246,35 @@ def test_a_recently_failed_follow_is_not_offered_again_yet(monkeypatch):
             return SimpleNamespace(data=[])
 
     monkeypatch.setattr(module, "get_sb", lambda: SimpleNamespace(table=lambda _name: _Query()))
-    module.approved(7, 5)
+    getattr(module, waiting)(7, 5)
     (filter_,) = [args[0] for name, args in calls if name == "or_"]
     assert filter_.startswith("follow_error.is.null,updated_at.lt.")
+    assert ("eq", ("status", status)) in calls
+    assert ("select", ("id,handle,follow_error",)) in calls
+
+
+def test_the_schools_own_following_list_gives_every_account_it_follows_a_row(sb, monkeypatch):
+    monkeypatch.setattr(module.school_service, "get_school_id", lambda slug: 7)
+    monkeypatch.setattr(module, "known_handles", lambda school_id: {"utmaclub", "uoysbs"})
+    added = []
+    monkeypatch.setattr(
+        module, "add_candidate", lambda school_id, handle, **kwargs: added.append((handle, kwargs))
+    )
+
+    module.record_following(
+        "tmu",
+        ["utmaclub", "UoYSBS", "newclub", "dipanddrink.offical", "a_member"],
+        ["utmaclub", "newclub", "dipanddrink.offical"],
+    )
+
+    # Only a public account with no row is new; the school's partner is left alone.
+    assert added == [("newclub", {"source": "crawl", "found_via": ["wat2do.tmu"]})]
+    seen, unfollow = [call.args[0] for call in sb.update.call_args_list]
+    assert set(seen) == {"seen_following_at"}
+    assert unfollow["status"] == "unfollow"
+    sb.in_.assert_any_call("handle", ["a_member", "newclub", "uoysbs", "utmaclub"])
+    # Only a rejected row goes back to be unfollowed.
+    sb.eq.assert_any_call("status", "rejected")
 
 
 def test_scoring_takes_an_equal_share_of_each_schools_oldest_accounts(sb, monkeypatch):

@@ -558,3 +558,131 @@ async fn followed_candidates_list_newest_first_and_filter_by_days() {
         .await
         .unwrap();
 }
+
+/// Insert a follow candidate for `school` in `status` with the given follow times
+/// (hours ago); returns its id.
+async fn follow_row(
+    db: &PgPool,
+    school: i32,
+    handle: &str,
+    status: &str,
+    followed_hours_ago: Option<i64>,
+    seen_hours_ago: Option<i64>,
+    unfollowed_hours_ago: Option<i64>,
+) -> Uuid {
+    sqlx::query_scalar(
+        "INSERT INTO public.instagram_follow_candidates \
+         (school_id, handle, source, status, followed_at, seen_following_at, unfollowed_at) \
+         VALUES ($1, $2, 'crawl', $3, now() - make_interval(hours => $4), \
+                 now() - make_interval(hours => $5), now() - make_interval(hours => $6)) \
+         RETURNING id",
+    )
+    .bind(school)
+    .bind(handle)
+    .bind(status)
+    .bind(followed_hours_ago.map(|hours| hours as i32))
+    .bind(seen_hours_ago.map(|hours| hours as i32))
+    .bind(unfollowed_hours_ago.map(|hours| hours as i32))
+    .fetch_one(db)
+    .await
+    .unwrap()
+}
+
+async fn follow_status(db: &PgPool, id: Uuid) -> String {
+    sqlx::query_scalar("SELECT status FROM public.instagram_follow_candidates WHERE id = $1")
+        .bind(id)
+        .fetch_one(db)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn rejecting_an_account_the_school_may_still_follow_queues_its_unfollow() {
+    let Some(db) = database() else { return };
+    let school = uwaterloo(&db).await;
+    let suffix = &Uuid::new_v4().simple().to_string()[..12];
+    // (status, followed, seen on the school's list, unfollowed) hours ago, and the
+    // status a rejection leaves.
+    let cases = [
+        ("followed", None, None, None, "unfollow"),
+        // A tapped follow whose bell step failed stays approved.
+        ("approved", Some(5), None, None, "unfollow"),
+        // The school's own Following list showed an account the crawl found.
+        ("pending", None, Some(1), None, "unfollow"),
+        // Unfollowed since it was last seen or followed.
+        ("pending", Some(9), Some(8), Some(2), "rejected"),
+        ("pending", None, None, None, "rejected"),
+        // The emulator finishing an unfollow.
+        ("unfollow", Some(9), None, None, "rejected"),
+    ];
+    let mut rows = Vec::new();
+    for (index, (status, followed, seen, unfollowed, expected)) in cases.iter().enumerate() {
+        let handle = format!("reject{index}{suffix}");
+        let id = follow_row(&db, school, &handle, status, *followed, *seen, *unfollowed).await;
+        rows.push((id, *expected));
+    }
+    for (id, _) in &rows {
+        sqlx::query(
+            "UPDATE public.instagram_follow_candidates SET status = 'rejected' WHERE id = $1",
+        )
+        .bind(id)
+        .execute(&db)
+        .await
+        .unwrap();
+    }
+    for (index, (id, expected)) in rows.iter().enumerate() {
+        assert_eq!(follow_status(&db, *id).await, *expected, "case {index}");
+    }
+    sqlx::query("DELETE FROM public.instagram_follow_candidates WHERE handle LIKE '%' || $1")
+        .bind(suffix)
+        .execute(&db)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn deleting_a_club_rejects_its_account_so_a_followed_one_is_unfollowed() {
+    let Some(db) = database() else { return };
+    let school = uwaterloo(&db).await;
+    let suffix = &Uuid::new_v4().simple().to_string()[..12];
+    let mut rows = Vec::new();
+    for (status, expected) in [
+        ("followed", "unfollow"),
+        ("approved", "rejected"),
+        ("pending", "rejected"),
+    ] {
+        let handle = format!("club{status}{suffix}");
+        let club: i32 = sqlx::query_scalar(
+            "INSERT INTO public.clubs (club_name, ig, club_type, school_id, submitted, status) \
+             VALUES ('Deleted Club', $1, 'independent', $2, true, 'approved') RETURNING id",
+        )
+        .bind(format!("@{handle}"))
+        .bind(school)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        let id = follow_row(&db, school, &handle, status, None, None, None).await;
+        sqlx::query("DELETE FROM public.clubs WHERE id = $1")
+            .bind(club)
+            .execute(&db)
+            .await
+            .unwrap();
+        rows.push((id, expected));
+    }
+    for (id, expected) in rows {
+        assert_eq!(follow_status(&db, id).await, expected);
+        let reason: Option<String> = sqlx::query_scalar(
+            "SELECT reason FROM public.instagram_follow_candidates WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        assert_eq!(reason.as_deref(), Some("Its club was deleted"));
+    }
+    sqlx::query("DELETE FROM public.instagram_follow_candidates WHERE handle LIKE '%' || $1")
+        .bind(suffix)
+        .execute(&db)
+        .await
+        .unwrap();
+}

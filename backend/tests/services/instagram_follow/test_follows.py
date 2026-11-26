@@ -36,6 +36,8 @@ class _Reader:
 @pytest.fixture
 def world(monkeypatch, tmp_path):
     marks = []
+    # The error each account to unfollow carries from its last try.
+    looked = {}
     monkeypatch.setattr(module, "BLOCKS_PATH", tmp_path / "blocked.json")
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
     monkeypatch.setattr(module, "_left", lambda school_id: (2, 40))
@@ -54,7 +56,10 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module.candidates,
         "to_unfollow",
-        lambda school_id, limit: [{"id": str(n), "handle": f"club{n}"} for n in range(limit)],
+        lambda school_id, limit: [
+            {"id": str(n), "handle": f"club{n}", "follow_error": looked.get(f"club{n}")}
+            for n in range(limit)
+        ],
     )
     monkeypatch.setattr(
         module.candidates,
@@ -67,7 +72,14 @@ def world(monkeypatch, tmp_path):
         module.candidates,
         "mark_follow_failed",
         lambda candidate_id, error, tapped=False: marks.append(
-            ("followed without bell" if tapped else "failed", candidate_id)
+            (
+                "followed without bell"
+                if tapped
+                else "looked"
+                if error == module.NOTHING_TO_UNFOLLOW
+                else "failed",
+                candidate_id,
+            )
         ),
     )
 
@@ -75,7 +87,8 @@ def world(monkeypatch, tmp_path):
         module.candidates, "reject_gone", lambda candidate_id: marks.append(("gone", candidate_id))
     )
 
-    def use(results=None):
+    def use(results=None, errors=None):
+        looked.update(errors or {})
         reader = _Reader(results or {})
         monkeypatch.setattr(module, "FollowingReader", lambda *args, **kwargs: reader)
         return reader, marks
@@ -131,6 +144,26 @@ def test_unfollows_failing_in_a_row_end_the_visit(world):
 
     assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(0, 0, False, failing=True)
     assert len(reader.unfollowed) == module.CONTROL.failures_before_rest
+
+
+def test_no_follow_to_undo_is_looked_at_again_before_it_counts(world):
+    # club0 shows Follow and club1 is gone at a first look; club2 and club3 showed
+    # nothing to undo at an earlier look too.
+    looked = module.NOTHING_TO_UNFOLLOW
+    reader, marks = world(
+        {"club0": False, "club1": None, "club2": False, "club3": None},
+        {"club2": looked, "club3": looked},
+    )
+
+    assert module.unfollow_due(object(), "utsg", 2) == FollowVisit(2, 2, False)
+    assert marks == [
+        ("looked", "0"),
+        ("looked", "1"),
+        ("gone", "2"),
+        ("gone", "3"),
+        ("unfollowed", "4"),
+        ("unfollowed", "5"),
+    ]
 
 
 def test_follows_that_stop_sticking_pause_the_account_like_a_block(world):
@@ -311,13 +344,6 @@ def test_a_visit_unfollows_within_the_allowance(world):
     assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
     assert reader.unfollowed == ["club0", "club1"]
     assert marks == [("unfollowed", "0"), ("unfollowed", "1")]
-
-
-def test_accounts_not_followed_or_gone_are_rejected_without_using_the_allowance(world):
-    reader, marks = world({"club0": False, "club1": None})
-
-    assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(2, 2, False)
-    assert marks == [("gone", "0"), ("gone", "1"), ("unfollowed", "2"), ("unfollowed", "3")]
 
 
 def test_a_failed_unfollow_waits_for_the_next_try(world):

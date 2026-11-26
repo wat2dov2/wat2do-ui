@@ -137,11 +137,14 @@ def test_each_score_decides_the_account(verdict, profile, handle, expected):
     assert module.decision({"handle": handle}, profile, score) == expected
 
 
-def test_an_unreadable_account_the_school_directory_lists_is_approved_on_review():
+def test_an_unreadable_account_the_school_directory_or_a_club_vouches_for_is_approved_on_review():
     listed = {"handle": "someband", "source": "directory", "found_via": ["Laurier Clubs"]}
+    ours = {"handle": "someband", "source": "club", "found_via": []}
     crawled = {"handle": "someband", "source": "crawl", "found_via": ["laurierchess"]}
     review = {"verdict": "review", "score": 45, "reason": "r"}
     assert module.decision(listed, {"read": "failed"}, review) == "approved"
+    assert module.decision(ours, {"read": "failed"}, review) == "approved"
+    assert module.decision(ours, _posted(3), review) == "rejected"
     assert module.decision(crawled, {"read": "failed"}, review) == "rejected"
     reject = {**review, "verdict": "reject"}
     assert module.decision(listed, {"read": "failed"}, reject) == "rejected"
