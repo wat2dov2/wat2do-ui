@@ -26,6 +26,8 @@ _INBOX_SEARCH = re.compile(r"^(?:Search or ask Meta AI|Ask Meta AI or Search|Sea
 _SEARCH_FIELD = re.compile(r"^search_bar_real_field$")
 _MORE_ACCOUNTS = re.compile(r"^More accounts$")
 _REQUESTS_TITLE = re.compile(r"^Message requests$")
+# The heading at the top of the inbox's thread list.
+_MESSAGES_HEADER = re.compile(r"^Messages$")
 _NO_REQUESTS = re.compile(r"^No message requests$|^You don't have any message requests")
 # Opening requests can first ask about message privacy; it is put off, never changed.
 _NOT_NOW = re.compile(r"^Not now$")
@@ -169,7 +171,7 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     device.pause()
     if not requests:
         return True
-    link = device.find(_REQUESTS_TAB)
+    link = _requests_link(device)
     if link is None:
         return False
     device.tap(link)
@@ -180,6 +182,23 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
         device.wait_for(_REQUESTS_TITLE)
     device.watch(lambda nodes: _row_nodes(nodes) or device.find(_NO_REQUESTS, nodes))
     return True
+
+
+def _requests_link(device: EmulatorDevice) -> Node | None:
+    """The Requests tab or link. The inbox reopens where it was last scrolled, so it is
+    scrolled back up until the link or the top of the list ("Messages") shows."""
+    seen: list[Node] | None = None
+    for _ in range(2 * (CONTROL.inbox_scrolls + 1) + 1):
+        nodes = device.screen()
+        link = device.find(_REQUESTS_TAB, nodes)
+        if link is not None or device.find(_MESSAGES_HEADER, nodes) is not None:
+            return link
+        if nodes == seen:
+            # Scrolling up changed nothing: this is the top, and it has no link.
+            return None
+        seen = nodes
+        device.scroll_up()
+    return None
 
 
 def _rows(nodes: list[Node], *, request: bool) -> list[InboxRow]:
