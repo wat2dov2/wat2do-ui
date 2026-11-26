@@ -243,3 +243,13 @@ def test_an_inbox_reopened_scrolled_down_is_scrolled_back_up_to_its_requests_lin
     device = _Scrolled(top)
     inbox.read_inbox(device, 0, requests=True)
     assert device.tapped[:2] == ["scrolled up", "Requests (1)"]
+
+
+def test_the_business_chat_privacy_note_after_accepting_is_closed() -> None:
+    device = _AcceptingDevice(asks_inbox=False)
+    device.screens[1] = [
+        _node("Business chats and your privacy", (60, 700, 1020, 780), "igds_headline_headline"),
+        _node("", (956, 338, 1020, 402), description="Close"),
+    ]
+    inbox.accept_request(device)
+    assert device.tapped == ["^Accept$", "^Close$"]

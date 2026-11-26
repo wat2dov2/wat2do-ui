@@ -36,6 +36,9 @@ _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
 # The same banner says when Instagram has limited the account's messages.
 _MESSAGING_LIMITED = re.compile(r"^You can.t send messages")
 _ACCEPT = re.compile(r"^Accept$")
+# Shown after accepting a business account's request (angrygooseinuw, 2026-11-26).
+_BUSINESS_PRIVACY = re.compile(r"^Business chats and your privacy")
+_CLOSE = re.compile(r"^Close$")
 _MOVE_TO_PRIMARY = re.compile(r"^igds_alert_dialog_primary_button$")
 _AGE = re.compile(r"^(now|\d+)([smhdw]?)$")
 _DAYS_PER_UNIT = {"s": 1 / 86_400, "m": 1 / 1440, "h": 1 / 24, "d": 1, "w": 7, "": 0}
@@ -151,10 +154,20 @@ def accept_request(device: EmulatorDevice) -> None:
         return
     raise_if_messaging_limited([prompt])
     device.tap_when(_ACCEPT)
-    # Some accounts then ask which inbox the thread moves to; Primary is where we look.
-    shown = device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_MOVE_TO_PRIMARY.pattern}"))
-    if shown.labelled(_MOVE_TO_PRIMARY):
-        device.tap(shown)
+    # Some accounts then ask which inbox the thread moves to (Primary is where we look),
+    # or explain business chats' privacy (closed, nothing changed), before the composer.
+    after = re.compile(
+        f"{_COMPOSER.pattern}|{_MOVE_TO_PRIMARY.pattern}|{_BUSINESS_PRIVACY.pattern}"
+    )
+    for _ in range(3):
+        shown = device.wait_for(after)
+        if shown.labelled(_COMPOSER):
+            break
+        if shown.labelled(_MOVE_TO_PRIMARY):
+            device.tap(shown)
+        else:
+            device.tap_when(_CLOSE)
+    else:
         device.wait_for(_COMPOSER)
     device.pause()
 

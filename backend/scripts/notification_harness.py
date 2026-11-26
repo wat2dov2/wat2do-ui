@@ -501,7 +501,7 @@ def _wait_for_reports(
     deadline = time.monotonic() + wait_minutes * 60
     found: list[dict[str, Any]] = []
     while time.monotonic() < deadline:
-        found = _reports(since)
+        found = _reports(since, scenario.sender)
         if found and not _runs_pending():
             break
         time.sleep(_POLL_SECONDS)
@@ -534,7 +534,9 @@ def _runs_pending() -> bool:
     )
 
 
-def _reports(since: datetime) -> list[dict[str, Any]]:
+def _reports(since: datetime, sender: str) -> list[dict[str, Any]]:
+    """The agent's reports on the sender's thread since ``since``: runs for other
+    senders' threads finish in between and are not this scenario's."""
     path = notification.STATE_DIR / f"{datetime.now(notification.TORONTO).date().isoformat()}.jsonl"
     if not path.exists():
         return []
@@ -542,8 +544,17 @@ def _reports(since: datetime) -> list[dict[str, Any]]:
     return [
         entry
         for entry in entries
-        if entry.get("school") == SCHOOL and datetime.fromisoformat(entry["ended"]) >= since
+        if entry.get("school") == SCHOOL
+        and datetime.fromisoformat(entry["ended"]) >= since
+        and _from(entry.get("sender", ""), sender)
     ]
+
+
+def _from(name: str, sender: str) -> bool:
+    """Whether a notification's sender name is our account ``sender``: its username, or
+    its display name ("Wat2Do | Sharing events @ <school>")."""
+    name = name.removeprefix(f"{TEST_ACCOUNT}: ").casefold()
+    return name == sender or name.endswith(f"@ {sender.removeprefix('wat2do.')}")
 
 
 def _handle_directly(device: EmulatorDevice, scenario: Scenario) -> dict[str, Any]:
@@ -561,7 +572,7 @@ def _handle_directly(device: EmulatorDevice, scenario: Scenario) -> dict[str, An
         received_at=started.isoformat(timespec="seconds"),
     )
     outcome = notification.handle(event)
-    reports = _reports(started)
+    reports = _reports(started, scenario.sender)
     if not reports:
         raise RuntimeError(f"The handler kept no report: {outcome}")
     return reports[-1]
