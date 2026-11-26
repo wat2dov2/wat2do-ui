@@ -62,14 +62,7 @@ def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, ca
     assert result.events[0]["school"] == "utsg"
     system, prompt, image_urls = calls[0]
     assert system == extractor._SYSTEM_MESSAGE
-    assert "Campus context: utsg." in prompt
-    assert "takes precedence over campus context" in prompt
-    assert "Never rename a host to match campus context" in prompt
-    assert "never to supply a missing venue" in prompt
-    assert "caption AND every relevant carousel image" in prompt
-    assert "including leading zeroes" in prompt
-    assert "registration link alone never means the event is online" in prompt
-    assert 'never invent a venue or substitute the school name or "On campus"' in prompt
+    assert "school: utsg\n" in prompt
     assert ('"description": string' in prompt) == (not caption or not caption.strip())
     assert '"school": string' not in prompt
     assert "https://example.com/image.jpg" not in prompt
@@ -245,13 +238,10 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     )
 
     prompt = create.call_args.kwargs["messages"][1]["content"][0]["text"]
-    assert "Campus context: ubc." in prompt
-    assert "Campus context: University of British Columbia" not in prompt
-    assert '"content_type": "event" | "hiring"' in prompt
-    assert '"positions": [' in prompt
+    assert "school: ubc\n" in prompt
 
 
-def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monkeypatch):
+def test_extraction_prompt_carries_the_schools_campus_seasons(monkeypatch):
     calls = []
     monkeypatch.setattr(extractor, "campus_season_prompt", lambda school: f"SEASONS FOR {school}")
     monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _school: "America/Toronto")
@@ -270,27 +260,6 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
 
     prompt = calls[0][1]
     assert "SEASONS FOR uwaterloo" in prompt
-    assert "POSITION ELIGIBILITY GATE (CRITICAL):" in prompt
-    assert "Election voting posts are not hiring." in prompt
-    assert "Candidate lists or slates" in prompt
-    assert "invitations to run for elected office are not hiring" in prompt
-    assert "Closure notices, holiday hours" in prompt
-    assert "EXPLICIT RECURRING SCHEDULES:" in prompt
-    assert "Do NOT infer or compress recurrence patterns" not in prompt
-    assert "daylight-saving" in prompt
-    assert "current-board rosters" in prompt
-    assert "generic club membership" in prompt
-    assert "independently pass BOTH tests" in prompt
-    assert "ROLE TEST:" in prompt
-    assert "OPENING TEST:" in prompt
-    assert "Mentors and mentees joining a peer-mentorship program" in prompt
-    assert "Do not relabel a program as an internship" in prompt
-    assert "competitive-team members joining through auditions" in prompt
-    assert "One-off event helpers" in prompt
-    assert 'Omit ineligible entries such as "General Members"' in prompt
-    assert "ticket or registration release" in prompt
-    assert "a program reveal" in prompt
-    assert "one object per logical event" in prompt
     assert extractor.EVENT_DISCOVERY_RULES in prompt
     assert "Networking opportunities: true when meeting people who can help" in prompt
     assert "hackathons, designathons, datathons, case competitions" in prompt
@@ -310,15 +279,6 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     for name in extractor.EventDiscoveryFields.model_fields:
         kind = "string[]" if name == "campus_season_ids" else "boolean"
         assert f'"{name}": {kind} or null' in prompt
-    assert 'Use ["Food"] for a generic food mention.' in prompt
-    assert 'Never return "Yes" or "Yes!" as a food label.' in prompt
-    assert '"Executive elections start today. Read the candidate speeches and vote' in prompt
-    assert '"Nominations are open. Apply or run for Treasurer by Friday"' in prompt
-    assert '"Meet this year\'s Merch Coordinator" is "other"' in prompt
-    assert '"Apply to be a mentor or mentee in our peer mentorship program"' in prompt
-    assert '"Applications are open for our eight-week equity research training program"' in prompt
-    assert '"Volunteers needed for our Welcome Week events; sign up below"' in prompt
-    assert '"Try out for our varsity esports team"' in prompt
 
 
 @pytest.mark.live_llm

@@ -1,0 +1,18 @@
+Test fixture standing in for the local prompt scraper/extraction_prompt.txt: one line per placeholder the real prompt has.
+campus_seasons: {campus_seasons}
+caption: {caption}
+categories_str: {categories_str}
+current_date: {current_date}
+current_day: {current_day}
+description_field: {description_field}
+description_rule: {description_rule}
+discovery_json_fields: {discovery_json_fields}
+discovery_rules: {discovery_rules}
+image_count: {image_count}
+local_tz_key: {local_tz_key}
+post_date: {post_date}
+post_day: {post_day}
+post_time: {post_time}
+school: {school}
+semester_line: {semester_line}
+Answer {{"content_type": "event" | "hiring" | "other"}}.

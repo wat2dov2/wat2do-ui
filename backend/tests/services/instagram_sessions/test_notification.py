@@ -17,9 +17,6 @@ DISPATCH = {
 
 @pytest.fixture(autouse=True)
 def state(monkeypatch, tmp_path):
-    prompt = tmp_path / "notification_prompt.md"
-    prompt.write_text('You run {{account}} for {{school_name}}: {{category}} from "{{sender}}".')
-    monkeypatch.setattr(module, "PROMPT_PATH", prompt)
     monkeypatch.setattr(module, "STATE_DIR", tmp_path)
     monkeypatch.setattr(module, "_PAUSED", tmp_path / "paused.json")
     monkeypatch.setattr(module, "_WAITING", tmp_path / "waiting")
@@ -135,7 +132,7 @@ def test_a_run_switches_to_the_account_and_keeps_the_full_report_on_the_mac(monk
     assert seen["env"]["WAT2DO_SITTING_SCHOOL"] == "tmu"
     assert seen["env"][module.RUN] == "1"
     assert seen["env"]["CLAUDE_CONFIG_DIR"].endswith(".claude-second")
-    assert '"TMU Pre-Vet Club"' in seen["prompt"] and "{{" not in seen["prompt"]
+    assert "sender: TMU Pre-Vet Club\n" in seen["prompt"] and "{{" not in seen["prompt"]
     (kept,) = (tmp_path / f"{datetime.now(module.TORONTO).date()}.jsonl").read_text().splitlines()
     assert json.loads(kept)["report"]["replied"] == "Sure, done!"
     assert oct(os.stat(next(tmp_path.glob("*.jsonl"))).st_mode & 0o777) == "0o600"

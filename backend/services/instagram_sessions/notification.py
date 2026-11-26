@@ -5,8 +5,8 @@ story mention and comment to the "Handle notification" workflow with only its ca
 school account, sender's name and time. The workflow's job on the Mac runs ``handle``:
 it takes the emulator (waiting its turn behind the worker), switches the app to the
 account and gives the notification to Claude Code with its prompt, read afresh for
-each run from the Mac's local prompts folder (``PROMPT_PATH``; prompts never live in
-the repository).
+each run from the Mac's local prompts folder (``instagram_sessions/notification_prompt.md``,
+``core/prompts.py``; prompts never live in the repository).
 Claude reads the thread on the emulator itself through the ``ig`` command
 (``moves.py``), decides, and acts; nothing it reads ever leaves the Mac. Each run's full
 report stays in ``~/.local/state/wat2do/notification-agent/<date>.jsonl``; what the job
@@ -36,6 +36,7 @@ from zoneinfo import ZoneInfo
 
 from core.controlbox import controlbox
 from core.launch_agents import atomic_write
+from core.prompts import render_prompt
 from services import school_service
 from services.claude_code import claude_environment, run_agent
 from services.instagram_accounts import android_user, school_account_username, school_for_account
@@ -46,7 +47,6 @@ DMS = controlbox.instagram_dms
 EMULATOR = controlbox.instagram_emulator
 TORONTO = ZoneInfo("America/Toronto")
 HERE = Path(__file__).parent
-PROMPT_PATH = Path.home() / "wat2do-data/prompts/instagram_sessions/notification_prompt.md"
 STATE_DIR = Path.home() / ".local/state/wat2do/notification-agent"
 _PAUSED = STATE_DIR / "paused.json"
 _WAITING = STATE_DIR / "waiting"
@@ -214,10 +214,7 @@ def prompt(notification: Notification, moment: datetime) -> str:
         "contact_email": DMS.contact_email,
         "reply_max_characters": str(DMS.reply_max_characters),
     }
-    text = PROMPT_PATH.read_text()
-    for key, value in values.items():
-        text = text.replace("{{" + key + "}}", value)
-    return text
+    return render_prompt("instagram_sessions/notification_prompt.md", values)
 
 
 def _keep(notification: Notification, report: dict[str, Any], moment: datetime) -> None:

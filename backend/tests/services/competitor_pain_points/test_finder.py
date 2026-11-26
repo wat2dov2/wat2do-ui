@@ -57,7 +57,7 @@ def test_findings_are_checked_and_invented_or_known_links_dropped(monkeypatch):
     assert findings[0].competitor == "eventbrite"
     assert findings[0].quote == "Eventbrite charges us for free tickets."
     prompt, kwargs, written = calls[0]
-    assert written == [X_POST] and "posts.json" in prompt
+    assert written == [X_POST] and "site: X (Twitter)" in prompt
     assert "Eventbrite" in prompt and "https://www.reddit.com/r/known/" in prompt
     assert "{{" not in prompt
     assert kwargs["tools"] == ("Read",)

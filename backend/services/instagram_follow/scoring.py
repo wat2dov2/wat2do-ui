@@ -34,6 +34,7 @@ from typing import Any
 
 from core.constants import FOLLOW_SOURCE_DIRECTORY
 from core.controlbox import controlbox
+from core.prompts import render_prompt
 from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_profile
@@ -41,7 +42,6 @@ from services.instagram_follow import candidates
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_follow
-PROMPT = (Path(__file__).parent / "prompt.md").read_text()
 WORKDIR_PREFIX = "wat2do-follow-scores-"
 VERDICTS = ("approve", "review", "reject")
 
@@ -137,13 +137,15 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             json.dumps([_packet(row) for row in batch], ensure_ascii=False)
         )
         answer = run_agent(
-            PROMPT.replace("{{school}}", _school(school))
-            .replace(
-                "{{lists_university_events}}",
-                "yes" if school in controlbox.ingestion.university_event_schools else "no",
-            )
-            .replace(
-                "{{confusable_schools}}", CONTROL.confusable_schools.get(school, "none known")
+            render_prompt(
+                "instagram_follow/prompt.md",
+                {
+                    "school": _school(school),
+                    "lists_university_events": "yes"
+                    if school in controlbox.ingestion.university_event_schools
+                    else "no",
+                    "confusable_schools": CONTROL.confusable_schools.get(school, "none known"),
+                },
             ),
             workdir=workdir,
             model=CONTROL.model,

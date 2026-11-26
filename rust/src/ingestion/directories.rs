@@ -27,13 +27,14 @@ use super::page_image::{download, fetch_event_poster};
 use super::state_directory;
 use crate::claude::{self, Agent, Limited, claude_environment, remove_leftovers};
 use crate::controlbox::INGESTION;
+use crate::prompts;
 use crate::pyjson::dumps;
 use crate::schools;
 use crate::time_zones::Tz;
 use crate::urls::urlsplit;
 
 pub const WORKDIR_PREFIX: &str = "wat2do-directory-";
-const PROMPT: &str = include_str!("../../../backend/services/ingestion/directory_prompt.md");
+const PROMPT: &str = "ingestion/directory_prompt.md";
 const DETAIL_FIELDS: [&str; 6] = ["title", "starts", "ends", "location", "host", "description"];
 
 static REPORT_SCHEMA: LazyLock<Value> = LazyLock::new(|| {
@@ -212,20 +213,23 @@ pub async fn prepare(pool: &PgPool, source: &Source, now: DateTime<Utc>) -> Resu
     .context("listing download failed")?;
     let listing_file = format!("listing{}", extension(&listing));
     let listed = listed(pool, school.id, horizon.with_timezone(&Utc), &timezone).await?;
-    let prompt = render_prompt(&[
-        ("name", source.name.clone()),
-        ("school", source.school.clone()),
-        (
-            "lists_university_events",
-            schools::lists_university_events(&source.school).to_owned(),
-        ),
-        ("listing_url", source.url.clone()),
-        ("listing_file", listing_file.clone()),
-        ("today", local_now.format("%A %Y-%m-%d").to_string()),
-        ("timezone", school.timezone.clone()),
-        ("horizon_end", horizon.format("%A %Y-%m-%d").to_string()),
-        ("max_items", INGESTION.directory_items_per_run.to_string()),
-    ]);
+    let prompt = prompts::fill(
+        &prompts::read(PROMPT)?,
+        &[
+            ("name", source.name.clone()),
+            ("school", source.school.clone()),
+            (
+                "lists_university_events",
+                schools::lists_university_events(&source.school).to_owned(),
+            ),
+            ("listing_url", source.url.clone()),
+            ("listing_file", listing_file.clone()),
+            ("today", local_now.format("%A %Y-%m-%d").to_string()),
+            ("timezone", school.timezone.clone()),
+            ("horizon_end", horizon.format("%A %Y-%m-%d").to_string()),
+            ("max_items", INGESTION.directory_items_per_run.to_string()),
+        ],
+    );
     Ok(Prepared {
         school_id: school.id,
         listing,
@@ -234,15 +238,6 @@ pub async fn prepare(pool: &PgPool, source: &Source, now: DateTime<Utc>) -> Resu
         listed,
         prompt,
     })
-}
-
-/// Substituted in this order, like the Python loop over its values dict.
-fn render_prompt(values: &[(&str, String)]) -> String {
-    let mut prompt = PROMPT.to_owned();
-    for (key, value) in values {
-        prompt = prompt.replace(&format!("{{{{{key}}}}}"), value);
-    }
-    prompt
 }
 
 /// `now + timedelta(days=n)` on an aware Python datetime: the wall clock moves
@@ -805,19 +800,22 @@ mod tests {
 
     #[test]
     fn the_prompt_fills_every_placeholder() {
-        let prompt = render_prompt(&[
-            ("name", "Penn Clubs".into()),
-            ("school", "upenn".into()),
-            ("lists_university_events", "no".into()),
-            ("listing_url", LISTING_URL.into()),
-            ("listing_file", "listing.html".into()),
-            ("today", "Monday 2026-11-02".into()),
-            ("timezone", "America/New_York".into()),
-            ("horizon_end", "Wednesday 2026-12-02".into()),
-            ("max_items", "40".into()),
-        ]);
-        assert!(prompt.contains("Listing: https://clubs.example.edu/events"));
-        assert!(prompt.contains("./listing.html"));
+        let prompt = prompts::fill(
+            &prompts::read(PROMPT).unwrap(),
+            &[
+                ("name", "Penn Clubs".to_owned()),
+                ("school", "upenn".into()),
+                ("lists_university_events", "no".into()),
+                ("listing_url", LISTING_URL.into()),
+                ("listing_file", "listing.html".into()),
+                ("today", "Monday 2026-11-02".into()),
+                ("timezone", "America/New_York".into()),
+                ("horizon_end", "Wednesday 2026-12-02".into()),
+                ("max_items", "40".into()),
+            ],
+        );
+        assert!(prompt.contains("listing_url: https://clubs.example.edu/events"));
+        assert!(prompt.contains("listing_file: listing.html"));
         assert!(!prompt.contains("{{"));
     }
 

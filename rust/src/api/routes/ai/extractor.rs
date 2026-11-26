@@ -3,11 +3,13 @@
 //! cleaning) and `services/ai_service.py` (the event form and the position)
 //! they use.
 //!
-//! The prompt template is `backend/services/scraper/extraction_prompt.txt`,
-//! which the Python extractor renders too. The model's answer is untrusted:
+//! The prompt template is `scraper/extraction_prompt.txt` in the local prompts
+//! folder ([`crate::prompts`]), read for every poster, which the Python
+//! extractor renders too. The model's answer is untrusted:
 //! an item that fails the extraction models' validation is dropped, and an
 //! answer with no usable structure is a failed extraction.
 
+use anyhow::{Context, Result};
 use chrono::{DateTime, Duration, NaiveDate, Timelike, Utc};
 use serde_json::{Map, Value};
 
@@ -19,14 +21,14 @@ use crate::constants::{
 };
 use crate::controlbox::EVENT_DISCOVERY;
 use crate::ingestion::prompt::{DISCOVERY, DISCOVERY_RULES};
+use crate::prompts;
 use crate::schools::{School, campus_season_prompt, normalize_slug};
 use crate::text::{normalize_scraped_text, python_strip};
 use crate::time_zones::Tz;
 
 pub const SYSTEM_MESSAGE: &str = "You triage social media posts and extract campus event and hiring information. Always return valid JSON with the exact structure requested.";
 
-const PROMPT_TEMPLATE: &str =
-    include_str!("../../../../../backend/services/scraper/extraction_prompt.txt");
+const PROMPT: &str = "scraper/extraction_prompt.txt";
 
 pub const POSITION_TYPES: &[&str] = &[
     "executive",
@@ -64,8 +66,9 @@ impl Completion for OpenAi<'_> {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ExtractionFailed;
 
-/// `str.format` for the template's placeholders and `{{` / `}}` escapes.
-fn render(template: &str, values: &[(&str, &str)]) -> String {
+/// `str.format` for the template's placeholders and `{{` / `}}` escapes; a
+/// placeholder with no value or no closing brace is an error, as in Python.
+fn render(template: &str, values: &[(&str, &str)]) -> Result<String> {
     let mut out = String::with_capacity(template.len() * 2);
     let mut rest = template;
     while let Some(at) = rest.find(['{', '}']) {
@@ -75,12 +78,14 @@ fn render(template: &str, values: &[(&str, &str)]) -> String {
             out.push_str(&tail[..1]);
             rest = &tail[2..];
         } else if tail.starts_with('{') {
-            let end = tail.find('}').expect("closed placeholder");
+            let end = tail
+                .find('}')
+                .context("the prompt has an unclosed placeholder")?;
             let name = &tail[1..end];
             let value = values
                 .iter()
                 .find(|(key, _)| *key == name)
-                .unwrap_or_else(|| panic!("no value for {{{name}}}"));
+                .with_context(|| format!("the prompt has no value for {{{name}}}"))?;
             out.push_str(value.1);
             rest = &tail[end + 1..];
         } else {
@@ -89,7 +94,7 @@ fn render(template: &str, values: &[(&str, &str)]) -> String {
         }
     }
     out.push_str(rest);
-    out
+    Ok(out)
 }
 
 /// `EVENT_DISCOVERY_JSON_FIELDS`: each discovery field's JSON type.
@@ -123,8 +128,8 @@ pub struct PromptInputs<'a> {
     pub semester_line: &'a str,
 }
 
-/// `_build_prompt`.
-pub fn build_prompt(inputs: &PromptInputs) -> String {
+/// `_build_prompt`, from the template as it is now.
+pub fn build_prompt(inputs: &PromptInputs) -> Result<String> {
     let has_caption = inputs
         .caption
         .is_some_and(|caption| !python_strip(caption).is_empty());
@@ -148,7 +153,7 @@ pub fn build_prompt(inputs: &PromptInputs) -> String {
     let json_fields = discovery_json_fields();
     let campus_seasons = campus_season_prompt(&normalize_slug(inputs.school));
     render(
-        PROMPT_TEMPLATE,
+        &prompts::read(PROMPT)?,
         &[
             ("school", inputs.school),
             ("current_day", inputs.current_day),
@@ -206,7 +211,11 @@ pub async fn extract_post_content(
         post_day: &day,
         post_time: &local.format("%H:%M").to_string(),
         semester_line: &semester_line,
-    });
+    })
+    .map_err(|error| {
+        tracing::error!("Extraction prompt failed: {error:#}");
+        ExtractionFailed
+    })?;
     let urls: Vec<String> = image_urls
         .iter()
         .filter(|url| !url.is_empty())

@@ -44,7 +44,7 @@ export function hasPartnersAt(school: string): boolean {
 
 /**
  * The venue alone: the first part of the event's map location, which names the
- * venue before its address (backend/services/ingestion/prompt.md). A map
+ * venue before its address (~/wat2do-data/prompts/ingestion/prompt.md). A map
  * location that starts with a street number names no venue, and an online or
  * unannounced one has none.
  */

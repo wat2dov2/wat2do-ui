@@ -81,7 +81,8 @@ fn prompts_render_like_the_python_extractor() {
             post_day: text("post_day"),
             post_time: text("post_time"),
             semester_line: text("semester_line"),
-        });
+        })
+        .unwrap();
         assert_eq!(prompt, fixture["prompt"].as_str().unwrap());
     }
     assert_eq!(fixtures.len(), 2);
@@ -177,7 +178,7 @@ async fn a_failed_call_is_a_failed_extraction() {
     let _ = extract_post_content(&waterloo(), &[String::new(), "y".to_owned()], now, &model).await;
     let asked = model.asked.lock().unwrap()[0].clone();
     assert_eq!(asked.2, ["y"]);
-    assert!(asked.1.contains("(1 images)"));
+    assert!(asked.1.contains("image_count: 1\n"));
 }
 
 #[test]

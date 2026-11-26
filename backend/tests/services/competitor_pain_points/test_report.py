@@ -145,7 +145,7 @@ def test_report_reads_complaints_and_code_and_drops_invented_links(monkeypatch):
     assert seen["complaints"][0]["competitor"] == "Eventbrite"
     assert seen["locales"] and set(seen["locales"]) == {"en.json"}
     assert seen["routers"]
-    assert "{{" not in seen["prompt"] and "1 complaints" in seen["prompt"]
+    assert "{{" not in seen["prompt"] and "count: 1\n" in seen["prompt"]
     assert seen["kwargs"]["tools"] == ("Read", "Grep", "Glob")
     assert seen["kwargs"]["allowed_tools"] == ("Read(./**)", "Grep(./**)", "Glob(./**)")
     assert not Path(seen["kwargs"]["workdir"]).exists()

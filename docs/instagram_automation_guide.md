@@ -4,7 +4,7 @@ The active collection path uses Instagram notifications on a physical Android ph
 Automate triggers the GitHub "Handle notification" workflow, which records each exact post URL in the notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
-An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
+An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `~/wat2do-data/prompts/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, manual profile listing, the follow crawl's Following reads, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
 Brave never opens individual posts for ingestion.
@@ -412,7 +412,7 @@ Unconfirmed changes are reported as failures for inspection rather than retried 
 ## Carousel draft selection and artwork
 
 A daily Claude job owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
-`wat2do-instagram curate` (`rust/src/instagram_publishing`, binary `wat2do-instagram`) runs one Claude Code agent per school that has no draft for today, in parallel (`curation.rs`, prompt in `rust/src/instagram_publishing/curation_prompt.md`).
+`wat2do-instagram curate` (`rust/src/instagram_publishing`, binary `wat2do-instagram`) runs one Claude Code agent per school that has no draft for today, in parallel (`curation.rs`, prompt in `~/wat2do-data/prompts/instagram_publishing/curation_prompt.md`).
 Each agent gets only Read access to a private folder holding the school's candidate packet and downscaled posters, and no application secrets.
 Its structured answer is validated as a `DraftSelection` (`selection.rs`) and saved with `save_review_draft` (`drafts.rs`); a rejected answer is retried once with the reason.
 Schools with no eligible events get an empty draft without an agent.
@@ -530,10 +530,10 @@ A page that fails to read is read again, up to `crawl_seed_attempts` times, and 
 Local state from an older crawler is finished and replaced by a fresh crawl on its next turn.
 New candidates are scored in the background, one scoring run at a time.
 `ig finish` opens the live post, likes it and reposts it, then edits it: More actions, Edit, Add audio.
-On the first try only (`gif_comments`), it also comments a GIF: Haiku names a well-known movie or TV scene that fits the carousel's first event (`gif_query_prompt.md`, null for none or for religious, political or grief events), the app searches GIPHY from the comment composer's GIF button, and Haiku looks at the numbered results (`gif_pick_prompt.md`) and picks a real movie or show clip or none. Tapping a result posts it at once, so nothing is tapped unless one was picked; a GIF failure never holds up the song.
+On the first try only (`gif_comments`), it also comments a GIF: Haiku names a well-known movie or TV scene that fits the carousel's first event (`~/wat2do-data/prompts/instagram_publishing/gif_query_prompt.md`, null for none or for religious, political or grief events), the app searches GIPHY from the comment composer's GIF button, and Haiku looks at the numbered results (`gif_pick_prompt.md`) and picks a real movie or show clip or none. Tapping a result posts it at once, so nothing is tapped unless one was picked; a GIF failure never holds up the song.
 Instagram's Repost label never changes and a second tap takes the repost back, so the job reads the check mark drawn inside the Repost icon from a screenshot and taps only when it is missing; the one-time "You reposted" note is closed.
 It searches the songs in random order.
-For each search, Claude Haiku (`music_model`, prompt in `backend/services/instagram_publishing/music_prompt.md`) reads the visible tracks and picks the one the admin meant, or none so the next song is tried.
+For each search, Claude Haiku (`music_model`, prompt in `~/wat2do-data/prompts/instagram_publishing/music_prompt.md`) reads the visible tracks and picks the one the admin meant, or none so the next song is tried.
 The suggested clip is kept, the edit is saved with Done, and the batch records `added` with the track.
 When Instagram has none of the songs the edit is discarded and the batch records `failed`.
 An emulator error discards the edit and leaves the batch `pending`; it is tried again no sooner than `music_retry_minutes` later, until `music_attempts` runs out.

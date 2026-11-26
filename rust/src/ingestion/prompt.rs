@@ -1,23 +1,29 @@
-//! Rendering `backend/services/ingestion/prompt.md` for one source.
+//! Rendering the ingestion agent's prompt (`ingestion/prompt.md` in the local
+//! prompts folder, [`crate::prompts`]) for one source.
 
 use std::sync::LazyLock;
 
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::Value;
 
 use crate::constants::EVENT_CATEGORIES;
-use crate::instagram_publishing::curation::PROMOTION_RULES;
+use crate::instagram_publishing::curation::promotion_rules;
+use crate::prompts;
 use crate::schools::{
     School, building_code_prompt, campus_season_prompt, lists_university_events, partner_accounts,
 };
 
-const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
+const PROMPT: &str = "ingestion/prompt.md";
 
 /// How to draw an event's `title_svg` from its poster, shared by this prompt and
-/// the title SVG backfill (`super::title_svgs`).
-pub const TITLE_SVG_RULES: &str =
-    include_str!("../../../backend/services/ingestion/title_svg_rules.md");
+/// the title SVG backfill (`super::title_svgs`), read as it is now.
+pub fn title_svg_rules() -> Result<String> {
+    Ok(prompts::read("ingestion/title_svg_rules.md")?
+        .trim_end()
+        .to_owned())
+}
 
 /// `backend/schemas/event_discovery_fields.json`, which the event schema,
 /// the extraction prompt and this agent's prompt all read.
@@ -94,7 +100,22 @@ pub struct Source<'a> {
     pub now: DateTime<Utc>,
 }
 
-pub fn render(source: &Source) -> String {
+/// The agent's prompt for `source`, from the prompt files as they are now.
+pub fn render(source: &Source) -> Result<String> {
+    let rules = Rules {
+        title_svg: title_svg_rules()?,
+        promotion: promotion_rules()?,
+    };
+    Ok(fill(&prompts::read(PROMPT)?, &rules, source))
+}
+
+/// The shared rule files the prompt renders in place.
+struct Rules {
+    title_svg: String,
+    promotion: String,
+}
+
+fn fill(template: &str, rules: &Rules, source: &Source) -> String {
     let timezone = source.school.tz();
     let now = source.now.with_timezone(&timezone);
     let posted = source
@@ -191,17 +212,13 @@ pub fn render(source: &Source) -> String {
         ),
         ("categories", categories),
         ("discovery_rules", DISCOVERY_RULES.clone()),
-        ("title_svg_rules", TITLE_SVG_RULES.trim_end().to_owned()),
-        ("promotion_rules", PROMOTION_RULES.trim_end().to_owned()),
+        ("title_svg_rules", rules.title_svg.clone()),
+        ("promotion_rules", rules.promotion.clone()),
         ("campus_seasons", campus_season_prompt(&source.school.slug)),
         ("building_codes", building_code_prompt(&source.school.slug)),
     ];
     // Substituted in this order, like the Python loop over its values dict.
-    let mut prompt = PROMPT.to_owned();
-    for (key, value) in &values {
-        prompt = prompt.replace(&format!("{{{{{key}}}}}"), value);
-    }
-    prompt
+    prompts::fill(template, &values)
 }
 
 #[cfg(test)]
@@ -235,6 +252,7 @@ mod tests {
             posted_at: None,
             now: Utc::now(),
         })
+        .unwrap()
     }
 
     #[test]
@@ -244,18 +262,14 @@ mod tests {
         assert!(rendered.contains("poster reference `pending:t0k3n/image-0`"));
         assert!(rendered.contains("carousel_requested_at = now()"));
         assert!(rendered.contains("- competition:"));
-        assert!(rendered.contains("MCAT prep"));
-        assert!(
-            rendered.contains("Businesses wat2do partners with at University of Waterloo: none.")
-        );
+        assert!(rendered.contains("title_svg_rules: Test fixture"));
+        assert!(rendered.contains("promotion_rules: Test fixture"));
+        assert!(rendered.contains("partner_accounts: none\n"));
     }
 
     #[test]
     fn a_school_names_its_partner_businesses() {
         let rendered = render_at("tmu", "Toronto Metropolitan University");
-        assert!(rendered.contains(
-            "Businesses wat2do partners with at Toronto Metropolitan University: \
-             @dipanddrink.offical (Dip & Drink)."
-        ));
+        assert!(rendered.contains("partner_accounts: @dipanddrink.offical (Dip & Drink)\n"));
     }
 }

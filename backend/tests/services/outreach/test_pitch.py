@@ -88,21 +88,11 @@ def test_a_pitch_that_breaks_the_rules_is_refused(changes):
 
 def test_the_prompt_names_the_school_payout_and_sender_but_leaves_both_links():
     prompt = pitch._prompt(LEAD)
-    assert "University of Waterloo" in prompt
-    assert "$3 for every student" in prompt
-    assert pitch.CONTROL.sender_name in prompt
+    assert "school_name: University of Waterloo\n" in prompt
+    assert "payout_per_scan: $3\n" in prompt
+    assert f"sender_name: {pitch.CONTROL.sender_name}\n" in prompt
     assert "{{claim_url}}" in prompt and "{{payout_terms_url}}" in prompt
     assert "{{" not in prompt.replace("{{claim_url}}", "").replace("{{payout_terms_url}}", "")
-    assert "—" not in prompt
-
-
-def test_the_script_and_email_name_points_the_claimed_club_list_has():
-    prompt = pitch._prompt(LEAD)
-    claimed = prompt.split("## 2. What claiming gets the club\n", 1)[1].split("\n## ", 1)[0]
-    points = [line.split(".", 1)[0] for line in claimed.splitlines() if line[:1].isdigit()]
-    assert points == [str(number) for number in range(1, 9)]
-    assert "points 1 to 5" in prompt and "points 6 to 8" in prompt
-    assert "$3 for every student it checks in" in claimed
 
 
 @pytest.mark.parametrize(("cents", "said"), [(300, "$3"), (250, "$2.50"), (405, "$4.05")])
@@ -112,14 +102,19 @@ def test_the_payout_reads_as_dollars(monkeypatch, cents, said):
 
 
 def test_every_lead_gets_one_hook_style_and_keeps_it():
-    assert len(pitch.HOOK_STYLES) >= 5
-    assert all(style.count("\n- ") >= 5 for style in pitch.HOOK_STYLES)
-    styles = {pitch._hook_style(f"lead-{number}") for number in range(200)}
-    assert styles == set(pitch.HOOK_STYLES)
+    styles = pitch._hook_styles()
+    assert [style.split("\n")[0] for style in styles] == [
+        "### Style 1",
+        "### Style 2",
+        "### Style 3",
+    ]
+    assert {pitch._hook_style(f"lead-{number}") for number in range(200)} == set(styles)
     prompt = pitch._prompt(LEAD)
-    chosen = [style for style in pitch.HOOK_STYLES if style.split("\n")[0] in prompt]
+    chosen = [style for style in styles if style.split("\n")[0] in prompt]
     assert len(chosen) == 1 and pitch._prompt(LEAD) == prompt
-    assert "Video hooks" not in prompt and "Sources:" not in prompt
+    # The hook's own placeholders are filled, and the preamble never goes in.
+    assert "Hook" in prompt and "{{school_name}}" not in prompt
+    assert "preamble" not in prompt
 
 
 def test_claude_reads_the_club_from_a_file_with_read_only_tools(monkeypatch):

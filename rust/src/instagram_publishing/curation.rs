@@ -9,7 +9,6 @@
 
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::LazyLock;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -24,16 +23,28 @@ use super::selection::{CAPTION_INTRO_LIMIT, DraftSelection, SelectionError};
 use super::{Refused, error_message};
 use crate::claude::{self, Agent};
 use crate::controlbox::INSTAGRAM_PUBLISHING;
+use crate::prompts;
 use crate::text::python_strip;
 
-/// Who and what Wat2Do promotes, shared with the ingestion agent's prompt,
-/// which records each event's verdict as `events.promotable`.
-pub const PROMOTION_RULES: &str = include_str!("promotion_rules.md");
+/// The curation agent's prompt in the local prompts folder ([`crate::prompts`]).
+const PROMPT: &str = "instagram_publishing/curation_prompt.md";
 
-/// `curation_prompt.md` with the promotion rules in place.
-pub static PROMPT: LazyLock<String> = LazyLock::new(|| {
-    include_str!("curation_prompt.md").replace("{{promotion_rules}}", PROMOTION_RULES.trim_end())
-});
+/// Who and what Wat2Do promotes (`instagram_publishing/promotion_rules.md` in
+/// the local prompts folder), shared with the ingestion agent's prompt, which
+/// records each event's verdict as `events.promotable`; read as it is now.
+pub fn promotion_rules() -> Result<String> {
+    Ok(prompts::read("instagram_publishing/promotion_rules.md")?
+        .trim_end()
+        .to_owned())
+}
+
+/// The curation prompt with the promotion rules in place, as both are now.
+fn prompt() -> Result<String> {
+    Ok(prompts::fill(
+        &prompts::read(PROMPT)?,
+        &[("promotion_rules", promotion_rules()?)],
+    ))
+}
 pub const WORKDIR_PREFIX: &str = "wat2do-instagram-curation-";
 
 /// The structured answer Claude must give (`ANSWER_SCHEMA`).
@@ -131,15 +142,15 @@ async fn answer_with_retries(
     save: impl AsyncFn(&Map<String, Value>) -> Result<Outcome>,
 ) -> Result<Outcome> {
     let attempts = INSTAGRAM_PUBLISHING.curation_attempts;
-    let mut prompt = PROMPT.clone();
+    let template = prompt()?;
+    let mut prompt = template.clone();
     for attempt in 1..=attempts {
         let answer = ask(&prompt).await?;
         match save(&answer).await {
             Ok(outcome) => return Ok(outcome),
             Err(error) if attempt < attempts && refused(&error) => {
                 prompt = format!(
-                    "{}\n\nYour previous answer was rejected; fix this and answer again:\n{}",
-                    *PROMPT,
+                    "{template}\n\nYour previous answer was rejected; fix this and answer again:\n{}",
                     error_message(&error)
                 );
             }
@@ -482,8 +493,9 @@ mod tests {
             Outcome::Saved
         );
         let prompts = prompts.into_inner().unwrap();
-        assert_eq!(prompts[0], *PROMPT);
-        assert!(prompts[1].starts_with(PROMPT.as_str()));
+        let template = prompt().unwrap();
+        assert_eq!(prompts[0], template);
+        assert!(prompts[1].starts_with(&template));
         assert!(prompts[1].contains(
             "Your previous answer was rejected; fix this and answer again:\n1 validation error"
         ));
@@ -598,15 +610,12 @@ mod tests {
             schema["properties"]["picks"]["items"]["properties"]["sticker_labels"]["maxItems"],
             4
         );
-        assert!(PROMPT.starts_with("You curate today's wat2do Instagram carousel draft"));
     }
 
     #[test]
     fn the_prompt_carries_the_promotion_rules() {
-        assert!(!PROMPT.contains("{{"));
-        assert!(PROMPT.contains(PROMOTION_RULES.trim_end()));
-        for excluded in ["roomie mixer", "MCAT", "LSAT", "AGMs", "members-only"] {
-            assert!(PROMOTION_RULES.contains(excluded), "{excluded}");
-        }
+        let prompt = prompt().unwrap();
+        assert!(!prompt.contains("{{"));
+        assert!(prompt.contains(&format!("promotion_rules: {}", promotion_rules().unwrap())));
     }
 }

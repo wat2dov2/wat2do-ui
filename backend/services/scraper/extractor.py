@@ -12,7 +12,6 @@ import json
 import logging
 from collections.abc import Callable
 from datetime import date, datetime
-from pathlib import Path
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
@@ -28,6 +27,7 @@ from core.constants.positions import (
     MAX_POSITION_REQUIREMENT_LENGTH,
     MAX_POSITION_TITLE_LENGTH,
 )
+from core.prompts import read_prompt
 from core.sanitize import normalize_scraped_text
 from schemas.event import EVENT_DISCOVERY, EventDiscoveryFields
 from schemas.position import PositionType
@@ -46,9 +46,10 @@ _SYSTEM_MESSAGE = (
     "Always return valid JSON with the exact structure requested."
 )
 
-# The prompt template (``str.format`` placeholders), shared with the Rust image
-# parsing routes (rust/src/api/routes/ai), which render it the same way.
-EXTRACTION_PROMPT = Path(__file__).with_name("extraction_prompt.txt").read_text(encoding="utf-8")
+# The prompt template (``str.format`` placeholders) in the local prompts folder,
+# shared with the Rust image parsing routes (rust/src/api/routes/ai), which
+# render it the same way.
+EXTRACTION_PROMPT = "scraper/extraction_prompt.txt"
 
 EVENT_DISCOVERY_JSON_FIELDS = "\n".join(
     f'"{name}": {"string[]" if name == "campus_season_ids" else "boolean"} or null,'
@@ -273,7 +274,7 @@ def _build_prompt(
         else "Do not output description. The application attaches the original caption to every extracted item."
     )
 
-    return EXTRACTION_PROMPT.format(
+    return read_prompt(EXTRACTION_PROMPT).format(
         school=school,
         current_day=current_day,
         current_date=current_date,

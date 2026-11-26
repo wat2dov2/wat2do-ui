@@ -41,6 +41,7 @@ from core.constants import (
 )
 from core.controlbox import controlbox
 from core.database import get_sb
+from core.prompts import read_prompt, render_prompt
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
@@ -61,10 +62,6 @@ _TORONTO = ZoneInfo("America/Toronto")
 WORKDIR_PREFIX = "wat2do-music-"
 # The GIF searches used lately, so 37 schools' carousels do not all get the same scene.
 RECENT_GIFS_PATH = Path.home() / ".local/state/wat2do/instagram-gifs/recent.json"
-PROMPT = (Path(__file__).parent / "music_prompt.md").read_text()
-GIF_QUERY_PROMPT = (Path(__file__).parent / "gif_query_prompt.md").read_text()
-GIF_PICK_PROMPT = (Path(__file__).parent / "gif_pick_prompt.md").read_text()
-PLACE_PROMPT = (Path(__file__).parent / "place_prompt.md").read_text()
 GIF_QUERY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {"query": {"type": ["string", "null"]}, "reason": {"type": "string"}},
@@ -179,7 +176,7 @@ def gif_comment(batch_id: str) -> GifComment | None:
             (Path(workdir) / "event.json").write_text(json.dumps(event, ensure_ascii=False))
             (Path(workdir) / "recent.json").write_text(json.dumps(recent, ensure_ascii=False))
             answer = run_agent(
-                GIF_QUERY_PROMPT,
+                read_prompt("instagram_publishing/gif_query_prompt.md"),
                 workdir=workdir,
                 model=_CONTROL.music_model,
                 tools=("Read",),
@@ -240,7 +237,7 @@ def pick_gif(
         image.crop((0, top, image.width, bottom)).save(Path(workdir) / "results.png")
         (Path(workdir) / "event.json").write_text(json.dumps(event, ensure_ascii=False))
         answer = run_agent(
-            GIF_PICK_PROMPT.replace("{{query}}", query),
+            render_prompt("instagram_publishing/gif_pick_prompt.md", {"query": query}),
             workdir=workdir,
             model=_CONTROL.music_model,
             tools=("Read",),
@@ -304,7 +301,8 @@ def slide_tags(batch_id: str) -> list[SlideTag]:
 def choose_track(query: str, tracks: Sequence[str]) -> int | None:
     """The index of the track the admin meant by ``query``, or None when none is it."""
     try:
-        return _ask_index(PROMPT.replace("{{query}}", query), "tracks.json", tracks)
+        prompt = render_prompt("instagram_publishing/music_prompt.md", {"query": query})
+        return _ask_index(prompt, "tracks.json", tracks)
     except ClaudeLimited:
         # Not an answer about this song: every song would fail the same way.
         raise
@@ -332,7 +330,8 @@ def choose_place(name: str, places: Sequence[str]) -> int | None:
     if exact is not None:
         return exact
     try:
-        return _ask_index(PLACE_PROMPT.replace("{{school}}", name), "places.json", places)
+        prompt = render_prompt("instagram_publishing/place_prompt.md", {"school": name})
+        return _ask_index(prompt, "places.json", places)
     except ClaudeCodeError:
         # The place is a nice extra; without an answer the post stays untagged.
         log.warning("The place picker did not answer")

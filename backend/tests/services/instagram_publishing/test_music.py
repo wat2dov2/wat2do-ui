@@ -160,7 +160,7 @@ def test_the_track_picker_sees_the_song_and_the_tracks(monkeypatch):
 
     monkeypatch.setattr(music, "run_agent", run_agent)
     music.choose_track("the weeknd after hours", ["After Hours by The Weeknd,6:01"])
-    assert '"the weeknd after hours"' in seen["prompt"]
+    assert "query: the weeknd after hours\n" in seen["prompt"]
     assert seen["tracks"] == '["After Hours by The Weeknd,6:01"]'
 
 

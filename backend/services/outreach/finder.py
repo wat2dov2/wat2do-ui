@@ -20,20 +20,19 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from html import unescape
-from pathlib import Path
 from typing import Any
 
 import httpx
 from pydantic import ValidationError
 
 from core.controlbox import controlbox
+from core.prompts import render_prompt
 from schemas.outreach import FoundClubEmail
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
 from services.outreach import formality, pitch, service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
-PROMPT = (Path(__file__).with_name("prompt.md")).read_text()
 WORKDIR_PREFIX = "wat2do-outreach-"
 _TOOLS = ("WebSearch", "WebFetch")
 ANSWER_SCHEMA: dict[str, Any] = {
@@ -169,10 +168,7 @@ def _prompt(club: dict[str, Any]) -> str:
         "school_name": club["school_name"],
         "club_page": club.get("club_page") or "none listed",
     }
-    prompt = PROMPT
-    for key, value in values.items():
-        prompt = prompt.replace("{{" + key + "}}", value)
-    return prompt
+    return render_prompt("outreach/prompt.md", values)
 
 
 def _page_with_addresses(url: str) -> str:

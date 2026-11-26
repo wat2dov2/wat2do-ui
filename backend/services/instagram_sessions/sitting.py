@@ -2,7 +2,8 @@
 
 From the control box's start time each morning, every school account gets one sitting
 a day, schools with a carousel to post first. Claude Code takes the emulator on that
-account and does everything in one go (``prompt.md``): it posts the day's carousel,
+account and does everything in one go (``instagram_sessions/prompt.md`` in the local prompts
+folder): it posts the day's carousel,
 likes and reposts it, sets its song, place and club tags, comments a GIF, shares
 each event's original post to the story, posts a thank-you story when the account just
 reached a follower or like milestone, then sends the claim-link follow-ups that are
@@ -32,6 +33,7 @@ from zoneinfo import ZoneInfo
 from core.constants import INSTAGRAM_BATCH_PUBLISHED, INSTAGRAM_MUSIC_PENDING
 from core.controlbox import controlbox
 from core.database import get_sb
+from core.prompts import render_prompt
 from core.tables import INSTAGRAM_PUBLISH_BATCHES
 from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, claude_environment, run_agent
@@ -45,7 +47,6 @@ EMULATOR = controlbox.instagram_emulator
 PUBLISHING = controlbox.instagram_publishing
 TORONTO = ZoneInfo("America/Toronto")
 HERE = Path(__file__).parent
-PROMPT = (HERE / "prompt.md").read_text()
 STATE_PATH = Path.home() / ".local/state/wat2do/instagram-sittings/sat.json"
 WORKDIR_PREFIX = "wat2do-sitting-"
 REPORT_SCHEMA: dict[str, Any] = {
@@ -148,10 +149,7 @@ def _prompt(school: str, moment: datetime) -> str:
         "today": moment.strftime("%A, %B %-d, %Y"),
         "minimum_slides": str(PUBLISHING.minimum_event_slides),
     }
-    prompt = PROMPT
-    for key, value in values.items():
-        prompt = prompt.replace("{{" + key + "}}", value)
-    return prompt
+    return render_prompt("instagram_sessions/prompt.md", values)
 
 
 def _waiting_carousels(moment: datetime) -> list[str]:

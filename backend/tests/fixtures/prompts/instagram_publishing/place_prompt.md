@@ -1,0 +1,2 @@
+Test fixture standing in for the local prompt instagram_publishing/place_prompt.md: one line per placeholder the real prompt has.
+school: {{school}}

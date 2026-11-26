@@ -1,0 +1,24 @@
+Test fixture standing in for the local prompt ingestion/prompt.md: one line per placeholder the real prompt has.
+building_codes: {{building_codes}}
+campus_seasons: {{campus_seasons}}
+caption: {{caption}}
+categories: {{categories}}
+coauthors: {{coauthors}}
+discovery_rules: {{discovery_rules}}
+images: {{images}}
+ingestion_source: {{ingestion_source}}
+lists_university_events: {{lists_university_events}}
+owner_club: {{owner_club}}
+partner_accounts: {{partner_accounts}}
+posted_at: {{posted_at}}
+promotion_rules: {{promotion_rules}}
+school: {{school}}
+school_id: {{school_id}}
+school_name: {{school_name}}
+semester_line: {{semester_line}}
+source_kind: {{source_kind}}
+source_note: {{source_note}}
+source_url: {{source_url}}
+timezone: {{timezone}}
+title_svg_rules: {{title_svg_rules}}
+today: {{today}}

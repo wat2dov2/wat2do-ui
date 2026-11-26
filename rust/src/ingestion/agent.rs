@@ -3,7 +3,8 @@
 //!
 //! The agent reads the source, inspects what is already listed, and writes the
 //! result itself through a database login scoped to events and positions. Its
-//! instructions live in `prompt.md`; this module prepares the source and applies
+//! instructions live in `ingestion/prompt.md` in the local prompts folder
+//! ([`crate::prompts`]); this module prepares the source and applies
 //! the side effects of what the agent changed.
 
 use std::collections::{HashMap, HashSet};
@@ -119,7 +120,7 @@ pub async fn ingest(
         coauthors: handles.get(1..).unwrap_or_default(),
         posted_at,
         now: Utc::now(),
-    });
+    })?;
     // Allow for clock skew between this Mac and the database's added_at.
     let started = Utc::now() - TimeDelta::minutes(5);
     let outcome = run(&rendered, workdir.path()).await;

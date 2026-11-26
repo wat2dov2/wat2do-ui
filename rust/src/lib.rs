@@ -24,6 +24,7 @@ pub mod notification_retry;
 pub mod notifications;
 pub mod openai;
 pub mod poster_payouts;
+pub mod prompts;
 pub mod pyjson;
 pub mod revalidation;
 pub mod schools;

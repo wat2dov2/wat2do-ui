@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,6 +11,7 @@ from fastapi.testclient import TestClient
 from core.auth import get_current_user
 from core.config import settings
 from core.constants import ROLE_ADMIN, ROLE_USER
+from core.prompts import DIR_VARIABLE
 from main import app
 from schemas.user import UserResponse
 from services import user_service
@@ -24,9 +26,15 @@ settings.auth_signing_key = base64.b64encode(
 ).decode("ascii")
 
 
+# The agent prompts live only on the Mac (core/prompts.py); tests read stand-ins
+# with the same placeholders.
+FIXTURE_PROMPTS = Path(__file__).parent / "fixtures/prompts"
+
+
 @pytest.fixture(autouse=True)
 def test_environment_settings(monkeypatch):
-    """Isolate test cookies, redirects, and email from developer settings."""
+    """Isolate test cookies, redirects, email and prompts from developer settings."""
+    monkeypatch.setenv(DIR_VARIABLE, str(FIXTURE_PROMPTS))
     monkeypatch.setattr(settings, "email_delivery_enabled", False)
     monkeypatch.setattr(settings, "cookie_domain", "")
     monkeypatch.setattr(settings, "frontend_url", "http://localhost:3000")

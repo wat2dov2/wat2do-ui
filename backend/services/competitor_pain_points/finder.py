@@ -28,15 +28,13 @@ from urllib.parse import urlsplit
 from pydantic import ValidationError
 
 from core.controlbox import controlbox
+from core.prompts import read_prompt, render_prompt
 from schemas.competitor_pain_point import FoundPainPoint
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
 from services.competitor_pain_points import reddit_browser, safari, service, x_browser
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.competitor_pain_points
-PROMPT = (Path(__file__).with_name("prompt.md")).read_text()
-BROWSER_PROMPT = (Path(__file__).with_name("browser_prompt.md")).read_text()
-REPORT = (Path(__file__).with_name("report.md")).read_text()
 # Lanes read in Safari before an agent runs: lane -> (site name, reader).
 BROWSER_LANES: dict[str, tuple[str, Callable[[str], list[dict[str, Any]]]]] = {
     "x": ("X (Twitter)", x_browser.read_posts),
@@ -160,7 +158,7 @@ def find(
 def _prompt(competitor: str, lane: str, known: list[str]) -> str:
     # Pieces that hold placeholders of their own go in first.
     values = {
-        "report": REPORT,
+        "report": read_prompt("competitor_pain_points/report.md"),
         "lane": CONTROL.lanes.get(lane, lane),
         "site": BROWSER_LANES[lane][0] if lane in BROWSER_LANES else "",
         "competitor_name": CONTROL.competitors[competitor],
@@ -171,10 +169,8 @@ def _prompt(competitor: str, lane: str, known: list[str]) -> str:
         "known_urls": json.dumps(known),
         "limit": str(CONTROL.findings_per_search),
     }
-    prompt = BROWSER_PROMPT if lane in BROWSER_LANES else PROMPT
-    for key, value in values.items():
-        prompt = prompt.replace("{{" + key + "}}", value)
-    return prompt
+    name = "browser_prompt.md" if lane in BROWSER_LANES else "prompt.md"
+    return render_prompt(f"competitor_pain_points/{name}", values)
 
 
 def _with_review_anchor(finding: FoundPainPoint) -> FoundPainPoint:

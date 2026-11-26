@@ -3,7 +3,7 @@
 //! The ingestion agent draws an event's title SVG when it reads the event's
 //! post. The API server's worker ([`run`]) draws it the same way, from the
 //! event's stored poster and the same rules
-//! (`backend/services/ingestion/title_svg_rules.md`), for every featured event
+//! (`ingestion/title_svg_rules.md` in the local prompts folder), for every featured event
 //! to come (one a carousel posts shows its poster's lettering on its featured
 //! card soon after) whose drawing is missing, does not spell its title, or
 //! would render badly on a card (`title_svg_rendering`), soonest first. Events
@@ -29,7 +29,7 @@ use crate::api::events::store::featured_events;
 use crate::claude::{self, Agent, Limited};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
-use crate::ingestion::prompt::TITLE_SVG_RULES;
+use crate::ingestion::prompt::title_svg_rules;
 use crate::launch_agents::claude_code_path;
 use crate::revalidation::revalidate_schools;
 
@@ -354,7 +354,7 @@ async fn draw_once(event: &Waiting, feedback: Option<&str>) -> Result<Drawn> {
         "properties": {"title_svg": {"type": ["string", "null"]}},
     });
     let answer = claude::run_agent(
-        &prompt(&file, &event.title, feedback),
+        &prompt(&file, &event.title, feedback)?,
         workdir.path(),
         Agent {
             name: "Title SVG agent",
@@ -392,17 +392,17 @@ async fn draw_once(event: &Waiting, feedback: Option<&str>) -> Result<Drawn> {
     Ok(Drawn::Svg(svg.to_owned()))
 }
 
-fn prompt(file: &str, title: &str, feedback: Option<&str>) -> String {
+fn prompt(file: &str, title: &str, feedback: Option<&str>) -> Result<String> {
     let again = feedback
         .map(|reason| {
             format!("\n\nYour last drawing of this title could not be used: {reason}. Draw it again without that.")
         })
         .unwrap_or_default();
-    format!(
+    Ok(format!(
         "./{file} is the poster of a campus event listed as \"{title}\". Read it, then answer with \
          `title_svg`: {rules}\n\nAnswer `title_svg` with the SVG text, or null.{again}",
-        rules = TITLE_SVG_RULES.trim_end(),
-    )
+        rules = title_svg_rules()?,
+    ))
 }
 
 #[cfg(test)]
@@ -490,14 +490,14 @@ mod tests {
 
     #[test]
     fn the_prompt_carries_the_shared_rules_and_the_title() {
-        let first = prompt("poster.jpg", "Fall Formal", None);
+        let first = prompt("poster.jpg", "Fall Formal", None).unwrap();
         assert!(first.contains("./poster.jpg"));
         assert!(first.contains("\"Fall Formal\""));
-        assert!(first.contains("textLength"));
+        assert!(first.contains("ingestion/title_svg_rules.md"));
         assert!(!first.contains("{{"));
         assert!(!first.contains("could not be used"));
         // A drawing again is told why the last one was not kept.
-        let again = prompt("poster.jpg", "Fall Formal", Some("it left out Formal"));
+        let again = prompt("poster.jpg", "Fall Formal", Some("it left out Formal")).unwrap();
         assert!(
             again.ends_with("could not be used: it left out Formal. Draw it again without that.")
         );

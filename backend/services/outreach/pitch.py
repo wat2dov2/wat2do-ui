@@ -1,13 +1,13 @@
 """Judge each lead's club from its events, and pitch the clubs that are a fit.
 
-Claude reads one club's newest events (``pitch_prompt.md``) and decides whether
+Claude reads one club's newest events (``outreach/pitch_prompt.md`` in the local prompts folder) and decides whether
 students would come out for them; for a club that is a fit it writes the video
 script the admin records and the personal email sent with the video. Both say only
 what the prompt lists a claimed club gets (the verified check, free QR tickets
 scanned at the door, the club payout per scanned student from
 ``controlbox/club_payouts.json``, who's going, its team and club panel), and the
 email links the payout terms. Each script
-opens with a hook in one style from ``hooks.md``, the same style for a lead every
+opens with a hook in one style from ``outreach/hooks.md``, the same style for a lead every
 time, so scripts across clubs do not all open the same way. Only leads at
 the control box's ``pitch_schools`` are pitched, and only fit leads reach the admin
 Outreach page. A club judged not a fit is judged again after ``pitch_recheck_days``.
@@ -28,6 +28,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from core.controlbox import controlbox
+from core.prompts import read_prompt, render_prompt
 from schemas.outreach import Pitch
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
 from services.outreach import service
@@ -35,12 +36,6 @@ from services.outreach import service
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
 PAYOUTS = controlbox.club_payouts
-PROMPT = (Path(__file__).with_name("pitch_prompt.md")).read_text()
-# Each "### " section of hooks.md is one hook style; its preamble is for people only.
-HOOK_STYLES = [
-    "### " + style.strip()
-    for style in (Path(__file__).with_name("hooks.md")).read_text().split("\n### ")[1:]
-]
 WORKDIR_PREFIX = "wat2do-pitch-"
 _TOOLS = ("Read",)
 _ALLOWED_TOOLS = ("Read(./**)",)
@@ -124,10 +119,18 @@ def _club(lead: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _hook_styles() -> list[str]:
+    """Each "### " section of ``outreach/hooks.md``; its preamble is for people only."""
+    return [
+        "### " + style.strip() for style in read_prompt("outreach/hooks.md").split("\n### ")[1:]
+    ]
+
+
 def _hook_style(lead_id: str) -> str:
     """The hook style for this lead's script, always the same one for the same lead."""
+    styles = _hook_styles()
     digest = hashlib.sha256(str(lead_id).encode()).digest()
-    return HOOK_STYLES[int.from_bytes(digest[:8]) % len(HOOK_STYLES)]
+    return styles[int.from_bytes(digest[:8]) % len(styles)]
 
 
 def _payout_per_scan() -> str:
@@ -144,7 +147,4 @@ def _prompt(lead: dict[str, Any]) -> str:
         "school_name": lead["school_name"],
         "payout_per_scan": _payout_per_scan(),
     }
-    prompt = PROMPT
-    for key, value in values.items():
-        prompt = prompt.replace("{{" + key + "}}", value)
-    return prompt
+    return render_prompt("outreach/pitch_prompt.md", values)

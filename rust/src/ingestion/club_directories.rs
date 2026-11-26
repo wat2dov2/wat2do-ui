@@ -35,11 +35,12 @@ use super::state_directory;
 use crate::claude::{self, Agent, Limited, claude_environment, remove_leftovers};
 use crate::constants::FOLLOW_SOURCE_DIRECTORY;
 use crate::controlbox::{ClubDirectory, ClubDirectoryListing, INGESTION};
+use crate::prompts;
 use crate::schools;
 use crate::urls::urlsplit;
 
 pub const WORKDIR_PREFIX: &str = "wat2do-club-directory-";
-const PROMPT: &str = include_str!("../../../backend/services/ingestion/club_directory_prompt.md");
+const PROMPT: &str = "ingestion/club_directory_prompt.md";
 const STATE_FILE: &str = "club-directories.json";
 const PAGE_PLACEHOLDER: &str = "{page}";
 const MAX_CLUB_PAGE_BYTES: usize = 2_000_000;
@@ -382,7 +383,7 @@ async fn run(directory: &ClubDirectory, url: &str, page: &[u8]) -> Result<Vec<Re
     let listing_file = format!("listing{}", extension(page));
     std::fs::write(workdir.path().join(&listing_file), page)?;
     let answer = claude::run_agent(
-        &render_prompt(directory, url, &listing_file),
+        &render_prompt(directory, url, &listing_file)?,
         workdir.path(),
         Agent {
             name: "Club directory agent",
@@ -398,23 +399,22 @@ async fn run(directory: &ClubDirectory, url: &str, page: &[u8]) -> Result<Vec<Re
     reported_clubs(&answer)
 }
 
-fn render_prompt(directory: &ClubDirectory, url: &str, listing_file: &str) -> String {
+fn render_prompt(directory: &ClubDirectory, url: &str, listing_file: &str) -> Result<String> {
     let notes = if directory.notes.is_empty() {
         "nothing more than the page says"
     } else {
         &directory.notes
     };
-    [
-        ("name", directory.name.as_str()),
-        ("schools", &directory.schools.join(", ")),
-        ("listing_url", url),
-        ("listing_file", listing_file),
-        ("notes", notes),
-    ]
-    .iter()
-    .fold(PROMPT.to_owned(), |prompt, (key, value)| {
-        prompt.replace(&format!("{{{{{key}}}}}"), value)
-    })
+    Ok(prompts::fill(
+        &prompts::read(PROMPT)?,
+        &[
+            ("name", directory.name.as_str()),
+            ("schools", &directory.schools.join(", ")),
+            ("listing_url", url),
+            ("listing_file", listing_file),
+            ("notes", notes),
+        ],
+    ))
 }
 
 fn reported_clubs(answer: &Map<String, Value>) -> Result<Vec<Reported>> {
@@ -804,9 +804,10 @@ mod tests {
 
     #[test]
     fn the_prompt_fills_every_placeholder() {
-        let prompt = render_prompt(&directory(&["utsg", "utm"]), LISTING_URL, "listing.json");
-        assert!(prompt.contains("Schools it covers: utsg, utm"));
-        assert!(prompt.contains("./listing.json"));
+        let prompt =
+            render_prompt(&directory(&["utsg", "utm"]), LISTING_URL, "listing.json").unwrap();
+        assert!(prompt.contains("schools: utsg, utm"));
+        assert!(prompt.contains("listing_file: listing.json"));
         assert!(!prompt.contains("{{"));
     }
 

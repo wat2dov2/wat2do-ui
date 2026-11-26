@@ -23,6 +23,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from core.controlbox import controlbox
+from core.prompts import render_prompt
 from schemas.competitor_pain_point import (
     CompetitorPainPointResponse,
     DailyReport,
@@ -36,7 +37,6 @@ from services.competitor_pain_points import service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.competitor_pain_points
-PROMPT = (Path(__file__).with_name("report_prompt.md")).read_text()
 REPOSITORY = Path(__file__).resolve().parents[3]
 WORKDIR_PREFIX = "wat2do-pain-point-report-"
 MAX_SUGGESTIONS = 8
@@ -214,10 +214,7 @@ def _prompt(count: int) -> str:
         "window_hours": str(CONTROL.report_window_hours),
         "max_suggestions": str(MAX_SUGGESTIONS),
     }
-    prompt = PROMPT
-    for key, value in values.items():
-        prompt = prompt.replace("{{" + key + "}}", value)
-    return prompt
+    return render_prompt("competitor_pain_points/report_prompt.md", values)
 
 
 def _report(
