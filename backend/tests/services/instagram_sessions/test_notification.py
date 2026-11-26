@@ -29,7 +29,9 @@ def state(monkeypatch, tmp_path):
 
 def _controls(monkeypatch, **values):
     monkeypatch.setattr(
-        module, "DMS", module.DMS.model_copy(update={"agent_enabled": True, **values})
+        module,
+        "DMS",
+        module.DMS.model_copy(update={"agent_enabled": True, "agent_schools": (), **values}),
     )
 
 
