@@ -83,6 +83,9 @@ class _AcceptingDevice:
     def tap_when(self, pattern):
         self.tapped.append(pattern.pattern)
 
+    def screen(self):
+        return [_node("", (168, 345, 1038, 395), "ig_text", "Search or ask Meta AI")]
+
     def tap(self, node):
         self.tapped.append(node.resource_id)
 
@@ -125,7 +128,8 @@ class _InboxDevice:
         return self.screen_nodes
 
     def find(self, pattern, nodes=None):
-        return next((n for n in self.screen_nodes if n.labelled(pattern)), None)
+        shown = self.screen_nodes if nodes is None else nodes
+        return next((n for n in shown if n.labelled(pattern)), None)
 
     def tap(self, node):
         self.tapped.append(node.description)
@@ -135,6 +139,17 @@ class _InboxDevice:
 
     def scroll_down(self):
         pass
+
+    def scroll_up(self):
+        self.tapped.append("scrolled up")
+
+    def wait_for(self, pattern):
+        # The requests list's title shows once it opened, unless a prompt is in front.
+        title = _node("Message requests", (189, 170, 657, 233), "action_bar_title")
+        return next((n for n in self.screen_nodes if n.labelled(pattern)), title)
+
+    def watch(self, look):
+        return look(self.screen_nodes)
 
 
 # wat2do.queensu's short inbox on 2026-10-25: one thread, no tabs and no Requests link.
@@ -151,7 +166,8 @@ def test_a_short_inbox_without_tabs_is_read_and_has_no_requests() -> None:
     device = _InboxDevice(SHORT_INBOX)
     assert [row.name for row in inbox.read_inbox(device, 0, requests=False)] == ["ESAQ"]
     assert inbox.read_inbox(device, 0, requests=True) == []
-    assert device.tapped == []
+    # One look up shows nothing new: the top, with no Requests link.
+    assert device.tapped == ["scrolled up"]
 
 
 def test_requests_are_opened_from_their_link_when_there_is_one() -> None:
@@ -191,6 +207,9 @@ class _SearchDevice(_InboxDevice):
     def tap_when(self, pattern):
         self.tapped.append(pattern.pattern)
 
+    def screen(self):
+        return [_node("", (168, 345, 1038, 395), "ig_text", "Search or ask Meta AI")]
+
     def wait_for(self, pattern):
         return next((n for n in SEARCHED if n.labelled(pattern)), SEARCHED[0])
 
@@ -212,3 +231,15 @@ def test_an_old_thread_opens_from_the_inbox_search_only_among_chats() -> None:
     assert ("UWaterloo ViVA Club", 327) in device.tapped
     assert ("UWaterloo ViVA Club", 618) not in device.tapped
     assert not inbox._open_by_search(_SearchDevice(found=False), 0, "UWaterloo ViVA Club")
+
+
+def test_an_inbox_reopened_scrolled_down_is_scrolled_back_up_to_its_requests_link() -> None:
+    top = [_node("Messages", (42, 875, 244, 925)), *LINKED_INBOX]
+
+    class _Scrolled(_InboxDevice):
+        def screen(self):
+            return self.screen_nodes if "scrolled up" in self.tapped else SHORT_INBOX
+
+    device = _Scrolled(top)
+    inbox.read_inbox(device, 0, requests=True)
+    assert device.tapped[:2] == ["scrolled up", "Requests (1)"]

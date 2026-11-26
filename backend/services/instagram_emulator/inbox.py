@@ -25,6 +25,10 @@ _TABS = re.compile(r"^(?:All|Primary|General|Requests)(?: \(\d+\))?(?:, .*)?$")
 _INBOX_SEARCH = re.compile(r"^(?:Search or ask Meta AI|Ask Meta AI or Search|Search)$")
 _SEARCH_FIELD = re.compile(r"^search_bar_real_field$")
 _MORE_ACCOUNTS = re.compile(r"^More accounts$")
+_REQUESTS_TITLE = re.compile(r"^Message requests$")
+# The heading at the top of the inbox's thread list.
+_MESSAGES_HEADER = re.compile(r"^Messages$")
+_NO_REQUESTS = re.compile(r"^No message requests$|^You don't have any message requests")
 # Opening requests can first ask about message privacy; it is put off, never changed.
 _NOT_NOW = re.compile(r"^Not now$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
@@ -111,7 +115,10 @@ def _open_by_search(device: EmulatorDevice, user: int, name: str) -> bool:
     "More accounts", which are only accounts to start a chat with); False when none shows.
     Only the name is typed, into the search field."""
     _open_list(device, user, requests=False)
-    device.tap_when(_INBOX_SEARCH)
+    search = _scrolled_up_to(device, _INBOX_SEARCH)
+    if search is None:
+        raise EmulatorError("The inbox's search box never showed")
+    device.tap(search)
     device.tap(device.wait_for(_SEARCH_FIELD))
     device.type_text(name)
 
@@ -167,16 +174,41 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     device.pause()
     if not requests:
         return True
-    link = device.find(_REQUESTS_TAB)
+    link = _requests_link(device)
     if link is None:
         return False
     device.tap(link)
-    device.pause()
-    later = device.find(_NOT_NOW)
-    if later is not None:
-        device.tap(later)
-        device.pause()
+    # The list opens a moment after its title, or behind a privacy prompt.
+    shown = device.wait_for(re.compile(f"{_REQUESTS_TITLE.pattern}|{_NOT_NOW.pattern}"))
+    if shown.labelled(_NOT_NOW):
+        device.tap(shown)
+        device.wait_for(_REQUESTS_TITLE)
+    device.watch(lambda nodes: _row_nodes(nodes) or device.find(_NO_REQUESTS, nodes))
     return True
+
+
+def _requests_link(device: EmulatorDevice) -> Node | None:
+    """The Requests tab or link, scrolled back into view: the inbox reopens where it was
+    last scrolled. None once the top of the list ("Messages") shows without it."""
+    return _scrolled_up_to(device, _REQUESTS_TAB, stop=_MESSAGES_HEADER)
+
+
+def _scrolled_up_to(
+    device: EmulatorDevice, pattern: re.Pattern[str], *, stop: re.Pattern[str] | None = None
+) -> Node | None:
+    """Scroll the inbox up until a control matching ``pattern`` shows; None when ``stop``
+    shows first or scrolling up changes nothing (the top)."""
+    seen: list[Node] | None = None
+    for _ in range(2 * (CONTROL.inbox_scrolls + 1) + 1):
+        nodes = device.screen()
+        found = device.find(pattern, nodes)
+        if found is not None or (stop is not None and device.find(stop, nodes) is not None):
+            return found
+        if nodes == seen:
+            return None
+        seen = nodes
+        device.scroll_up()
+    return None
 
 
 def _rows(nodes: list[Node], *, request: bool) -> list[InboxRow]:
