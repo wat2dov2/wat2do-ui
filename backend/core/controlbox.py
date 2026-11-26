@@ -1211,6 +1211,7 @@ class InstagramDmsControl(_ControlModel):
     agent_schools: tuple[Annotated[str, Field(pattern=r"^[a-z0-9_]{2,40}$")], ...]
     # What one account may do in a day, across every run.
     replies_per_account_per_day: int = Field(ge=0, le=100)
+    replies_per_thread_per_day: int = Field(ge=1, le=20)
     boosts_per_account_per_day: int = Field(ge=0, le=100)
     hearts_per_account_per_day: int = Field(ge=0, le=200)
     comment_likes_per_account_per_day: int = Field(ge=0, le=200)

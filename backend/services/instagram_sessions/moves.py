@@ -416,9 +416,10 @@ def opt_out(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def reply(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
-    """Send a short reply in the thread: at most one per thread within
-    ``thread_repeat_hours`` and ``replies_per_account_per_day`` a day. A thread whose
-    sender asked to be left out gets only the acknowledgement of that opt-out."""
+    """Send a short reply in the thread, only while their newest message is newer than
+    ours (one reply per message of theirs), at most ``replies_per_thread_per_day`` in one
+    thread and ``replies_per_account_per_day`` in all a day. A thread whose sender asked
+    to be left out gets only the acknowledgement of that opt-out."""
     text = safe_reply(args.text)
     if text is None:
         raise MoveError(
@@ -426,10 +427,15 @@ def reply(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
             f"{DMS.reply_max_characters} characters, with no tag, no email but "
             f"{DMS.contact_email}, no link outside wat2do.io and no long number"
         )
-    _once_per_thread("reply", args.thread)
+    if _count("reply", thread=args.thread, hours=24) >= DMS.replies_per_thread_per_day:
+        raise MoveError(
+            f"Refused: this thread already got {DMS.replies_per_thread_per_day} replies today"
+        )
     _within_cap("reply", DMS.replies_per_account_per_day)
     reader = _reader(device, args.thread)
     thread = reader.read()
+    if thread and thread[-1]["from"] == "us":
+        raise MoveError("Refused: we already answered their newest message")
     if _left_out(thread) and not _done("opt-out", thread=args.thread):
         raise MoveError("Refused: they asked to be left out; only an opt-out is acknowledged")
     _pace()
@@ -888,6 +894,16 @@ def _done(move: str, *, thread: str | None = None, hours: float | None = None) -
         datetime.fromisoformat(entry["ended"]) >= since
         and (thread is None or entry.get("thread") == thread)
         for entry in _entries(move)
+    )
+
+
+def _count(move: str, *, thread: str, hours: float) -> int:
+    """How many times ``move`` succeeded in ``thread`` within ``hours``."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    return sum(
+        1
+        for entry in _entries(move)
+        if datetime.fromisoformat(entry["ended"]) >= since and entry.get("thread") == thread
     )
 
 

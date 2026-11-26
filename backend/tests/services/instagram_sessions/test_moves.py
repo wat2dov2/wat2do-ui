@@ -66,6 +66,7 @@ class _Reader:
 
     def send_reply(self, text):
         _Reader.replies.append(text)
+        _Reader.thread = [*_Reader.thread, {"from": "us", "text": text}]
 
     def heart(self):
         _Reader.hearts.append(self.name)
@@ -520,17 +521,31 @@ def _logged(move, thread="TMU Pre-Vet Club", minutes_ago=5, **extra):
         log.write(json.dumps({**entry, **extra}) + "\n")
 
 
-def test_a_reply_is_sent_once_per_thread_a_day(agent, capsys):
+def test_a_reply_answers_each_message_of_theirs_once(agent, capsys):
+    agent.thread = [{"from": "them", "text": "can you repost this?", "sender": "tmuprevet"}]
     assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "Sure, done!"]) == 0
     assert json.loads(capsys.readouterr().out) == {
         "thread": "TMU Pre-Vet Club",
         "status": "reply sent",
     }
+    # Our reply is now the newest message: nothing more until they write again.
     assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "Done again!"]) == 1
-    assert "already got a reply" in json.loads(capsys.readouterr().out)["error"]
-    assert agent.replies == ["Sure, done!"]
+    assert "already answered" in json.loads(capsys.readouterr().out)["error"]
+    # A follow-up question the same day gets its own answer.
+    agent.thread = [*agent.thread, {"from": "them", "text": "how do we submit an event?"}]
+    assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "At wat2do.io/submit"]) == 0
+    assert agent.replies == ["Sure, done!", "At wat2do.io/submit"]
     # The log keeps when it was sent, never what.
     assert "Sure, done!" not in next(moves.LOG_DIR.glob("*.jsonl")).read_text()
+
+
+def test_a_thread_gets_at_most_its_daily_replies(agent):
+    agent.thread = [{"from": "them", "text": "one more question", "sender": "tmuprevet"}]
+    for _ in range(moves.DMS.replies_per_thread_per_day):
+        _logged("reply")
+    with pytest.raises(moves.MoveError, match="replies today"):
+        moves.reply(_Calm(), _args(text="Sure!"))
+    assert agent.replies == []
 
 
 def test_an_account_sends_at_most_its_daily_replies(agent):
