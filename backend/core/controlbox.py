@@ -599,6 +599,13 @@ class InstagramPublishingControl(_ControlModel):
     # Later runs draft only schools still missing today's draft, so one failed run is retried.
     curation_hours: tuple[Annotated[int, Field(ge=0, le=23)], ...] = Field(min_length=1)
     curation_minute: int = Field(ge=0, le=59)
+    # Right after curation saves a draft, a second agent checks every slide against the
+    # promotion rules and takes off any that fails them before a sitting can post it.
+    draft_audit_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    draft_audit_timeout_seconds: int = Field(ge=60, le=3600)
+    # The Claude login the draft audit and the curation quality test run on, never the
+    # one ingestion runs on.
+    quality_claude_config_dir: str = Field(min_length=1)
     poster_timeout_seconds: float = Field(gt=0, le=120)
     # Right after a sitting posts a carousel, the Mac's emulator likes, reposts and adds a
     # song to it; a carousel posted outside a sitting is tried again music_retry_minutes

@@ -213,7 +213,7 @@ async fn enabled_accounts(db: &PgPool) -> Result<Vec<EnabledAccount>> {
 }
 
 /// `_daily_batch`: today's events draft for the account, if there is one.
-async fn daily_batch(
+pub(super) async fn daily_batch(
     db: &PgPool,
     account_key: &str,
     local_date: NaiveDate,

@@ -10,10 +10,12 @@
 //! Liking, reposting and adding music to a published carousel stay with the
 //! Python emulator worker (`services/instagram_publishing/music.py`).
 
+pub mod audit;
 pub mod curation;
 pub mod drafts;
 pub mod meta;
 pub mod publishing;
+pub mod quality;
 pub mod rendering;
 pub mod schedule;
 pub mod selection;
