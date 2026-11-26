@@ -937,7 +937,7 @@ class MaintenanceControl(_ControlModel):
     probe_timeout_seconds: int = Field(ge=10, le=600)
     command_timeout_seconds: int = Field(ge=5, le=600)
     # Instagram items in the last window against the median of the same window on each
-    # of the baseline days; a day's total the same way; a school is dark when its last
+    # of the baseline days; a day's total the same way. A school is dark when its last
     # day is under its ratio of a baseline at least the minimum.
     ingestion_window_hours: int = Field(ge=1, le=24)
     baseline_days: int = Field(ge=2, le=28)
@@ -947,7 +947,11 @@ class MaintenanceControl(_ControlModel):
     ingestion_silence_minutes: int = Field(ge=10, le=1440)
     school_dark_min_baseline: int = Field(ge=1)
     school_dark_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
-    dark_schools_red: int = Field(ge=1, le=50)
+    # A school with no daily digest for `school_digest_hours` (the quiet-school lane's
+    # own limit) should still be read by that lane: under `school_low_ratio` of its
+    # baseline, the lane is not covering it.
+    school_low_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    school_digest_hours: int = Field(ge=1, le=96)
     brave_heartbeat_max_seconds: int = Field(ge=30, le=7200)
     brave_window_hours: int = Field(ge=1, le=48)
     brave_job_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
@@ -982,6 +986,8 @@ class MaintenanceControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_thresholds(self) -> "MaintenanceControl":
+        if self.school_dark_ratio >= self.school_low_ratio:
+            raise ValueError("school_dark_ratio must be below school_low_ratio")
         if self.disk_free_gb_red >= self.disk_free_gb_yellow:
             raise ValueError("disk_free_gb_red must be below disk_free_gb_yellow")
         if set(self.keep_alive_agents) & set(self.scheduled_agents):

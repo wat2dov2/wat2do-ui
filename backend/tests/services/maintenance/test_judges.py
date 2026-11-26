@@ -14,7 +14,8 @@ CONTROL = controlbox.maintenance.model_copy(
         "ingestion_silence_minutes": 120,
         "school_dark_min_baseline": 40,
         "school_dark_ratio": 0.1,
-        "dark_schools_red": 2,
+        "school_low_ratio": 0.25,
+        "school_digest_hours": 26,
         "brave_heartbeat_max_seconds": 600,
         "brave_window_hours": 3,
         "brave_job_failure_ratio": 0.3,
@@ -55,6 +56,7 @@ def _ingestion(**changes):
         "day_now": 2000,
         "day_baseline": [2100, 1900, 2200, 1800, 2000, 2300, 2050],
         "last_item_minutes": 3,
+        "no_digest": [],
         "schools": {
             "uwaterloo": {"today": 60, "baseline": [62, 60, 64, 58, 61, 66, 59]},
             "yorku": {"today": 70, "baseline": [72] * 7},
@@ -90,22 +92,26 @@ def test_no_item_for_too_long_is_red():
     assert _ingestion(last_item_minutes=None).status == "red"
 
 
-def test_one_dark_school_is_yellow_and_two_are_red():
-    one = _ingestion(
+def test_one_school_far_under_its_own_median_is_red():
+    # 2026-11-26: uwaterloo got 2 items in a day against its usual 60-96.
+    check = _ingestion(
         schools={
             "uwaterloo": {"today": 2, "baseline": [60] * 7},
             "yorku": {"today": 70, "baseline": [72] * 7},
         }
     )
-    assert one.status == "yellow"
-    assert "uwaterloo 2 (median 60)" in one.summary
-    two = _ingestion(
-        schools={
-            "uwaterloo": {"today": 2, "baseline": [60] * 7},
-            "yorku": {"today": 4, "baseline": [72] * 7},
-        }
-    )
-    assert two.status == "red"
+    assert check.status == "red"
+    assert "uwaterloo 2 (median 60)" in check.summary
+
+
+def test_a_school_without_a_digest_is_red_only_when_the_quiet_lane_misses_it_too():
+    low = {"uwaterloo": {"today": 12, "baseline": [60] * 7}}
+    assert _ingestion(schools=low).status == "green"
+    check = _ingestion(schools=low, no_digest=["uwaterloo"])
+    assert check.status == "red"
+    assert "no daily digest for 26 h" in check.summary
+    covered = {"uwaterloo": {"today": 40, "baseline": [60] * 7}}
+    assert _ingestion(schools=covered, no_digest=["uwaterloo"]).status == "green"
 
 
 def test_a_school_with_a_small_baseline_is_never_dark():

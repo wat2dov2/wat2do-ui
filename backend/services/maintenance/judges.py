@@ -80,16 +80,27 @@ def ingestion(reading: dict[str, Any], control: MaintenanceControl) -> Check:
             if silence is None
             else f"no Instagram item for {silence:.0f} min"
         )
-    dark = sorted(
-        f"{school} {counts['today']} (median {_median(counts['baseline']):g})"
-        for school, counts in reading["schools"].items()
-        if _median(counts["baseline"]) >= control.school_dark_min_baseline
-        and counts["today"] < control.school_dark_ratio * _median(counts["baseline"])
-    )
-    if len(dark) >= control.dark_schools_red:
-        red.append(f"{len(dark)} schools nearly dark in the last 24 h: {', '.join(dark)}")
-    elif dark:
-        yellow.append(f"school nearly dark in the last 24 h: {', '.join(dark)}")
+    # 2026-11-26: uwaterloo got 2 items in a day against its usual 60-96.
+    dark: list[str] = []
+    uncovered: list[str] = []
+    for school, counts in sorted(reading["schools"].items()):
+        baseline = _median(counts["baseline"])
+        if baseline < control.school_dark_min_baseline:
+            continue
+        line = f"{school} {counts['today']} (median {baseline:g})"
+        if counts["today"] < control.school_dark_ratio * baseline:
+            dark.append(line)
+        elif (
+            school in reading["no_digest"] and counts["today"] < control.school_low_ratio * baseline
+        ):
+            uncovered.append(line)
+    if dark:
+        red.append(f"nearly dark in the last 24 h: {', '.join(dark)}")
+    if uncovered:
+        red.append(
+            f"no daily digest for {control.school_digest_hours} h and few items "
+            f"(the quiet-school lane is not covering them): {', '.join(uncovered)}"
+        )
     return verdict(
         "ingestion",
         red,

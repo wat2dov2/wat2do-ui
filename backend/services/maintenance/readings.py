@@ -17,7 +17,7 @@ import sqlite3
 import subprocess
 import tempfile
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -48,6 +48,13 @@ class Context:
         self.state = state
         self.now = now
         self.local = now.astimezone(TORONTO)
+        self._recorded: Recorded | None = None
+
+    def recorded(self) -> Recorded:
+        """The notification recorder's recent lines, read once per pass."""
+        if self._recorded is None:
+            self._recorded = _read_recorded()
+        return self._recorded
 
     def run(
         self, command: list[str], *, timeout: float | None = None, env: dict[str, str] | None = None
@@ -177,6 +184,7 @@ def ingestion(rows: dict[str, Any], context: Context) -> dict[str, Any]:
         "day_now": total(0, 24),
         "day_baseline": [total(24 * day, 24) for day in days],
         "last_item_minutes": rows["last_item_minutes"],
+        "no_digest": sorted(_schools_without_digest(rows["schools"], context)),
         "schools": {
             slug: {
                 "today": per_school[slug].get(0, 0),
@@ -184,6 +192,17 @@ def ingestion(rows: dict[str, Any], context: Context) -> dict[str, Any]:
             }
             for slug in rows["schools"]
         },
+    }
+
+
+def _schools_without_digest(schools: list[str], context: Context) -> set[str]:
+    since = context.now - timedelta(hours=context.control.school_digest_hours)
+    digests = context.recorded().digest_by_account
+    return {
+        school
+        for school in schools
+        if digests.get(school_account_username(school), datetime.min.replace(tzinfo=timezone.utc))
+        < since
     }
 
 
@@ -219,11 +238,9 @@ def brave(context: Context) -> dict[str, Any]:
     jobs: dict[str, dict[str, int]] = defaultdict(dict)
     for kind, state, count in rows:
         jobs[kind][state] = count
-    error_lines, log_hours = 0, 0.0
-    for name in ("worker.stderr.log", "worker.operations.log"):
-        text, hours = context.new_log_text(BROWSER_STATE / name)
-        error_lines += sum(1 for line in text.splitlines() if line.startswith("ERROR"))
-        log_hours = max(log_hours, hours)
+    # The live (Rust) worker logs here; worker.operations.log is the old Python worker's.
+    text, log_hours = context.new_log_text(BROWSER_STATE / "worker.stderr.log")
+    error_lines = sum(1 for line in text.splitlines() if line.startswith("ERROR"))
     return {
         "status": {
             key: status.get(key) for key in ("paused", "accounts_paused", "accounts_missing")
@@ -288,10 +305,16 @@ def _tail_lines(path: Path, size: int) -> list[str]:
     return lines[1:] if path.stat().st_size > size else lines
 
 
-def recorder(context: Context) -> dict[str, Any]:
-    emulator = controlbox.instagram_emulator
-    last: dict[str, datetime] = {}
-    last_digest: datetime | None = None
+class Recorded:
+    """When the recorder last heard each Android user, and each account's last digest."""
+
+    def __init__(self) -> None:
+        self.by_user: dict[str, datetime] = {}
+        self.digest_by_account: dict[str, datetime] = {}
+
+
+def _read_recorded() -> Recorded:
+    recorded = Recorded()
     for line in _tail_lines(NOTIFICATION_LOG / "notifications.jsonl", _RECORDER_TAIL_BYTES):
         try:
             row = json.loads(line)
@@ -299,9 +322,20 @@ def recorder(context: Context) -> dict[str, Any]:
         except (ValueError, KeyError, TypeError):
             continue
         user = str(row.get("android_user"))
-        last[user] = max(at, last.get(user, at))
-        if row.get("category") == "subscription_daily_digest":
-            last_digest = at if last_digest is None else max(at, last_digest)
+        recorded.by_user[user] = max(at, recorded.by_user.get(user, at))
+        account = row.get("account")
+        if row.get("category") == "subscription_daily_digest" and account:
+            recorded.digest_by_account[account] = max(
+                at, recorded.digest_by_account.get(account, at)
+            )
+    return recorded
+
+
+def recorder(context: Context) -> dict[str, Any]:
+    emulator = controlbox.instagram_emulator
+    recorded = context.recorded()
+    last = recorded.by_user
+    last_digest = max(recorded.digest_by_account.values(), default=None)
     dispatch = json.loads((NOTIFICATION_LOG / "dispatch.json").read_text(encoding="utf-8"))
     any_last = max(last.values(), default=None)
     return {
