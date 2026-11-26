@@ -43,5 +43,6 @@
   "story_max_age_hours": 12,
   "stats_media_limit": 25,
   "stats_history_days": 30,
-  "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"]
+  "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"],
+  "asian_song_override": ["The Weeknd - Hong Kong", "Hong Kong The Weeknd"]
 }
