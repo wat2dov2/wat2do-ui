@@ -23,6 +23,7 @@ from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS
 from services import school_service
+from services.instagram_accounts import android_user
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError
 from services.instagram_emulator.story import share_to_story
 
@@ -84,7 +85,7 @@ def share(device: EmulatorDevice, school: str, batch_id: str) -> Story:
         except EmulatorError as exc:
             log.warning("Could not share %s to %s's story", url, school, exc_info=True)
             failed[url] = str(exc)
-            device.reset_app(EMULATOR.android_user_by_school[school])
+            device.reset_app(android_user(school))
     story = Story(shared=len(urls) - len(failed), total=len(urls), failed=failed)
     _record(batch_id, STORY_POSTED if story.shared else STORY_FAILED, story.error)
     return story

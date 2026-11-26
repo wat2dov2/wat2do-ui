@@ -22,6 +22,7 @@ from pathlib import Path
 
 from PIL import Image, ImageStat
 
+from services.instagram_accounts import android_user
 from services.instagram_emulator.device import (
     CONTROL,
     EmulatorDevice,
@@ -89,7 +90,7 @@ def share_to_story(
     """
     if not _POST_URL.fullmatch(media_url):
         raise EmulatorError("Only an exact Instagram post or reel can go to a story")
-    user = CONTROL.android_user_by_school[school]
+    user = android_user(school)
     if sticker is not None:
         device.put_photo(user, sticker)
     device.open_instagram(user, media_url)

@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 from PIL import Image
 
+from services.instagram_accounts import android_user
 from services.instagram_emulator.device import (
     CONTROL,
     EmulatorDevice,
@@ -150,7 +151,7 @@ def finish_post(
     """
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
-    user = CONTROL.android_user_by_school[school]
+    user = android_user(school)
     try:
         return _finish(device, user, permalink, queries, choose, gif, place, clubs)
     except EmulatorError:
