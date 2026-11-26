@@ -3,8 +3,9 @@
 From the control box's start time each morning, every school account gets one sitting
 a day, schools with a carousel to post first. Claude Code takes the emulator on that
 account and does everything in one go (``prompt.md``): it posts the day's carousel,
-likes and reposts it, sets its song, place and club tags, comments a GIF, and shares
-each event's original post to the story, then sends the claim-link follow-ups that are
+likes and reposts it, sets its song, place and club tags, comments a GIF, shares
+each event's original post to the story, posts a thank-you story when the account just
+reached a follower or like milestone, then sends the claim-link follow-ups that are
 due. Direct messages are otherwise not part of it: the notification agent
 (``notification.py``) answers each as it arrives. A carousel
 posted outside a sitting (the admin's Publish button) brings its school's sitting

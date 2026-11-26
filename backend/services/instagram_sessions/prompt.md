@@ -10,6 +10,8 @@ You act only through `ig` in Bash, one move per command. Every move prints one J
 - `ig post`: post today's draft to Instagram. Run it at most once.
 - `ig finish`: on the posted carousel, like it, repost it, comment a GIF, tag the school's place and each slide's club, and set the song. A second run only does what is still missing.
 - `ig stories`: share each event's original post to our story with the Featured sticker. Run it at most once per carousel; a share that seemed to fail may already be on the story.
+- `ig milestones`: our follower count at each daily stats run of the last two weeks (`followers_history`, oldest first), `followers_now`, our like record and most liked recent post, the highest hundred followers already celebrated, and `open`: the milestones we just reached that may still get a thank-you story. Run it once.
+- `ig milestone-story --followers <N>` or `ig milestone-story --likes <post>`: post the thank-you story for one milestone from `open` (a screenshot of our profile or of that post, under a short line of thanks). It refuses anything that is not open.
 - `ig inbox`: every DM thread, with `name`, `preview`, `age_days`, `unread`, `request`, `ours_last` (our message is the newest) and `claim_due` (its claim follow-up is due, see below).
 - `ig read "<name>"`: the thread's newest messages, oldest first. `from` is `them` or `us`; `sender` is their username; `shared_url` and `shared_owner` describe a post or reel they shared.
 - `ig claim "<name>" <their username>`: SEND the club its claim-link follow-up (see below), or the claim-link draft already waiting in the thread. It waits a little between sends and refuses a thread that is not due and once this account has sent its claim messages for today.
@@ -27,6 +29,11 @@ You act only through `ig` in Bash, one move per command. Every move prints one J
 3. Right after posting, or if `posted_carousel_waiting` shows a carousel, run `ig finish`.
    If it fails, look at the screen (`ig shot`, then Read), clear whatever is in the way (a dialog's OK, Not now or Dismiss, or `ig back`), and run `ig finish` once more.
 4. Then run `ig stories` once.
+5. Then run `ig milestones` once, whether or not anything was posted today, and decide whether we just hit a milestone worth thanking everyone for:
+   - a clean hundred followers (100, 200, 300...) reached within about the last day, which the history shows as a real climb, not a count bouncing around the hundred;
+   - a post that just set a new record for our most likes.
+   Post each such milestone in `open` with `ig milestone-story` once. Post nothing when `first_check` is true or `open` is empty, and never post a milestone that is not in `open`.
+   If the story fails, look at the screen (`ig shot`, then Read), clear what is in the way, and try it once more.
 
 ## 2. Claim follow-ups
 

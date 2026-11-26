@@ -1,6 +1,8 @@
+import io
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from services.instagram_emulator import story as module
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
@@ -199,3 +201,114 @@ def test_a_sticker_that_does_not_reach_the_corner_stops_the_share(screens) -> No
     ):
         module.share_to_story(device, "uwaterloo", POST, sticker=Path("featured_sticker_en.png"))
     assert "Your story" not in device.taps
+
+
+class _PhotoDevice(_Device):
+    """Also answers the gallery lookup, a screenshot, and the share that opens the editor."""
+
+    def __init__(self, screens, *, shots=(), gallery=("", "Row: 0 _id=4711\n")):
+        super().__init__(screens)
+        self.commands = []
+        self.shots = list(shots)
+        self.gallery = list(gallery)
+
+    def adb(self, *args):
+        self.commands.append(args)
+        if "query" in args:
+            return self.gallery.pop(0) if len(self.gallery) > 1 else self.gallery[0]
+        if "android.intent.action.SEND" in args:
+            self.screens.pop(0)
+        return ""
+
+    def _press(self, node, hold_ms):
+        super()._press(node, hold_ms)
+        self.taps[-1] = node.label
+
+    def put_photo(self, user, photo):
+        self.photos.append((user, photo.read_bytes()))
+        return "milestone_story-0a1b2c3d.png"
+
+    def screenshot(self):
+        return self.shots.pop(0) if len(self.shots) > 1 else self.shots[0]
+
+
+def _png(size=(1080, 2400), colour=(255, 255, 255), noisy=True):
+    image = Image.new("RGB", size, colour)
+    if noisy:
+        for x in range(0, size[0], 7):
+            for y in range(0, size[1], 11):
+                image.putpixel((x, y), (0, 0, 0))
+    out = io.BytesIO()
+    image.save(out, format="PNG")
+    return out.getvalue()
+
+
+def _size(png):
+    with Image.open(io.BytesIO(png)) as image:
+        return image.size
+
+
+def test_a_photo_goes_to_the_story_from_the_gallery(screens) -> None:
+    recorded = []
+    device = _PhotoDevice([HOME, EDITOR, HOME])
+    module.share_photo(device, 12, b"card", before_post=lambda: recorded.append(device.taps[:]))
+    assert device.photos == [(12, b"card")]
+    send = next(command for command in device.commands if "android.intent.action.SEND" in command)
+    assert "content://media/external/images/media/4711" in send
+    assert send[-1].endswith("/com.instagram.share.handleractivity.StoryShareHandlerActivity")
+    # The milestone is recorded just before Your story, never after it.
+    assert recorded == [[]]
+    assert device.taps == ["Your story"]
+
+
+def test_a_photo_the_gallery_never_lists_is_not_shared(screens) -> None:
+    device = _PhotoDevice([HOME], gallery=("",))
+    with pytest.raises(EmulatorError, match="never reached the gallery"):
+        module.share_photo(device, 12, b"card", before_post=lambda: pytest.fail("recorded"))
+    assert not any("android.intent.action.SEND" in command for command in device.commands)
+
+
+PROFILE = [
+    Node("angrygooseinuw", "", (169, 128, 636, 275), "action_bar_title"),
+    Node("11", "", (525, 373, 559, 427), "profile_header_familiar_followers_value"),
+    Node("", "Photo by Angry Goose at Row 1, Column 1", (0, 1069, 356, 1544)),
+    Node("", "Photo by Angry Goose at Row 2, Column 1", (0, 1550, 356, 2025)),
+]
+SUGGESTIONS = [
+    *PROFILE[:2],
+    Node("", "Discover people", (964, 852, 1048, 936), "row_profile_header_button_chaining"),
+    Node("Discover people", "", (42, 992, 322, 1039), "similar_accounts_carousel_title"),
+]
+
+
+def test_the_profile_screenshot_closes_the_suggestions_and_ends_at_the_grid(screens) -> None:
+    device = _PhotoDevice([HOME, SUGGESTIONS, PROFILE], shots=[_png()])
+    shot = module.profile_screenshot(device, 12, "angrygooseinuw")
+    assert device.taps == ["Discover people"]
+    # From the top bar down to the grid's second row: no status bar, no navigation bar.
+    assert _size(shot) == (1080, 2025 - 128)
+
+
+POST_SCREEN = [
+    Node("", "wat2do.wlu posted a carousel", (0, 275, 1080, 412), "row_feed_profile_header"),
+    Node("", "Photo 1 of 10", (0, 412, 1080, 1762), "carousel_video_media_group"),
+    Node("", "Like", (32, 1843, 95, 1906), "row_feed_button_like"),
+    Node("21", "", (106, 1814, 143, 1935)),
+    Node("", "Add to Saved", (958, 1814, 1074, 1924), "row_feed_button_save"),
+    Node("wat2do.wlu Fresh events at wlu", "", (32, 1935, 1080, 2274)),
+]
+
+
+def test_the_post_screenshot_waits_for_the_picture_and_ends_at_the_buttons(screens) -> None:
+    loading = _png(noisy=False)
+    device = _PhotoDevice([HOME, POST_SCREEN], shots=[loading, loading, _png()])
+    shot = module.post_screenshot(device, 12, POST)
+    assert device.shots == [_png()]
+    # The header to the row of buttons with the like count, not the caption.
+    assert _size(shot) == (1080, 1935 - 275)
+
+
+def test_a_post_picture_that_never_loads_is_not_shown(screens) -> None:
+    device = _PhotoDevice([HOME, POST_SCREEN], shots=[_png(noisy=False)])
+    with pytest.raises(EmulatorError, match="never loaded"):
+        module.post_screenshot(device, 12, POST)

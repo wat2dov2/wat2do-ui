@@ -64,7 +64,7 @@ from services.instagram_emulator.direct import (
 from services.instagram_emulator.following import FollowingReader
 from services.instagram_emulator.inbox import open_row, read_inbox
 from services.instagram_emulator.story import share_to_story
-from services.instagram_publishing import music, stories
+from services.instagram_publishing import milestones, music, stories
 from services.instagram_sessions import notification
 
 EMULATOR = controlbox.instagram_emulator
@@ -111,10 +111,11 @@ _ACTING = frozenset(
         "feature",
         "correction",
         "opt-out",
+        "milestone-story",
     }
 )
-# Moves that only read what is on the device.
-_READING = frozenset({"status", "inbox", "read", "screen", "shot"})
+# Moves that only read what is on the device, or never touch it.
+_READING = frozenset({"status", "inbox", "read", "screen", "shot", "milestones"})
 # How far back the daily caps and the per-thread repeats look.
 _LOG_DAYS = 2
 
@@ -198,6 +199,35 @@ def share_stories(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str
         raise MoveError("No posted carousel of this school is waiting for its story")
     story = stories.share(device, school(), batch["id"])
     return {"shared": story.shared, "of": story.total, "not_shared": story.failed}
+
+
+def milestone_report(_device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
+    """The account's follower history, like record and celebrated milestones, and the
+    milestones this check opened for a thank-you story."""
+    return milestones.report(_school_id())
+
+
+def milestone_story(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Post the thank-you story for an open milestone: a hundred followers, or a post's
+    like record."""
+    record = school_service.get_school(school())
+    if record is None:
+        raise MoveError("This school is not in the database")
+    if args.followers is not None:
+        wanted = milestones.Milestone("followers", args.followers)
+    else:
+        wanted = milestones.Milestone("likes", 0, milestones.Post("", args.likes, 0))
+    try:
+        return milestones.post_story(
+            device,
+            school_id=record.id,
+            user=user(),
+            username=school_account_username(school()),
+            language=record.language,
+            milestone=wanted,
+        )
+    except milestones.MilestoneError as exc:
+        raise MoveError(str(exc)) from exc
 
 
 # --- direct messages ---------------------------------------------------------------
@@ -781,6 +811,8 @@ MOVES: dict[str, Callable[[EmulatorDevice, argparse.Namespace], dict[str, Any]]]
     "post": post,
     "finish": finish,
     "stories": share_stories,
+    "milestones": milestone_report,
+    "milestone-story": milestone_story,
     "inbox": inbox,
     "read": read,
     "claim": claim,
@@ -801,20 +833,37 @@ MOVES: dict[str, Callable[[EmulatorDevice, argparse.Namespace], dict[str, Any]]]
 }
 # Moves whose answer the log keeps (never a message's text).
 _LOGGED_RESULTS = frozenset(
-    {"post", "finish", "stories", "share", "claim", "feature", "boost", "accept", "mute"}
+    {
+        "post",
+        "finish",
+        "stories",
+        "milestones",
+        "milestone-story",
+        "share",
+        "claim",
+        "feature",
+        "boost",
+        "accept",
+        "mute",
+    }
 )
 
 
 def parser() -> argparse.ArgumentParser:
     parse = argparse.ArgumentParser(prog="ig", description=__doc__)
     commands = parse.add_subparsers(dest="move", required=True)
-    for name in ("status", "post", "finish", "stories", "inbox", "screen", "shot", "back"):
+    for name in ("status", "post", "finish", "stories", "milestones", "inbox", "screen"):
+        commands.add_parser(name)
+    for name in ("shot", "back"):
         commands.add_parser(name)
     for name in ("read", "correction", "opt-out", "heart", "accept", "mute"):
         commands.add_parser(name).add_argument("thread")
     answer = commands.add_parser("reply")
     answer.add_argument("thread")
     answer.add_argument("--text", required=True)
+    story = commands.add_parser("milestone-story").add_mutually_exclusive_group(required=True)
+    story.add_argument("--followers", type=int)
+    story.add_argument("--likes", metavar="POST")
     send = commands.add_parser("claim")
     send.add_argument("thread")
     send.add_argument("username")

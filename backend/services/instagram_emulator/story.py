@@ -1,16 +1,26 @@
-"""Share a club's post or reel to a school account's story from the Instagram app.
+"""Post to a school account's story from the Instagram app.
 
 Instagram's website cannot add someone else's post to a story, so the app on the
 emulator does it the way a person would: open the post, Share, Add to story, then
 post to "Your story". A carousel's story also gets a "Featured" sticker in the
 post's top-right corner (``sticker``): a gallery photo added as a photo sticker.
+
+A picture of our own (a milestone's thank-you card) goes to the story the way a person
+shares one from their gallery (``share_photo``), and ``profile_screenshot`` and
+``post_screenshot`` take the screenshots such a card shows.
 """
 
 from __future__ import annotations
 
+import io
 import re
+import shlex
+import tempfile
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
+
+from PIL import Image, ImageStat
 
 from services.instagram_emulator.device import (
     CONTROL,
@@ -46,6 +56,27 @@ _STICKER_TOLERANCE = 60
 # A drag towards the screen's right edge can stop short of the corner, or not move the
 # sticker at all; the next one starts where it stopped.
 _DRAGS = 6
+# Android's share target that opens a gallery picture in Instagram's story editor.
+_STORY_SHARE_ACTIVITY = "com.instagram.share.handleractivity.StoryShareHandlerActivity"
+_GALLERY = "content://media/external/images/media"
+_STORY_PHOTO = "milestone_story.png"
+# The media scanner adds a picture to the gallery a moment after it is told about it.
+_GALLERY_LOOKUPS = 10
+# The account's own profile: its follower count, the "Discover people" suggestions it
+# can show under the buttons (closed for the screenshot), and the post grid.
+_FOLLOWERS = re.compile(r"^profile_header_(?:familiar_)?followers")
+_TOP_BAR = re.compile(r"^action_bar_title$")
+_SUGGESTIONS = re.compile(r"^similar_accounts_carousel_title$")
+_SUGGESTIONS_TOGGLE = re.compile(r"^row_profile_header_button_chaining$")
+_GRID_SECOND_ROW = re.compile(r"^.* at Row 2, Column 1$")
+# A post page: the post's header, then its picture, buttons and like count; the next
+# post on the page starts with a header of its own.
+_POST_HEADER = re.compile(r"^row_feed_profile_header$")
+_LIKE = re.compile(r"^row_feed_button_like$")
+_ROW_HEIGHT = 150
+# A loading picture is a blank square: its grey levels spread far less than a photo's.
+_LOADED_SPREAD = 12
+_PICTURE_LOOKS = 15
 
 
 def share_to_story(
@@ -137,3 +168,125 @@ def _added(nodes: list[Node], post: Node) -> Node | None:
         (node for node in nodes if node.labelled(_ON_STORY) and node.bounds != post.bounds),
         None,
     )
+
+
+def share_photo(
+    device: EmulatorDevice, user: int, photo: bytes, *, before_post: Callable[[], None]
+) -> None:
+    """Post the PNG ``photo`` to the account's story, or raise without knowing it was not
+    posted. ``before_post`` runs just before "Your story" is tapped: a failure before it
+    means the story was not posted.
+
+    The picture becomes the gallery's newest photo and is shared to Instagram's story
+    the way the gallery's Share does, which opens it in the story editor.
+    """
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / _STORY_PHOTO
+        path.write_bytes(photo)
+        name = device.put_photo(user, path)
+    device.adb(
+        "shell",
+        "am",
+        "start",
+        "--user",
+        str(user),
+        "-a",
+        "android.intent.action.SEND",
+        "-t",
+        "image/png",
+        "--eu",
+        "android.intent.extra.STREAM",
+        _gallery_uri(device, user, name),
+        "-n",
+        f"{CONTROL.instagram_package}/{_STORY_SHARE_ACTIVITY}",
+    )
+    _open_story_editor(device)
+    before_post()
+    device.tap_when(_POST_TO_STORY)
+    _decline_facebook_sharing(device)
+    device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
+
+
+def _gallery_uri(device: EmulatorDevice, user: int, name: str) -> str:
+    """The gallery's address for the picture ``name``, once the media scanner added it."""
+    for _ in range(_GALLERY_LOOKUPS):
+        rows = device.adb(
+            "shell",
+            "content",
+            "query",
+            "--user",
+            str(user),
+            "--uri",
+            _GALLERY,
+            "--projection",
+            "_id",
+            "--where",
+            shlex.quote(f"_display_name='{name}'"),
+        )
+        found = re.search(r"_id=(\d+)", rows)
+        if found:
+            return f"{_GALLERY}/{found[1]}"
+        device.pause()
+    raise EmulatorError("The story picture never reached the gallery")
+
+
+def profile_screenshot(device: EmulatorDevice, user: int, username: str) -> bytes:
+    """The account's own profile as PNG bytes: from its top bar to the post grid's
+    second row, with Instagram's "Discover people" suggestions closed."""
+    device.open_instagram(user, f"https://www.instagram.com/{username}/")
+    device.wait_for(_FOLLOWERS)
+    if device.find(_SUGGESTIONS) is not None:
+        device.tap_when(_SUGGESTIONS_TOGGLE)
+        device.wait_until_gone(_SUGGESTIONS, seconds=CONTROL.screen_wait_seconds)
+    device.pause()
+    nodes = device.screen()
+    top = device.find(_TOP_BAR, nodes)
+    if top is None:
+        raise EmulatorError("The profile's top bar was not on screen")
+    row = device.find(_GRID_SECOND_ROW, nodes)
+    bottom = row.bounds[3] if row is not None else max(node.bounds[3] for node in nodes)
+    return _crop(device.screenshot(), top.bounds[1], bottom)
+
+
+def post_screenshot(device: EmulatorDevice, user: int, url: str) -> bytes:
+    """The post at ``url`` as PNG bytes: its header, its picture once loaded, and its row
+    of buttons with the like count."""
+    if not _POST_URL.fullmatch(url):
+        raise EmulatorError("Only an exact Instagram post or reel can be shown")
+    device.open_instagram(user, url)
+    like = device.wait_for(_LIKE)
+    nodes = device.screen()
+    header = device.find(_POST_HEADER, nodes)
+    if header is None:
+        raise EmulatorError("The post's header was not on screen")
+    # The row of buttons and counts: every labelled control level with the Like button.
+    middle = (like.bounds[1] + like.bounds[3]) // 2
+    row = [
+        node.bounds[3]
+        for node in nodes
+        if node.label and node.bounds[1] <= middle <= node.bounds[3] < middle + _ROW_HEIGHT
+    ]
+    shot = _loaded(device, (header.bounds[0], header.bounds[3], header.bounds[2], like.bounds[1]))
+    return _crop(shot, header.bounds[1], max(row))
+
+
+def _loaded(device: EmulatorDevice, box: tuple[int, int, int, int]) -> bytes:
+    """A screenshot taken once the picture in ``box`` has loaded: until then Instagram
+    draws a blank square with a spinner, which reads as nearly one colour."""
+    for _ in range(_PICTURE_LOOKS):
+        shot = device.screenshot()
+        with Image.open(io.BytesIO(shot)) as image:
+            spread = ImageStat.Stat(image.convert("L").crop(box)).stddev[0]
+        if spread > _LOADED_SPREAD:
+            return shot
+        device.pause()
+    raise EmulatorError("The post's picture never loaded")
+
+
+def _crop(screenshot: bytes, top: int, bottom: int) -> bytes:
+    """The screenshot's rows from ``top`` to ``bottom``, as PNG bytes."""
+    with Image.open(io.BytesIO(screenshot)) as image:
+        cropped = image.convert("RGB").crop((0, top, image.width, bottom))
+    out = io.BytesIO()
+    cropped.save(out, format="PNG")
+    return out.getvalue()

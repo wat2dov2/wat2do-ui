@@ -1246,6 +1246,13 @@ class InstagramSessionsControl(_ControlModel):
     limit_pause_minutes: int = Field(ge=5, le=720)
     # The notification agent runs on the same model and login, at most this long a run.
     notification_timeout_minutes: int = Field(ge=2, le=120)
+    # A post's like record gets a thank-you story only from this many likes; a smaller
+    # record is kept without one.
+    milestone_minimum_likes: int = Field(ge=1, le=100_000)
+    # A milestone gets its story only when the check that sees it comes at most this
+    # long after the last check and the stats run it reads: a crossing found later may
+    # be days old, and is only recorded.
+    milestone_window_hours: int = Field(ge=1, le=72)
 
 
 class HiddenSchoolAccountControl(_ControlModel):

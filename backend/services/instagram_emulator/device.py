@@ -539,8 +539,9 @@ class EmulatorDevice:
         )
         self.adb("shell", script)
 
-    def put_photo(self, user: int, photo: Path) -> None:
-        """Make ``photo`` the newest picture in the Android user's gallery.
+    def put_photo(self, user: int, photo: Path) -> str:
+        """Make ``photo`` the newest picture in the Android user's gallery, and return the
+        name it got there.
 
         Instagram's photo-sticker picker lists the gallery by when each picture was
         added, newest first, so the story editor's first photo is this one. Android
@@ -577,6 +578,7 @@ class EmulatorDevice:
                 "-d",
                 f"file:///storage/emulated/{user}/Pictures/{scanned}",
             )
+        return name
 
     def _swipe(self, *, start: tuple[int, int], end: tuple[int, int]) -> None:
         self.pause()
