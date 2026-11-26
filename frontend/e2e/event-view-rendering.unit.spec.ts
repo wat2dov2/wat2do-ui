@@ -778,3 +778,40 @@ test("calendar tiles retain host and cohost pictures and route selection to the 
   props.onSelectEvent!(occurrence, {} as React.SyntheticEvent<HTMLElement>);
   expect(selected).toEqual([listing]);
 });
+
+test("the screen after sending an event renders for a club's team and for a visitor, even before the form built a preview", () => {
+  // From 2026-09-15 to 11-06 this screen read a preview event the form never gave it
+  // and crashed, so clubs saw an error page although their event had been sent (KCAY
+  // at York sent one event five times).
+  const { EventSuccessScreen } = loadComponent("features/events/components/EventForm/EventForm/EventSuccessScreen", {
+    "@/features/clubs": loadComponent("features/clubs/components/ClaimClubNotice"),
+    "@/shared/layout": loadComponent("shared/layout/section"),
+  }) as typeof import("../src/features/events/components/EventForm/EventForm/EventSuccessScreen");
+  const nodeRequire = createRequire(import.meta.url);
+  const { buildPreviewEvent }: typeof import("../src/features/events/lib/previewEvent") = nodeRequire("../src/features/events/lib/previewEvent");
+  const { getEventFormDefaults }: typeof import("../src/features/events/hooks/useEventForm.utils") = nodeRequire("../src/features/events/hooks/useEventForm.utils");
+  const formData = { ...getEventFormDefaults("America/Toronto"), title: "Meet & Greet", club_id: 3039 };
+  const club = (verified: boolean) => ({
+    id: 3039, club_name: "Kurdish Cultural Association at York", school: "uwaterloo", verified,
+    status: "approved" as const, categories: [], club_page: "", ig: "kurdyork", discord: null,
+  });
+  const preview = (verified: boolean) => buildPreviewEvent({
+    school: "uwaterloo", formData, imagePreview: "", club: club(verified), fallbackTitle: "events.eventTitle",
+  });
+  const render = (props: Pick<ComponentProps<typeof EventSuccessScreen>, "isSubmissionOnly" | "event">) =>
+    renderToStaticMarkup(createElement(EventSuccessScreen, { onClose() {}, isEditMode: false, formData, ...props }));
+
+  const created = render({ isSubmissionOnly: false, event: preview(true) });
+  expect(created).toContain("events.eventCreated");
+  expect(created).toContain("Kurdish Cultural Association at York");
+  expect(created).not.toContain("clubs.claimNotice.description");
+
+  const sent = render({ isSubmissionOnly: true, event: preview(false) });
+  expect(sent).toContain("events.submissionReceived");
+  expect(sent).toContain("clubs.claimNotice.description");
+  expect(sent).toContain('href="/clubs/3039?claim=1"');
+
+  const withoutPreview = render({ isSubmissionOnly: true, event: null });
+  expect(withoutPreview).toContain("events.submissionReceived");
+  expect(withoutPreview).toContain("Meet &amp; Greet");
+});
