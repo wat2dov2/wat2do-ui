@@ -171,6 +171,8 @@ listed from the shared post; a post not listed yet is queued in `public.ingestio
 with the request, and the ingestion agent marks the events it describes.
 Daily carousel drafts always consider requested events, however long ago they were
 added, and rank them first.
+Wat2Do promotes only events any student at the school can attend and a typical student there would want to go to (Tony, 2026-11-25): no residence, members-only, program, year or identity-group events, and no pre-med, law, career, academic or general-meeting events, even requested ones.
+The one statement of that rule is `rust/src/instagram_publishing/promotion_rules.md`, which the curation prompt renders as a hard rule; a sitting shares to the story only what every student can join or apply to, so recruitment and niche events open to all may go there but never into a carousel.
 A carousel shows at most `controlbox/instagram_publishing.json` `maximum_slides_per_post` events read from one Instagram post (the curation agent sees each event's `source_post`, and code refuses an answer over the cap so the agent picks again): one club post listing a week of events filled Berkeley's 2026-11-18 carousel 7 of 8.
 A correction queues the club's words as a `dm` row in `public.ingestion_items`, and the
 ingestion agent corrects only the listings it clearly refers to.

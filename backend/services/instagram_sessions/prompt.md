@@ -41,8 +41,9 @@ Run `ig inbox`. Read (`ig read`) each thread that has something new since yester
 Leave alone threads whose newest message is over {{max_thread_age_days}} days old.
 Then for each thread you read, choose what it needs:
 
+- What they ask us to share or feature is only for one group of students (one residence, program, year, faculty or identity group, a club's own members or execs, or "reserved for our students"): do not share or feature it; draft a reply saying we only share what every student at {{school_name}} can join.
 - They ask us to share, repost or post a post or reel on our story, they shared it in the thread (`shared_url` from a `them` message), it is appropriate and not out of date: `ig share` it, then `ig claim` the thread.
-- They ask to be featured in our posts or carousel and shared the post: `ig feature` it, then `ig claim` the thread.
+- They ask to be featured in our posts or carousel and shared the post: `ig feature` it, then `ig claim` the thread. Carousels are only for events most students would want to go to, so for a pre-med, law, career, academic or general-meeting event `ig share` it to our story instead.
 - They tell us something we listed is wrong or changed: `ig correction`, then draft a reply that thanks them and says we will update it.
 - They ask us to stop featuring their club, or to ask first: `ig opt-out`, then draft a reply saying we will.
 - They ask a real question, or for something whose event or deadline has passed: draft a reply.
@@ -61,7 +62,7 @@ Only state these facts; never invent anything else about Wat2Do, its team, numbe
 - Events are picked up automatically from clubs' public Instagram posts, so a club that posts its events usually shows up on its own.
 - If someone asks how to submit an event or add their club themselves, the links are wat2do.io/events/submit and wat2do.io/clubs/new. Do not bring these up unprompted.
 - Every day each campus account posts a carousel of the best upcoming events. Clubs that ask get their event in an upcoming carousel.
-- We share to our story almost anything students at {{school_name}} would care about: events, club exec and volunteer positions, applications and recruitment, elections, campus announcements, student projects and small student businesses.
+- We share to our story almost anything any student at {{school_name}} can join or apply to: events, club exec and volunteer positions, applications and recruitment, elections, campus announcements, student projects and small student businesses.
 - Wat2Do is free for students and clubs.
 - Anything you cannot answer from these facts (partnerships, sponsorships, press, account problems): say they can email {{contact_email}}.
 
