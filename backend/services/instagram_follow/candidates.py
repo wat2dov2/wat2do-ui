@@ -6,7 +6,13 @@ emulator follows what is approved. One row per school and handle is kept whateve
 is never offered twice: an account an admin rejected stays rejected. Approving
 creates the club when the school has none with that handle (or gives the account to the
 club a directory row was found for), and queues the follow.
-Rejecting an account the school already follows queues an unfollow instead.
+
+Rejecting an account the school may still follow (the row is followed, a follow was
+tapped, or the school's own Following list showed it) queues an unfollow instead,
+whoever rejects it: a database trigger
+(``backend/database/migrations/20261126213700_follow_candidate_unfollow_one_path.sql``)
+turns the rejection into ``unfollow``, and deleting a club rejects its account's row the
+same way.
 """
 
 from __future__ import annotations
@@ -23,6 +29,7 @@ from core.constants import (
     FOLLOW_CANDIDATE_REJECTED,
     FOLLOW_CANDIDATE_UNFOLLOW,
     FOLLOW_SOURCE_CLUB,
+    FOLLOW_SOURCE_CRAWL,
 )
 from core.controlbox import controlbox
 from core.database import get_sb
@@ -32,6 +39,7 @@ from core.tables import CLUBS, INSTAGRAM_FOLLOW_CANDIDATES
 CONTROL = controlbox.instagram_follow
 from schemas.club import CLUB_STATUS_APPROVED, ClubCreate, ClubUpdate
 from services import club_service, school_service
+from services.instagram_accounts import school_account_username
 from services.instagram_emulator.device import CONTROL as EMULATOR
 
 _SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
@@ -86,11 +94,53 @@ def add_candidate(
     ).execute()
 
 
-def sync_club_targets() -> int:
-    """Queue every listed club's Instagram account for following by its school's account.
+def record_following(school: str, followed: list[str], public: list[str]) -> None:
+    """Take in what the school account's own Following list showed (``followed``, its
+    ``public`` accounts among them), so every account it follows has a row.
 
-    Our own clubs need no review, so they go in approved. A club whose handle already
-    has a row, in any status, is left alone. Returns how many rows were added.
+    The list proves only what it shows, so nothing is concluded about an account it
+    does not. Each row it shows is marked seen there; one rejected waits to be
+    unfollowed again, since the account is still followed; a public account with no
+    row goes to the scorer, and rejecting it then unfollows it. A partner of the
+    school (``controlbox/partners.json``) is followed on purpose and left alone.
+    """
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return
+    partners = {
+        partner.instagram_handle
+        for partner in controlbox.partners.partners
+        if school in partner.schools
+    }
+    followed = sorted({normalize_handle(handle) for handle in followed} - partners - {None})
+    known = known_handles(school_id)
+    for handle in public:
+        if normalize_handle(handle) not in known | partners:
+            add_candidate(
+                school_id,
+                handle,
+                source=FOLLOW_SOURCE_CRAWL,
+                found_via=[school_account_username(school)],
+            )
+    now = datetime.now(timezone.utc).isoformat()
+    for start in range(0, len(followed), _INSERT_CHUNK):
+        chunk = followed[start : start + _INSERT_CHUNK]
+        get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update({"seen_following_at": now}).eq(
+            "school_id", school_id
+        ).in_("handle", chunk).execute()
+        get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
+            {"status": FOLLOW_CANDIDATE_UNFOLLOW, "follow_error": None, "updated_at": now}
+        ).eq("school_id", school_id).in_("handle", chunk).eq(
+            "status", FOLLOW_CANDIDATE_REJECTED
+        ).execute()
+
+
+def sync_club_targets() -> int:
+    """Queue every listed club's Instagram account for its school's account to follow.
+
+    Each goes in pending, linked to its club, so the scorer checks it belongs to the
+    school like any other find. A club whose handle already has a row, in any status,
+    is left alone. Returns how many rows were added.
     """
     school_ids = {
         school_id
@@ -124,7 +174,7 @@ def sync_club_targets() -> int:
                 "handle": handle,
                 "name": club["club_name"],
                 "source": FOLLOW_SOURCE_CLUB,
-                "status": FOLLOW_CANDIDATE_APPROVED,
+                "status": FOLLOW_CANDIDATE_PENDING,
                 "club_id": club["id"],
             },
         )
@@ -309,19 +359,29 @@ def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, An
 
 
 def approved(school_id: int, limit: int) -> list[dict[str, Any]]:
-    """Approved accounts waiting to be followed, in the order they were approved.
+    """Approved accounts waiting to be followed, in the order they were approved."""
+    return _waiting(school_id, FOLLOW_CANDIDATE_APPROVED, limit)
 
-    Accounts whose follow failed go after the rest, least recently tried first, so one
-    that keeps failing never holds up the others; one that failed within
+
+def to_unfollow(school_id: int, limit: int) -> list[dict[str, Any]]:
+    """Accounts waiting to be unfollowed, failed ones last, least recently tried first."""
+    return _waiting(school_id, FOLLOW_CANDIDATE_UNFOLLOW, limit)
+
+
+def _waiting(school_id: int, status: str, limit: int) -> list[dict[str, Any]]:
+    """The school's accounts waiting in ``status`` for the emulator.
+
+    Accounts whose last try failed go after the rest, least recently tried first, so one
+    that keeps failing never holds up the others; one tried within
     ``follow_retry_hours`` is not offered again yet, so it never keeps the worker busy.
     """
     retry_before = datetime.now(timezone.utc) - timedelta(hours=CONTROL.follow_retry_hours)
     response = (
         get_sb()
         .table(INSTAGRAM_FOLLOW_CANDIDATES)
-        .select("id,handle")
+        .select("id,handle,follow_error")
         .eq("school_id", school_id)
-        .eq("status", FOLLOW_CANDIDATE_APPROVED)
+        .eq("status", status)
         .or_(f'follow_error.is.null,updated_at.lt."{retry_before.isoformat()}"')
         .order("follow_error", nullsfirst=True)
         .order("updated_at")
@@ -353,36 +413,6 @@ def mark_follow_failed(candidate_id: str, error: str, *, tapped: bool = False) -
     if tapped:
         update["followed_at"] = now
     get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()
-
-
-def stop_following(candidate_ids: list[str]) -> None:
-    """Reject the accounts for good; one the school follows waits to be unfollowed first."""
-    now = datetime.now(timezone.utc).isoformat()
-    for start in range(0, len(candidate_ids), _INSERT_CHUNK):
-        chunk = candidate_ids[start : start + _INSERT_CHUNK]
-        for status, followed in (
-            (FOLLOW_CANDIDATE_UNFOLLOW, [FOLLOW_CANDIDATE_FOLLOWED]),
-            (FOLLOW_CANDIDATE_REJECTED, [FOLLOW_CANDIDATE_PENDING, FOLLOW_CANDIDATE_APPROVED]),
-        ):
-            get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
-                {"status": status, "follow_error": None, "updated_at": now}
-            ).in_("id", chunk).in_("status", followed).execute()
-
-
-def to_unfollow(school_id: int, limit: int) -> list[dict[str, Any]]:
-    """Accounts waiting to be unfollowed, failed ones last, least recently tried first."""
-    response = (
-        get_sb()
-        .table(INSTAGRAM_FOLLOW_CANDIDATES)
-        .select("id,handle")
-        .eq("school_id", school_id)
-        .eq("status", FOLLOW_CANDIDATE_UNFOLLOW)
-        .order("follow_error", nullsfirst=True)
-        .order("updated_at")
-        .limit(limit)
-        .execute()
-    )
-    return response.data or []
 
 
 def mark_unfollowed(candidate_id: str, *, tapped: bool) -> None:

@@ -20,7 +20,9 @@ whose crawl ends is crawled again once the schools that finished before it have 
 their turn. Each crawl starts over from the school's own Following list, so it also
 reads the clubs the school followed since and finds accounts created since, and takes
 the seeds in a new random order, so a crawl the miss streak ends early still reaches
-clubs the last one never did.
+clubs the last one never did. What the school's own list shows is recorded
+(``candidates.record_following``): an account we rejected that it still follows is
+unfollowed, and one it follows with no row at all goes to the scorer.
 
 The lists are read through the Mac's browser worker (``wat2do-browser following``), one
 page per job: in the school accounts' own Lightpanda sessions, each at its own pace, or
@@ -326,6 +328,11 @@ class _Crawl:
             return new
         state["reading"] = None
         if not state["seeded"]:
+            # Whom the school account really follows: every account on its list gets a
+            # row, and one we rejected is unfollowed.
+            candidates.record_following(
+                self.school, state["followed"], [username for username, _ in state["queue"]]
+            )
             # A new order each crawl, so the miss streak never ends every crawl at the
             # same clubs.
             random.shuffle(state["queue"])

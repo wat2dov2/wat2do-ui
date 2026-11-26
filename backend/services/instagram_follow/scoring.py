@@ -13,8 +13,8 @@ approves an account.
 
 Each score decides the account right away: only approve verdicts are approved, and a
 review of a profile that could not be read when the school's club directory lists it
-(the follow itself then shows whether it exists); everything else, an account the
-scorer is unsure of included, is rejected. Rejected accounts that posted within the
+or it is one of our own clubs' accounts (the follow itself then shows whether it
+exists); everything else, an account the scorer is unsure of included, is rejected. Rejected accounts that posted within the
 last year are read and scored again every ``recheck_days``, so one that goes on to
 post clearly as this school's club is approved then.
 """
@@ -32,7 +32,7 @@ from itertools import groupby
 from pathlib import Path
 from typing import Any
 
-from core.constants import FOLLOW_SOURCE_DIRECTORY
+from core.constants import FOLLOW_SOURCE_CLUB, FOLLOW_SOURCE_DIRECTORY
 from core.controlbox import controlbox
 from core.prompts import render_prompt
 from services import school_service
@@ -116,7 +116,7 @@ def decision(row: dict[str, Any], profile: dict[str, Any], score: dict[str, Any]
     """Approved or rejected, from the score and what the read saw."""
     if score["verdict"] == "approve":
         return candidates.FOLLOW_CANDIDATE_APPROVED
-    if score["verdict"] == "review" and profile["read"] == "failed" and _directory(row):
+    if score["verdict"] == "review" and profile["read"] == "failed" and _vouched_for(row):
         return candidates.FOLLOW_CANDIDATE_APPROVED
     return candidates.FOLLOW_CANDIDATE_REJECTED
 
@@ -186,6 +186,12 @@ def _packet(row: dict[str, Any]) -> dict[str, Any]:
         "posts": [{key: post[key] for key in ("posted_at", "caption", "url")} for post in posts],
         "directory": _directory(row),
     }
+
+
+def _vouched_for(row: dict[str, Any]) -> bool:
+    """Whether something besides the posts ties the account to the school: its official
+    club directory lists it, or it is one of our own clubs' accounts."""
+    return row.get("source") == FOLLOW_SOURCE_CLUB or _directory(row) is not None
 
 
 def _directory(row: dict[str, Any]) -> str | None:
