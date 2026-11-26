@@ -50,7 +50,12 @@ from services.instagram_emulator.device import (  # noqa: E402
     exclusive,
     labels,
 )
-from services.instagram_emulator.inbox import open_row, read_inbox  # noqa: E402
+from services.instagram_emulator.inbox import (  # noqa: E402
+    MessagingLimited,
+    open_row,
+    raise_if_messaging_limited,
+    read_inbox,
+)
 from services.instagram_sessions import notification  # noqa: E402
 
 SCHOOL = "testu"
@@ -407,8 +412,19 @@ def _open_profile_thread(device: EmulatorDevice, handle: str) -> None:
     if button is None:
         raise EmulatorError(f"{handle}'s profile never showed its Message button")
     device.tap(button)
-    if device.watch(lambda nodes: device.find(direct._COMPOSER, nodes), seconds=20) is None:
+    shown = device.watch(
+        lambda nodes: (
+            device.find(direct._COMPOSER, nodes)
+            or next((node for node in nodes if node.resource_id == "thread_disabled_title"), None)
+        ),
+        seconds=20,
+    )
+    if shown is None:
         raise EmulatorError("The thread's composer never showed")
+    try:
+        raise_if_messaging_limited([shown])
+    except MessagingLimited as exc:
+        raise SenderChallenged(f"Instagram has limited this sender's messages: {exc}") from exc
 
 
 def _share_post(device: EmulatorDevice, url: str, handle: str) -> None:
@@ -552,6 +568,12 @@ def _handle_directly(device: EmulatorDevice, scenario: Scenario) -> dict[str, An
 def _check(
     device: EmulatorDevice, scenario: Scenario, reports: list[dict[str, Any]]
 ) -> dict[str, Any]:
+    failed = [entry["report"] for entry in reports if entry["report"]["case"] == "error"]
+    reports = [entry for entry in reports if entry["report"]["case"] != "error"]
+    if not reports:
+        # Claude Code never ran the agent (a usage limit, a lost login): not a verdict.
+        why = failed[0]["problems"] if failed else "no report"
+        return {"passed": None, "why": f"not run: {why}"[:300]}
     cases = [entry["report"]["case"] for entry in reports]
     moves = [
         match.group(1)
@@ -614,8 +636,12 @@ def _required(node: Any) -> Any:
     return node
 
 
+_VERDICT = {True: "PASS", False: "FAIL", None: "NOT RUN"}
+
+
 def _write(results: list[dict[str, Any]]) -> None:
     passed = sum(1 for result in results if result.get("passed"))
+    not_run = sum(1 for result in results if result.get("passed") is None)
     rows = []
     for result in results:
         thread = "".join(
@@ -624,8 +650,8 @@ def _write(results: list[dict[str, Any]]) -> None:
         )
         shot = result.get("shot")
         rows.append(
-            f"<section class='{'pass' if result.get('passed') else 'fail'}'>"
-            f"<h2>{'PASS' if result.get('passed') else 'FAIL'}: {html.escape(result['title'])}</h2>"
+            f"<section class='{_VERDICT[result.get('passed')].lower()}'>"
+            f"<h2>{_VERDICT[result.get('passed')]}: {html.escape(result['title'])}</h2>"
             f"<p>{html.escape(result.get('why') or '')}</p>"
             f"<p>chain: {html.escape(str(result.get('chain', '')))}; cases {html.escape(str(result.get('cases')))};"
             f" moves {html.escape(str(result.get('moves')))}</p>"
@@ -639,9 +665,10 @@ def _write(results: list[dict[str, Any]]) -> None:
         "<!doctype html><meta charset='utf-8'><title>Notification agent test</title><style>"
         "body{font-family:-apple-system,sans-serif;max-width:900px;margin:24px auto;padding:0 16px}"
         "section{border:1px solid #ccc;border-radius:8px;padding:12px;margin:12px 0}"
-        ".pass{border-color:#2a7}.fail{border-color:#c33}.m{padding:4px 8px;margin:2px 0;border-radius:6px}"
+        ".pass{border-color:#2a7}.fail{border-color:#c33}.not{border-color:#aaa;color:#666}.m{padding:4px 8px;margin:2px 0;border-radius:6px}"
         ".them{background:#eee}.us{background:#dbeafe;text-align:right}.notes{color:#666}"
-        f"</style><h1>Notification agent test: {passed} of {len(results)} passed</h1>"
+        f"</style><h1>Notification agent test: {passed} of {len(results) - not_run} passed"
+        f" ({not_run} not run)</h1>"
         f"<p>{datetime.now().strftime('%Y-%m-%d %H:%M')}, test account {TEST_ACCOUNT}</p>"
         + "".join(rows)
     )

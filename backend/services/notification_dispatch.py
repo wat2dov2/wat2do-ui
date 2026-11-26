@@ -110,13 +110,21 @@ def payload(notification: Notification, account: str) -> dict[str, Any] | None:
             "client_payload": {
                 "category": notification.category,
                 "account": account,
-                "sender": notification.text(_TITLE),
+                "sender": _sender(notification, account),
                 "received_at": datetime.fromtimestamp(
                     notification.posted_at / 1000, timezone.utc
                 ).isoformat(timespec="seconds"),
             },
         }
     return None
+
+
+def _sender(notification: Notification, account: str) -> str:
+    """The sender's name. On an Android user holding several accounts, Instagram titles a
+    message "<recipient account>: <sender>" (angrygooseinuw, 2026-11-25); the account
+    part is not the sender."""
+    title = notification.text(_TITLE)
+    return title.removeprefix(f"{account}: ")
 
 
 def _key(notification: Notification) -> str:

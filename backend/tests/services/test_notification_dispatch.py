@@ -89,6 +89,13 @@ def test_a_message_goes_to_the_agent_with_its_sender_but_never_its_text():
     assert "PRIVATE_TEXT" not in json.dumps(body)
 
 
+def test_the_recipient_account_is_cut_from_the_sender():
+    note = _notification("direct_v2_pending")
+    note.extras["android.title"] = "angrygooseinuw: Wat2Do | Sharing events @ mit"
+    body = module.payload(note, "angrygooseinuw")
+    assert body["client_payload"]["sender"] == "Wat2Do | Sharing events @ mit"
+
+
 def test_each_notification_is_sent_once_with_its_extras(tmp_path):
     sent = []
     dispatcher, _ = _dispatcher(tmp_path, send=sent.append)
