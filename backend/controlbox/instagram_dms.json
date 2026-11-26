@@ -8,7 +8,7 @@
   "claim_send_gap_min_seconds": 90,
   "claim_send_gap_max_seconds": 240,
   "claim_follow_up_hours": 24,
-  "agent_enabled": false,
+  "agent_enabled": true,
   "agent_schools": [],
   "replies_per_account_per_day": 15,
   "replies_per_thread_per_day": 3,
