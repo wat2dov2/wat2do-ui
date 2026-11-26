@@ -262,6 +262,9 @@ pub struct InstagramBrowser {
     pub secondary_cleanup_timeout_seconds: f64,
     /// How soon a paused worker tries again to confirm an interrupted request settled.
     pub cancellation_confirm_retry_seconds: f64,
+    /// How long an uncertain like or repost keeps the worker paused before it settles
+    /// the tabs and resumes by itself.
+    pub uncertain_engagement_hold_seconds: f64,
     pub poll_interval_seconds: f64,
     pub worker_poll_interval_seconds: f64,
     pub job_timeout_seconds: f64,

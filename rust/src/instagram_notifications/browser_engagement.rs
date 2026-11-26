@@ -11,8 +11,17 @@ use super::scripts;
 use crate::controlbox::instagram_browser;
 
 const ACTIONS: [&str; 3] = ["like", "save", "repost"];
-const DISPATCH_UNCERTAIN: &str =
+/// The pauses an engagement leaves when its click may or may not have gone through.
+/// The worker lifts them by itself after `uncertain_engagement_hold_seconds`.
+pub const DISPATCH_UNCERTAIN: &str =
     "Instagram engagement dispatch is uncertain; inspect browser state before resuming";
+pub const COMPLETION_UNCERTAIN: &str =
+    "Instagram engagement completion is uncertain; inspect browser state before resuming";
+
+/// True for a pause an uncertain like or repost left.
+pub fn is_uncertain_pause(reason: &str) -> bool {
+    reason == DISPATCH_UNCERTAIN || reason == COMPLETION_UNCERTAIN
+}
 
 /// Complete one post per worker lock, verifying identity before any click.
 /// Open once and finish configured actions before releasing this post's lock.
@@ -76,9 +85,7 @@ fn complete(
         Ok(()) => Ok(json!({"action": action, "status": "succeeded"})),
         // Python's `except Exception` let interrupts through.
         Err(BrowserError::Interrupted) => Err(BrowserError::Interrupted),
-        Err(_) => Err(BrowserError::uncertain(
-            "Instagram engagement completion is uncertain; inspect browser state before resuming",
-        )),
+        Err(_) => Err(BrowserError::uncertain(COMPLETION_UNCERTAIN)),
     }
 }
 

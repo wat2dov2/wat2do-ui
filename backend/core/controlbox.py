@@ -681,6 +681,9 @@ class InstagramBrowserControl(_ControlModel):
     account_transition_grace_seconds: float = Field(gt=0, le=120)
     secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)
     cancellation_confirm_retry_seconds: float = Field(gt=0, le=3600)
+    # An uncertain like or repost pauses the worker at least this long; then the worker
+    # settles its tabs and resumes by itself (the engagement is never replayed).
+    uncertain_engagement_hold_seconds: float = Field(ge=60, le=86400)
     poll_interval_seconds: float = Field(gt=0, le=5)
     worker_poll_interval_seconds: float = Field(gt=0, le=10)
     job_timeout_seconds: float = Field(gt=0, le=300)

@@ -185,6 +185,7 @@ When the primary tab cannot confirm cancellation of its own read-only query (a d
 Beyond that, a digest or retrieval job never pauses the worker over an unconfirmed cancellation, wherever in the job it happens; the job fails and retries instead.
 Uncertain sends, likes and reposts still pause the worker, as do logouts that need a person.
 A like or repost whose page request cannot be cancelled in time (a busy Mac stalls Brave) pauses the worker only until every worker tab settles: the worker tries settling them again every `cancellation_confirm_retry_seconds`, resumes by itself once they do, and never replays the failed engagement.
+A like or repost whose click may or may not have gone through ("engagement completion is uncertain" or "dispatch is uncertain") pauses the worker for `uncertain_engagement_hold_seconds`; then the worker settles its tabs the same way and resumes by itself, again without replaying the engagement.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.

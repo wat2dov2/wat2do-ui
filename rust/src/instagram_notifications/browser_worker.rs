@@ -37,6 +37,8 @@ const SQLITE_READONLY: i32 = 8;
 const SQLITE_FULL: i32 = 13;
 const INTERRUPTED_PAUSE: &str = "Worker interrupted; inspect browser state before resuming";
 const STOPPED_DURING_JOB: &str = "Worker stopped during job; inspect before retrying";
+/// The uncertain engagement pause being held, and when it may be lifted.
+const UNCERTAIN_HOLD: &str = "uncertain_engagement_hold";
 
 /// Classify queue failures by SQLite's code without exposing SQL or file paths.
 pub fn storage_failure_reason(error: &BrowserError) -> Option<&'static str> {
@@ -512,20 +514,28 @@ impl Worker {
         recovered
     }
 
-    /// Lift a pause for an unconfirmed cancellation once every worker tab has settled.
+    /// Lift a pause for an unconfirmed cancellation or an uncertain engagement once
+    /// every worker tab has settled.
     ///
     /// A like or repost whose page request Brave could not cancel in time (a busy Mac
     /// stalls Brave) pauses all browser work so that request cannot act later. Settling
     /// the tabs again is the confirmation the job ran out of time for, so the worker
     /// keeps trying it instead of failing every school's digests until a person resumes.
+    /// A like or repost whose click may or may not have gone through pauses the same
+    /// way; it is lifted the same way, but only after `uncertain_engagement_hold_seconds`
+    /// (11-24 and 11-25 it held every digest for 10 to 12 hours until a person resumed).
     /// The failed engagement is never replayed. True once browser work may resume.
     pub fn confirm_cancellation(&self, now: &dyn Fn() -> f64) -> BrowserResult<bool> {
         let queue = &self.queue;
         let paused = queue.setting_or("paused", Value::Bool(false))?;
-        if !paused
-            .as_str()
-            .is_some_and(|reason| reason.contains(CANCELLATION_UNCONFIRMED))
-        {
+        let reason = paused.as_str().unwrap_or_default();
+        let uncertain = browser_engagement::is_uncertain_pause(reason);
+        if !uncertain {
+            self.forget_uncertain_hold()?;
+            if !reason.contains(CANCELLATION_UNCONFIRMED) {
+                return Ok(false);
+            }
+        } else if now() < self.uncertain_hold_until(reason, now)? {
             return Ok(false);
         }
         let next_at = pyjson::number(&queue.setting_or("cancellation_confirm_next_at", json!(0))?)
@@ -563,8 +573,48 @@ impl Worker {
         if !queue.compare_set_pause(&paused, &Value::Bool(false))? {
             return Ok(false);
         }
-        tracing::warn!("Interrupted Instagram request settled; browser work resumes");
+        if uncertain {
+            self.forget_uncertain_hold()?;
+            tracing::warn!(
+                "Uncertain Instagram engagement pause lifted after the hold and settled tabs; browser work resumes (the engagement is not replayed): {reason}"
+            );
+        } else {
+            tracing::warn!("Interrupted Instagram request settled; browser work resumes");
+        }
         Ok(true)
+    }
+
+    /// When the uncertain engagement pause `reason` may first be lifted.
+    ///
+    /// The hold starts when the worker first sees the pause, so it also covers a pause
+    /// written before this worker started.
+    fn uncertain_hold_until(&self, reason: &str, now: &dyn Fn() -> f64) -> BrowserResult<f64> {
+        let hold = self.queue.setting_or(UNCERTAIN_HOLD, Value::Null)?;
+        if hold.get("pause").and_then(Value::as_str) == Some(reason)
+            && let Some(until) = hold.get("until").and_then(pyjson::number)
+        {
+            return Ok(until);
+        }
+        let until = now() + control().uncertain_engagement_hold_seconds;
+        self.queue
+            .set_setting(UNCERTAIN_HOLD, json!({"pause": reason, "until": until}))?;
+        tracing::warn!(
+            "Instagram engagement is uncertain; browser work resumes once its tabs settle after {} s",
+            control().uncertain_engagement_hold_seconds
+        );
+        Ok(until)
+    }
+
+    /// A pause a person lifted or replaced starts its own hold the next time.
+    fn forget_uncertain_hold(&self) -> BrowserResult<()> {
+        if self
+            .queue
+            .setting_or(UNCERTAIN_HOLD, Value::Null)?
+            .is_null()
+        {
+            return Ok(());
+        }
+        self.queue.set_setting(UNCERTAIN_HOLD, Value::Null)
     }
 
     /// Admit work only after restoring the configured pool without changing accounts.
