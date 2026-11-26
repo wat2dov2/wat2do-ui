@@ -267,15 +267,14 @@ async fn too_few_slides_or_an_unreadable_key_are_never_claimed() {
     let Some(db) = database() else { return };
     let school = uwaterloo(&db).await;
     let first = event(&db, school, "Board Games", 3).await;
-    let second = event(&db, school, "Study Hall", 4).await;
-    let (id, _) = batch(&db, school, "failed", &[first, second]).await;
+    let (id, _) = batch(&db, school, "failed", &[first]).await;
     connect_account(&db, school).await;
     let refused = batches::claim_batch(&db, KEY, id, 1).await;
     assert!(
-        matches!(refused, Err(ApiError::Validation { ref detail, .. }) if detail == "Choose at least 3 event slides before publishing")
+        matches!(refused, Err(ApiError::Validation { ref detail, .. }) if detail == "Choose at least 2 event slides before publishing")
     );
-    let third = event(&db, school, "Pottery", 5).await;
-    add_item(&db, id, third, 3).await;
+    let second = event(&db, school, "Study Hall", 4).await;
+    add_item(&db, id, second, 2).await;
     let wrong_key =
         batches::claim_batch(&db, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", id, 1).await;
     assert!(

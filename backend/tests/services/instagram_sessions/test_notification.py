@@ -84,7 +84,8 @@ def test_a_hidden_test_school_is_handled_like_any_school(monkeypatch):
 
 def test_a_resting_account_is_skipped_until_its_rest_ends(monkeypatch):
     _controls(monkeypatch)
-    now = datetime(2026, 11, 25, 20, tzinfo=timezone.utc)
+    # `_skipped` reads the real clock, so the rest starts now.
+    now = datetime.now(timezone.utc)
     module.pause("tmu", "Confirm you're human", now=now)
     assert module.paused_until("tmu", now=now + timedelta(hours=1))
     assert module.paused_until("tmu", now=now + timedelta(hours=25)) is None
