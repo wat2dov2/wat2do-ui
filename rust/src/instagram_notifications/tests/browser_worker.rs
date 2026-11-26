@@ -3839,9 +3839,6 @@ fn test_cancellation_confirmation_leaves_every_other_pause_alone() {
         json!(false),
         json!(true),
         json!(LOGGED_OUT_PAUSE),
-        json!(
-            "Instagram engagement completion is uncertain; inspect browser state before resuming"
-        ),
         json!("Worker interrupted during engagement; inspect browser state before resuming"),
     ] {
         env.queue.set_setting("paused", pause.clone()).unwrap();
@@ -3881,6 +3878,137 @@ fn test_the_worker_resumes_by_itself_after_an_unconfirmed_cancellation() {
     let digest_id = digest(&env.queue, "cache-after-the-stall");
     // Brave answers again: the next pass confirms the tabs settled and takes the digest.
     let worker = env.worker(env.pool(), returning(json!({"status": "succeeded"})));
+    worker.run(true, false, Arc::new(Event::default())).unwrap();
+    assert!(!is_paused(&env.queue));
+    assert_eq!(job(&env.queue, &digest_id).state, "succeeded");
+    // The engagement itself is never replayed.
+    assert_eq!(job(&env.queue, &engagement_id).state, "failed");
+    assert_eq!(job(&env.queue, &engagement_id).attempts, 1);
+}
+
+#[test]
+fn test_an_uncertain_engagement_pause_lifts_after_its_hold_once_every_tab_settles() {
+    // 11-24 and 11-25: a uwaterloo like left this pause and every school's digests
+    // failed for 10 to 12 hours until a person resumed.
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(browser_engagement::COMPLETION_UNCERTAIN))
+        .unwrap();
+    let settles = Arc::new(AtomicUsize::new(0));
+    let counted = settles.clone();
+    let results = Mutex::new(vec![
+        Err(BrowserError::Timeout(
+            "Brave browser automation timed out".to_owned(),
+        )),
+        Ok(Vec::new()),
+    ]);
+    let pool = env.pool().settle(move || {
+        counted.fetch_add(1, Ordering::SeqCst);
+        results.lock().unwrap().remove(0)
+    });
+    let worker = env.real_worker(pool);
+    let now = Mutex::new(1000.0);
+    let clock = || *now.lock().unwrap();
+    let hold = control().uncertain_engagement_hold_seconds;
+    let retry = control().cancellation_confirm_retry_seconds;
+    // The hold starts when the worker first sees the pause; no tab is touched in it.
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    *now.lock().unwrap() += hold - 1.0;
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(settles.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        paused(&env.queue),
+        json!(browser_engagement::COMPLETION_UNCERTAIN)
+    );
+    // After the hold the tabs must still settle: a timeout keeps the pause.
+    *now.lock().unwrap() += 1.0;
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(
+        paused(&env.queue),
+        json!(browser_engagement::COMPLETION_UNCERTAIN)
+    );
+    *now.lock().unwrap() += retry;
+    assert!(worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+    assert_eq!(settles.load(Ordering::SeqCst), 2);
+    assert_eq!(
+        setting(&env.queue, "uncertain_engagement_hold"),
+        Some(Value::Null)
+    );
+}
+
+#[test]
+fn test_an_uncertain_dispatch_pause_lifts_when_the_worker_tab_is_gone() {
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(browser_engagement::DISPATCH_UNCERTAIN))
+        .unwrap();
+    let pool = env.pool().settle(|| {
+        Err(BrowserError::tab_unavailable(
+            "No worker Instagram window is open",
+        ))
+    });
+    let worker = env.real_worker(pool);
+    let hold = control().uncertain_engagement_hold_seconds;
+    assert!(!worker.confirm_cancellation(&|| 1000.0).unwrap());
+    assert!(worker.confirm_cancellation(&|| 1000.0 + hold).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+}
+
+#[test]
+fn test_every_uncertain_engagement_pause_gets_its_own_hold() {
+    let env = Env::new();
+    let worker = env.real_worker(env.pool().settle(|| Ok(Vec::new())));
+    let hold = control().uncertain_engagement_hold_seconds;
+    let uncertain = json!(browser_engagement::COMPLETION_UNCERTAIN);
+    env.queue.set_setting("paused", uncertain.clone()).unwrap();
+    assert!(!worker.confirm_cancellation(&|| 1000.0).unwrap());
+    // A person resumes during the hold; a later identical pause starts a new hold.
+    env.queue.set_setting("paused", json!(false)).unwrap();
+    assert!(!worker.confirm_cancellation(&|| 1010.0).unwrap());
+    env.queue.set_setting("paused", uncertain.clone()).unwrap();
+    assert!(!worker.confirm_cancellation(&|| 1000.0 + hold).unwrap());
+    assert_eq!(paused(&env.queue), uncertain);
+    assert!(
+        worker
+            .confirm_cancellation(&|| 1000.0 + 2.0 * hold)
+            .unwrap()
+    );
+    // The lift forgets its hold too.
+    env.queue.set_setting("paused", uncertain.clone()).unwrap();
+    assert!(
+        !worker
+            .confirm_cancellation(&|| 1000.0 + 3.0 * hold)
+            .unwrap()
+    );
+    assert_eq!(paused(&env.queue), uncertain);
+}
+
+#[test]
+fn test_the_worker_resumes_by_itself_after_an_uncertain_engagement() {
+    let env = Env::new();
+    env.host.set_time(10_000.0);
+    let engagement_id = engagement(&env.queue, "Uncertain");
+    let worker = env.worker(env.pool(), |_, _, _| {
+        Err(BrowserError::uncertain(
+            browser_engagement::COMPLETION_UNCERTAIN,
+        ))
+    });
+    assert!(worker.process_next_job(true).unwrap());
+    assert_eq!(
+        paused(&env.queue),
+        json!(browser_engagement::COMPLETION_UNCERTAIN)
+    );
+    let waiting = digest(&env.queue, "cache-during-the-hold");
+    let worker = env.worker(env.pool(), returning(json!({"status": "succeeded"})));
+    // Within the hold the worker stays paused and the digest waits.
+    worker.run(true, false, Arc::new(Event::default())).unwrap();
+    assert!(is_paused(&env.queue));
+    assert_eq!(job(&env.queue, &waiting).state, "pending");
+    env.host
+        .advance(control().uncertain_engagement_hold_seconds);
+    // Once the hold is over the next pass settles the tabs and takes a new digest.
+    let digest_id = digest(&env.queue, "cache-after-the-hold");
     worker.run(true, false, Arc::new(Event::default())).unwrap();
     assert!(!is_paused(&env.queue));
     assert_eq!(job(&env.queue, &digest_id).state, "succeeded");

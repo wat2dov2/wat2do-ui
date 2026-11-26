@@ -542,7 +542,9 @@ pub fn launch_agent_payload(queue: &BrowserJobQueue, binary: &Path, checkout: &P
         ),
         ("RunAtLoad".to_owned(), Plist::Bool(true)),
         ("KeepAlive".to_owned(), Plist::Bool(true)),
-        ("ProcessType".to_owned(), "Background".into()),
+        // Background throttled the worker's osascript calls past their Apple Event
+        // timeout on a busy Mac (11-23), failing digests.
+        ("ProcessType".to_owned(), "Standard".into()),
         ("StandardOutPath".to_owned(), log("worker.stdout.log")),
         ("StandardErrorPath".to_owned(), log("worker.stderr.log")),
     ]))

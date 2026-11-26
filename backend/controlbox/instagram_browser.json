@@ -27,6 +27,7 @@
   "account_transition_grace_seconds": 2,
   "secondary_cleanup_timeout_seconds": 5,
   "cancellation_confirm_retry_seconds": 60,
+  "uncertain_engagement_hold_seconds": 300,
   "poll_interval_seconds": 0.25,
   "worker_poll_interval_seconds": 0.5,
   "job_timeout_seconds": 120,

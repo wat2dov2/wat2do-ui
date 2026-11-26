@@ -516,6 +516,7 @@ fn test_install_uses_stable_checkout_and_shared_spool() {
     );
     assert_eq!(entry(&payload, "KeepAlive"), &Plist::Bool(true));
     assert_eq!(entry(&payload, "RunAtLoad"), &Plist::Bool(true));
+    assert_eq!(entry(&payload, "ProcessType"), &Plist::from("Standard"));
     assert_eq!(verbs(&host), vec!["print", "enable", "bootstrap"]);
     assert_eq!(queue.get_setting("paused").unwrap(), Some(json!(false)));
     // Only PATH: no credential such as DATA_API_KEY reaches the worker's environment.
