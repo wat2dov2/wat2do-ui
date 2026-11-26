@@ -4,7 +4,7 @@ Read `packet.json` in this folder. It has the school, its language (`en` or `fr`
 
 ## Which events
 
-Events with a `carousel_requested_at` time were asked for by their own club in our DMs. Pick every one of them unless it breaks a rule below (an excluded club) or is clearly inappropriate to promote, even when it would otherwise be too plain to make the cut, and rank them before the other picks. The rest of these rules choose among the other events.
+Events with a `carousel_requested_at` time were asked for by their own club in our DMs. Pick every one of them unless it breaks a hard rule below (an excluded club, a religious or political event, or one that fails the promotion rules) or is clearly inappropriate to promote, even when it would otherwise be too plain to make the cut, and rank them before the other picks. The rest of these rules choose among the other events.
 
 Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_clubs`, or whose club is clearly one of those accounts. Those clubs asked not to be posted.
 
@@ -12,14 +12,17 @@ Never pick religious events. A religious event's purpose is worship, prayer, rel
 
 Never pick political events. A political event is about politics, government or a cause: protests, rallies, vigils, marches, strikes and strike votes, days of action, organizing or campaign trainings, petitions, solidarity events, talks, panels, debates or screenings about political issues, conflicts or legislation, Model UN and policy competitions, and any event hosted by an activist, solidarity, advocacy or partisan group or a political party or campaign, even when the event itself is a show, dinner, sale or social. A non-political social, game, show or career event hosted by an ordinary academic or student society (a political science students' pub night, a law negotiation competition) is fine.
 
-Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs, religious events and political events, the only three hard rules. Pick fewer only when fewer remain, and then pick every one that remains. Every other rule below only ranks events; none of them ever leaves a slide empty while an eligible event is unpicked.
+Never pick an event that fails Wat2Do's promotion rules, even to fill a slide:
 
-A full carousel matters more than any ranking rule: an empty slide is the worst outcome, worse than a plain, career, niche or near-duplicate event.
+{{promotion_rules}}
+
+Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs, religious events, political events and events that fail the promotion rules, the only four hard rules. Pick fewer only when fewer remain, and then pick every one that remains. Every other rule below only ranks events; none of them ever leaves a slide empty while an eligible event is unpicked.
+
+A full carousel matters more than any ranking rule: an empty slide is worse than a plain or near-duplicate event, but a slide that breaks a hard rule is worse than an empty one.
 
 These rank below every other event, because the admin removes them from drafts whenever something else can take their slide; use them only to fill slides that would otherwise be empty:
 - drag shows and drag nights;
-- events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize;
-- events aimed at the members of one ethnic or national community rather than at every student, such as an African or Nigerian students' night, a Punjabi or Tamil students' association social, or a heritage community's meeting. A cultural event put on for every student to enjoy, such as a Chinese night market, a Lunar New Year fair, a multicultural food festival or a K-pop dance night, is not one of these and ranks on its own merits.
+- events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize.
 
 Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account. The carousel's goal is getting students to try new things, side quests they would not have found on their own: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
 
@@ -27,7 +30,7 @@ Four kinds of event come first, ahead of everything else the rules below favor:
 - large-scale events: campus-wide or multi-club nights, festivals, big shows and concerts, varsity games, anything expecting hundreds of students;
 - free food: a free meal, pizza, BBQ or snacks that the event states, the bigger and better the food the better;
 - club parties and socials: parties, pub crawls, mixers, DJ nights and socials a club throws, at a venue or on campus;
-- side quests, new things to try: hands-on making (pottery, painting, crafts, cooking, building something), competitions and tournaments anyone can enter (not the career competitions below), and activities most students have never done (climbing, skating, axe throwing, a dance, improv or DJ class), the more novel and story-worthy the better.
+- side quests, new things to try: hands-on making (pottery, painting, crafts, cooking, building something), competitions and tournaments anyone can enter for fun, and activities most students have never done (climbing, skating, axe throwing, a dance, improv or DJ class), the more novel and story-worthy the better.
 An event that is two or more of these at once leads the carousel.
 
 Then favor events that are:
@@ -36,9 +39,9 @@ Then favor events that are:
 - unusual, fun or memorable to do;
 - promoted with polished, high-effort, aesthetic artwork.
 
-Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops (a hands-on making session is a side quest, not one of these), information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
+Boring and low-status events rank last: routine weekly club hangouts, generic skill workshops (a hands-on making session is a side quest, not one of these), booths, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
 
-Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. Pick at most one of these per carousel while other events can fill the slides, and never place one in the first three slides. Two kinds are exceptions and rank like a good social event: one with a big, real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and one run in person by a household-name company or person most students already know (such as OpenAI or Google engineers). Free credits, swag or a sponsor logo are not a big prize.
+The promotion rules already leave out career, academic, pre-med, law and general-meeting events. Of the two kinds they let through, a big-prize competition and a household-name appearance, pick at most one per carousel while other events can fill the slides, and never place it in the first three slides. Free credits, swag or a sponsor logo are not a big prize.
 
 ## Variety
 
@@ -52,7 +55,7 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slides should be the large-scale events, free food, club parties and side quests above, the first one appealing to almost any student: never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
+`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slides should be the large-scale events, free food, club parties and side quests above, the first one appealing to almost any student: never a workshop or a competition, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 

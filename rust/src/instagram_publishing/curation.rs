@@ -9,6 +9,7 @@
 
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -25,7 +26,13 @@ use crate::claude::{self, Agent};
 use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::text::python_strip;
 
-pub const PROMPT: &str = include_str!("curation_prompt.md");
+/// Who and what Wat2Do promotes.
+pub const PROMOTION_RULES: &str = include_str!("promotion_rules.md");
+
+/// `curation_prompt.md` with the promotion rules in place.
+pub static PROMPT: LazyLock<String> = LazyLock::new(|| {
+    include_str!("curation_prompt.md").replace("{{promotion_rules}}", PROMOTION_RULES.trim_end())
+});
 pub const WORKDIR_PREFIX: &str = "wat2do-instagram-curation-";
 
 /// The structured answer Claude must give (`ANSWER_SCHEMA`).
@@ -123,14 +130,15 @@ async fn answer_with_retries(
     save: impl AsyncFn(&Map<String, Value>) -> Result<Outcome>,
 ) -> Result<Outcome> {
     let attempts = INSTAGRAM_PUBLISHING.curation_attempts;
-    let mut prompt = PROMPT.to_owned();
+    let mut prompt = PROMPT.clone();
     for attempt in 1..=attempts {
         let answer = ask(&prompt).await?;
         match save(&answer).await {
             Ok(outcome) => return Ok(outcome),
             Err(error) if attempt < attempts && refused(&error) => {
                 prompt = format!(
-                    "{PROMPT}\n\nYour previous answer was rejected; fix this and answer again:\n{}",
+                    "{}\n\nYour previous answer was rejected; fix this and answer again:\n{}",
+                    *PROMPT,
                     error_message(&error)
                 );
             }
@@ -473,8 +481,8 @@ mod tests {
             Outcome::Saved
         );
         let prompts = prompts.into_inner().unwrap();
-        assert_eq!(prompts[0], PROMPT);
-        assert!(prompts[1].starts_with(PROMPT));
+        assert_eq!(prompts[0], *PROMPT);
+        assert!(prompts[1].starts_with(PROMPT.as_str()));
         assert!(prompts[1].contains(
             "Your previous answer was rejected; fix this and answer again:\n1 validation error"
         ));
@@ -590,5 +598,14 @@ mod tests {
             4
         );
         assert!(PROMPT.starts_with("You curate today's wat2do Instagram carousel draft"));
+    }
+
+    #[test]
+    fn the_prompt_carries_the_promotion_rules() {
+        assert!(!PROMPT.contains("{{"));
+        assert!(PROMPT.contains(PROMOTION_RULES.trim_end()));
+        for excluded in ["roomie mixer", "MCAT", "LSAT", "AGMs", "members-only"] {
+            assert!(PROMOTION_RULES.contains(excluded), "{excluded}");
+        }
     }
 }
