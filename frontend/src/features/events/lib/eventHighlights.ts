@@ -39,15 +39,20 @@ function featuredScore(event: Event): number {
 
 /**
  * The featured row's events: every event Wat2Do featured that is still on and
- * has a poster, soonest first. A school with fewer than `featuredCount` of
- * them tops the row up with one-off events that start within the window,
- * ranked by their signals, then soonest first, one per club.
+ * has a poster, those of verified clubs (clubs that onboarded) first, each
+ * group soonest first. A school with fewer than `featuredCount` of them tops
+ * the row up with one-off events that start within the window, ranked by their
+ * signals, then soonest first, one per club.
  */
 function pickFeaturedEvents(soonestFirst: readonly UpcomingEvent[], nowMs: number): Event[] {
   const { featuredCount, featuredWindowMs } = controlBox.eventDiscovery.highlights;
-  const picked = soonestFirst
+  const featured = soonestFirst
     .map(({ event }) => event)
     .filter(event => event.featured === true && Boolean(event.source_image_url));
+  const picked = [
+    ...featured.filter(event => event.verified === true),
+    ...featured.filter(event => event.verified !== true),
+  ];
   if (picked.length >= featuredCount) return picked;
 
   const clubOf = (event: Event) => event.club_id != null ? `id:${event.club_id}` : `name:${event.club ?? event.id}`;

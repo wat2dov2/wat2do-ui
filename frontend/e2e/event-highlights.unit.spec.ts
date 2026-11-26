@@ -61,6 +61,19 @@ test("the featured row leads with every event Wat2Do featured, soonest first, th
   expect(featuredIds(events)).toEqual([3, 5, 4, 6, 2, 7, 1]);
 });
 
+test("verified clubs' featured events lead the row, then the other featured events, each soonest first, then the top-ups", () => {
+  const events = [
+    event(1, 2, { featured: true }),
+    event(2, 3, { employers_on_campus: true }),
+    event(3, 4, { featured: true, verified: true }),
+    event(4, 5, { featured: true }),
+    event(5, 6, { featured: true, verified: true }),
+    // A verified club's event Wat2Do did not feature only tops the row up.
+    event(6, 1, { verified: true }),
+  ];
+  expect(featuredIds(events)).toEqual([3, 5, 1, 4, 2, 6]);
+});
+
 test("ties go to the sooner event, and plain events fill the row when few stand out", () => {
   const events = [event(1, 30), event(2, 10), event(3, 20, { featured: true })];
   expect(featuredIds(events)).toEqual([3, 2, 1]);
