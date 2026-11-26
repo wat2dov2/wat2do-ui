@@ -31,7 +31,8 @@ The aim is a site that is fast and costs close to nothing: nothing runs all the 
 | Email | SES in AWS account 291667884807 |
 | AWS access from the Mac | IAM user `wat2do-api` (SES send), whose key is in `~/wat2do-data/config/backend.env`; IAM user `wat2do-web-deploy` (the web bucket, the functions' code, CloudFront invalidations), AWS CLI profile `wat2do-deploy` |
 | Spend alert | AWS budget `wat2do-monthly`: email at 80% of $30 actual and at a forecast above $30 |
-| Process Notifications | the Mac's existing runner (`wat2do-macmini-browser`), since GitHub-hosted runners cannot reach a home Postgres |
+| Handle notification (posts) | the Mac's existing runner (`wat2do-macmini-browser`), since GitHub-hosted runners cannot reach a home Postgres |
+| Handle notification (messages, mentions, comments) | a third Mac runner (`wat2do-scraper-2`, label `wat2do-macmini-emulator`) that takes one run at a time, so notifications queue for the emulator without holding up posts |
 | Scheduled emails, poster payouts, Instagram account stats | launchd timers running the deployed release |
 | Deploys | a job on a second Mac runner (`wat2do-macmini-deploy`), below |
 

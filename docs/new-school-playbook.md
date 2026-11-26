@@ -23,7 +23,7 @@ A new school is complete only when all of the following are true:
 - The chapter account follows every verified club Instagram account stored for that school.
 - Instagram post notifications are set to `All` for every followed club when Instagram exposes the consolidated notification screen.
 - The chapter account is logged into the dedicated Android device that runs the Automate flow.
-- A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the `process-notification` workflow resolves it to the correct school.
+- A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the "Handle notification" workflow resolves it to the correct school.
 - The chapter account is configured in the Meta developer app using Instagram API with Instagram Login.
 - The account's validated Instagram-scoped user ID and encrypted access token exist in `public.instagram_publishing_accounts`.
 - A publishing draft can be generated for the school and the production token-maintenance path recognizes the account.
@@ -954,7 +954,7 @@ Trigger or wait for one real post notification from a followed test club.
 
 Verify that Automate sends a `new_instagram_post` repository dispatch containing the expected username or post URL and `intended_recipient_id`.
 
-Verify the GitHub **Process Notifications** workflow starts and routes it to the new school.
+Verify the GitHub **Handle notification** workflow starts and routes it to the new school.
 
 If the observed recipient ID is not yet on the school row, add it through a reviewed migration and rerun the notification's run.
 
@@ -1267,7 +1267,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Account logged into the dedicated Automate phone as a separate login.
 - [ ] Real notification generated the expected repository dispatch.
 - [ ] Recipient ID stored on the correct school row through a migration.
-- [ ] `process-notification` routed and processed the test correctly.
+- [ ] "Handle notification" routed and processed the test correctly.
 
 ### Meta publishing
 

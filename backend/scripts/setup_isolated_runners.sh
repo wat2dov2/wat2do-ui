@@ -150,8 +150,9 @@ if [[ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]]; then
 fi
 mkdir "${STAGING_DIRECTORY}/package"
 tar xzf "${STAGING_DIRECTORY}/${TARBALL_NAME}" -C "${STAGING_DIRECTORY}/package"
-if [[ ! -x "${STAGING_DIRECTORY}/package/config.sh" || ! -x "${STAGING_DIRECTORY}/package/svc.sh" ]]; then
-  echo "Runner archive is missing executable setup scripts." >&2
+# config.sh writes svc.sh when it registers the runner; current archives ship without it.
+if [[ ! -x "${STAGING_DIRECTORY}/package/config.sh" ]]; then
+  echo "Runner archive is missing its executable config.sh." >&2
   exit 1
 fi
 

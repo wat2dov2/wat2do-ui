@@ -55,15 +55,20 @@ def test_a_safe_reply_is_plain_one_line_ascii():
 
 
 class _Reader:
-    drafts: list[str] = []
+    replies: list[str] = []
     sent: list[tuple] = []
+    hearts: list[str] = []
     thread: list[dict] = []
 
     def __init__(self, device, thread, opener):
         self.stale = False
+        self.name = thread
 
-    def draft(self, text):
-        _Reader.drafts.append(text)
+    def send_reply(self, text):
+        _Reader.replies.append(text)
+
+    def heart(self):
+        _Reader.hearts.append(self.name)
 
     def send_claim(self, text, *, handle, tokens):
         _Reader.sent.append((text, handle, tokens))
@@ -75,10 +80,13 @@ class _Reader:
 
 @pytest.fixture
 def reader(monkeypatch):
-    _Reader.drafts = []
+    _Reader.replies = []
     _Reader.sent = []
+    _Reader.hearts = []
     _Reader.thread = []
     monkeypatch.setattr(moves, "ThreadReader", _Reader)
+    monkeypatch.setattr(moves, "refuse_if_excluded", lambda handle: None)
+    monkeypatch.setattr(moves.time, "sleep", lambda seconds: None)
     return _Reader
 
 
@@ -108,15 +116,6 @@ def due(claims_on):
 
 def _args(**values):
     return SimpleNamespace(**{"thread": "TMU Pre-Vet Club", "text": "", "claim": None, **values})
-
-
-def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
-    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
-    result = moves.draft(object(), _args(text="happy to share it!", claim="tmuprevet"))
-    (typed,) = reader.drafts
-    assert typed.startswith("happy to share it! Hey! We're happy to keep featuring your events.")
-    assert f"https://tmu.wat2do.io/claim/{TOKEN}" in typed
-    assert TOKEN not in json.dumps(result)
 
 
 def test_a_zero_daily_claim_limit_switches_claims_off(monkeypatch, reader):
@@ -387,15 +386,17 @@ def test_a_sitting_never_sees_a_claim_link_it_reads(monkeypatch, reader):
     assert TOKEN not in json.dumps([read, listed])
 
 
-def test_a_draft_needs_something_to_type(reader):
-    with pytest.raises(moves.MoveError, match="Nothing to type"):
-        moves.draft(object(), _args())
-
-
 def test_an_unsafe_reply_is_refused_before_anything_is_typed(reader):
     with pytest.raises(moves.MoveError, match="Refused"):
-        moves.draft(object(), _args(text="dm @other for promo"))
-    assert reader.drafts == []
+        moves.reply(object(), _args(text="dm @other for promo"))
+    assert reader.replies == []
+
+
+class _Calm:
+    """An emulator showing no challenge."""
+
+    def challenge(self):
+        return None
 
 
 class _Screen:
@@ -455,10 +456,7 @@ def test_only_a_post_they_shared_in_the_thread_can_be_acted_on(monkeypatch, read
 def test_each_move_logs_its_times_and_never_message_text(monkeypatch, tmp_path, reader, capsys):
     reader.thread = [{"from": "them", "text": "secret words", "sender": "tmuprevet"}]
 
-    class _Device:
-        pass
-
-    monkeypatch.setattr(moves, "EmulatorDevice", _Device)
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
     assert moves.main(["read", "TMU Pre-Vet Club"]) == 0
     printed = json.loads(capsys.readouterr().out)
     assert printed["messages"][0]["text"] == "secret words"
@@ -471,8 +469,8 @@ def test_each_move_logs_its_times_and_never_message_text(monkeypatch, tmp_path, 
 
 
 def test_a_refused_move_exits_nonzero_with_its_reason(monkeypatch, capsys, reader):
-    monkeypatch.setattr(moves, "EmulatorDevice", object)
-    assert moves.main(["draft", "TMU Pre-Vet Club", "--text", "dm @x"]) == 1
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
+    assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "dm @x"]) == 1
     assert "Refused" in json.loads(capsys.readouterr().out)["error"]
 
 
@@ -480,7 +478,7 @@ def test_ig_stories_answers_and_logs_why_each_post_was_not_shared(monkeypatch, t
     not_shared = {
         "https://www.instagram.com/p/AAA/": "The photo sticker did not move to the post's corner"
     }
-    monkeypatch.setattr(moves, "EmulatorDevice", object)
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
     monkeypatch.setattr(moves, "_story_carousel", lambda: {"id": "batch-1"})
     monkeypatch.setattr(
         moves.stories,
@@ -494,3 +492,178 @@ def test_ig_stories_answers_and_logs_why_each_post_was_not_shared(monkeypatch, t
         for line in next((tmp_path / "log").glob("*.jsonl")).read_text().splitlines()
     ]
     assert entry["move"] == "stories" and entry["result"]["not_shared"] == not_shared
+
+
+# --- the notification agent's moves ------------------------------------------------
+
+
+@pytest.fixture
+def agent(monkeypatch, tmp_path, reader):
+    monkeypatch.setattr(moves.notification, "STATE_DIR", tmp_path / "agent")
+    monkeypatch.setattr(moves.notification, "_PAUSED", tmp_path / "agent" / "paused.json")
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
+    return reader
+
+
+def _logged(move, thread="TMU Pre-Vet Club", minutes_ago=5, **extra):
+    moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    ended = moves.datetime.now(moves.timezone.utc) - moves.timedelta(minutes=minutes_ago)
+    entry = {
+        "school": "tmu",
+        "move": move,
+        "thread": thread,
+        "ok": True,
+        "ended": ended.isoformat(),
+    }
+    with (moves.LOG_DIR / f"{moves._today()}.jsonl").open("a") as log:
+        log.write(json.dumps({**entry, **extra}) + "\n")
+
+
+def test_a_reply_is_sent_once_per_thread_a_day(agent, capsys):
+    assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "Sure, done!"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "thread": "TMU Pre-Vet Club",
+        "status": "reply sent",
+    }
+    assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "Done again!"]) == 1
+    assert "already got a reply" in json.loads(capsys.readouterr().out)["error"]
+    assert agent.replies == ["Sure, done!"]
+    # The log keeps when it was sent, never what.
+    assert "Sure, done!" not in next(moves.LOG_DIR.glob("*.jsonl")).read_text()
+
+
+def test_an_account_sends_at_most_its_daily_replies(agent):
+    for number in range(moves.DMS.replies_per_account_per_day):
+        _logged("reply", thread=f"club {number}")
+    with pytest.raises(moves.MoveError, match="for today"):
+        moves.reply(_Calm(), _args(text="Sure, done!"))
+    assert agent.replies == []
+
+
+@pytest.mark.parametrize(
+    "words",
+    [
+        "please stop featuring our events",
+        "Can you ask us first before you post?",
+        "We don't want to be tracked, remove us",
+        "please take this down",
+        "Merci d'arreter de partager nos evenements",
+    ],
+)
+def test_a_thread_that_asked_to_be_left_out_gets_nothing(agent, words):
+    agent.thread = [{"from": "them", "text": words, "sender": "tmuprevet"}]
+    for move, args in (
+        (moves.reply, _args(text="Sure, done!")),
+        (moves.heart, _args()),
+        (moves.accept, _args()),
+        (moves.boost, _args(post="https://www.instagram.com/p/ABC123/")),
+    ):
+        with pytest.raises(moves.MoveError, match="left out"):
+            move(_Calm(), args)
+    assert agent.replies == [] and agent.hearts == []
+
+
+def test_an_opt_out_is_acknowledged_once(agent):
+    agent.thread = [{"from": "them", "text": "please stop featuring us", "sender": "tmuprevet"}]
+    _logged("opt-out")
+    moves.reply(_Calm(), _args(text="Got it, sorry about that!"))
+    assert agent.replies == ["Got it, sorry about that!"]
+
+
+def test_an_excluded_club_gets_nothing(agent, monkeypatch):
+    agent.thread = [{"from": "them", "text": "can you repost this?", "sender": "tmuprevet"}]
+
+    def refuse(handle):
+        if handle == "tmuprevet":
+            raise moves.LeftOut("left out")
+
+    monkeypatch.setattr(moves, "refuse_if_excluded", refuse)
+    with pytest.raises(moves.MoveError, match="left out"):
+        moves.heart(_Calm(), _args())
+
+
+def test_a_heart_goes_once_to_the_thread_asked_for(agent):
+    agent.thread = [{"from": "them", "text": "thank you!!", "sender": "tmuprevet"}]
+    moves.heart(_Calm(), _args())
+    _logged("heart")
+    with pytest.raises(moves.MoveError, match="already got a heart"):
+        moves.heart(_Calm(), _args())
+    assert agent.hearts == ["TMU Pre-Vet Club"]
+
+
+def test_a_post_is_boosted_once(agent, monkeypatch):
+    post = "https://www.instagram.com/p/ABC123/"
+    agent.thread = [{"from": "them", "shared_url": post, "shared_owner": "tmuprevet"}]
+    done = []
+    monkeypatch.setattr(moves, "like_and_repost", lambda device, user, url: done.append("liked"))
+    monkeypatch.setattr(moves.items, "request_carousel", lambda url, *, school: done.append(url))
+    monkeypatch.setattr(moves, "share_to_story", lambda device, school, url: done.append("story"))
+    monkeypatch.setattr(moves, "user", lambda: 10)
+
+    class _Roomy(_Calm):
+        def free_data_megabytes(self):
+            return 10_000
+
+    result = moves.boost(_Roomy(), _args(post=post))
+    assert result == {"status": "shared to the story", "post": post, "liked_and_reposted": True}
+    assert done == ["liked", post, "story"]
+    _logged("boost", post=post)
+    with pytest.raises(moves.MoveError, match="already boosted"):
+        moves.boost(_Roomy(), _args(post=post))
+
+
+def test_a_challenge_stops_the_move_and_rests_the_account(agent, monkeypatch, capsys):
+    class _Challenged:
+        def challenge(self):
+            return "Confirm you're human to use your account"
+
+    monkeypatch.setattr(moves, "EmulatorDevice", _Challenged)
+    assert moves.main(["heart", "TMU Pre-Vet Club"]) == 1
+    assert "Stopped" in json.loads(capsys.readouterr().out)["error"]
+    assert moves.notification.paused_until("tmu") is not None
+    # Every move that acts waits out the rest; looking still works.
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
+    assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "hi"]) == 1
+    assert "paused until" in json.loads(capsys.readouterr().out)["error"]
+    assert moves.main(["read", "TMU Pre-Vet Club"]) == 0
+
+
+def test_a_dry_run_reads_the_recording_and_touches_nothing(monkeypatch, tmp_path, capsys):
+    recording = tmp_path / "thread.json"
+    post = "https://www.instagram.com/p/ABC123/"
+    recording.write_text(
+        json.dumps(
+            {
+                "thread": "TMU Pre-Vet Club",
+                "messages": [
+                    {
+                        "from": "them",
+                        "text": "repost pls",
+                        "shared_url": post,
+                        "shared_owner": "tmuprevet",
+                    }
+                ],
+                "inbox": [],
+            }
+        )
+    )
+    monkeypatch.setenv(moves.notification.DRY_RUN, str(recording))
+    monkeypatch.setattr(moves, "EmulatorDevice", None)
+    assert moves.main(["read", "TMU Pre-Vet Club"]) == 0
+    assert json.loads(capsys.readouterr().out)["messages"][0]["text"] == "repost pls"
+    assert moves.main(["boost", "TMU Pre-Vet Club", "--post", post]) == 0
+    assert json.loads(capsys.readouterr().out)["status"] == "boost done"
+    assert (
+        moves.main(["boost", "TMU Pre-Vet Club", "--post", "https://www.instagram.com/p/X/"]) == 0
+    )
+    assert "not shared by them" in json.loads(capsys.readouterr().out)["error"]
+    assert json.loads(recording.read_text())["done"] == ["boost"]
+    assert not moves.LOG_DIR.exists()
+
+
+def test_a_notification_run_never_sends_a_claim(monkeypatch, capsys, reader):
+    monkeypatch.setenv(moves.notification.RUN, "1")
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
+    assert moves.main(["claim", "TMU Pre-Vet Club", "tmuprevet"]) == 1
+    assert "follow-up" in json.loads(capsys.readouterr().out)["error"]
+    assert reader.sent == []

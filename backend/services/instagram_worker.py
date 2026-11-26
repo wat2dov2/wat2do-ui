@@ -8,8 +8,9 @@ The most urgent work is a sitting (``services/instagram_sessions/sitting.py``): 
 morning start time, each school account's daily turn, in which a Claude session posts
 its carousel and right away likes, reposts, sets the song, tags and shares the story
 for it, then drafts its DM replies; and any carousel an admin posted outside a sitting.
-While a sitting is due, unfollows and follows stop between profiles for it, and for the
-daily reclaim, which restarts the emulator before the morning's sittings.
+While a sitting is due, unfollows and follows stop between profiles for it, for a
+notification run waiting for the emulator (``instagram_sessions/notification.py``), and
+for the daily reclaim, which restarts the emulator before the morning's sittings.
 Follows happen only during the control box's follow hours. The emulator's lock is held
 for one visit at a time, and one failing step never stops the others. An account the
 app cannot switch to rests while the others go on, and so do an account's follows once
@@ -44,7 +45,7 @@ from services.instagram_emulator.device import (
     reclaim_due,
 )
 from services.instagram_follow import candidates, crawl, follows, scoring
-from services.instagram_sessions import sitting
+from services.instagram_sessions import notification, sitting
 
 log = logging.getLogger(__name__)
 FOLLOW = controlbox.instagram_follow
@@ -169,15 +170,20 @@ def _sittings_due(now: datetime) -> list[str]:
 
 class _Interrupt:
     """True once the emulator is needed for something more urgent than the visit's long
-    steps: a sitting that is due, or the daily reclaim and restart. Unfollows and follows
-    ask it between profiles and stop for it."""
+    steps: a sitting that is due, a notification run waiting for the emulator, or the
+    daily reclaim and restart. Unfollows and follows ask it between profiles and stop
+    for it."""
 
     def __init__(self) -> None:
         self.seen = False
 
     def __call__(self) -> bool:
         try:
-            self.seen = bool(_sittings_due(datetime.now(timezone.utc))) or reclaim_due()
+            self.seen = (
+                bool(_sittings_due(datetime.now(timezone.utc)))
+                or notification.waiting()
+                or reclaim_due()
+            )
         except Exception:
             log.exception("Could not check for a sitting that is due")
         return self.seen

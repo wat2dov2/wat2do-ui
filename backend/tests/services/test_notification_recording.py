@@ -271,14 +271,17 @@ class _Log:
         self.recorded.append(notification)
         return self.written
 
+    def account(self, recipient_id):
+        return "wat2do.tmu"
+
 
 class _Dispatcher:
     def __init__(self):
         self.offered = []
         self.sends = 0
 
-    def offer(self, notification):
-        self.offered.append(notification)
+    def offer(self, notification, account=""):
+        self.offered.append((notification, account))
         return True
 
     def send_due(self):
@@ -386,14 +389,14 @@ def test_a_failed_step_stops_the_reader_and_the_recorder_goes_on(caplog):
     assert "failed a step" in caplog.text
 
 
-def test_each_new_notification_but_a_direct_message_is_offered_for_dispatch():
+def test_each_new_notification_is_offered_for_dispatch_with_its_account():
     post = _notification()
     message = _direct_message(push_id="push-2")
     reader = _Reader([[post, message]])
     recorder, _, _ = _recorder(_Device([True]), reader)
     recorder.step()
     recorder.step()
-    assert recorder.dispatcher.offered == [post]
+    assert recorder.dispatcher.offered == [(post, "wat2do.tmu"), (message, "wat2do.tmu")]
     # Every step first sends what is due, listening or not.
     assert recorder.dispatcher.sends == 2
 

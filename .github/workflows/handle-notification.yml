@@ -1,30 +1,36 @@
-name: Process Notifications
-# A direct message's title is its sender, so only the notifications this workflow
-# processes are named by their title; any other is named by its category alone.
+name: Handle notification
+# A direct message's title is its sender, so only the post notifications this workflow
+# processes are named by their title; the agent's runs are named by their category and
+# school account, and any other by its category alone.
 run-name: >-
   ${{
+    github.event.action == 'instagram_interaction' && format('Handle {0} - {1}', github.event.client_payload.category, github.event.client_payload.account) ||
     contains(fromJSON('["post","subscription_daily_digest"]'), github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category']) && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
     contains(fromJSON('["post","subscription_daily_digest"]'), fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category']) && format('{0} - {1}', fromJSON(inputs.notification_payload || '{}')['android.title'], fromJSON(inputs.notification_payload || '{}')['android.subText']) ||
     (github.event_name == 'repository_dispatch' || inputs.notification_payload) && format('Skipped {0} notification', github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category'] || 'uncategorized') ||
     format('Process @{0}', inputs.poster_id)
   }}
 
-# Process forwarded Instagram notifications or a manually selected handle.
-# Triggered either manually (workflow_dispatch) or by an external service
-# posting to repository_dispatch with type=new_instagram_post.
+# Handle each Instagram notification a school account gets, or a manually selected handle.
+# Posts and daily digests (repository_dispatch type new_instagram_post, from the phones and
+# the Mac's notification recorder, or a manual run) are processed by the notification
+# binary. Direct messages, message requests, story mentions and comments (type
+# instagram_interaction, from the recorder, carrying only the category, the school
+# account, the sender's name and the time) go to the notification agent on the Mac's
+# emulator (backend/services/instagram_sessions/notification.py).
 #
 # This repository and its Actions logs are public, and GitHub prints every env:
-# value in each step's log. A notification payload (a direct message's text, for
-# one) therefore never enters an env: block, a log line or an artifact: route
-# reads only its category and recipient, and the processing step hands the payload
-# from the event file straight to the binary.
+# value in each step's log. A notification payload (a direct message's text, or a
+# sender's name) therefore never enters an env: block, a log line or an artifact: route
+# reads only the category, the recipient or the school account, and each processing
+# step hands the payload from the event file straight to its program.
 #
 # When triggered manually, the workflow uses a five-year cutoff instead of
 # one day so an admin can backfill an account that hasn't been scraped before.
 
 on:
   repository_dispatch:
-    types: [new_instagram_post]
+    types: [new_instagram_post, instagram_interaction]
   workflow_dispatch:
     inputs:
       poster_id:
@@ -45,19 +51,33 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       routed: ${{ steps.check.outputs.routed }}
+      agent: ${{ steps.check.outputs.agent }}
     steps:
       - id: check
         env:
+          # The agent's dispatch: its category and school account, never its sender.
+          INTERACTION: ${{ github.event.action == 'instagram_interaction' }}
+          INTERACTION_CATEGORY: ${{ github.event.client_payload.category }}
+          INTERACTION_ACCOUNT: ${{ github.event.client_payload.account }}
           # A manual run may name a handle and school instead of a notification.
           MANUAL_RETRIEVAL: ${{ github.event_name == 'workflow_dispatch' && !inputs.notification_payload }}
           PUSH_CATEGORY: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category'] }}
           INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
           TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
         run: |
+          echo 'agent=false' >> "$GITHUB_OUTPUT"
+          # A direct message, request, mention or comment goes to the notification agent.
+          if [[ "$INTERACTION" == true ]]; then
+            echo 'routed=false' >> "$GITHUB_OUTPUT"
+            if [[ "$INTERACTION_CATEGORY" =~ ^[a-z0-9_]{2,60}$ && "$INTERACTION_ACCOUNT" =~ ^wat2do\.[a-z0-9_]{2,40}$ ]]; then
+              echo 'agent=true' >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::Skipped an interaction without a valid category and school account."
+            fi
           # Only post and digest notifications name posts to record (ACTIONABLE_CATEGORIES in
           # rust/src/instagram_notifications/process_notification.rs). Any other category,
           # direct messages included, ends here, and the notice names only the category.
-          if [[ "$MANUAL_RETRIEVAL" != true && "$PUSH_CATEGORY" != post && "$PUSH_CATEGORY" != subscription_daily_digest ]]; then
+          elif [[ "$MANUAL_RETRIEVAL" != true && "$PUSH_CATEGORY" != post && "$PUSH_CATEGORY" != subscription_daily_digest ]]; then
             echo "::notice::Skipped a ${PUSH_CATEGORY:-uncategorized} notification; only post and subscription_daily_digest notifications are processed."
             echo 'routed=false' >> "$GITHUB_OUTPUT"
           # Instagram also posts empty summary notifications with no recipient. Nothing can
@@ -73,8 +93,7 @@ jobs:
     needs: route
     if: needs.route.outputs.routed == 'true'
     # The Mac mini hosts the database and the browser worker that digests need; one
-    # runner keeps one copy of the notification binary. DMs are answered by the
-    # emulator worker's inbox sweep instead.
+    # runner keeps one copy of the notification binary.
     runs-on: [self-hosted, wat2do-macmini-browser]
     environment: production
 
@@ -147,3 +166,25 @@ jobs:
               --cutoff-days "$CUTOFF_DAYS"
             echo "Queued $POSTER_ID for ingestion; the Mac's processor picks it up within seconds."
           fi
+
+  handle:
+    needs: route
+    if: needs.route.outputs.agent == 'true'
+    # The emulator's own runner takes one run at a time, so a burst of notifications
+    # queues on GitHub instead of fighting over the phone; a concurrency group would keep
+    # only the newest waiting run and cancel the rest. The run itself also waits its turn
+    # for the emulator's lock behind the emulator worker.
+    runs-on: [self-hosted, wat2do-macmini-emulator]
+    environment: production
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    steps:
+      - name: Handle the notification on the emulator
+        run: |
+          # The dispatch goes from the event file to the handler's stdin only: it names the
+          # sender, which never enters env: or this log. The handler runs from the Mac's
+          # runtime checkout, with the emulator worker's code, settings and Claude login,
+          # and prints only the case and the moves it made.
+          cd "$HOME/wat2do-runtime/backend"
+          jq -c '.client_payload' "$GITHUB_EVENT_PATH" | .venv/bin/python jobs/handle_instagram_notification.py run

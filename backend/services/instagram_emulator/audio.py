@@ -208,6 +208,19 @@ def _finish(
     return added
 
 
+def like_and_repost(device: EmulatorDevice, user: int, url: str) -> None:
+    """Like a club's post and repost it to our followers' feeds, each only if not done
+    yet: the notification agent's boost of a post a club shared with us."""
+    if not _POST_URL.fullmatch(url):
+        raise EmulatorError("Only an exact Instagram post can be liked and reposted")
+    try:
+        _open_post(device, user, url)
+        _like_and_repost(device)
+    except EmulatorError:
+        device.reset_app(user)
+        raise
+
+
 def _open_post(device: EmulatorDevice, user: int, permalink: str) -> None:
     """Open the live post; a link that lands before the app is ready is opened again."""
     for _ in range(_POST_OPEN_ATTEMPTS):

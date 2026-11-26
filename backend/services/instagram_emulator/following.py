@@ -1,4 +1,4 @@
-"""Follow and unfollow accounts from the emulator's Instagram app.
+"""Follow, unfollow and mute accounts from the emulator's Instagram app.
 
 Following an account also turns its post notifications to All, since ingestion only
 hears about posts from accounts whose bell is set that way. Unfollowing taps the same
@@ -30,6 +30,9 @@ _BLOCKED = labels(
 _BELL = re.compile(r"^Open notification settings$")
 _POSTS = re.compile(r"^Posts$")
 _ALL = re.compile(r"^All$")
+_OFF = re.compile(r"^Off$")
+# The bell's rows a mute turns off; Instagram shows only those the account has.
+_MUTED_ROWS = (_POSTS, re.compile(r"^Stories$"), re.compile(r"^Reels$"))
 _UNFOLLOW = labels("Unfollow", "Cancel request", "Cancel Request")
 _FOLLOWED_LABELS = ("Message", "Following", "Requested")
 _UNFOLLOWED_LABELS = ("Follow", "Follow back")
@@ -120,6 +123,35 @@ class FollowingReader:
             self._wait_for_button(_UNFOLLOWED_LABELS, "Instagram never confirmed the unfollow")
             return True
 
+    def mute(self, username: str) -> str:
+        """Turn our notifications of the account's posts, stories and reels off, so
+        ingestion never hears of its posts again (an account that asked to be left out).
+        What was done, in words."""
+        with self._recovering():
+            button = self._open_profile(username, _FOLLOW_BUTTON)
+            if button is None:
+                return "the profile is gone or hidden"
+            if button.text != "Following":
+                return "not followed, so no notifications to turn off"
+            self._show_bell(username)
+            for row in _MUTED_ROWS:
+                self._set_off(row)
+            return "notifications turned off"
+
+    def _set_off(self, row: re.Pattern[str]) -> None:
+        """Set one of the bell's rows to Off, if the sheet has it and it is not off yet."""
+        if self._setting(row) in ("", "Off"):
+            self._device.back()
+            return
+        self._device.tap_when(row)
+        self._device.tap_when(_OFF)
+        self._device.watch(
+            lambda nodes: self._device.find(row, nodes) is None, seconds=_SETTLE_SECONDS
+        )
+        if self._setting(row) != "Off":
+            raise EmulatorError("Instagram kept the account's notifications on")
+        self._device.back()
+
     @contextmanager
     def _recovering(self) -> Iterator[None]:
         """Start the app afresh after a step fails: a sheet it left open, such as the
@@ -183,14 +215,20 @@ class FollowingReader:
         self._device.back()
 
     def _posts_setting(self) -> str:
-        """Open the bell's sheet and read the value under its Posts row."""
+        return self._setting(_POSTS)
+
+    def _setting(self, row: re.Pattern[str]) -> str:
+        """Open the bell's sheet and read the value under one of its rows ("" without it)."""
         self._device.tap_when(_BELL)
-        posts = self._device.wait_for(_POSTS)
+        self._device.wait_for(_POSTS)
         nodes = self._device.screen()
+        shown = self._device.find(row, nodes)
+        if shown is None:
+            return ""
         values = [
             node.text
             for node in nodes
-            if node.resource_id == "context_menu_item_sub_label" and node.inside(posts)
+            if node.resource_id == "context_menu_item_sub_label" and node.inside(shown)
         ]
         return values[0] if values else ""
 

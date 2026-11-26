@@ -15,7 +15,7 @@ import yaml
 from core.controlbox import controlbox
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-WORKFLOW = yaml.safe_load((REPO_ROOT / ".github/workflows/process-notification.yml").read_text())
+WORKFLOW = yaml.safe_load((REPO_ROOT / ".github/workflows/handle-notification.yml").read_text())
 JOB = WORKFLOW["jobs"]["process-post"]
 STEPS = {step["name"]: step for step in JOB["steps"] if "name" in step}
 SCRIPT = REPO_ROOT / "scripts/notification-binary.sh"
@@ -293,7 +293,7 @@ def test_pinned_actionlint_accepts_notification_workflow():
 
 def test_pinned_actionlint_rejects_runner_context_unavailable_in_job_environment():
     content = (
-        (REPO_ROOT / ".github/workflows/process-notification.yml")
+        (REPO_ROOT / ".github/workflows/handle-notification.yml")
         .read_text()
         .replace(
             "\n    env:\n",
@@ -391,7 +391,19 @@ PROCESSED_CATEGORIES = ["post", "subscription_daily_digest"]
 RECIPIENT_ID = "17841400000000000"
 
 
-def run_route(monkeypatch, *, category="post", recipient="", school="", manual=False):
+def run_route(
+    monkeypatch,
+    *,
+    category="post",
+    recipient="",
+    school="",
+    manual=False,
+    interaction=False,
+    account="",
+):
+    monkeypatch.setenv("INTERACTION", "true" if interaction else "false")
+    monkeypatch.setenv("INTERACTION_CATEGORY", category if interaction else "")
+    monkeypatch.setenv("INTERACTION_ACCOUNT", account)
     monkeypatch.setenv("MANUAL_RETRIEVAL", "true" if manual else "false")
     monkeypatch.setenv("PUSH_CATEGORY", category)
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", recipient)
@@ -449,6 +461,62 @@ def test_route_ends_every_other_category_naming_only_the_category(runner, monkey
     assert not result.stderr
 
 
+@pytest.mark.parametrize("category", ["direct_v2_text", "direct_v2_pending", "comment"])
+def test_an_interaction_goes_to_the_agent_and_never_to_post_processing(
+    runner, monkeypatch, category
+):
+    result = run_route(monkeypatch, category=category, interaction=True, account="wat2do.utsc")
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT") == {"agent": "true", "routed": "false"}
+    assert not result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    ("category", "account"),
+    [("direct_v2_text", "utsc"), ("direct_v2_text", ""), ("Direct; rm", "wat2do.utsc")],
+)
+def test_an_interaction_without_a_valid_category_or_account_is_skipped(
+    runner, monkeypatch, category, account
+):
+    result = run_route(monkeypatch, category=category, interaction=True, account=account)
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT") == {"agent": "false", "routed": "false"}
+    assert result.stdout.startswith("::notice::Skipped an interaction")
+
+
+def test_the_agent_reads_its_dispatch_from_the_event_file_only():
+    handle = WORKFLOW["jobs"]["handle"]
+    (step,) = handle["steps"]
+    route_env = ROUTE_STEP["env"]
+
+    assert handle["if"] == "needs.route.outputs.agent == 'true'"
+    assert handle["runs-on"] == ["self-hosted", "wat2do-macmini-emulator"]
+    assert "concurrency" not in handle and "concurrency" not in WORKFLOW
+    assert "env" not in handle and "env" not in step
+    assert "jq -c '.client_payload' \"$GITHUB_EVENT_PATH\" | " in step["run"]
+    assert "jobs/handle_instagram_notification.py run" in step["run"]
+    # The route reads only the category and the account; the sender stays in the event file.
+    assert route_env["INTERACTION_CATEGORY"] == "${{ github.event.client_payload.category }}"
+    assert route_env["INTERACTION_ACCOUNT"] == "${{ github.event.client_payload.account }}"
+    assert "client_payload.sender" not in json.dumps(WORKFLOW)
+    # YAML 1.1 reads the "on" key as True.
+    assert WORKFLOW[True]["repository_dispatch"]["types"] == [
+        "new_instagram_post",
+        "instagram_interaction",
+    ]
+
+
+def test_an_agent_run_is_named_by_its_category_and_account_only():
+    first = WORKFLOW["run-name"].splitlines()[1].strip()
+
+    assert first == (
+        "github.event.action == 'instagram_interaction' && format('Handle {0} - {1}', "
+        "github.event.client_payload.category, github.event.client_payload.account) ||"
+    )
+
+
 def test_a_manual_retrieval_carries_no_category_and_is_routed(runner, monkeypatch):
     result = run_route(monkeypatch, category="", school="uwaterloo", manual=True)
 
@@ -503,8 +571,16 @@ def test_no_env_block_carries_the_notification_payload():
     # GitHub prints every env: value in each step's log, and these logs are public.
     for owner, env in env_blocks():
         for name, value in env.items():
-            if "notification_dict" in value or "notification_payload" in value:
-                assert name in {"MANUAL_RETRIEVAL", "PUSH_CATEGORY", "INTENDED_RECIPIENT_ID"}, (
+            if "client_payload" in value or "notification_payload" in value:
+                assert name in {
+                    "MANUAL_RETRIEVAL",
+                    "PUSH_CATEGORY",
+                    "INTENDED_RECIPIENT_ID",
+                    "INTERACTION_CATEGORY",
+                    "INTERACTION_ACCOUNT",
+                    "TARGET_SCHOOL",
+                    "CUTOFF_DAYS",
+                }, (
                     owner,
                     name,
                 )
@@ -518,7 +594,7 @@ def test_no_step_stores_or_uploads_the_notification_payload():
 
     assert not any("artifact" in step.get("uses", "") for step in steps)
     readers = [step.get("name") for step in steps if "GITHUB_EVENT_PATH" in step.get("run", "")]
-    assert readers == ["Process the Instagram account"]
+    assert readers == ["Process the Instagram account", "Handle the notification on the emulator"]
 
 
 @pytest.fixture

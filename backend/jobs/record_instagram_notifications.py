@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Record the Instagram notifications the Mac's emulator gets, and start the workflow for
-its posts.
+its posts, messages, mentions and comments.
 
 ``run`` keeps appending each new notification to
 ``~/.local/state/wat2do/notification-log/notifications.jsonl``
-(``services/notification_recording.py``), with no direct message's text, and sends each
-new post and daily digest as the phones' repository dispatch
-(``services/notification_dispatch.py``). Its own status lines go to ``recorder.log`` beside it, rotated at
-``log_max_bytes``. ``install-schedule`` keeps ``run`` alive through a macOS LaunchAgent.
+(``services/notification_recording.py``), with no direct message's text, sends each new
+post and daily digest as the phones' repository dispatch, and each new direct message,
+request, mention and comment, without its text, for the workflow's notification agent
+(``services/notification_dispatch.py``). Its own status lines go to ``recorder.log``
+beside it, rotated at ``log_max_bytes``. ``install-schedule`` keeps ``run`` alive through a macOS LaunchAgent.
 """
 
 from __future__ import annotations

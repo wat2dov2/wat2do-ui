@@ -24,5 +24,19 @@
   "send_spacing_seconds": 1,
   "retry_first_seconds": 30,
   "retry_longest_seconds": 1800,
-  "refusals_before_drop": 3
+  "refusals_before_drop": 3,
+  "agent_push_categories": [
+    "direct_v2_text",
+    "direct_v2_media_share",
+    "direct_v2_clips_share",
+    "direct_v2_reel_share",
+    "direct_v2_story_share",
+    "direct_v2_media",
+    "direct_v2_gif",
+    "direct_v2_default",
+    "direct_v2_pending",
+    "direct_v2_reel_mention",
+    "comment"
+  ],
+  "agent_dispatch_event_type": "instagram_interaction"
 }

@@ -84,7 +84,6 @@ def test_a_sitting_runs_claude_with_only_the_ig_command_on_the_second_login(monk
             "posted": True,
             "finished": True,
             "stories": "3 of 3",
-            "drafts": 2,
             "claims_sent": 1,
             "problems": "",
         }
@@ -97,7 +96,8 @@ def test_a_sitting_runs_claude_with_only_the_ig_command_on_the_second_login(monk
     )
     device = _Device()
     report = sitting.run(device, "uwo", MORNING)
-    assert report["drafts"] == 2
+    assert report["claims_sent"] == 1
+    assert "{{" not in seen["prompt"]
     assert device.released
     assert seen["tools"] == ("Bash", "Read")
     assert seen["allowed_tools"] == ("Bash(ig:*)", "Read(./**)")

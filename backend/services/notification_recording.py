@@ -1,14 +1,16 @@
 """Record the Instagram notifications the Mac's emulator gets, and start the notification
-workflow for its posts.
+workflow for its posts, messages, mentions and comments.
 
 The school accounts are active in the Instagram app on the Mac's Android emulator, so
 Instagram pushes many of their notifications there. Through ``NotificationReader`` the
 recorder appends one JSON line per notification to
 ``~/.local/state/wat2do/notification-log/notifications.jsonl``, and hands each new post or
 daily digest to ``services/notification_dispatch.py``, which starts the
-``process-notification`` workflow for it just as the physical phones do. Nothing checks
+"Handle notification" workflow for it just as the physical phones do. Nothing checks
 whether a phone sent the same notification: the workflow records each recipient and push
-ID once. A stopped Android user gets no notifications, and Android stops the least
+ID once. Each new direct message, message request, story mention and comment starts the
+workflow's notification agent instead, with only its category, school account, sender's
+name and time. A stopped Android user gets no notifications, and Android stops the least
 recently used one whenever the worker switches another to the front, so every
 ``start_users_every_seconds`` the recorder starts each user that holds a school account
 and has stopped, in the background (Instagram then delivers what it held back). Beyond
@@ -18,9 +20,9 @@ holds the emulator's lock.
 A line holds when the notification was posted and recorded, its Android user, the
 school account it was meant for (its Instagram ID, and its username once a notification
 has named it), Instagram's push category, the channel and every extra the reader
-carries. A direct message keeps only its push category, Android user, recipient and
-times, never its sender, title or text: this repository is public, and DM text is never
-logged anywhere, nor ever dispatched. Group summaries only repeat the notifications under
+carries. A direct message's line keeps only its push category, Android user, recipient
+and times, never its sender, title or text: this repository is public, and DM text is
+never logged anywhere, nor ever dispatched. Group summaries only repeat the notifications under
 them and are skipped.
 
 A notification is written once: by its recipient and Instagram's push ID, or by Android's
@@ -175,6 +177,10 @@ class NotificationLog:
         self._save(recorded_at.timestamp())
         return True
 
+    def account(self, recipient_id: str) -> str:
+        """The school account username a notification named for this recipient, or ""."""
+        return self._accounts.get(recipient_id, "")
+
     def _learn_account(self, notification: Notification) -> None:
         subtext = notification.text(_SUBTEXT)
         if notification.recipient_id and (
@@ -295,8 +301,9 @@ class Recorder:
                 self._heard_at = self._monotonic()
                 if self._notifications.record(notification):
                     self._recorded += 1
-                    if not is_direct_message(notification):
-                        self._dispatcher.offer(notification)
+                    self._dispatcher.offer(
+                        notification, self._notifications.account(notification.recipient_id)
+                    )
         except NotificationReaderError as exc:
             # Usually the emulator restarting; the next step waits for it.
             log.info("%s after recording %d notifications", exc, self._recorded)

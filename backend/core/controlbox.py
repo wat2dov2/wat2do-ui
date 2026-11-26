@@ -1203,6 +1203,31 @@ class InstagramDmsControl(_ControlModel):
     # A claim only follows up, this long after we shared or featured the post a thread
     # asked for, never alongside that reply (Tony, 2026-11-25).
     claim_follow_up_hours: int = Field(ge=1, le=168)
+    # The notification agent (services/instagram_sessions/notification.py) answers one
+    # DM, mention or comment notification at a time. agent_enabled is its kill switch:
+    # false makes every run a no-op. While agent_schools names any school, only those
+    # accounts are handled (the rollout); an empty list means every account.
+    agent_enabled: bool
+    agent_schools: tuple[Annotated[str, Field(pattern=r"^[a-z0-9_]{2,40}$")], ...]
+    # What one account may do in a day, across every run.
+    replies_per_account_per_day: int = Field(ge=0, le=100)
+    boosts_per_account_per_day: int = Field(ge=0, le=100)
+    hearts_per_account_per_day: int = Field(ge=0, le=200)
+    # Every move that sends or taps something others see first waits a random pause
+    # in this range, so an account never acts in a burst.
+    send_wait_min_seconds: int = Field(ge=0, le=600)
+    send_wait_max_seconds: int = Field(ge=0, le=600)
+    # One thread gets at most one reply and one heart within this many hours.
+    thread_repeat_hours: int = Field(ge=1, le=720)
+    # A challenge, a login screen or an action limit pauses the account's notification
+    # handling this long.
+    challenge_pause_hours: int = Field(ge=1, le=720)
+
+    @model_validator(mode="after")
+    def _send_waits_are_ordered(self) -> "InstagramDmsControl":
+        if self.send_wait_min_seconds > self.send_wait_max_seconds:
+            raise ValueError("send_wait_min_seconds cannot exceed send_wait_max_seconds")
+        return self
 
 
 class InstagramSessionsControl(_ControlModel):
@@ -1219,6 +1244,8 @@ class InstagramSessionsControl(_ControlModel):
     # usage limit instead pauses every sitting this long.
     sitting_attempts: int = Field(ge=1, le=5)
     limit_pause_minutes: int = Field(ge=5, le=720)
+    # The notification agent runs on the same model and login, at most this long a run.
+    notification_timeout_minutes: int = Field(ge=2, le=120)
 
 
 class HiddenSchoolAccountControl(_ControlModel):
@@ -1590,7 +1617,7 @@ class CompetitorPainPointsControl(_ControlModel):
 
 
 class NotificationRetryControl(_ControlModel):
-    """Rerunning failed Process Notifications workflow runs once they can succeed.
+    """Rerunning failed "Handle notification" workflow runs once they can succeed.
 
     A LaunchAgent runs a pass every interval_minutes. While the Brave worker is paused or
     down it reruns nothing; otherwise it reruns each failed run whose school account is
@@ -1656,6 +1683,13 @@ class NotificationRecordingControl(_ControlModel):
     )
     github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     dispatch_event_type: str = Field(pattern=r"^[a-z_]{2,60}$")
+    # Each new notification in these categories (direct messages, mentions, comments)
+    # starts the workflow's notification agent through this dispatch instead. It carries
+    # only the category, the school account, the sender's name and the time, never text.
+    agent_push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z0-9_]{2,60}$")], ...] = Field(
+        min_length=1
+    )
+    agent_dispatch_event_type: str = Field(pattern=r"^[a-z_]{2,60}$")
     dispatch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # Dispatches go out at least this far apart, so a burst is not taken for spam.
     send_spacing_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
@@ -1679,6 +1713,10 @@ class NotificationRecordingControl(_ControlModel):
             for marker in self.direct_message_markers
         ):
             raise ValueError("a direct message category must never be dispatched")
+        if set(self.agent_push_categories) & set(self.dispatch_push_categories):
+            raise ValueError("a category goes either to post processing or to the agent")
+        if self.agent_dispatch_event_type == self.dispatch_event_type:
+            raise ValueError("the agent's dispatch needs its own event type")
         return self
 
 

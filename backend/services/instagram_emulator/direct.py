@@ -1,11 +1,11 @@
-"""Read one school account's DM thread in the Instagram app, and draft our reply in it.
+"""Read one school account's DM thread in the Instagram app, and answer in it.
 
 A sitting's moves (``services/instagram_sessions/moves.py``) open a thread by tapping
 its inbox row and read it from the screen the app draws: who sent each message, its
-text, and any post or reel shared in it. A reply is typed into the thread at a
-person's pace and left there unsent: a person reads every draft and sends it. The one
-message that is sent is the claim-link message to a club that asked us to feature it
-(Tony, 2026-11-24).
+text, and any post or reel shared in it. The notification agent's
+moves send a short reply, react with a heart, accept a request or send the claim-link
+message to a club that asked us to feature it (Tony, 2026-11-24), each typed or tapped
+at a person's pace.
 
 Every move works on the thread it names and no other: the thread is opened from its
 inbox row each time and its header must name it before anything is read or typed
@@ -38,7 +38,8 @@ _SEND_BUTTON = re.compile(r"^row_thread_composer_send_button_container$")
 _COMPOSER_HINT = re.compile(r"^[^.!?\n]{1,40}…$")
 # A club's claim link, which carries its claim token.
 CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/([0-9a-f-]+)\S*", re.IGNORECASE)
-# A message asking us to stop featuring them, in English or French.
+# A message asking us to stop featuring them, to ask first or not to track them, in
+# English or French.
 _OPT_OUT = re.compile(
     r"\b(?:stop|quit)\s+(?:post|shar|repost|featur|includ|promot|tagg)"
     r"|\b(?:don['’]?t|do not|no longer|not)\s+(?:to\s+)?(?:be\s+)?"
@@ -47,7 +48,11 @@ _OPT_OUT = re.compile(
     r"|\bleave\s+us\s+out\b|\bopt(?:ing)?[\s-]?out\b|\bunsubscribe\b"
     r"|\bne\s+(?:pas|plus)\s+(?:nous\s+)?(?:publier|partager|republier|mettre)"
     r"|\b(?:arr[eê]te[rz]?|cessez)\s+de\s+(?:publier|partager|republier)"
-    r"|\b(?:retire[rz]?|enlever|enlevez)\s+(?:nous|notre|nos)\b",
+    r"|\b(?:retire[rz]?|enlever|enlevez)\s+(?:nous|notre|nos)\b"
+    r"|\bask\s+(?:us\s+)?(?:first|before)\b|\bcheck\s+with\s+us\s+(?:first|before)\b"
+    r"|\bwithout\s+(?:our\s+|asking\s+|any\s+)?(?:permission|consent)\b"
+    r"|\b(?:be\s+tracked|track(?:ing)?\s+us)\b"
+    r"|\bsans\s+(?:notre\s+)?(?:permission|accord|autorisation)\b",
     re.IGNORECASE,
 )
 _SHARE = labels("Send post", "Share")
@@ -80,12 +85,13 @@ _THEIR_BUBBLE_MAX_LEFT = 240
 # A text message is usually an unnamed view, but one with a link preview names its text.
 _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
+# A long press on a message opens the reactions bar above it.
+_LONG_PRESS_MS = 700
+_HEART_REACTION = labels("❤", "Heart", "Love")
+# A reaction shows as a small pill under the message.
+_REACTED = labels("Reaction", "❤")
 # Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
 _REVEAL_SCROLLS = 4
-
-
-class DraftWaiting(EmulatorError):
-    """The thread already holds an unsent claim-link draft that a person has yet to send."""
 
 
 class ReplyWaiting(EmulatorError):
@@ -140,29 +146,59 @@ class ThreadReader:
             for message in messages
         ]
 
-    def draft(self, text: str) -> None:
-        """Type ``text`` into the thread's composer and leave it there unsent.
+    def send_reply(self, text: str) -> None:
+        """Send ``text`` in the thread, typed at a person's pace and confirmed first.
 
-        A message request shows its composer only once accepted. The draft is confirmed
-        in the composer, then the keyboard and the thread are closed; Instagram keeps a
-        thread's unsent text as its draft. A thread already holding an unsent claim link
-        is left untouched until a person has read and sent it.
+        The thread is opened from its inbox row and must be the one asked for. A message
+        request shows its composer only once accepted (``accept``). Whatever the composer
+        held before (an old draft no one approved) is cleared and never sent. Send is
+        tapped only once the composer shows exactly ``text`` and the header still names
+        the thread, and the composer must be empty after.
         """
-        nodes = self._composer_shown(self.open_thread())
-        composer = _required(self._device.find(_COMPOSER, nodes))
-        if CLAIM_LINK.search(composer.text):
-            raise DraftWaiting(
-                "This thread already holds an unsent claim-link draft waiting for a person, "
-                "so it was left as it is"
-            )
+        nodes = self.open_thread()
+        composer = self._device.find(_COMPOSER, nodes)
+        if composer is None:
+            raise EmulatorError("This thread is a message request; accept it first")
         self._device.tap(composer)
         self._device.clear_field()
         self._device.type_text(text)
-        typed = _required(self._device.find(_COMPOSER)).text
-        if _as_typed(typed) != _as_typed(text):
-            raise EmulatorError("The draft did not show in the thread's composer")
+        if _as_typed(_required(self._device.find(_COMPOSER)).text) != _as_typed(text):
+            raise EmulatorError("The reply did not show in the thread's composer")
+        self._device.pause()
+        nodes = self._device.screen()
+        self._require_thread(nodes)
+        self._device.tap(_required(self._device.find(_SEND_BUTTON, nodes)))
+        self._device.pause()
+        if not _composer_empty(_required(self._device.find(_COMPOSER)).text):
+            raise EmulatorError("The reply was still in the composer after Send")
+        # The keyboard, then the thread.
         self._device.back()
         self._device.back()
+
+    def heart(self) -> None:
+        """React with a heart to their newest message: a long press on it opens the
+        reactions bar, whose heart is tapped, and the reaction must then show under it."""
+        nodes = self.open_thread()
+        theirs = [message for message in _messages(nodes) if message["from"] == "them"]
+        if not theirs:
+            raise EmulatorError("They have no message on screen to react to")
+        newest = theirs[-1]
+        bubble = newest["media"] or _text_node(nodes, newest["text"])
+        if bubble is None:
+            raise EmulatorError("Their newest message could not be found on screen")
+        self._device.tap(bubble, hold_ms=_LONG_PRESS_MS)
+        self._device.tap_when(_HEART_REACTION)
+        if self._device.watch(lambda shown: self._device.find(_REACTED, shown)) is None:
+            raise EmulatorError("Instagram did not show the heart under their message")
+        self._device.back()
+
+    def accept(self) -> bool:
+        """Accept the thread if it is a message request; False when it is not one."""
+        nodes = self.open_thread()
+        if self._device.find(_COMPOSER, nodes) is not None:
+            return False
+        self._composer_shown(nodes)
+        return True
 
     def send_claim(self, message: str, *, handle: str, tokens: frozenset[str]) -> str:
         """Send the club behind ``handle`` its claim-link message, the one DM the
@@ -192,7 +228,7 @@ class ThreadReader:
             )
         refuse_if_excluded(sender)
         messages = _messages(nodes)
-        if any(m["from"] == "them" and _OPT_OUT.search(m["text"]) for m in messages):
+        if asks_to_be_left_out(messages):
             raise LeftOut("They asked in this thread to be left out, so nothing was sent")
         # A claim only follows up our last reply; anything they wrote since needs a person.
         if not messages or messages[-1]["from"] != "us":
@@ -408,6 +444,24 @@ def _names_thread(nodes: list[Node], thread: str) -> bool:
 def _as_name(text: str) -> str:
     # Instagram wraps some names in invisible direction marks.
     return " ".join(text.replace("\u200e", "").replace("\u200f", "").casefold().split())
+
+
+def asks_to_be_left_out(messages: list[dict[str, Any]]) -> bool:
+    """Whether they wrote, in any of ``messages``, that we should stop featuring them."""
+    return any(
+        message.get("from") == "them" and _OPT_OUT.search(str(message.get("text") or ""))
+        for message in messages
+    )
+
+
+def _composer_empty(text: str) -> bool:
+    return not text.strip() or bool(_COMPOSER_HINT.match(text.strip()))
+
+
+def _text_node(nodes: list[Node], text: str) -> Node | None:
+    """The bubble of their text message ``text``, the lowest one when it repeats."""
+    matches = [node for node in nodes if node.text == text and _side(node) == "them"]
+    return max(matches, key=lambda node: node.bounds[1], default=None)
 
 
 def plain_handle(value: object) -> str:
