@@ -1195,6 +1195,9 @@ class InstagramDmsControl(_ControlModel):
     claim_sends_per_account_per_day: int = Field(ge=0, le=30)
     claim_send_gap_min_seconds: int = Field(ge=0, le=3600)
     claim_send_gap_max_seconds: int = Field(ge=0, le=3600)
+    # A claim only follows up, this long after we shared or featured the post a thread
+    # asked for, never alongside that reply (Tony, 2026-11-25).
+    claim_follow_up_hours: int = Field(ge=1, le=168)
 
 
 class InstagramSessionsControl(_ControlModel):

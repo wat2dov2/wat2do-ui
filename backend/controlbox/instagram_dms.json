@@ -6,5 +6,6 @@
   "inbox_scrolls": 3,
   "claim_sends_per_account_per_day": 0,
   "claim_send_gap_min_seconds": 90,
-  "claim_send_gap_max_seconds": 240
+  "claim_send_gap_max_seconds": 240,
+  "claim_follow_up_hours": 20
 }

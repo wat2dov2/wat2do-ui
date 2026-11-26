@@ -137,15 +137,26 @@ THREAD = "spihc.waterloo"
 class _DraftDevice:
     """A thread whose composer shows whatever was typed; records every key and tap.
 
-    ``header`` is the thread on screen: its title and, under it, its username.
+    ``header`` is the thread on screen: its title and, under it, its username. ``said``
+    are their messages, then ``wrote`` ours, the newest last.
     """
 
-    def __init__(self, *, request=False, echo=True, sends=True, header=(THREAD, ""), said=()):
+    def __init__(
+        self,
+        *,
+        request=False,
+        echo=True,
+        sends=True,
+        header=(THREAD, ""),
+        said=(),
+        wrote=("Just shared it to our story!",),
+    ):
         self.request = request
         self.echo = echo
         self.sends = sends
         self.header = header
         self.said = said
+        self.wrote = wrote
         self.typed = ""
         self.sent = []
         self.taps = []
@@ -161,6 +172,10 @@ class _DraftDevice:
             *(
                 _node(text, (179, 400 + 100 * i, 882, 480 + 100 * i))
                 for i, text in enumerate(self.said)
+            ),
+            *(
+                _node(text, (700, 900 + 100 * i, 1040, 980 + 100 * i))
+                for i, text in enumerate(self.wrote)
             ),
         ]
         if not self.request or self.accepted:
@@ -311,6 +326,21 @@ def test_a_thread_asking_to_be_left_out_gets_nothing(said) -> None:
 def test_a_request_to_share_is_not_taken_for_leaving_out() -> None:
     device = _DraftDevice(said=("Hey! Could you share our post to your story?",))
     assert _send_claim(device) == "typed and sent the claim message"
+
+
+def test_a_claim_never_follows_their_unanswered_message() -> None:
+    # A claim only follows up our last reply; whatever they wrote since needs a person.
+    device = _DraftDevice(said=("Thanks! Also, could you share our next post?",), wrote=())
+    with pytest.raises(module.ClaimRefused, match="not the newest"):
+        _send_claim(device)
+    assert device.sent == [] and device.taps == []
+
+
+def test_a_thread_that_already_got_a_claim_link_gets_no_other() -> None:
+    device = _DraftDevice(wrote=(CLAIM,))
+    with pytest.raises(module.ClaimRefused, match="already got a claim link"):
+        _send_claim(device)
+    assert device.sent == [] and device.taps == []
 
 
 def test_a_waiting_claim_draft_for_another_club_is_never_sent() -> None:

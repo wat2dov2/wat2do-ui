@@ -101,7 +101,8 @@ class LeftOut(EmulatorError):
 
 
 class ClaimRefused(EmulatorError):
-    """The claim link waiting in the thread is not its club's own, so nothing was sent."""
+    """The thread is not ready for its claim follow-up (they wrote last, it already got a
+    claim link, or the one waiting there is another club's), so nothing was sent."""
 
 
 class ThreadReader:
@@ -169,7 +170,8 @@ class ThreadReader:
 
         The thread is opened from its inbox row and must be the club's own: its header
         names the thread and its sender is ``handle``, a club that never asked to be left
-        out (in ``instagram_excluded_clubs`` or in a message on screen). A claim-link
+        out (in ``instagram_excluded_clubs`` or in a message on screen). Our message must
+        be the newest on screen and none of ours may hold a claim link. A claim-link
         draft an earlier sitting typed is sent as it is only when its token is one of
         ``tokens``, the club's own; an empty composer gets ``message`` typed at a
         person's pace, confirmed in the composer. A composer holding any other unsent
@@ -189,8 +191,14 @@ class ThreadReader:
                 "so nothing was sent"
             )
         refuse_if_excluded(sender)
-        if any(m["from"] == "them" and _OPT_OUT.search(m["text"]) for m in _messages(nodes)):
+        messages = _messages(nodes)
+        if any(m["from"] == "them" and _OPT_OUT.search(m["text"]) for m in messages):
             raise LeftOut("They asked in this thread to be left out, so nothing was sent")
+        # A claim only follows up our last reply; anything they wrote since needs a person.
+        if not messages or messages[-1]["from"] != "us":
+            raise ClaimRefused("Our message is not the newest in this thread, so nothing was sent")
+        if any(m["from"] == "us" and CLAIM_LINK.search(m["text"]) for m in messages):
+            raise ClaimRefused("This thread already got a claim link, so nothing was sent")
         nodes = self._composer_shown(nodes)
         composer = _required(self._device.find(_COMPOSER, nodes))
         waiting = CLAIM_LINK.search(composer.text)

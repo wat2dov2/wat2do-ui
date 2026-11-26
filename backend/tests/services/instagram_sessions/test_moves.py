@@ -90,6 +90,22 @@ def claims_on(monkeypatch):
     )
 
 
+def _log_request_handled(hours_ago, move="share", thread="TMU Pre-Vet Club"):
+    """Our sitting shared or featured the post this thread asked for, ``hours_ago``."""
+    ended = moves.datetime.now(moves.timezone.utc) - moves.timedelta(hours=hours_ago)
+    day = ended.astimezone(moves.TORONTO).date().isoformat()
+    moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    with (moves.LOG_DIR / f"{day}.jsonl").open("a") as log:
+        entry = {"school": "tmu", "move": move, "thread": thread, "ok": True}
+        log.write(json.dumps({**entry, "ended": ended.isoformat()}) + "\n")
+
+
+@pytest.fixture
+def due(claims_on):
+    """The Pre-Vet thread's request was handled a day ago, so its claim follow-up is due."""
+    _log_request_handled(hours_ago=moves.DMS.claim_follow_up_hours + 4)
+
+
 def _args(**values):
     return SimpleNamespace(**{"thread": "TMU Pre-Vet Club", "text": "", "claim": None, **values})
 
@@ -112,7 +128,7 @@ def test_claims_stay_switched_off(monkeypatch, reader):
     assert reader.sent == []
 
 
-def test_a_claim_sends_the_clubs_own_link_but_never_prints_it(monkeypatch, reader, claims_on):
+def test_a_claim_sends_the_clubs_own_link_but_never_prints_it(monkeypatch, reader, due):
     monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     result = moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
     ((sent, handle, tokens),) = reader.sent
@@ -146,7 +162,7 @@ def _log_claims(count, minutes_ago):
         )
 
 
-def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader, claims_on):
+def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader, due):
     monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     _log_claims(moves.DMS.claim_sends_per_account_per_day, minutes_ago=60)
     with pytest.raises(moves.MoveError, match="for today"):
@@ -154,7 +170,7 @@ def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader, claims_o
     assert reader.sent == []
 
 
-def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader, claims_on):
+def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader, due):
     monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     slept = []
     monkeypatch.setattr(moves.time, "sleep", slept.append)
@@ -242,8 +258,83 @@ def test_a_club_that_asked_to_be_left_out_has_no_claim_target(database):
 def _log_sent_claim(day, result):
     moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
     entry = {"school": "tmu", "move": "claim", "ok": True, "ended": f"{day}T15:00:00+00:00"}
+    # Every move's log line names its thread, as `main` writes it.
+    entry["thread"] = result["thread"]
     with (moves.LOG_DIR / f"{day}.jsonl").open("a") as log:
         log.write(json.dumps({**entry, "result": result}) + "\n")
+
+
+@pytest.mark.parametrize(
+    "handled",
+    [
+        # Nothing handled in this thread: a claim never goes out on its own.
+        None,
+        # Shared just now: the claim waits for the follow-up a day later.
+        ("share", 1),
+        ("feature", 1),
+        # Shared a day ago, but in another thread.
+        ("share", 30, "GiveBack"),
+    ],
+)
+def test_a_claim_only_follows_up_a_day_after_the_request(monkeypatch, reader, claims_on, handled):
+    if handled:
+        move, hours, *thread = handled
+        _log_request_handled(
+            hours_ago=hours, move=move, thread=thread[0] if thread else "TMU Pre-Vet Club"
+        )
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
+    with pytest.raises(moves.MoveError, match="Not due"):
+        moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    assert reader.sent == []
+
+
+def test_a_featured_request_a_day_old_is_due_for_its_claim(monkeypatch, reader, claims_on):
+    _log_request_handled(hours_ago=moves.DMS.claim_follow_up_hours + 1, move="feature")
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
+    moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    assert len(reader.sent) == 1
+
+
+def test_the_inbox_marks_threads_whose_claim_follow_up_is_due(monkeypatch, reader):
+    def row(name, ours):
+        return SimpleNamespace(
+            name=name, preview="Sent 1d ago", age_days=1.0, unread=False, request=False, ours=ours
+        )
+
+    rows = [
+        row("TMU Pre-Vet Club", True),
+        # They wrote since our reply: a person answers first.
+        row("GiveBack", False),
+        # Shared only an hour ago.
+        row("tmublueprint", True),
+        # Already claimed.
+        row("tmaps105", True),
+        # Never asked for anything.
+        row("iraniantmu", True),
+    ]
+    monkeypatch.setattr(
+        moves, "read_inbox", lambda device, user, requests: [] if requests else rows
+    )
+    monkeypatch.setattr(moves, "user", lambda: 10)
+    day = moves.DMS.claim_follow_up_hours + 4
+    for thread, hours in (
+        ("TMU Pre-Vet Club", day),
+        ("GiveBack", day),
+        ("tmublueprint", 1),
+        ("tmaps105", day),
+    ):
+        _log_request_handled(hours_ago=hours, thread=thread)
+    _log_sent_claim(moves._today(), {"thread": "tmaps105", "club_id": 9})
+    listed = {
+        thread["name"]: thread["claim_due"] for thread in moves.inbox(object(), _args())["threads"]
+    }
+    assert listed == {
+        "TMU Pre-Vet Club": True,
+        "GiveBack": False,
+        "tmublueprint": False,
+        "tmaps105": False,
+        "iraniantmu": False,
+    }
 
 
 @pytest.mark.parametrize(

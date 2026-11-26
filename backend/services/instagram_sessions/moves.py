@@ -8,8 +8,9 @@ sitting log, never a message's text.
 
 Replies are typed into their thread and left there for a person to read and send. The
 one direct message a move sends is the claim-link message (``ig claim``) to a club that
-asked us to repost or feature its post (Tony, 2026-11-24), paced, capped per account and
-sent at most once to each club, only in that club's own thread.
+asked us to repost or feature its post (Tony, 2026-11-24): only as a follow-up about a day
+after we did it (Tony, 2026-11-25), paced, capped per account and sent at most once to
+each club, only in that club's own thread.
 """
 
 from __future__ import annotations
@@ -177,6 +178,8 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
     """Every listed thread once; a message request's own row wins."""
     rows = {row.name: row for row in read_inbox(device, user(), requests=False)}
     rows.update({row.name: row for row in read_inbox(device, user(), requests=True)})
+    handled = _requests_handled()
+    claimed = {entry.get("thread") for entry in _logged(("claim",))}
     return {
         "threads": [
             {
@@ -186,6 +189,10 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
                 "unread": row.unread,
                 "request": row.request,
                 "ours_last": row.ours,
+                # A claim follows up a request we handled a day ago, once nothing is new.
+                "claim_due": row.ours
+                and row.name not in claimed
+                and _follow_up_due(handled.get(row.name)),
             }
             for row in rows.values()
         ]
@@ -233,13 +240,21 @@ def claim(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     """Send the club behind ``username`` its claim-link message in the thread.
 
     The one DM a sitting sends, at most once to each club, and only in the club's own
-    thread (``ThreadReader.send_claim`` checks the thread before touching it). A claim-link
-    draft already waiting there is sent as it is when it carries the club's own link. Each
-    account sends at most ``claim_sends_per_account_per_day`` a day, each a random
-    ``claim_send_gap_*_seconds`` after its last, so it never sends in a burst.
+    thread (``ThreadReader.send_claim`` checks the thread before touching it). It only
+    follows up: at least ``claim_follow_up_hours`` after we shared or featured the post
+    the thread asked for, with our message still the newest there, never alongside that
+    reply (Tony, 2026-11-25). A claim-link draft already waiting there is sent as it is
+    when it carries the club's own link. Each account sends at most
+    ``claim_sends_per_account_per_day`` a day, each a random ``claim_send_gap_*_seconds``
+    after its last, so it never sends in a burst.
     """
     if DMS.claim_sends_per_account_per_day == 0:
         raise MoveError("Claim messages are switched off; send nothing")
+    if not _follow_up_due(_requests_handled().get(args.thread)):
+        raise MoveError(
+            "Not due: a claim only follows up a day after we shared or featured a post "
+            "this thread asked for"
+        )
     target = claim_target(args.username)
     sent_today = _claims_sent_today()
     if len(sent_today) >= DMS.claim_sends_per_account_per_day:
@@ -271,7 +286,7 @@ def _claims_sent_today() -> list[datetime]:
     """When this account's claim messages went out today, from the sitting log."""
     return [
         datetime.fromisoformat(entry["ended"])
-        for entry in _claims_sent(LOG_DIR / f"{_today()}.jsonl")
+        for entry in _logged(("claim",), [LOG_DIR / f"{_today()}.jsonl"])
     ]
 
 
@@ -280,24 +295,40 @@ def _claimed_before(club_id: int, name: str) -> bool:
     Logs from before 2026-11-25 name the club only (``claim_for``)."""
     return any(
         entry["result"].get("club_id") == club_id or entry["result"].get("claim_for") == name
-        for path in sorted(LOG_DIR.glob("*.jsonl"))
-        for entry in _claims_sent(path)
+        for entry in _logged(("claim",))
     )
 
 
-def _claims_sent(path: Path) -> list[dict[str, Any]]:
-    """This account's claim moves that sent their message, from one day's sitting log."""
-    if not path.exists():
-        return []
-    sent = []
-    for line in path.read_text().splitlines():
-        try:
-            entry = json.loads(line)
-        except ValueError:
+def _requests_handled() -> dict[str, datetime]:
+    """When this account last shared or featured a post each thread asked for, by thread."""
+    handled: dict[str, datetime] = {}
+    for entry in _logged(("share", "feature")):
+        ended = datetime.fromisoformat(entry["ended"])
+        handled[entry.get("thread", "")] = max(ended, handled.get(entry.get("thread", ""), ended))
+    return handled
+
+
+def _follow_up_due(handled_at: datetime | None) -> bool:
+    """Whether a request handled at ``handled_at`` is old enough for its claim follow-up."""
+    follow_up = timedelta(hours=DMS.claim_follow_up_hours)
+    return handled_at is not None and datetime.now(timezone.utc) - handled_at >= follow_up
+
+
+def _logged(moves: tuple[str, ...], paths: list[Path] | None = None) -> list[dict[str, Any]]:
+    """This account's moves of these kinds that succeeded, from the given days' sitting
+    logs (every day's by default)."""
+    entries = []
+    for path in sorted(LOG_DIR.glob("*.jsonl")) if paths is None else paths:
+        if not path.exists():
             continue
-        if entry.get("school") == school() and entry.get("move") == "claim" and entry.get("ok"):
-            sent.append({**entry, "result": entry.get("result") or {}})
-    return sent
+        for line in path.read_text().splitlines():
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if entry.get("school") == school() and entry.get("move") in moves and entry.get("ok"):
+                entries.append({**entry, "result": entry.get("result") or {}})
+    return entries
 
 
 def share(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
