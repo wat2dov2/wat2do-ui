@@ -19,9 +19,9 @@ When a post speaks to one group ("hey nursing!", "calling all Agros", "meet fell
 Good fits: parties, socials and mixers open to all, free food, concerts, shows, sports games, games nights and tournaments, festivals, markets, trips, hands-on making, new activities to try and big free giveaways.
 These fail it even when anyone may attend:
 - pre-med, pre-health, pre-dental and pre-pharmacy events: medical school panels and info sessions, MCAT prep, premed talks, suturing, injection or other clinical-skills workshops;
-- every law or legal-career event: pre-law and law society panels, law school info sessions and tours, mooting, mock trials, legal networking and LSAT prep;
+- every law or legal-career event: pre-law and law society panels, law school info sessions and tours, mooting, mock trials, legal networking and LSAT prep (and a law school's own student societies hold their events for law students, which fails the first test);
 - other career-track and one-industry events: info sessions, recruiting and career panels, networking nights, firm or company nights, career fairs, resume reviews, headshot sessions and case competitions;
-- academic events: research talks, lab tours, journal clubs, webinars, study sessions, tutoring, exam reviews and program info nights;
+- academic events: research talks, lab tours, journal clubs, webinars, study sessions, tutoring, exam reviews, test prep (GRE, GMAT) and program info nights;
 - a club's general meetings, even when open to everyone: GMs, first meetings, AGMs, info and intro meetings, elections and town halls.
 Two kinds pass it despite that list: a competition any student can enter for fun with a big real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and an in-person appearance by a household-name company or person most students already know.
 A club in one of those fields can still throw an event for everyone, judged on its own: a pre-dental club's trivia party or a pre-law society's holiday social open to every student passes both tests.
