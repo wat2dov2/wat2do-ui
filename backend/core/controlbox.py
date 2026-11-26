@@ -622,6 +622,11 @@ class InstagramPublishingControl(_ControlModel):
     asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
         max_length=100
     )
+    # When not empty, the asian_song_schools play only these songs (typed like an admin's
+    # song list), in place of the songs marked Asian or K-pop. Empty it to go back to them.
+    asian_song_override: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        max_length=20
+    )
     # The daily stats run keeps each account's newest posts and this many days of follower counts.
     stats_media_limit: int = Field(ge=1, le=100)
     stats_history_days: int = Field(ge=2, le=365)

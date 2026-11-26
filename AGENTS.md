@@ -194,6 +194,7 @@ The editor moves a sticker only from the first finger move past Android's touch 
 Each post is tried once and the story is marked before the first share, so it is never shared twice; a post that cannot be shared is left out, and why, post by post, goes into `story_error` ("2 of 3 posts shared. Not shared: <post> <reason>"), shown in the admin's carousel drawer, and into the `ig stories` answer the sitting log keeps.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
+While `asian_song_override` there lists any songs, those campuses play only those songs instead (since 2026-11-25, only The Weeknd's "Hong Kong"); emptying the list goes back to the songs marked Asian or K-pop.
 The emulator also follows the clubs each school account should follow, and the follow crawl finds them through the browser worker.
 `public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club`, `import` or `directory`), and nothing else follows accounts.
 One row per school and handle is kept whatever its status, so an account an admin rejected is never offered again.

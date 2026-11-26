@@ -40,6 +40,11 @@ class _Table:
         return SimpleNamespace(data=self.rows)
 
 
+def _override(monkeypatch, songs):
+    control = music._CONTROL.model_copy(update={"asian_song_override": songs})
+    monkeypatch.setattr(music, "_CONTROL", control)
+
+
 @pytest.fixture
 def database(monkeypatch):
     tables = {
@@ -56,6 +61,8 @@ def database(monkeypatch):
         ],
     }
     calls = []
+    # The tests pick songs from these rows, whatever override the control box has today.
+    _override(monkeypatch, [])
     monkeypatch.setattr(
         music,
         "get_sb",
@@ -225,6 +232,12 @@ def test_asian_campuses_play_only_asian_and_kpop_songs(monkeypatch, database):
     assert music._CONTROL.asian_song_schools
     assert "uwaterloo" in music._CONTROL.asian_song_schools
     assert _tried_songs(monkeypatch, database, "uwaterloo") == [["bts spring day"]]
+    assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
+
+
+def test_the_asian_song_override_replaces_the_asian_songs_only(monkeypatch, database):
+    _override(monkeypatch, ["the weeknd - hong kong"])
+    assert _tried_songs(monkeypatch, database, "uwaterloo") == [["the weeknd - hong kong"]]
     assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
 
 
