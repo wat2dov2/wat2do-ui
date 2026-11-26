@@ -149,7 +149,9 @@ class _InboxDevice:
         return next((n for n in self.screen_nodes if n.labelled(pattern)), title)
 
     def watch(self, look):
-        return look(self.screen_nodes)
+        # The requests list's title shows once it opened.
+        title = _node("Message requests", (189, 170, 657, 233), "action_bar_title")
+        return look(self.screen_nodes) or look([*self.screen_nodes, title])
 
 
 # wat2do.queensu's short inbox on 2026-10-25: one thread, no tabs and no Requests link.

@@ -219,14 +219,26 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     link = _requests_link(device)
     if link is None:
         return False
+    opened = re.compile(f"{_REQUESTS_TITLE.pattern}|{_NOT_NOW.pattern}")
     device.tap(link)
-    # The list opens a moment after its title, or behind a privacy prompt.
-    shown = device.wait_for(re.compile(f"{_REQUESTS_TITLE.pattern}|{_NOT_NOW.pattern}"))
+    # The list opens a moment after its title, or behind a privacy prompt. A tap that
+    # landed while the inbox was still settling from a scroll is made once more.
+    shown = device.watch(lambda nodes: device.find(opened, nodes))
+    if shown is None:
+        device.tap(_required_link(device))
+        shown = device.wait_for(opened)
     if shown.labelled(_NOT_NOW):
         device.tap(shown)
         device.wait_for(_REQUESTS_TITLE)
     device.watch(lambda nodes: _row_nodes(nodes) or device.find(_NO_REQUESTS, nodes))
     return True
+
+
+def _required_link(device: EmulatorDevice) -> Node:
+    link = _requests_link(device)
+    if link is None:
+        raise EmulatorError("The inbox's Requests link went away")
+    return link
 
 
 def _requests_link(device: EmulatorDevice) -> Node | None:
