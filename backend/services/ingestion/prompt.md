@@ -141,11 +141,11 @@ BEGIN;
 WITH e AS (
   INSERT INTO events (title, description, location, map_location, club, club_id, ig_handle, school_id, source_url,
     source_image_url, ingestion_source, price, food, registration, category, title_svg,
-    competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids)
+    competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids, promotable)
   VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$,
     $t$Arts Lecture Hall, University of Waterloo, 200 University Ave W, Waterloo, ON$t$, $t$Improv Club, UW$t$, 6805,
     'uwimprovisation', {{school_id}}, '{{source_url}}', '<poster reference>',
-    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', $t$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140"><text x="200" y="104" text-anchor="middle" font-family="Impact,'Arial Narrow Bold',sans-serif" font-size="110" textLength="380" lengthAdjust="spacingAndGlyphs" fill="#ffffff" stroke="#151515" stroke-width="3" paint-order="stroke">IMPROV UW</text></svg>$t$, NULL, NULL, NULL, NULL, NULL)
+    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', $t$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140"><text x="200" y="104" text-anchor="middle" font-family="Impact,'Arial Narrow Bold',sans-serif" font-size="110" textLength="380" lengthAdjust="spacingAndGlyphs" fill="#ffffff" stroke="#151515" stroke-width="3" paint-order="stroke">IMPROV UW</text></svg>$t$, NULL, NULL, NULL, NULL, NULL, true)
   RETURNING id
 )
 INSERT INTO event_dates (event_id, dtstart_utc, dtend_utc, tz)
@@ -199,7 +199,12 @@ Columns:
 - `title_svg`: {{title_svg_rules}}
   On a listed event, set it only when this source's poster becomes its image.
 - `cancelled`: false unless the event is cancelled.
+- `promotable`: whether Wat2Do may promote the event in its Instagram carousels and featured row: true when it passes both tests of the promotion rules below, false when it fails either. Never NULL for rows you create.
+  It only decides promotion: list the event either way.
+  On a listed event, set it again only when this source changes who can attend or what the event is.
 - Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.
+
+{{promotion_rules}}
 
 {{discovery_rules}}
 

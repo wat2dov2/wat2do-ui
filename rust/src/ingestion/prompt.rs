@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::constants::EVENT_CATEGORIES;
+use crate::instagram_publishing::curation::PROMOTION_RULES;
 use crate::schools::{
     School, building_code_prompt, campus_season_prompt, lists_university_events, partner_accounts,
 };
@@ -191,6 +192,7 @@ pub fn render(source: &Source) -> String {
         ("categories", categories),
         ("discovery_rules", DISCOVERY_RULES.clone()),
         ("title_svg_rules", TITLE_SVG_RULES.trim_end().to_owned()),
+        ("promotion_rules", PROMOTION_RULES.trim_end().to_owned()),
         ("campus_seasons", campus_season_prompt(&source.school.slug)),
         ("building_codes", building_code_prompt(&source.school.slug)),
     ];
@@ -242,6 +244,7 @@ mod tests {
         assert!(rendered.contains("poster reference `pending:t0k3n/image-0`"));
         assert!(rendered.contains("carousel_requested_at = now()"));
         assert!(rendered.contains("- competition:"));
+        assert!(rendered.contains("MCAT prep"));
         assert!(
             rendered.contains("Businesses wat2do partners with at University of Waterloo: none.")
         );

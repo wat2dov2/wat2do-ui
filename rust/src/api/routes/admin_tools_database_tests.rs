@@ -508,6 +508,16 @@ async fn a_claim_link_hands_its_club_to_the_first_signed_in_opener() {
         (true, true),
         "a claimed club's events are verified and featured"
     );
+    // Unless the ingestion agent judged the event not promotable.
+    for (promotable, featured) in [(Some(false), false), (None, true)] {
+        sqlx::query("UPDATE public.events SET promotable = $2 WHERE id = $1")
+            .bind(event)
+            .bind(promotable)
+            .execute(&db)
+            .await
+            .unwrap();
+        assert_eq!(verified_and_featured().await, (true, featured));
+    }
     // Unless the club asked to stay out of carousels: then it is never featured.
     let handle = format!("claimed{tag}");
     sqlx::query("UPDATE public.events SET ig_handle = $2 WHERE id = $1")

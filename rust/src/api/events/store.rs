@@ -202,12 +202,31 @@ macro_rules! claimed_club {
 }
 pub(crate) use claimed_club;
 
+/// Whether Wat2Do may promote the event `$event` (an alias of `public.events`):
+/// its club has not asked to stay out of carousels, and the ingestion agent did
+/// not judge it unpromotable by `instagram_publishing/promotion_rules.md` (null,
+/// never judged, counts as promotable). Carousel candidates and featured events
+/// both use it.
+macro_rules! promotable_event {
+    ($event:literal) => {
+        concat!(
+            "(NOT ",
+            $crate::api::events::store::excluded_club!($event),
+            " AND ",
+            $event,
+            ".promotable IS NOT FALSE)"
+        )
+    };
+}
+pub(crate) use promotable_event;
+
 /// The ids (`event_id`) of the events Wat2Do features, those whose id is one of
 /// `$ids` (an SQL array): every event it posted in an Instagram carousel, and
 /// every event of a claimed club, whose events are verified (a club that
 /// onboarded is featured from its first listing on). An event whose club has
-/// asked to stay out of carousels (Hillel's accounts among them) is never
-/// featured.
+/// asked to stay out of carousels (Hillel's accounts among them), and one the
+/// ingestion agent judged not promotable (`events.promotable` false: for one
+/// group of students, or of little appeal to a typical one), is never featured.
 macro_rules! featured_events {
     ($ids:literal) => {
         concat!(
@@ -216,15 +235,15 @@ macro_rules! featured_events {
             "JOIN public.events fe ON fe.id = i.event_id ",
             "WHERE i.event_id = ANY(",
             $ids,
-            ") AND (i.published_at IS NOT NULL OR b.status = 'published') AND NOT ",
-            $crate::api::events::store::excluded_club!("fe"),
+            ") AND (i.published_at IS NOT NULL OR b.status = 'published') AND ",
+            $crate::api::events::store::promotable_event!("fe"),
             " UNION SELECT fe.id FROM public.events fe JOIN public.clubs c ON c.id = fe.club_id ",
             "WHERE fe.id = ANY(",
             $ids,
             ") AND ",
             $crate::api::events::store::claimed_club!("c"),
-            " AND NOT ",
-            $crate::api::events::store::excluded_club!("fe")
+            " AND ",
+            $crate::api::events::store::promotable_event!("fe")
         )
     };
 }
