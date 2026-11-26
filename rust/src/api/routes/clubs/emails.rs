@@ -112,7 +112,7 @@ pub fn review_decision(
         subject,
         body_html: layout::shell(
             &heading,
-            &(layout::paragraph(&escape(&intro), true)
+            &(layout::paragraph(&escape(&intro), false)
                 + &details_html
                 + &layout::paragraph(&escape(CLOSING), true)),
             &[],
@@ -232,7 +232,7 @@ pub fn invitation(club_name: &str, recipient: &str, invite_url: &str) -> EmailMe
         subject: format!("Invitation to manage {club_name} on wat2do"),
         body_html: layout::shell(
             &format!("Join {club_name}"),
-            &(layout::paragraph(&escape(&intro), true)
+            &(layout::paragraph(&escape(&intro), false)
                 + &layout::button(invite_url, "Accept invitation")
                 + &layout::note(&escape(&expiry))),
             &[],
@@ -446,6 +446,8 @@ mod tests {
                 .contains("Accept the invitation: https://uwo.wat2do.io/invite/abc")
         );
         assert!(message.body_text.ends_with("This invitation expires in 7 days. If you did not expect it, you can safely ignore this email."));
-        assert!(message.body_html.contains("font:13px/1.6"));
+        // The expiry is small print under the button.
+        let html = &message.body_html;
+        assert!(html.find("Accept invitation").unwrap() < html.find("font:14px/1.5").unwrap());
     }
 }

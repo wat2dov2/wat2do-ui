@@ -771,25 +771,13 @@ pub fn login_email(email: &str, code: &str, callback_url: &str) -> EmailMessage 
         "This code and link expire in {minutes} minutes. \
          If you did not request this, you can safely ignore this email."
     );
-    let code_box = format!(
-        concat!(
-            r#"<div class="w2d-elevated" style="margin:0 0 20px;padding:16px;background:{};"#,
-            "border:1px solid {};border-radius:12px;text-align:center;",
-            r#"color:{};font:800 30px monospace;letter-spacing:8px;">"#,
-            "{}</div>",
-        ),
-        layout::SURFACE_ELEVATED,
-        layout::BORDER,
-        layout::FOREGROUND,
-        escape(code)
-    );
     EmailMessage {
         to: vec![email.to_owned()],
         subject: "Your wat2do login code and link".to_owned(),
         body_html: layout::shell(
             "Log in to wat2do",
-            &(layout::paragraph("Here is your 6-digit login code:", true)
-                + &code_box
+            &(layout::paragraph("Here is your 6-digit login code:", false)
+                + &layout::code(code)
                 + &layout::paragraph("Or open this link to sign in:", true)
                 + &layout::button(callback_url, "Open sign-in link")
                 + &layout::note(&escape(&expiry))),

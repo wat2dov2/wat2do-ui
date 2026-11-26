@@ -148,6 +148,7 @@ def test_event_change_email_leads_with_cancellation_and_escapes_values():
     html, _text = _change_email(
         {"cancelled": {"old": False, "new": True}},
         title="<b>Night</b>",
+        club="Tea & Co",
     )
 
     assert rendering.event_change_subject(_event(), {"cancelled": {"new": True}}) == (
@@ -156,6 +157,7 @@ def test_event_change_email_leads_with_cancellation_and_escapes_values():
     assert rendering.event_change_subject(_event(), {"location": {}}) == "Changed: Tea Tasting"
     assert "<strong>Cancelled</strong>" in html
     assert "&lt;b&gt;Night&lt;/b&gt;" in html
+    assert ">Hosted by Tea &amp; Co</div>" in html
     assert "event-image" not in html
 
 
@@ -250,8 +252,12 @@ def test_event_change_email_offers_a_paid_holder_a_refund():
     assert rendering.REFUND_OFFER in text
     assert f"Request a refund: {refund}" in text
     assert f'href="{refund}"' in html
+    # A section of its own under the event's button, with the refund as an inline link.
+    assert html.index("View event on wat2do") < html.index("Need a refund?</h2>")
+    assert f'href="{refund}" style="color:#171717;font-weight:700;' in html
     _html, plain = _change_email({"location": {"old": "SLC", "new": "DC"}})
     assert rendering.REFUND_OFFER not in plain
+    assert "Need a refund?" not in _html
 
 
 def test_only_a_new_time_or_place_offers_a_refund():

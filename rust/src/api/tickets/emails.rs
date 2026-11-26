@@ -103,9 +103,7 @@ pub fn send_tickets(
                     &codes,
                     order.as_ref().map(|order| order.id),
                 );
-                send_in_background_then(message, move || async move {
-                    inbox::record_for_emails(&db, &[recipient], &notice).await;
-                });
+                send_then_record(&db, message, notice);
             }
             Err(error) => tracing::error!("Could not build the tickets email: {error:#}"),
         }
@@ -167,10 +165,8 @@ fn tickets_message(
         })
         .collect::<anyhow::Result<Vec<_>>>()?;
 
-    let mut rows = vec![
-        ("When".to_owned(), when.clone()),
-        ("Where".to_owned(), where_.clone()),
-    ];
+    let mut lines = vec![when.clone(), where_.clone()];
+    let mut receipt = Vec::new();
     let mut text_payment = Vec::new();
     match payment {
         Some(payment) => {
@@ -179,12 +175,12 @@ fn tickets_message(
                 i64::from(payment.unit_amount_cents) * count as i64,
                 payment.currency,
             );
-            rows.push(("Tickets".to_owned(), format!("{count} \u{d7} {unit}")));
-            rows.push(("Total paid".to_owned(), total.clone()));
-            rows.push(("Paid to".to_owned(), host.clone()));
+            receipt.push(("Tickets", format!("{count} \u{d7} {unit}")));
+            receipt.push(("Total paid", total.clone()));
+            receipt.push(("Paid to", host.clone()));
             text_payment.push(format!("Total paid: {total} to {host}"));
         }
-        None => rows.push(("Hosted by".to_owned(), host.clone())),
+        None => lines.push(format!("Hosted by {host}")),
     }
     let tickets = if count == 1 {
         "ticket".to_owned()
@@ -206,13 +202,19 @@ fn tickets_message(
             "Can't make it? Give your ticket back from its page, so someone else can go.".to_owned()
         }
     };
-    let poster = hero.as_ref().map_or(String::new(), |image| {
-        format!(
-            r#"<img src="cid:{}" alt="{}" width="590" style="display:block;width:100%;max-width:590px;height:auto;margin:0 0 20px;border-radius:12px;">"#,
-            image.content_id,
-            escape(&event.title)
-        )
-    });
+    let event_link = format!("{site}/events/{}", event.id);
+    let poster = hero
+        .as_ref()
+        .map(|image| format!("cid:{}", image.content_id));
+    let receipt: String = receipt
+        .iter()
+        .map(|(label, value)| detail_row(label, value))
+        .collect();
+    let receipt = if receipt.is_empty() {
+        receipt
+    } else {
+        format!("{receipt}<div style=\"height:20px;\"></div>")
+    };
     let cards: String = qr_images
         .iter()
         .zip(&links)
@@ -220,11 +222,9 @@ fn tickets_message(
         .map(|(index, (image, link))| ticket_card(index + 1, count, &image.content_id, link))
         .collect();
     let content = format!(
-        "{}{poster}{}<div style=\"height:20px;\"></div>{cards}{}",
+        "{}{}{receipt}{cards}{}",
         layout::paragraph(&lead, false),
-        rows.iter()
-            .map(|(label, value)| detail_row(label, value))
-            .collect::<String>(),
+        layout::info_card(&event_link, &event.title, &lines, poster.as_deref()),
         layout::note(&escape(&closing)),
     );
     let mut text = vec![
@@ -275,10 +275,10 @@ fn ticket_card(index: usize, count: usize, content_id: &str, link: &str) -> Stri
     let link = escape(link);
     format!(
         concat!(
-            r#"<div style="margin:0 0 16px;padding:20px;border:1px solid {border};border-radius:12px;text-align:center;">"#,
-            r#"<div style="margin:0 0 12px;color:{muted};font:700 12px {font};letter-spacing:.06em;text-transform:uppercase;">{label}</div>"#,
-            r#"<a href="{link}"><img src="cid:{content_id}" alt="Ticket QR code" width="220" height="220" style="display:block;margin:0 auto 12px;border:0;"></a>"#,
-            r#"<a href="{link}" style="color:{fg};font:600 14px {font};">Open ticket</a></div>"#,
+            r#"<div class="w2d-border" style="margin:0 0 20px;padding:20px;border:1px solid {border};border-radius:16px;text-align:center;">"#,
+            r#"<div class="w2d-muted" style="margin:0 0 12px;color:{muted};font:700 12px/1.4 {font};letter-spacing:.06em;text-transform:uppercase;">{label}</div>"#,
+            r#"<a href="{link}"><img src="cid:{content_id}" alt="Ticket QR code" width="220" height="220" style="display:block;margin:0 auto 12px;border:0;border-radius:12px;"></a>"#,
+            r#"<a class="w2d-fg" href="{link}" style="color:{fg};font:700 16px/1.4 {font};">Open ticket</a></div>"#,
         ),
         border = BORDER,
         muted = MUTED_FOREGROUND,
@@ -310,6 +310,19 @@ pub fn send_refund_notice(
     amount_cents: i64,
     currency: &str,
 ) {
+    let (message, notice) =
+        refund_notice_message(settings, event, recipient, refunded, amount_cents, currency);
+    send_then_record(db, message, notice);
+}
+
+fn refund_notice_message(
+    settings: &Settings,
+    event: &Event,
+    recipient: &str,
+    refunded: Refunded<'_>,
+    amount_cents: i64,
+    currency: &str,
+) -> (EmailMessage, Notice) {
     let host = event.club.clone().unwrap_or_else(|| "The club".to_owned());
     let amount = format_money(amount_cents, currency);
     let (count, cancelled) = match refunded {
@@ -354,15 +367,8 @@ pub fn send_refund_notice(
         ),
         layout::button(&link, action),
     );
-    let notice = Notice::about_event(
-        NotificationKind::TicketRefunded,
-        event.id,
-        &event.title,
-        link,
-    );
-    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
     let message = EmailMessage {
-        to: emails.clone(),
+        to: vec![recipient.to_owned()],
         subject: if cancelled {
             format!("{} was cancelled: you've been refunded", event.title)
         } else {
@@ -383,9 +389,13 @@ pub fn send_refund_notice(
         inline_images: vec![layout::LOGO.clone()],
         ..EmailMessage::default()
     };
-    send_in_background_then(message, move || async move {
-        inbox::record_for_emails(&db, &emails, &notice).await;
-    });
+    let notice = Notice::about_event(
+        NotificationKind::TicketRefunded,
+        event.id,
+        &event.title,
+        link,
+    );
+    (message, notice)
 }
 
 /// Tells everyone on the club's team that a holder wants their money back.
@@ -404,6 +414,30 @@ pub fn send_refund_request(
     if recipients.is_empty() {
         return;
     }
+    let (message, notice) = refund_request_message(
+        settings,
+        event,
+        recipients,
+        holder_name,
+        amount_cents,
+        currency,
+        note,
+        ticket_id,
+    );
+    send_then_record(db, message, notice);
+}
+
+#[allow(clippy::too_many_arguments)]
+fn refund_request_message(
+    settings: &Settings,
+    event: &Event,
+    recipients: Vec<String>,
+    holder_name: &str,
+    amount_cents: i64,
+    currency: &str,
+    note: Option<&str>,
+    ticket_id: uuid::Uuid,
+) -> (EmailMessage, Notice) {
     let host = event.club.clone().unwrap_or_else(|| "your club".to_owned());
     let amount = format_money(amount_cents, currency);
     // The event's ticket desk, opened on its club.
@@ -417,9 +451,7 @@ pub fn send_refund_request(
         "{holder_name} asked {host} for a refund of one {amount} ticket to {}.",
         event.title
     );
-    let quoted = note.map_or(String::new(), |note| {
-        layout::note(&escape(&format!("\u{201c}{note}\u{201d}")))
-    });
+    let quoted = note.map_or(String::new(), |note| layout::quote(&escape(note)));
     let content = format!(
         "{}{quoted}{}{}",
         layout::paragraph(&escape(&lead), false),
@@ -436,7 +468,7 @@ pub fn send_refund_request(
     text.push(String::new());
     text.push(format!("Refund or decline it from the ticket desk: {desk}"));
     let message = EmailMessage {
-        to: recipients.clone(),
+        to: recipients,
         subject: format!("Refund request: {}", event.title),
         body_html: layout::shell("Refund request", &content, &[]),
         body_text: text.join("\n"),
@@ -450,10 +482,7 @@ pub fn send_refund_request(
         &event.title,
         desk,
     );
-    let db = db.clone();
-    send_in_background_then(message, move || async move {
-        inbox::record_for_emails(&db, &recipients, &notice).await;
-    });
+    (message, notice)
 }
 
 /// Tells the holder the club said no, so nobody waits on an answer that never comes.
@@ -464,6 +493,16 @@ pub fn send_refund_declined(
     recipient: &str,
     code: &str,
 ) {
+    let (message, notice) = refund_declined_message(settings, event, recipient, code);
+    send_then_record(db, message, notice);
+}
+
+fn refund_declined_message(
+    settings: &Settings,
+    event: &Event,
+    recipient: &str,
+    code: &str,
+) -> (EmailMessage, Notice) {
     let host = event.club.clone().unwrap_or_else(|| "The club".to_owned());
     let link = codes::ticket_url(&site(settings, event), code);
     let lead = format!(
@@ -493,7 +532,12 @@ pub fn send_refund_declined(
         &event.title,
         link,
     );
-    let (db, emails) = (db.clone(), vec![recipient.to_owned()]);
+    (message, notice)
+}
+
+/// Send `message` in the background, and repeat it in each recipient's inbox once SES has it.
+fn send_then_record(db: &PgPool, message: EmailMessage, notice: Notice) {
+    let (db, emails) = (db.clone(), message.to.clone());
     send_in_background_then(message, move || async move {
         inbox::record_for_emails(&db, &emails, &notice).await;
     });
@@ -597,5 +641,53 @@ mod tests {
                 .contains("Total paid: $30.00 CAD to Board Game Club")
         );
         assert_eq!(message.inline_images.len(), 3);
+    }
+
+    #[test]
+    fn a_refund_request_quotes_the_holder_and_opens_the_ticket_desk() {
+        let settings = test_settings(&[("FRONTEND_URL", "https://wat2do.io")]);
+        let (message, notice) = refund_request_message(
+            &settings,
+            &event(),
+            vec!["exec@b.c".to_owned()],
+            "Sam",
+            1500,
+            "cad",
+            Some("Sick <today>"),
+            uuid::Uuid::from_u128(1),
+        );
+        assert!(message.body_html.contains(">Sick &lt;today&gt;</div>"));
+        let desk = "https://uwaterloo.wat2do.io/club-panel/events/42?club=7";
+        assert!(message.body_html.contains(&format!(r#"href="{desk}""#)));
+        assert!(message.body_text.contains("Their note: \"Sick <today>\""));
+        assert_eq!(notice.link.as_deref(), Some(desk));
+    }
+
+    #[test]
+    fn refund_answers_lead_back_to_the_ticket_or_the_event() {
+        let settings = test_settings(&[("FRONTEND_URL", "https://wat2do.io")]);
+        let code = "A".repeat(24);
+        let ticket = format!("https://uwaterloo.wat2do.io/tickets/{code}");
+        let (declined, _) = refund_declined_message(&settings, &event(), "a@b.c", &code);
+        assert!(declined.body_html.contains(&format!(r#"href="{ticket}""#)));
+        assert!(declined.body_html.contains("Your ticket still works."));
+        let (refunded, _) = refund_notice_message(
+            &settings,
+            &event(),
+            "a@b.c",
+            Refunded::Cancelled { count: 2 },
+            3000,
+            "cad",
+        );
+        assert_eq!(
+            refunded.subject,
+            "Board Games Night was cancelled: you've been refunded"
+        );
+        assert!(refunded.body_html.contains("<strong>$30.00 CAD</strong>"));
+        assert!(
+            refunded
+                .body_html
+                .contains(r#"href="https://uwaterloo.wat2do.io/events/42""#)
+        );
     }
 }

@@ -167,6 +167,14 @@ pub fn render_morning_email_html(
             .collect();
         content += &grid_section("New positions", &cards);
     }
+    content += &if events.is_empty() {
+        layout::button(
+            &format!("{}/positions", links.frontend_url),
+            "See all positions",
+        )
+    } else {
+        layout::button(&new_events_url(links.frontend_url), "See all new events")
+    };
     layout::shell(subject, &content, &footer_links(links))
 }
 
@@ -214,8 +222,8 @@ pub fn render_event_reminder_html(
         image_src,
         links.frontend_url,
         &[
-            ("When", format!("{day}, {times}")),
-            ("Where", or(&event.location, "Location TBA").to_owned()),
+            format!("{day} \u{b7} {times}"),
+            or(&event.location, "Location TBA").to_owned(),
         ],
     );
     layout::shell(subject, &content, &footer_links(links))
@@ -252,7 +260,7 @@ fn grid_section(title: &str, cards: &[String]) -> String {
                 concat!(
                     r#"<div style="display:inline-block;box-sizing:border-box;width:100%;"#,
                     "max-width:{max_width}px;padding:0 {gutter}px 20px 0;",
-                    r#"vertical-align:top;text-align:left;font:15px/1.35 {font};">{card}</div>"#,
+                    r#"vertical-align:top;text-align:left;font:16px/1.35 {font};">{card}</div>"#,
                 ),
                 max_width = GRID_CARD_MAX_WIDTH_PX,
                 gutter = GRID_GUTTER_PX,
@@ -262,25 +270,19 @@ fn grid_section(title: &str, cards: &[String]) -> String {
         })
         .collect();
     format!(
-        concat!(
-            r#"<h2 style="margin:24px 0 12px;color:{fg};font:700 19px {font};">{title}</h2>"#,
-            r#"<div style="font-size:0;line-height:0;">{blocks}</div>"#,
-        ),
-        fg = FOREGROUND,
-        font = FONT,
-        title = escape(title),
-        blocks = blocks,
+        r#"{}<div style="margin:0 0 4px;font-size:0;line-height:0;">{blocks}</div>"#,
+        layout::section_heading(title)
     )
 }
 
 fn grid_card(href: &str, media: &CardMedia, title: &str, details: &[String]) -> String {
     let image = match &media.image_src {
         Some(src) if !src.is_empty() => format!(
-            r#"<img src="{}" alt="" width="288" style="display:block;width:100%;height:auto;border:0;border-radius:12px;">"#,
+            r#"<img src="{}" alt="" width="288" style="display:block;width:100%;height:auto;border:0;border-radius:16px;">"#,
             escape(src)
         ),
         _ => format!(
-            r#"<div class="w2d-elevated" style="padding:56px 12px;background:{SURFACE_ELEVATED};border-radius:12px;color:{FOREGROUND};text-align:center;font:600 15px/1.3 {FONT};">{}</div>"#,
+            r#"<div class="w2d-elevated w2d-fg" style="padding:56px 12px;background:{SURFACE_ELEVATED};border-radius:16px;color:{FOREGROUND};text-align:center;font:600 16px/1.3 {FONT};">{}</div>"#,
             escape(title)
         ),
     };
@@ -288,15 +290,15 @@ fn grid_card(href: &str, media: &CardMedia, title: &str, details: &[String]) -> 
         .iter()
         .map(|detail| {
             format!(
-                r#"<br><span style="color:{MUTED_FOREGROUND};font:13px/1.5 {FONT};">{}</span>"#,
+                r#"<br><span class="w2d-muted" style="color:{MUTED_FOREGROUND};font:14px/1.45 {FONT};">{}</span>"#,
                 escape(detail)
             )
         })
         .collect();
     format!(
         concat!(
-            r#"<a href="{href}" style="display:block;color:{fg};text-decoration:none;">{image}{club}"#,
-            r#"<div style="padding:6px 2px 0;"><strong style="font:700 15px/1.35 {font};">{title}</strong>{details}</div></a>"#,
+            r#"<a class="w2d-fg" href="{href}" style="display:block;color:{fg};text-decoration:none;">{image}{club}"#,
+            r#"<div style="padding:6px 2px 0;"><strong style="font:700 16px/1.35 {font};">{title}</strong>{details}</div></a>"#,
         ),
         href = escape(href),
         fg = FOREGROUND,
@@ -328,7 +330,7 @@ fn club_line(media: &CardMedia) -> String {
         concat!(
             r#"<table role="presentation" cellpadding="0" cellspacing="0" "#,
             r#"style="border-collapse:collapse;margin:10px 2px 0;"><tr>"#,
-            r#"{logo}<td valign="middle" style="color:{muted};font:600 13px/1.3 {font};">{name}</td></tr></table>"#,
+            r#"{logo}<td class="w2d-muted" valign="middle" style="color:{muted};font:600 14px/1.3 {font};">{name}</td></tr></table>"#,
         ),
         logo = logo,
         muted = MUTED_FOREGROUND,
@@ -337,60 +339,31 @@ fn club_line(media: &CardMedia) -> String {
     )
 }
 
-/// One event's poster, title, detail rows and link: the body of single-event emails.
+/// One event's card and link: the body of single-event emails.
 fn event_spotlight(
     intro: &str,
     event: &Event,
     image_src: Option<&str>,
     frontend_url: &str,
-    rows: &[(&str, String)],
+    lines: &[String],
 ) -> String {
     let url = event_url(event.id, frontend_url);
-    let escaped_url = escape(&url);
-    let title = escape(or(&event.title, "Untitled event"));
-    let image = match image_src.filter(|src| !src.is_empty()) {
-        Some(src) => format!(
-            concat!(
-                r#"<a href="{url}"><img src="{src}" "#,
-                r#"alt="{title}" width="590" style="display:block;width:100%;max-width:590px;"#,
-                r#"height:auto;margin:0 0 20px;border-radius:12px;"></a>"#,
-            ),
-            url = escaped_url,
-            src = escape(src),
-            title = title,
-        ),
-        None => String::new(),
-    };
-    let detail_rows: String = rows
-        .iter()
-        .map(|(label, value)| detail_row(label, value))
-        .collect();
     format!(
-        concat!(
-            "{intro}{image}",
-            r#"<a href="{url}" style="color:{fg};text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px {font};">"#,
-            "{title}</h2></a>{rows}",
-            r#"<div style="height:16px;"></div>"#,
-            "{button}",
-        ),
-        intro = layout::paragraph(&escape(intro), true),
-        image = image,
-        url = escaped_url,
-        fg = FOREGROUND,
-        font = FONT,
-        title = title,
-        rows = detail_rows,
-        button = layout::button(&url, "View event on wat2do"),
+        "{}{}{}",
+        layout::paragraph(&escape(intro), false),
+        layout::info_card(&url, or(&event.title, "Untitled event"), lines, image_src),
+        layout::button(&url, "View event on wat2do"),
     )
 }
 
+/// A labelled line of a summary, such as a receipt's total.
 pub(crate) fn detail_row(label: &str, value: &str) -> String {
     format!(
         concat!(
-            r#"<div style="padding:12px 0;border-top:1px solid {border};">"#,
-            r#"<div style="margin:0 0 4px;color:{muted};font:700 12px {font};"#,
+            r#"<div class="w2d-border" style="padding:12px 0;border-top:1px solid {border};">"#,
+            r#"<div class="w2d-muted" style="margin:0 0 4px;color:{muted};font:700 12px/1.4 {font};"#,
             r#"letter-spacing:.06em;text-transform:uppercase;">{label}</div>"#,
-            r#"<div style="color:{fg};font:15px/1.5 {font};"><strong>{value}</strong></div></div>"#,
+            r#"<div class="w2d-fg" style="color:{fg};font:16px/1.45 {font};"><strong>{value}</strong></div></div>"#,
         ),
         border = BORDER,
         muted = MUTED_FOREGROUND,
@@ -541,7 +514,9 @@ mod tests {
         assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
         assert!(html.contains("SLC &amp; DC"));
         assert!(html.contains(r#"src="cid:event-42""#));
-        assert!(html.contains("background:#f9f9f9"));
+        assert!(html.contains("background:#ffffff"));
+        assert!(html.contains(r#"href="https://uwaterloo.wat2do.io/events?new=1""#));
+        assert!(html.contains(">See all new events</a>"));
         assert!(html.contains(r#"href="https://uwaterloo.wat2do.io/events/42""#));
         assert!(!html.contains("New positions"));
     }
@@ -563,6 +538,9 @@ mod tests {
         assert!(positions_table.contains(r#"href="https://uwaterloo.wat2do.io/positions""#));
         assert!(positions_table.contains(r#"src="cid:club-esports""#));
         assert!(positions_table.contains("Esports"));
+        let positions_only =
+            render_morning_email_html("1 new position", &[], &[position()], TORONTO, &LINKS);
+        assert!(positions_only.contains(">See all positions</a>"));
     }
 
     #[test]

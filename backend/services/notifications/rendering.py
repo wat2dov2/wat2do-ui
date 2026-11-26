@@ -1,8 +1,8 @@
 """Pure HTML and plain-text rendering of event change emails.
 
 The scheduled morning email and event reminders render in Rust
-(`rust/src/notifications/rendering.rs`); keep the event spotlight there in step
-with this one.
+(`rust/src/notifications/rendering.rs`); keep the event spotlight and detail
+rows there in step with these.
 """
 
 from datetime import datetime
@@ -13,7 +13,10 @@ from services.email_layout import (
     EMAIL_FONT,
     EMAIL_THEME,
     email_button,
+    email_info_card,
+    email_link,
     email_paragraph,
+    email_section_heading,
     email_shell,
 )
 
@@ -94,9 +97,8 @@ def render_event_change_html(
     refund_url: str | None,
 ) -> str:
     refund = (
-        '<div style="height:24px;"></div>'
-        + email_paragraph(escape(REFUND_OFFER))
-        + email_button(refund_url, "Request a refund")
+        email_section_heading("Need a refund?")
+        + email_paragraph(f"{escape(REFUND_OFFER)} {email_link(refund_url, 'Request a refund')}.")
         if refund_url
         else ""
     )
@@ -129,32 +131,28 @@ def _event_spotlight(
     frontend_url: str,
     rows: list[tuple[str, str | None, str | None]],
 ) -> str:
-    """One event's poster, title, detail rows, and link: the body of single-event emails."""
-    href = escape(event_url(event, frontend_url), quote=True)
-    title = escape(str(event.get("title") or "Untitled event"))
-    image = (
-        f'<a href="{href}"><img src="{escape(image_src, quote=True)}" '
-        f'alt="{title}" width="590" style="display:block;width:100%;max-width:590px;'
-        'height:auto;margin:0 0 20px;border-radius:12px;"></a>'
-        if image_src
-        else ""
-    )
+    """One event's card, detail rows, and link: the body of single-event emails."""
+    url = event_url(event, frontend_url)
+    club = event.get("club")
     return (
-        f"{email_paragraph(escape(intro), muted=True)}"
-        f"{image}"
-        f'<a href="{href}" style="color:{EMAIL_THEME["foreground"]};'
-        f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px {EMAIL_FONT};">'
-        f"{title}</h2></a>"
+        email_paragraph(escape(intro))
+        + email_info_card(
+            url,
+            str(event.get("title") or "Untitled event"),
+            [f"Hosted by {club}"] if club else [],
+            image_src,
+        )
         + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
-        + '<div style="height:16px;"></div>'
-        + email_button(event_url(event, frontend_url), "View event on wat2do")
+        + '<div style="height:20px;"></div>'
+        + email_button(url, "View event on wat2do")
     )
 
 
 def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
     muted = EMAIL_THEME["muted_foreground"]
     struck = (
-        f'<span style="color:{muted};text-decoration:line-through;">{escape(old)}</span>'
+        f'<span class="w2d-muted" style="color:{muted};text-decoration:line-through;">'
+        f"{escape(old)}</span>"
         if old
         else ""
     )
@@ -163,12 +161,12 @@ def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
     elif new:
         value = f"<strong>{escape(new)}</strong>"
     else:
-        value = f'{struck} <span style="color:{muted};">(removed)</span>'
+        value = f'{struck} <span class="w2d-muted" style="color:{muted};">(removed)</span>'
     return (
-        f'<div style="padding:12px 0;border-top:1px solid {EMAIL_THEME["border"]};">'
-        f'<div style="margin:0 0 4px;color:{muted};font:700 12px {EMAIL_FONT};'
+        f'<div class="w2d-border" style="padding:12px 0;border-top:1px solid {EMAIL_THEME["border"]};">'
+        f'<div class="w2d-muted" style="margin:0 0 4px;color:{muted};font:700 12px/1.4 {EMAIL_FONT};'
         f'letter-spacing:.06em;text-transform:uppercase;">{escape(label)}</div>'
-        f'<div style="color:{EMAIL_THEME["foreground"]};font:15px/1.5 {EMAIL_FONT};">'
+        f'<div class="w2d-fg" style="color:{EMAIL_THEME["foreground"]};font:16px/1.45 {EMAIL_FONT};">'
         f"{value}</div></div>"
     )
 
