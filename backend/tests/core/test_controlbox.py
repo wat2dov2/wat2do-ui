@@ -940,6 +940,35 @@ def test_instagram_emulator_rejects_more_than_ten_accounts_on_one_user(tmp_path:
         load_controlbox(path)
 
 
+def test_instagram_emulator_counts_hidden_school_accounts_toward_the_app_limit(
+    tmp_path: Path,
+) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update(
+            {
+                "android_user_by_school": {f"school-{index}": 0 for index in range(10)},
+                "hidden_school_accounts": {"testu": {"android_user": 0, "username": "test"}},
+            }
+        ),
+    )
+    with pytest.raises(ValidationError, match="at most ten"):
+        load_controlbox(path)
+
+
+def test_instagram_emulator_keeps_hidden_schools_out_of_the_worker(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload["hidden_school_accounts"].update(
+            {"uwaterloo": {"android_user": 12, "username": "test"}}
+        ),
+    )
+    with pytest.raises(ValidationError, match="cannot be a worker account"):
+        load_controlbox(path)
+
+
 @pytest.mark.parametrize(
     "paths", [["databases"], ["shared_prefs/x"], ["../etc"], ["files/../databases"], []]
 )

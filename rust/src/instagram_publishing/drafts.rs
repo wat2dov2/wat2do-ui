@@ -271,9 +271,10 @@ pub async fn list_draft_candidates(db: &PgPool, now: DateTime<Utc>) -> Result<Ve
         .map(|account| (account.account_key.clone(), account))
         .collect();
     let excluded = excluded_clubs(db).await?;
-    let schools: Vec<String> = sqlx::query_scalar("SELECT slug FROM public.schools ORDER BY slug")
-        .fetch_all(db)
-        .await?;
+    let schools: Vec<String> =
+        sqlx::query_scalar("SELECT slug FROM public.schools WHERE NOT hidden ORDER BY slug")
+            .fetch_all(db)
+            .await?;
     let mut packets = Vec::new();
     for account_key in schools {
         let account = accounts.get(&account_key);

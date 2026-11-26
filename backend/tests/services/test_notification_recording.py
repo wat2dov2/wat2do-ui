@@ -138,6 +138,12 @@ def test_a_direct_message_never_teaches_an_account(tmp_path):
     assert _lines(tmp_path)[0]["account"] is None
 
 
+def test_a_hidden_school_test_account_is_named_too(tmp_path):
+    notifications = module.NotificationLog(tmp_path, now=_Clock())
+    notifications.record(_notification(extras={"android.subText": "angrygooseinuw"}))
+    assert _lines(tmp_path)[0]["account"] == "angrygooseinuw"
+
+
 def test_a_notification_is_written_once_however_often_the_reader_replays_it(tmp_path):
     clock = _Clock()
     notifications = module.NotificationLog(tmp_path, now=clock)
@@ -401,7 +407,7 @@ def test_a_notification_written_before_is_not_offered_again():
 
 
 def _users():
-    return sorted(set(module.EMULATOR.android_user_by_school.values()))
+    return sorted(set(module.EMULATOR.android_users_by_account()))
 
 
 def test_a_stopped_android_user_is_started_again_once_per_check(caplog):

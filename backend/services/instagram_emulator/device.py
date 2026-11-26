@@ -584,7 +584,7 @@ class EmulatorDevice:
         if not reclaim_due():
             return self.free_data_megabytes()
         package = CONTROL.instagram_package
-        for user in sorted(set(CONTROL.android_user_by_school.values())):
+        for user in sorted(set(CONTROL.android_users_by_account())):
             folder = f"/data/user/{user}/{package}"
             paths = " ".join(f"{folder}/{path}" for path in CONTROL.instagram_cache_paths)
             self.adb(

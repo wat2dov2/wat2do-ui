@@ -12,6 +12,10 @@ def test_school_accounts_are_named_after_their_school():
     assert school_account_username("UofT_SG") == "wat2do.uoft_sg"
 
 
+def test_a_hidden_school_uses_its_test_account():
+    assert school_account_username("testu") == "angrygooseinuw"
+
+
 @pytest.mark.parametrize("slug", ["", "has space", "a-dash", "x" * 30])
 def test_a_slug_that_cannot_name_an_account_is_refused(slug):
     with pytest.raises(ValueError, match="account username is invalid"):

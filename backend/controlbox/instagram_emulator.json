@@ -61,6 +61,12 @@
     "berkeley": 12,
     "brocku": 12
   },
+  "hidden_school_accounts": {
+    "testu": {
+      "android_user": 12,
+      "username": "angrygooseinuw"
+    }
+  },
   "adb_timeout_seconds": 30,
   "user_switch_wait_seconds": 25,
   "account_switch_settle_seconds": 5,
