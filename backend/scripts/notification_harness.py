@@ -293,7 +293,9 @@ SCENARIOS: tuple[Scenario, ...] = (
 )
 
 
-def run(only: set[str], wait_minutes: float, post: str) -> list[dict[str, Any]]:
+def run(
+    only: set[str], wait_minutes: float, post: str, *, send: bool = True
+) -> list[dict[str, Any]]:
     if not controlbox.instagram_dms.agent_enabled or (
         controlbox.instagram_dms.agent_schools
         and SCHOOL not in controlbox.instagram_dms.agent_schools
@@ -304,7 +306,7 @@ def run(only: set[str], wait_minutes: float, post: str) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     sends: dict[str, int] = {}
     try:
-        _run_scenarios(device, only, wait_minutes, post, results, sends)
+        _run_scenarios(device, only, wait_minutes, post, results, sends, send=send)
     finally:
         _take_back_exclusions()
     return results
@@ -317,6 +319,8 @@ def _run_scenarios(
     post: str,
     results: list[dict[str, Any]],
     sends: dict[str, int],
+    *,
+    send: bool,
 ) -> None:
     for scenario in SCENARIOS:
         if only and scenario.id not in only:
@@ -328,11 +332,11 @@ def _run_scenarios(
             "notes": scenario.notes,
         }
         try:
-            if not scenario.extra.get("direct_only"):
+            if send and not scenario.extra.get("direct_only"):
                 _send(device, scenario, post, sends)
             if scenario.setup:
                 _prepare(device, scenario)
-            reports = _wait_for_reports(scenario, started, wait_minutes)
+            reports = _wait_for_reports(scenario, started, wait_minutes) if send else []
             if not reports:
                 result["chain"] = "direct (no workflow run arrived)"
                 reports = [_handle_directly(device, scenario)]
@@ -648,8 +652,11 @@ def main() -> int:
     parser.add_argument("--only", default="")
     parser.add_argument("--wait", type=float, default=8)
     parser.add_argument("--post", default=DEFAULT_POST)
+    # Check scenarios whose messages an earlier run already sent, handling them directly.
+    parser.add_argument("--no-send", action="store_true")
     args = parser.parse_args()
-    results = run({item for item in args.only.split(",") if item}, args.wait, args.post)
+    only = {item for item in args.only.split(",") if item}
+    results = run(only, args.wait, args.post, send=not args.no_send)
     print(json.dumps({r["id"]: r.get("passed") for r in results}))
     print(f"Report: {REPORT}")
     return 0 if all(result.get("passed") for result in results) else 1
