@@ -26,6 +26,8 @@ _INBOX_SEARCH = re.compile(r"^(?:Search or ask Meta AI|Ask Meta AI or Search|Sea
 _SEARCH_FIELD = re.compile(r"^search_bar_real_field$")
 _MORE_ACCOUNTS = re.compile(r"^More accounts$")
 _REQUESTS_TITLE = re.compile(r"^Message requests$")
+# How many requests are looked into for one whose header names the sender.
+_REQUEST_LOOKS = 10
 # The heading at the top of the inbox's thread list.
 _MESSAGES_HEADER = re.compile(r"^Messages$")
 _NO_REQUESTS = re.compile(r"^No message requests$|^You don't have any message requests")
@@ -90,9 +92,12 @@ def read_inbox(device: EmulatorDevice, user: int, *, requests: bool) -> list[Inb
 
 def open_row(device: EmulatorDevice, user: int, name: str) -> None:
     """Open the thread with ``name`` from the main inbox, or from requests if it is there,
-    else from the inbox's search, which finds a chat however old it is.
+    else the request whose thread is titled ``name``, else from the inbox's search, which
+    finds a chat however old it is.
 
-    A request moves to the main inbox once accepted, so both lists are searched.
+    A request moves to the main inbox once accepted, so both lists are searched. A
+    request row shows only the sender's username while a notification names them by
+    their display name, which only the thread's own header shows.
     """
     for requests in (False, True):
         if not _open_list(device, user, requests=requests):
@@ -103,8 +108,32 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
                 _enter(device, row)
                 return
             device.scroll_down()
+    if _open_request_titled(device, user, name):
+        return
     if not _open_by_search(device, user, name):
         raise EmulatorError("The DM thread is no longer in the inbox")
+
+
+def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
+    """Open the message request whose thread header names ``name``, looking into each
+    request in turn (the sender is not told a request was opened); False when none is."""
+    if not _open_list(device, user, requests=True):
+        return False
+    looked: set[str] = set()
+    for _ in range(_REQUEST_LOOKS):
+        rows = [row for row in _row_nodes(device.screen()) if _name(row) not in looked]
+        if not rows:
+            return False
+        looked.add(_name(rows[0]))
+        _enter(device, rows[0])
+        title = next(
+            (node.label for node in device.screen() if node.resource_id == "header_title"), ""
+        )
+        if title == name:
+            return True
+        device.back()
+        device.wait_for(_REQUESTS_TITLE)
+    return False
 
 
 def _enter(device: EmulatorDevice, row: Node) -> None:

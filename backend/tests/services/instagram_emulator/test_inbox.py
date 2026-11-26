@@ -253,3 +253,47 @@ def test_the_business_chat_privacy_note_after_accepting_is_closed() -> None:
     ]
     inbox.accept_request(device)
     assert device.tapped == ["^Accept$", "^Close$"]
+
+
+class _RequestsDevice:
+    """Message requests listing usernames; each thread's header shows the display name."""
+
+    TITLES = {
+        "wat2do.mit": "Wat2Do | Sharing events @ mit",
+        "wat2do.utsg": "Wat2Do | Sharing Events @ utsg",
+    }
+
+    def __init__(self):
+        self.open = None
+        self.entered = []
+
+    def screen(self):
+        if self.open is None:
+            return [
+                *_row(940, "wat2do.mit, hey could you repost this ·, 2h", "wat2do.mit"),
+                *_row(1139, "wat2do.utsg, hi! can you feature ·, 1h", "wat2do.utsg"),
+            ]
+        return [_node(self.TITLES[self.open], (304, 156, 650, 204), "header_title")]
+
+    def tap(self, node):
+        self.open = node.description.split(", ")[0]
+        self.entered.append(self.open)
+
+    def wait_for(self, pattern):
+        return _node("", (0, 0, 1, 1))
+
+    def pause(self):
+        pass
+
+    def back(self):
+        self.open = None
+
+
+def test_a_request_is_found_by_the_display_name_its_thread_shows(monkeypatch) -> None:
+    monkeypatch.setattr(inbox, "_open_list", lambda device, user, requests: True)
+    device = _RequestsDevice()
+    assert inbox._open_request_titled(device, 0, "Wat2Do | Sharing Events @ utsg")
+    assert device.entered == ["wat2do.mit", "wat2do.utsg"] and device.open == "wat2do.utsg"
+    device = _RequestsDevice()
+    assert not inbox._open_request_titled(device, 0, "Someone Else")
+    assert device.open is None
