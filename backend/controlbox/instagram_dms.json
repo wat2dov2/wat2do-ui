@@ -16,5 +16,7 @@
   "send_wait_min_seconds": 20,
   "send_wait_max_seconds": 90,
   "thread_repeat_hours": 24,
-  "challenge_pause_hours": 24
+  "challenge_pause_hours": 24,
+  "comment_likes_per_account_per_day": 40,
+  "pins_per_account_per_day": 10
 }

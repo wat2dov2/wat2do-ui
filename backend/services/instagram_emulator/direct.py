@@ -85,11 +85,9 @@ _THEIR_BUBBLE_MAX_LEFT = 240
 # A text message is usually an unnamed view, but one with a link preview names its text.
 _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
-# A long press on a message opens the reactions bar above it.
-_LONG_PRESS_MS = 700
-_HEART_REACTION = labels("❤", "Heart", "Love")
-# A reaction shows as a small pill under the message.
-_REACTED = labels("Reaction", "❤")
+# A reaction shows as a small emoji pill under its message, about 47 px square.
+_REACTION_PILL_MAX = 120
+_REACTION_WAIT_SECONDS = 5
 # Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
 _REVEAL_SCROLLS = 4
 
@@ -142,6 +140,8 @@ class ThreadReader:
                 "shared_url": message["shared_url"],
                 "sender": sender if message["from"] == "them" else None,
                 "shared_owner": message["shared_owner"],
+                # Reactions on it (ours under theirs, theirs under ours), such as "❤".
+                "reactions": message["reactions"],
             }
             for message in messages
         ]
@@ -175,22 +175,27 @@ class ThreadReader:
         self._device.back()
         self._device.back()
 
-    def heart(self) -> None:
-        """React with a heart to their newest message: a long press on it opens the
-        reactions bar, whose heart is tapped, and the reaction must then show under it."""
+    def heart(self) -> bool:
+        """React with a heart to their newest message, unless it already has our reaction;
+        True when this call reacted. A double tap is a message's quick reaction, and the
+        reaction must then show under the message."""
         nodes = self.open_thread()
         theirs = [message for message in _messages(nodes) if message["from"] == "them"]
         if not theirs:
             raise EmulatorError("They have no message on screen to react to")
         newest = theirs[-1]
-        bubble = newest["media"] or _text_node(nodes, newest["text"])
+        if newest["reactions"]:
+            return False
+        bubble = newest["media"] or newest["node"]
         if bubble is None:
             raise EmulatorError("Their newest message could not be found on screen")
-        self._device.tap(bubble, hold_ms=_LONG_PRESS_MS)
-        self._device.tap_when(_HEART_REACTION)
-        if self._device.watch(lambda shown: self._device.find(_REACTED, shown)) is None:
+        self._device.double_tap(bubble)
+        reacted = self._device.watch(
+            lambda shown: _reacted_below(shown, bubble), seconds=_REACTION_WAIT_SECONDS
+        )
+        if not reacted:
             raise EmulatorError("Instagram did not show the heart under their message")
-        self._device.back()
+        return True
 
     def accept(self) -> bool:
         """Accept the thread if it is a message request; False when it is not one."""
@@ -458,10 +463,26 @@ def _composer_empty(text: str) -> bool:
     return not text.strip() or bool(_COMPOSER_HINT.match(text.strip()))
 
 
-def _text_node(nodes: list[Node], text: str) -> Node | None:
-    """The bubble of their text message ``text``, the lowest one when it repeats."""
-    matches = [node for node in nodes if node.text == text and _side(node) == "them"]
-    return max(matches, key=lambda node: node.bounds[1], default=None)
+def _is_reaction(node: Node) -> bool:
+    """Whether the node is a reaction pill under a message: a little emoji, not a message."""
+    width, height = node.bounds[2] - node.bounds[0], node.bounds[3] - node.bounds[1]
+    text = node.text.strip()
+    return (
+        bool(text)
+        and not any(ch.isalnum() for ch in text)
+        and width <= _REACTION_PILL_MAX
+        and height <= _REACTION_PILL_MAX
+    )
+
+
+def _reacted_below(nodes: list[Node], bubble: Node) -> bool:
+    """Whether a reaction pill now shows right under ``bubble``."""
+    return any(
+        _is_reaction(node)
+        and bubble.bounds[3] - 10 <= node.bounds[1] <= bubble.bounds[3] + _REACTION_PILL_MAX
+        and node.bounds[0] < bubble.bounds[2]
+        for node in nodes
+    )
 
 
 def plain_handle(value: object) -> str:
@@ -557,6 +578,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
         and not any(node.inside(bubble) for bubble in bubbles)
     ]
     found: list[tuple[int, dict[str, Any]]] = []
+    pills: list[Node] = []
     for bubble in bubbles:
         if bubble.bounds[1] < top:
             continue
@@ -574,8 +596,10 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": media,
+                    "node": bubble,
                     "card": False,
                     "cut_off": bubble.bounds[1] <= message_list.bounds[1],
+                    "reactions": "",
                 },
             )
         )
@@ -600,8 +624,10 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": card,
+                    "node": card,
                     "card": True,
                     "cut_off": card.bounds[1] <= message_list.bounds[1],
+                    "reactions": "",
                 },
             )
         )
@@ -615,6 +641,9 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
             or any(node.inside(container) for container in [*bubbles, *cards, *trays])
         ):
             continue
+        if _is_reaction(node):
+            pills.append(node)
+            continue
         found.append(
             (
                 node.bounds[1],
@@ -625,12 +654,20 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": None,
                     "media": None,
+                    "node": node,
                     "card": False,
                     "cut_off": False,
+                    "reactions": "",
                 },
             )
         )
-    return [message for _top, message in sorted(found, key=lambda pair: pair[0])]
+    messages = [message for _top, message in sorted(found, key=lambda pair: pair[0])]
+    # A reaction pill sits under the message it reacts to: the last one that starts above it.
+    for pill in pills:
+        above = [m for m in messages if m["node"].bounds[1] < pill.bounds[1]]
+        if above:
+            above[-1]["reactions"] += pill.text.strip()
+    return messages
 
 
 def _newest_message_is_old(nodes: list[Node]) -> bool:

@@ -43,14 +43,23 @@ from core.database import get_sb
 from core.tables import (
     CLUB_MEMBERS,
     CLUBS,
+    EVENTS,
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
     OUTREACH_LEADS,
 )
-from services import school_service
+from schemas.event_date import OccurrenceUpdate
+from services import event_date_service, event_service, school_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 from services.ingestion import items
 from services.instagram_accounts import android_user, school_account_username
 from services.instagram_emulator.audio import like_and_repost
+from services.instagram_emulator.comments import (
+    PinLimitReached,
+    like_comment,
+    pin_comment,
+    read_comments,
+)
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, exclusive
 from services.instagram_emulator.direct import (
     CLAIM_LINK,
@@ -112,10 +121,15 @@ _ACTING = frozenset(
         "correction",
         "opt-out",
         "milestone-story",
+        "fix-event",
+        "like-comment",
+        "pin-comment",
     }
 )
 # Moves that only read what is on the device, or never touch it.
-_READING = frozenset({"status", "inbox", "read", "screen", "shot", "milestones"})
+_READING = frozenset({"status", "inbox", "read", "screen", "shot", "milestones", "comments"})
+# How many of the account's newest posts ``ig comments`` reads.
+_COMMENTED_POSTS = 3
 # How far back the daily caps and the per-thread repeats look.
 _LOG_DAYS = 2
 
@@ -431,15 +445,21 @@ def heart(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     reader = _reader(device, args.thread)
     _refuse_if_left_out(reader.read())
     _pace()
-    reader.heart()
-    return {"thread": args.thread, "status": "hearted their newest message"}
+    hearted = reader.heart()
+    status = (
+        "hearted their newest message" if hearted else "their newest message already had our heart"
+    )
+    return {"thread": args.thread, "status": status}
 
 
 def boost(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     """Like and repost a post they shared in the thread, put its events in an upcoming
     carousel and share it to our story; each post once."""
-    if any(entry.get("post") == args.post for entry in _logged(("boost",))):
-        raise MoveError("Refused: this post was already boosted")
+    if any(
+        args.post in (entry.get("post"), entry["result"].get("post"))
+        for entry in _logged(("boost", "share"))
+    ):
+        raise MoveError("Refused: this post was already boosted or shared to our story")
     _within_cap("boost", DMS.boosts_per_account_per_day)
     reader = _reader(device, args.thread)
     thread = reader.read()
@@ -478,6 +498,86 @@ def mute(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     reader = FollowingReader(device, user(), profile_wait_seconds=EMULATOR.screen_wait_seconds)
     outcome = reader.mute(handle)
     return {"status": outcome, "account": handle}
+
+
+def find_event(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """The sender's club's events at this school from the last week on, each with the
+    posted carousels it is a slide of, so a correction can name the event it fixes."""
+    handle = sender(_reader(device, args.thread).read())
+    if not handle:
+        raise MoveError("The sender's username could not be read")
+    events = _club_events(handle)
+    slides = _posted_slides([event["id"] for event in events])
+    return {
+        "club": handle,
+        "events": [{**event, "carousels": slides.get(event["id"], [])} for event in events],
+    }
+
+
+def fix_event(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Correct one of the sender's club's events the way the app's own edit does
+    (``update_event_with_occurrences``), with only what they said was wrong."""
+    handle = sender(_reader(device, args.thread).read())
+    if not handle:
+        raise MoveError("The sender's username could not be read")
+    if args.event not in {event["id"] for event in _club_events(handle)}:
+        raise MoveError(f"Event {args.event} is not one of {handle}'s events here")
+    event = event_service.get_event(args.event)
+    if event is None:
+        raise MoveError(f"Event {args.event} is gone")
+    patch: dict[str, Any] = {}
+    if args.title:
+        patch["title"] = plain(args.title)[:200]
+    if args.location:
+        # The map finds the new place again.
+        patch.update(location=plain(args.location)[:200], map_location=None)
+    if args.cancelled:
+        patch["cancelled"] = True
+    occurrences = _moved(event, args.start, args.end) if args.start or args.end else None
+    if not patch and occurrences is None:
+        raise MoveError("Nothing to fix: give --title, --location, --start, --end or --cancelled")
+    event_service.update_event_and_occurrences(args.event, patch, occurrences)
+    event_feed_revalidation_service.revalidate_schools([school()], resources=("events", "clubs"))
+    return {"event": args.event, "fixed": sorted([*patch, *(["dates"] if occurrences else [])])}
+
+
+def comments(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
+    """The comments on this account's newest posted carousels: who wrote each, and
+    whether we liked or pinned it. ``ig shot`` shows their words."""
+    posts = [row for row in _batches(status=INSTAGRAM_BATCH_PUBLISHED) if row.get("permalink")]
+    found = []
+    for row in posts[:_COMMENTED_POSTS]:
+        found.append(
+            {
+                "post": row["permalink"],
+                "comments": [
+                    {"author": c.author, "liked": c.liked, "pinned": c.pinned}
+                    for c in read_comments(device, user(), row["permalink"])
+                ],
+            }
+        )
+    return {"posts": found}
+
+
+def like_comment_move(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Like a comment on one of our posts (every one but spam, scams and hate)."""
+    _ours(args.post)
+    _within_cap("like-comment", DMS.comment_likes_per_account_per_day)
+    _pace()
+    liked = like_comment(device, user(), args.post, args.author)
+    return {"post": args.post, "status": "liked" if liked else "already liked"}
+
+
+def pin_comment_move(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Pin a genuine comment on one of our posts; at most three stay pinned per post."""
+    _ours(args.post)
+    _within_cap("pin-comment", DMS.pins_per_account_per_day)
+    _pace()
+    try:
+        pinned = pin_comment(device, user(), args.post, args.author)
+    except PinLimitReached as exc:
+        raise MoveError(f"{exc}; leave the pins as they are") from exc
+    return {"post": args.post, "status": "pinned" if pinned else "already pinned"}
 
 
 # --- looking and touching ----------------------------------------------------------
@@ -636,6 +736,111 @@ def claim_target(handle: str) -> ClaimTarget:
 
 def _reader(device: EmulatorDevice, thread: str) -> ThreadReader:
     return ThreadReader(device, thread, lambda: open_row(device, user(), thread))
+
+
+def _club_events(handle: str) -> list[dict[str, Any]]:
+    """The club's events at this school, by its account or its club's, from a week ago on."""
+    clubs = (
+        get_sb()
+        .table(CLUBS)
+        .select("id,ig")
+        .eq("school_id", _school_id())
+        .ilike("ig", f"%{handle}")
+        .execute()
+    ).data or []
+    club_ids = [club["id"] for club in clubs if plain_handle(club.get("ig")) == handle]
+    owned = f"ig_handle.eq.{handle}" + (
+        f",club_id.in.({','.join(str(club_id) for club_id in club_ids)})" if club_ids else ""
+    )
+    rows = (
+        get_sb()
+        .table(EVENTS)
+        .select("id,title,location,cancelled")
+        .eq("school_id", _school_id())
+        .or_(owned)
+        .order("id", desc=True)
+        .limit(40)
+        .execute()
+    ).data or []
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    dates = event_date_service.list_for_events([row["id"] for row in rows])
+    tz = ZoneInfo(school_service.get_school(school()).timezone)  # type: ignore[union-attr]
+    events = []
+    for row in rows:
+        occurrences = [
+            o for o in dates.get(row["id"], []) if (o.dtend_utc or o.dtstart_utc) >= since
+        ]
+        if occurrences:
+            events.append(
+                {
+                    **row,
+                    "dates": [
+                        {
+                            "start": o.dtstart_utc.astimezone(tz).strftime("%Y-%m-%dT%H:%M"),
+                            "end": o.dtend_utc.astimezone(tz).strftime("%Y-%m-%dT%H:%M")
+                            if o.dtend_utc
+                            else None,
+                        }
+                        for o in occurrences
+                    ],
+                }
+            )
+    return events
+
+
+def _posted_slides(event_ids: list[int]) -> dict[int, list[dict[str, Any]]]:
+    """For each event, the posted carousels of this school it is a slide of."""
+    if not event_ids:
+        return {}
+    items = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_ITEMS)
+        .select("event_id,batch_id,position")
+        .in_("event_id", event_ids)
+        .execute()
+    ).data or []
+    posted = {row["id"]: row for row in _batches(status=INSTAGRAM_BATCH_PUBLISHED)}
+    found: dict[int, list[dict[str, Any]]] = {}
+    for item in items:
+        batch = posted.get(item["batch_id"])
+        if batch is not None:
+            found.setdefault(item["event_id"], []).append(
+                {"batch": batch["id"], "permalink": batch["permalink"]}
+            )
+    return found
+
+
+def _moved(event: Any, start: str | None, end: str | None) -> list[OccurrenceUpdate]:
+    """The event's dates with its first one moved to ``start``/``end`` (local times)."""
+    record = school_service.get_school(school())
+    tz = ZoneInfo(record.timezone if record else "America/Toronto")
+    occurrences = sorted(event.occurrences, key=lambda o: o.dtstart_utc)
+    if not occurrences:
+        raise MoveError("The event has no date to move")
+    first = occurrences[0]
+    try:
+        new_start = datetime.fromisoformat(start).replace(tzinfo=tz) if start else first.dtstart_utc
+        new_end = datetime.fromisoformat(end).replace(tzinfo=tz) if end else None
+    except ValueError as exc:
+        raise MoveError("Give times as YYYY-MM-DDTHH:MM, local to the school") from exc
+    if new_end is None and first.dtend_utc is not None:
+        # A moved start keeps the event's length.
+        new_end = new_start + (first.dtend_utc - first.dtstart_utc)
+    moved = [OccurrenceUpdate(id=first.id, dtstart_utc=new_start, dtend_utc=new_end, tz=first.tz)]
+    moved += [
+        OccurrenceUpdate(
+            id=o.id, dtstart_utc=o.dtstart_utc, dtend_utc=o.dtend_utc, duration=o.duration, tz=o.tz
+        )
+        for o in occurrences[1:]
+    ]
+    return moved
+
+
+def _ours(permalink: str) -> None:
+    """Refuse a post that is not one of this account's posted carousels."""
+    posts = {row.get("permalink") for row in _batches(status=INSTAGRAM_BATCH_PUBLISHED)}
+    if permalink not in posts:
+        raise MoveError("That is not one of this account's posts")
 
 
 def _left_out(thread: list[dict[str, Any]]) -> bool:
@@ -825,6 +1030,11 @@ MOVES: dict[str, Callable[[EmulatorDevice, argparse.Namespace], dict[str, Any]]]
     "boost": boost,
     "accept": accept,
     "mute": mute,
+    "find-event": find_event,
+    "comments": comments,
+    "like-comment": like_comment_move,
+    "pin-comment": pin_comment_move,
+    "fix-event": fix_event,
     "screen": screen,
     "shot": shot,
     "tap": tap,
@@ -845,6 +1055,9 @@ _LOGGED_RESULTS = frozenset(
         "boost",
         "accept",
         "mute",
+        "fix-event",
+        "like-comment",
+        "pin-comment",
     }
 )
 
@@ -854,9 +1067,9 @@ def parser() -> argparse.ArgumentParser:
     commands = parse.add_subparsers(dest="move", required=True)
     for name in ("status", "post", "finish", "stories", "milestones", "inbox", "screen"):
         commands.add_parser(name)
-    for name in ("shot", "back"):
+    for name in ("shot", "back", "comments"):
         commands.add_parser(name)
-    for name in ("read", "correction", "opt-out", "heart", "accept", "mute"):
+    for name in ("read", "correction", "opt-out", "heart", "accept", "mute", "find-event"):
         commands.add_parser(name).add_argument("thread")
     answer = commands.add_parser("reply")
     answer.add_argument("thread")
@@ -864,6 +1077,18 @@ def parser() -> argparse.ArgumentParser:
     story = commands.add_parser("milestone-story").add_mutually_exclusive_group(required=True)
     story.add_argument("--followers", type=int)
     story.add_argument("--likes", metavar="POST")
+    for name in ("like-comment", "pin-comment"):
+        comment = commands.add_parser(name)
+        comment.add_argument("--post", required=True)
+        comment.add_argument("--author", required=True)
+    fix = commands.add_parser("fix-event")
+    fix.add_argument("thread")
+    fix.add_argument("--event", type=int, required=True)
+    fix.add_argument("--title")
+    fix.add_argument("--location")
+    fix.add_argument("--start")
+    fix.add_argument("--end")
+    fix.add_argument("--cancelled", action="store_true")
     send = commands.add_parser("claim")
     send.add_argument("thread")
     send.add_argument("username")
@@ -955,6 +1180,10 @@ def _dry_run(args: argparse.Namespace, recording: Path) -> dict[str, Any]:
         if args.thread != recorded["thread"]:
             return {"error": "The DM thread is no longer in the inbox"}
         return {"thread": args.thread, "stale": False, "messages": thread}
+    if args.move == "comments":
+        return {"posts": recorded.get("posts", [])}
+    if args.move == "find-event":
+        return {"club": recorded.get("club", ""), "events": recorded.get("events", [])}
     if args.move == "reply" and safe_reply(args.text) is None:
         return {"error": "Refused: the reply is not safe to send"}
     if args.move in ("boost", "share", "feature"):

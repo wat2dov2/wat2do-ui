@@ -3,7 +3,9 @@
 //! `curate` has Claude draft every school's carousel; `publish-draft` posts
 //! one school's ready draft for today (the emulator worker's Claude sitting
 //! runs it when it is that school's turn); `publish-batch` posts one batch the
-//! API already claimed (the admin's Publish button starts it); `stats`
+//! API already claimed (the admin's Publish button starts it); `refresh-slide`
+//! draws a posted carousel's slide again after a club corrected its event and
+//! rebuilds the caption (the notification agent's `ig fix-slide`); `stats`
 //! refreshes expiring tokens and reads every account's followers and posts;
 //! `install-schedule` runs curate daily through a macOS LaunchAgent that keeps
 //! no logs.
@@ -44,6 +46,8 @@ enum Command {
     PublishDraft { school: String },
     /// Publish one batch the API claimed for publishing
     PublishBatch { batch_id: uuid::Uuid },
+    /// Draw a posted carousel's slide for one event again and rebuild its caption
+    RefreshSlide { batch_id: uuid::Uuid, event_id: i32 },
     /// Refresh expiring tokens, then read every account's followers and posts
     Stats,
     /// Validate and store the account_key=token lines of a private file
@@ -134,6 +138,14 @@ async fn main() -> anyhow::Result<ExitCode> {
                 .publish_batch(batch_id)
                 .await?;
             print_json(&json!({"status": status}));
+            false
+        }
+        Command::RefreshSlide { batch_id, event_id } => {
+            let storage = wat2do::storage::shared()?;
+            let refreshed = Publisher::new(&db, settings, storage)
+                .refresh_slide(batch_id, event_id)
+                .await?;
+            print_json(&serde_json::to_value(refreshed)?);
             false
         }
         Command::Stats => {

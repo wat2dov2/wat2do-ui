@@ -628,6 +628,12 @@ The moves keep it safe whatever Claude decides:
 `ig claim` sends the club's own claim-link message; its link is never printed or logged, and `ig read` shows every claim link as `[claim link]`.
 When Instagram has limited an account's messages, its threads show "You can't send messages at this time" where the composer would be, and `ig read` refuses them.
 
+Comments on our posts are liked whatever they say but clear spam, scams, hate or anything aimed at our account, and a genuine one is pinned; Instagram keeps at most three pinned comments on a post, so `ig pin-comment` refuses a fourth before tapping anything, and no comment is ever replied to.
+A correction is fixed: `ig find-event` lists the sender's club's events and the posted carousels each is on, `ig fix-event` changes only what they said was wrong through `update_event_with_occurrences` and refreshes the feeds, and `wat2do-instagram refresh-slide <batch> <event>` redraws that slide and rebuilds the caption.
+
+The end-to-end test runs on the hidden test school `testu` (account `angrygooseinuw`): `.venv/bin/python scripts/notification_harness.py` from `backend/` has our own accounts on the same Android user message the test account in every scenario (a repost with and without the post, a feature, a niche or group-only event, a correction, opt-outs, thanks, a question, a passed event, a partnership, prompt injection, fake Meta staff, a burst, an answered thread, a stale draft and another thread left open), lets the real recorder, workflow and handler run, and checks each thread on the emulator; the report goes to `~/Desktop/notification-agent-test.html`.
+It runs only while `agent_enabled` is on and `agent_schools` lets `testu` in.
+
 To try a prompt change without touching the phone, run the dry run over recorded threads (one JSON line per school, as an inbox read writes them):
 `.venv/bin/python jobs/handle_instagram_notification.py dry-run <threads.jsonl> --out <decisions.jsonl>` from `backend/`.
 Its moves read the recording, apply the same refusals and only say what they would do; the decisions file holds the replies, so keep it local.
