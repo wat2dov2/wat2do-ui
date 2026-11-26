@@ -119,9 +119,10 @@ def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
     assert TOKEN not in json.dumps(result)
 
 
-def test_claims_stay_switched_off(monkeypatch, reader):
-    # Off since 2026-11-25, when claims went into other clubs' threads.
-    assert moves.DMS.claim_sends_per_account_per_day == 0
+def test_a_zero_daily_claim_limit_switches_claims_off(monkeypatch, reader):
+    monkeypatch.setattr(
+        moves, "DMS", moves.DMS.model_copy(update={"claim_sends_per_account_per_day": 0})
+    )
     monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     with pytest.raises(moves.MoveError, match="switched off"):
         moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
