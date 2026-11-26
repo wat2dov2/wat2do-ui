@@ -616,7 +616,7 @@ The moves keep it safe whatever Claude decides:
 
 - Every move that types or taps in a thread opens it afresh from the inbox and checks its header shows that thread (`direct.require_thread`), and refuses otherwise.
 - A thread whose sender is in `public.instagram_excluded_clubs`, or whose messages ask us to stop, take something down or ask first, gets nothing but the opt-out and its one acknowledgement.
-- One reply and one heart per thread within `thread_repeat_hours`; each post boosted once; at most `replies_per_account_per_day`, `boosts_per_account_per_day` and `hearts_per_account_per_day` per account a day.
+- A reply only while their newest message is newer than ours, at most `replies_per_thread_per_day` per thread a day; one heart per thread within `thread_repeat_hours`; each post boosted once; at most `replies_per_account_per_day`, `boosts_per_account_per_day` and `hearts_per_account_per_day` per account a day.
 - Every move others can see waits a random `send_wait_min_seconds` to `send_wait_max_seconds`, and text is typed one character at a time and confirmed in the composer before Send. Whatever the composer held before is cleared, never sent.
 - A reply is plain ASCII up to `reply_max_characters`, with no tag, no link outside wat2do.io, no email but `contact_email` and no long number.
 - After each move, a challenge, an action limit or a login screen stops it and rests the account's notification handling for `challenge_pause_hours`.
