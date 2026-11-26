@@ -422,11 +422,22 @@ class EmulatorDevice:
         self.pause()
         self._press(self.wait_for(pattern, seconds=seconds), hold_ms)
 
-    def _press(self, node: Node, hold_ms: int) -> None:
+    def double_tap(self, node: Node) -> None:
+        """Tap a control twice in quick succession at one point, after a person's pause:
+        a direct message's quick reaction (a heart)."""
+        self.pause()
+        x, y = self._point(node)
+        self.adb("shell", f"input tap {x} {y}; input tap {x} {y}")
+
+    def _point(self, node: Node) -> tuple[int, int]:
         x1, y1, x2, y2 = node.bounds
-        # Land somewhere in the middle half of the control, never on its edge.
+        # Somewhere in the middle half of the control, never on its edge.
         x = round(self._rng.uniform(x1 + (x2 - x1) / 4, x2 - (x2 - x1) / 4))
         y = round(self._rng.uniform(y1 + (y2 - y1) / 4, y2 - (y2 - y1) / 4))
+        return x, y
+
+    def _press(self, node: Node, hold_ms: int) -> None:
+        x, y = self._point(node)
         if hold_ms:
             self.adb("shell", "input", "swipe", str(x), str(y), str(x), str(y), str(hold_ms))
         else:

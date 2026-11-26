@@ -307,7 +307,7 @@ pub(crate) async fn caption_school(
 }
 
 /// `build_caption` for these slide events, in order.
-async fn caption_for(
+pub(crate) async fn caption_for(
     db: &PgPool,
     events: &[&Event],
     school: &str,

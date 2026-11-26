@@ -168,7 +168,7 @@ def _finish(
     place: PlaceTag | None,
     clubs: Sequence[SlideTag],
 ) -> AddedTrack:
-    _open_post(device, user, permalink)
+    open_post(device, user, permalink)
     _like_and_repost(device)
     comment = gif() if gif is not None else None
     if comment is not None:
@@ -178,7 +178,7 @@ def _finish(
             # The GIF is a nice extra; it never holds up the song.
             log.warning("Could not comment a GIF on %s", permalink, exc_info=True)
     # Liking may have scrolled a tall post; open it again so its menu is in view.
-    _open_post(device, user, permalink)
+    open_post(device, user, permalink)
     device.tap_when(_POST_OPTIONS)
     device.tap_when(_EDIT)
     device.wait_for(_EDIT_INFO)
@@ -214,14 +214,14 @@ def like_and_repost(device: EmulatorDevice, user: int, url: str) -> None:
     if not _POST_URL.fullmatch(url):
         raise EmulatorError("Only an exact Instagram post can be liked and reposted")
     try:
-        _open_post(device, user, url)
+        open_post(device, user, url)
         _like_and_repost(device)
     except EmulatorError:
         device.reset_app(user)
         raise
 
 
-def _open_post(device: EmulatorDevice, user: int, permalink: str) -> None:
+def open_post(device: EmulatorDevice, user: int, permalink: str) -> None:
     """Open the live post; a link that lands before the app is ready is opened again."""
     for _ in range(_POST_OPEN_ATTEMPTS):
         device.open_instagram(user, permalink)

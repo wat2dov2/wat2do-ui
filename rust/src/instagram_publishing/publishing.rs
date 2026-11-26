@@ -15,6 +15,7 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -222,15 +223,7 @@ impl<'a> Publisher<'a> {
                 .event
                 .as_ref()
                 .ok_or_else(|| before(anyhow!("slide {} has no event", item.row.id)))?;
-            let mut payload = slide_payload(self.db, event).await.map_err(before)?;
-            if let Some(labels) = batch.sticker_selections.get(&event.id.to_string()) {
-                let labels: Vec<&String> = labels
-                    .iter()
-                    .take(INSTAGRAM_PUBLISHING.maximum_stickers_per_event)
-                    .collect();
-                payload.insert("sticker_labels".into(), serde_json::json!(labels));
-            }
-            events.push(Value::Object(payload));
+            events.push(event_slide(self.db, batch, event).await.map_err(before)?);
         }
         let events_rendered = async {
             let mut slides: Vec<Rendered> = Vec::new();
@@ -398,6 +391,96 @@ impl DraftOutcome {
             } => json!({"status": status, "batch_id": batch_id, "permalink": permalink}),
         }
     }
+}
+
+/// What `refresh_slide` drew for a posted carousel's corrected event.
+#[derive(Debug, Serialize)]
+pub struct RefreshedSlide {
+    /// The slide's place in the posted carousel, the cover being 0.
+    pub slide: usize,
+    /// How many slides the carousel has, cover and outro included.
+    pub slides: usize,
+    /// The corrected slide's image.
+    pub url: String,
+    /// The carousel's caption, rebuilt from its events as they are now.
+    pub caption: String,
+}
+
+impl Publisher<'_> {
+    /// Draw a posted carousel's slide for `event_id` again from the event as it is now
+    /// (after a club's correction), keep it as the slide's image, and rebuild the
+    /// caption from the carousel's events. Instagram's post itself is left to the
+    /// emulator, the one place a posted carousel can be edited.
+    pub async fn refresh_slide(&self, batch_id: Uuid, event_id: i32) -> Result<RefreshedSlide> {
+        let batch = batches::get_batch(self.db, batch_id)
+            .await
+            .map_err(job_error)?;
+        if batch.row.status != STATUS_PUBLISHED {
+            return Err(anyhow!("batch {batch_id} is not posted"));
+        }
+        let mut items: Vec<&batches::Item> = batch.items.iter().collect();
+        items.sort_by_key(|item| item.row.position);
+        let (index, item) = items
+            .iter()
+            .enumerate()
+            .find(|(_, item)| item.row.event_id == Some(event_id))
+            .ok_or_else(|| anyhow!("event {event_id} is not on batch {batch_id}"))?;
+        let event = item
+            .event
+            .as_ref()
+            .ok_or_else(|| anyhow!("event {event_id} is gone"))?;
+        let slide = self
+            .renderer
+            .event(&event_slide(self.db, &batch, event).await?)
+            .await?;
+        sqlx::query(
+            "UPDATE public.instagram_publish_items \
+             SET published_asset_url = $2, updated_at = now() WHERE id = $1",
+        )
+        .bind(item.row.id)
+        .bind(&slide.url)
+        .execute(self.db)
+        .await?;
+        let events: Vec<&Event> = items
+            .iter()
+            .filter_map(|item| item.event.as_ref())
+            .collect();
+        let caption = batches::caption_for(
+            self.db,
+            &events,
+            &batch.row.school,
+            &batch.row.caption_intro,
+        )
+        .await
+        .map_err(job_error)?;
+        sqlx::query(
+            "UPDATE public.instagram_publish_batches SET caption = $2, updated_at = now() \
+             WHERE id = $1",
+        )
+        .bind(batch_id)
+        .bind(&caption)
+        .execute(self.db)
+        .await?;
+        Ok(RefreshedSlide {
+            slide: index + 1,
+            slides: items.len() + 2,
+            url: slide.url,
+            caption,
+        })
+    }
+}
+
+/// One event's slide as the renderer reads it, with the stickers the batch chose for it.
+async fn event_slide(db: &PgPool, batch: &Batch, event: &Event) -> Result<Value> {
+    let mut payload = slide_payload(db, event).await?;
+    if let Some(labels) = batch.sticker_selections.get(&event.id.to_string()) {
+        let labels: Vec<&String> = labels
+            .iter()
+            .take(INSTAGRAM_PUBLISHING.maximum_stickers_per_event)
+            .collect();
+        payload.insert("sticker_labels".into(), serde_json::json!(labels));
+    }
+    Ok(Value::Object(payload))
 }
 
 /// What Instagram now shows for a batch.

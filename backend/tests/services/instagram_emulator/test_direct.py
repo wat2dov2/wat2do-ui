@@ -694,3 +694,66 @@ def test_a_club_that_opts_out_is_left_out_once_by_its_plain_handle(monkeypatch) 
             {"on_conflict": "ig_handle", "ignore_duplicates": True},
         )
     ]
+
+
+# The mcmaster chat of 2026-11-25 as the app drew it: our heart pills under their messages.
+REACTED_CHAT = [
+    _node("baddiesatmac", (304, 156, 556, 204), "header_title"),
+    _node("", (0, 275, 1080, 2251), "message_list"),
+    _node("NOV 19, 3:05 PM", (0, 1532, 1080, 1615)),
+    _node("YAY love uuu💖💖", (179, 1673, 533, 1723)),
+    _node("❤", (176, 1754, 223, 1801)),
+    _node("Mentioned you in their story", (184, 1844, 596, 1882)),
+    _node("❤", (176, 1972, 223, 2019)),
+    _node("Thank you ❤️❤️", (710, 2088, 1027, 2138)),
+]
+
+
+def test_a_reaction_pill_belongs_to_the_message_above_it() -> None:
+    messages = module._messages(REACTED_CHAT)
+    assert [(m["from"], m["text"], m["reactions"]) for m in messages] == [
+        ("them", "YAY love uuu💖💖", "❤"),
+        ("them", "Mentioned you in their story", "❤"),
+        ("us", "Thank you ❤️❤️", ""),
+    ]
+
+
+class _HeartDevice:
+    def __init__(self, nodes, *, shows=True):
+        self.nodes = list(nodes)
+        self.shows = shows
+        self.double_taps = []
+
+    def screen(self):
+        return self.nodes
+
+    def double_tap(self, node):
+        self.double_taps.append(node.text)
+        if self.shows:
+            x1, _y1, _x2, y2 = node.bounds
+            self.nodes.append(_node("❤", (x1, y2 + 10, x1 + 47, y2 + 57)))
+
+    def watch(self, look, seconds=None):
+        return look(self.nodes)
+
+
+HEART_CHAT = [
+    _node(THREAD, (304, 156, 650, 204), "header_title"),
+    _node("", (0, 275, 1080, 2251), "message_list"),
+    _node("Sure, done!", (850, 1500, 1040, 1550)),
+    _node("thank you so much!!", (179, 1700, 600, 1750)),
+]
+
+
+def test_a_heart_goes_on_their_newest_message_once() -> None:
+    device = _HeartDevice(HEART_CHAT)
+    assert _opened(device).heart() is True
+    assert device.double_taps == ["thank you so much!!"]
+    # The pill now shows, so a second heart does nothing.
+    assert _opened(device).heart() is False
+    assert device.double_taps == ["thank you so much!!"]
+
+
+def test_a_heart_that_never_shows_fails() -> None:
+    with pytest.raises(module.EmulatorError, match="did not show the heart"):
+        _opened(_HeartDevice(HEART_CHAT, shows=False)).heart()

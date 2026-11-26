@@ -69,6 +69,7 @@ class _Reader:
 
     def heart(self):
         _Reader.hearts.append(self.name)
+        return True
 
     def send_claim(self, text, *, handle, tokens):
         _Reader.sent.append((text, handle, tokens))
@@ -610,6 +611,12 @@ def test_a_post_is_boosted_once(agent, monkeypatch):
     _logged("boost", post=post)
     with pytest.raises(moves.MoveError, match="already boosted"):
         moves.boost(_Roomy(), _args(post=post))
+    # A post a sitting shared to the story counts too.
+    other = "https://www.instagram.com/p/SHARED/"
+    agent.thread = [{"from": "them", "shared_url": other, "shared_owner": "tmuprevet"}]
+    _logged("share", result={"post": other})
+    with pytest.raises(moves.MoveError, match="already boosted"):
+        moves.boost(_Roomy(), _args(post=other))
 
 
 def test_a_challenge_stops_the_move_and_rests_the_account(agent, monkeypatch, capsys):
@@ -707,3 +714,83 @@ def test_ig_milestone_story_posts_an_open_milestone_on_the_sitting_account(
         ("milestone-story", False),
     ]
     assert entries[0]["result"] == answer
+
+
+# --- corrections -------------------------------------------------------------------
+
+
+@pytest.fixture
+def correction_setup(monkeypatch, reader):
+    from datetime import datetime as real_datetime
+    from datetime import timezone as utc_zone
+    from uuid import uuid4
+
+    reader.thread = [{"from": "them", "text": "the date is wrong", "sender": "tmuprevet"}]
+    monkeypatch.setattr(
+        moves.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(id=7, timezone="America/Toronto", name="TMU", language="en"),
+    )
+    monkeypatch.setattr(
+        moves, "_club_events", lambda handle: [{"id": 5}] if handle == "tmuprevet" else []
+    )
+    first = SimpleNamespace(
+        id=uuid4(),
+        dtstart_utc=real_datetime(2026, 12, 1, 23, 0, tzinfo=utc_zone.utc),
+        dtend_utc=real_datetime(2026, 12, 2, 1, 0, tzinfo=utc_zone.utc),
+        duration=None,
+        tz="America/Toronto",
+    )
+    monkeypatch.setattr(
+        moves.event_service, "get_event", lambda event_id: SimpleNamespace(occurrences=[first])
+    )
+    updates = []
+    monkeypatch.setattr(
+        moves.event_service,
+        "update_event_and_occurrences",
+        lambda event_id, patch, occurrences: updates.append((event_id, patch, occurrences)),
+    )
+    revalidated = []
+    monkeypatch.setattr(
+        moves.event_feed_revalidation_service,
+        "revalidate_schools",
+        lambda schools, resources: revalidated.append(schools),
+    )
+    return SimpleNamespace(first=first, updates=updates, revalidated=revalidated)
+
+
+def _fix(**values):
+    base = {
+        "thread": "TMU Pre-Vet Club",
+        "event": 5,
+        "title": None,
+        "location": None,
+        "start": None,
+        "end": None,
+        "cancelled": False,
+    }
+    return SimpleNamespace(**{**base, **values})
+
+
+def test_a_correction_moves_the_event_through_the_apps_own_edit(correction_setup):
+    result = moves.fix_event(object(), _fix(start="2026-12-03T19:00", location="SLC 201"))
+    ((event_id, patch, (moved,)),) = correction_setup.updates
+    assert event_id == 5
+    assert patch == {"location": "SLC 201", "map_location": None}
+    # 7 PM Toronto is midnight UTC, and the event keeps its two hours.
+    assert moved.id == correction_setup.first.id
+    assert moved.dtstart_utc.isoformat() == "2026-12-04T00:00:00+00:00"
+    assert moved.dtend_utc.isoformat() == "2026-12-04T02:00:00+00:00"
+    assert result == {"event": 5, "fixed": ["dates", "location", "map_location"]}
+    assert correction_setup.revalidated == [["tmu"]]
+
+
+def test_a_correction_only_touches_the_senders_own_events(correction_setup):
+    with pytest.raises(moves.MoveError, match="not one of tmuprevet's events"):
+        moves.fix_event(object(), _fix(event=6, title="Something else"))
+    assert correction_setup.updates == []
+
+
+def test_a_correction_needs_something_to_fix(correction_setup):
+    with pytest.raises(moves.MoveError, match="Nothing to fix"):
+        moves.fix_event(object(), _fix())

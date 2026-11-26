@@ -1213,6 +1213,8 @@ class InstagramDmsControl(_ControlModel):
     replies_per_account_per_day: int = Field(ge=0, le=100)
     boosts_per_account_per_day: int = Field(ge=0, le=100)
     hearts_per_account_per_day: int = Field(ge=0, le=200)
+    comment_likes_per_account_per_day: int = Field(ge=0, le=200)
+    pins_per_account_per_day: int = Field(ge=0, le=100)
     # Every move that sends or taps something others see first waits a random pause
     # in this range, so an account never acts in a burst.
     send_wait_min_seconds: int = Field(ge=0, le=600)
