@@ -913,6 +913,82 @@ class InstagramLightpandaControl(_ControlModel):
         return self
 
 
+class MaintenanceControl(_ControlModel):
+    """The hourly watchdog (`jobs/maintain_wat2do.py watchdog`) and the daily maintenance agent."""
+
+    watchdog_interval_minutes: int = Field(ge=10, le=240)
+    # The maintenance agent runs every day from this Toronto time, whatever the watchdog saw.
+    agent_hour: int = Field(ge=0, le=23)
+    agent_minute: int = Field(ge=0, le=59)
+    # Its model and the Claude Code login it runs on, apart from the one ingestion uses.
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    claude_config_dir: str = Field(pattern=r"^~?/[A-Za-z0-9._/-]+$")
+    agent_timeout_minutes: int = Field(ge=10, le=360)
+    # One Bash call of the agent may run this long (a build, a relogin).
+    move_timeout_minutes: int = Field(ge=2, le=60)
+    # A red check starts the agent at once, at most once per problem in this many hours
+    # and at most this many extra runs a day.
+    trigger_debounce_hours: float = Field(gt=0, le=24, allow_inf_nan=False)
+    triggered_runs_per_day: int = Field(ge=0, le=24)
+    report_dir: str = Field(pattern=r"^~?/[A-Za-z0-9._/ -]+$")
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Each Claude login is asked for one word with this model to see it is not limited.
+    probe_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    probe_timeout_seconds: int = Field(ge=10, le=600)
+    command_timeout_seconds: int = Field(ge=5, le=600)
+    # Instagram items in the last window against the median of the same window on each
+    # of the baseline days; a day's total the same way; a school is dark when its last
+    # day is under its ratio of a baseline at least the minimum.
+    ingestion_window_hours: int = Field(ge=1, le=24)
+    baseline_days: int = Field(ge=2, le=28)
+    ingestion_window_min_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    ingestion_window_min_baseline: int = Field(ge=1)
+    ingestion_day_min_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    ingestion_silence_minutes: int = Field(ge=10, le=1440)
+    school_dark_min_baseline: int = Field(ge=1)
+    school_dark_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    dark_schools_red: int = Field(ge=1, le=50)
+    brave_heartbeat_max_seconds: int = Field(ge=30, le=7200)
+    brave_window_hours: int = Field(ge=1, le=48)
+    brave_job_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    brave_job_min_jobs: int = Field(ge=1)
+    brave_error_lines_per_hour: int = Field(ge=1)
+    recorder_silence_minutes: int = Field(ge=10, le=1440)
+    recorder_user_silence_hours: int = Field(ge=1, le=72)
+    digest_silence_hours: int = Field(ge=1, le=96)
+    dispatch_waiting_max: int = Field(ge=1)
+    workflow_file: str = Field(pattern=r"^[a-z0-9-]+\.ya?ml$")
+    workflow_window_hours: int = Field(ge=1, le=48)
+    workflow_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    workflow_min_runs: int = Field(ge=1)
+    queued_run_max_minutes: int = Field(ge=5, le=1440)
+    notification_agent_error_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
+    notification_agent_min_reports: int = Field(ge=1)
+    runners: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...] = Field(min_length=1)
+    emulator_restarts_per_day: int = Field(ge=1)
+    qemu_cpu_percent: int = Field(ge=50, le=2000)
+    disk_free_gb_yellow: float = Field(gt=0, allow_inf_nan=False)
+    disk_free_gb_red: float = Field(gt=0, allow_inf_nan=False)
+    swap_used_gb_red: float = Field(gt=0, allow_inf_nan=False)
+    # LaunchAgents that must always have a process, and timers that must stay loaded
+    # with a clean last exit.
+    keep_alive_agents: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...]
+    scheduled_agents: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...]
+    retry_log_max_minutes: int = Field(ge=10, le=1440)
+    # From these Toronto hours, today's sittings and carousels should have happened.
+    sittings_check_hour: int = Field(ge=0, le=23)
+    carousels_check_hour: int = Field(ge=0, le=23)
+    snapshot_max_age_days: int = Field(ge=0, le=14)
+
+    @model_validator(mode="after")
+    def validate_thresholds(self) -> "MaintenanceControl":
+        if self.disk_free_gb_red >= self.disk_free_gb_yellow:
+            raise ValueError("disk_free_gb_red must be below disk_free_gb_yellow")
+        if set(self.keep_alive_agents) & set(self.scheduled_agents):
+            raise ValueError("a LaunchAgent is either kept alive or scheduled")
+        return self
+
+
 class WorkflowFailureAlertsControl(_ControlModel):
     discord_admin_role_ids: tuple[str, ...] = Field(min_length=1)
 
@@ -1849,6 +1925,7 @@ class ControlBox(_ControlModel):
     instagram_sessions: InstagramSessionsControl
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
+    maintenance: MaintenanceControl
     promoter_program: PromoterProgramControl
     ticketing: TicketingControl
 

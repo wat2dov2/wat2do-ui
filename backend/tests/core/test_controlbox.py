@@ -1331,3 +1331,16 @@ def test_notification_inbox_controls_reject_invalid_configuration(tmp_path, fiel
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
+
+
+def test_maintenance_runs_on_the_second_login_with_sane_thresholds(tmp_path: Path) -> None:
+    assert controlbox.maintenance.model == "claude-opus-5-5"
+    assert controlbox.maintenance.claude_config_dir == "~/.claude-second"
+    assert "io.wat2do.ingestion.process" in controlbox.maintenance.keep_alive_agents
+    path = _write_control(
+        tmp_path,
+        "maintenance",
+        lambda payload: payload.update({"disk_free_gb_red": 30, "disk_free_gb_yellow": 20}),
+    )
+    with pytest.raises(ValidationError, match="disk_free_gb_red"):
+        load_controlbox(path)
