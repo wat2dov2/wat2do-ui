@@ -323,6 +323,13 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         .execute(&db)
         .await
         .unwrap();
+    // An event the ingestion agent judged not promotable is not featured, even posted.
+    let unpromotable = event(day * 2, None).await;
+    sqlx::query("UPDATE public.events SET promotable = false WHERE id = $1")
+        .bind(unpromotable)
+        .execute(&db)
+        .await
+        .unwrap();
     // A claimed club's events are featured without a carousel, and drawn.
     let claimed = event(day * 4, None).await;
     let owner = Uuid::new_v4();
@@ -363,6 +370,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         over,
         unshapely,
         opted_out,
+        unpromotable,
         far_featured,
     ]
     .into_iter()
@@ -383,7 +391,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
     }
     sqlx::query(
         "INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position) \
-         VALUES ($1, $2, $3, 8)",
+         VALUES ($1, $2, $3, 9)",
     )
     .bind(carousel)
     .bind(&slug)
@@ -400,6 +408,7 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         unposted,
         unshapely,
         opted_out,
+        unpromotable,
         far,
         far_featured,
         claimed,
@@ -413,8 +422,8 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
         .map(|(event, drawing)| (event.id, drawing.is_some()))
         .collect();
     // Featured events only (posted or a claimed club's), soonest first, each with whether
-    // it has a drawing a new one replaces. The opted-out club's event is not featured, so
-    // it is not drawn.
+    // it has a drawing a new one replaces. The opted-out club's event and the unpromotable
+    // one are not featured, so they are not drawn.
     let i = i64::from;
     assert_eq!(
         due,

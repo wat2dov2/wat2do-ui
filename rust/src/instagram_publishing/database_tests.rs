@@ -228,16 +228,35 @@ async fn candidates_are_only_the_events_added_since_the_last_carousel() {
         .await
         .unwrap();
 
+    // One the ingestion agent judged not promotable (a residence's roomie mixer),
+    // even when its club asked for it.
+    let unpromotable = event(&db, school, "Roomie mixer", -hour, day, Some("Business")).await;
+    sqlx::query(
+        "UPDATE public.events SET promotable = false, carousel_requested_at = now() WHERE id = $1",
+    )
+    .bind(unpromotable as i32)
+    .execute(&db)
+    .await
+    .unwrap();
+
     let now = Utc::now();
     let candidates = drafts::draft_candidates(&db, &slug, now - day, now)
         .await
         .unwrap();
     let picked: Vec<i64> = candidates.iter().map(|event| event.id).collect();
     // Soonest first. Left out: no category, starting too soon, already
-    // posted, a club that opted out, and the earlier event, collected before
-    // this window, which never comes back to fill the carousel.
+    // posted, a club that opted out, an event not promotable, and the earlier
+    // event, collected before this window, which never comes back to fill the
+    // carousel.
     assert_eq!(picked, [sooner, later, requested]);
-    for left_out in [uncategorized, too_soon, posted, opted_out, earlier] {
+    for left_out in [
+        uncategorized,
+        too_soon,
+        posted,
+        opted_out,
+        unpromotable,
+        earlier,
+    ] {
         assert!(!picked.contains(&left_out));
     }
     let first = &candidates[0];

@@ -26,7 +26,8 @@ use crate::claude::{self, Agent};
 use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::text::python_strip;
 
-/// Who and what Wat2Do promotes.
+/// Who and what Wat2Do promotes, shared with the ingestion agent's prompt,
+/// which records each event's verdict as `events.promotable`.
 pub const PROMOTION_RULES: &str = include_str!("promotion_rules.md");
 
 /// `curation_prompt.md` with the promotion rules in place.
