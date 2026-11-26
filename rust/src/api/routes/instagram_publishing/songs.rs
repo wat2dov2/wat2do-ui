@@ -19,11 +19,22 @@ pub struct Song {
     pub id: Uuid,
     pub query: String,
     pub asian_campuses_only: bool,
+    pub french_campuses_only: bool,
     #[serde(serialize_with = "json::datetime")]
     pub created_at: DateTime<Utc>,
 }
 
-const COLUMNS: &str = "id, query, asian_campuses_only, created_at";
+const COLUMNS: &str = "id, query, asian_campuses_only, french_campuses_only, created_at";
+
+/// `InstagramSongCreate`: the song as typed, and the one group of campuses it
+/// is kept for (Asian campuses, French-language campuses, or neither: every
+/// other campus).
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct NewSong {
+    pub query: String,
+    pub asian_campuses_only: bool,
+    pub french_campuses_only: bool,
+}
 
 /// `list_songs`: newest first.
 pub async fn list(db: &PgPool) -> Result<Vec<Song>, ApiError> {
@@ -41,8 +52,8 @@ fn normalize(query: &str) -> String {
 }
 
 /// `add_song`: a song is on the list once, however it is capitalized.
-pub async fn add(db: &PgPool, query: &str, asian_campuses_only: bool) -> Result<Song, ApiError> {
-    let query = normalize(query);
+pub async fn add(db: &PgPool, song: &NewSong) -> Result<Song, ApiError> {
+    let query = normalize(&song.query);
     let folded = casefold(&query);
     if list(db)
         .await?
@@ -52,11 +63,12 @@ pub async fn add(db: &PgPool, query: &str, asian_campuses_only: bool) -> Result<
         return Err(ApiError::conflict(INSTAGRAM_SONG_EXISTS));
     }
     Ok(sqlx::query_as(&format!(
-        "INSERT INTO public.instagram_songs (query, asian_campuses_only) VALUES ($1, $2) \
-         RETURNING {COLUMNS}"
+        "INSERT INTO public.instagram_songs (query, asian_campuses_only, french_campuses_only) \
+         VALUES ($1, $2, $3) RETURNING {COLUMNS}"
     ))
     .bind(&query)
-    .bind(asian_campuses_only)
+    .bind(song.asian_campuses_only)
+    .bind(song.french_campuses_only)
     .fetch_one(db)
     .await?)
 }

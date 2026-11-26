@@ -89,8 +89,8 @@ fn parse_publish(mut body: Body) -> Result<i64, ApiError> {
     Ok(version.unwrap_or_default())
 }
 
-/// `InstagramSongCreate`.
-fn parse_song(mut body: Body) -> Result<(String, bool), ApiError> {
+/// `InstagramSongCreate`: a song is kept for one group of campuses at most.
+fn parse_song(mut body: Body) -> Result<songs::NewSong, ApiError> {
     let query = body.required_string(
         "query",
         &Str::new()
@@ -99,8 +99,16 @@ fn parse_song(mut body: Body) -> Result<(String, bool), ApiError> {
             .pattern(r"\S", &NOT_BLANK),
     );
     let asian_campuses_only = body.bool_or("asian_campuses_only", false);
+    let french_campuses_only = body.bool_or("french_campuses_only", false);
+    if asian_campuses_only && french_campuses_only {
+        body.model_error("a song plays at Asian campuses or French-language campuses, not both");
+    }
     body.finish()?;
-    Ok((query.unwrap_or_default(), asian_campuses_only))
+    Ok(songs::NewSong {
+        query: query.unwrap_or_default(),
+        asian_campuses_only,
+        french_campuses_only,
+    })
 }
 
 /// `FollowCandidateDecisionsSubmit`: 1 to 500 `{id, status}` decisions.
@@ -267,8 +275,8 @@ pub async fn add_instagram_song(
     State(state): State<AppState>,
     request: Request,
 ) -> Result<Response, ApiError> {
-    let (_, (query, asian_campuses_only)) = admin_body(&state, request, parse_song).await?;
-    let song = songs::add(&state.db, &query, asian_campuses_only).await?;
+    let (_, new_song) = admin_body(&state, request, parse_song).await?;
+    let song = songs::add(&state.db, &new_song).await?;
     Ok((StatusCode::CREATED, Json(song)).into_response())
 }
 

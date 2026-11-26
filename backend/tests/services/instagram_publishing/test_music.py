@@ -215,6 +215,8 @@ def _tried_songs(monkeypatch, database, school):
     database.tables["instagram_songs"] = [
         {"query": "the weeknd after hours", "asian_campuses_only": False},
         {"query": "bts spring day", "asian_campuses_only": True},
+        {"query": "angèle - bruxelles je t'aime", "french_campuses_only": True},
+        {"query": "stromae - alors on danse", "french_campuses_only": True},
     ]
     tried = []
     monkeypatch.setattr(
@@ -235,10 +237,32 @@ def test_asian_campuses_play_only_asian_and_kpop_songs(monkeypatch, database):
     assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
 
 
+FRENCH_SONGS = ["angèle - bruxelles je t'aime", "stromae - alors on danse"]
+
+
+def test_french_campuses_play_only_french_songs_and_no_one_else_does(monkeypatch, database):
+    assert set(music._CONTROL.french_song_schools) == {"udem", "ulaval", "uqam"}
+    assert _tried_songs(monkeypatch, database, "udem") == [FRENCH_SONGS]
+    assert _tried_songs(monkeypatch, database, "ulaval") == [FRENCH_SONGS]
+    assert _tried_songs(monkeypatch, database, "uqam") == [FRENCH_SONGS]
+    # Memorial is an English campus, whatever schools.language says about it.
+    assert _tried_songs(monkeypatch, database, "mun") == [["the weeknd after hours"]]
+    assert _tried_songs(monkeypatch, database, "uwaterloo") == [["bts spring day"]]
+    assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
+
+
+def test_a_french_asian_campus_plays_french_songs(monkeypatch, database):
+    # The French list decides first, so a French campus never gets the Asian songs.
+    control = music._CONTROL.model_copy(update={"asian_song_schools": ["udem"]})
+    monkeypatch.setattr(music, "_CONTROL", control)
+    assert _tried_songs(monkeypatch, database, "udem") == [FRENCH_SONGS]
+
+
 def test_the_asian_song_override_replaces_the_asian_songs_only(monkeypatch, database):
     _override(monkeypatch, ["the weeknd - hong kong"])
     assert _tried_songs(monkeypatch, database, "uwaterloo") == [["the weeknd - hong kong"]]
     assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
+    assert _tried_songs(monkeypatch, database, "udem") == [FRENCH_SONGS]
 
 
 SONGS = [f"song {n}" for n in range(7)]

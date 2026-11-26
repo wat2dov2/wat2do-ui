@@ -3855,6 +3855,11 @@ export interface components {
              * @default false
              */
             asian_campuses_only: boolean;
+            /**
+             * French Campuses Only
+             * @default false
+             */
+            french_campuses_only: boolean;
         };
         /** InstagramSongResponse */
         InstagramSongResponse: {
@@ -3867,6 +3872,8 @@ export interface components {
             query: string;
             /** Asian Campuses Only */
             asian_campuses_only: boolean;
+            /** French Campuses Only */
+            french_campuses_only: boolean;
             /**
              * Created At
              * Format: date-time

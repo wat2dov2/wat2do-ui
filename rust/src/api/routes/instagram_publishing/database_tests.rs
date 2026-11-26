@@ -299,11 +299,21 @@ async fn songs_are_listed_once_however_they_are_capitalized() {
     // test_songs_are_added_once_regardless_of_case, test_deleting_a_missing_song_is_not_found
     let Some(db) = database() else { return };
     let name = format!("sza  saturn {}", Uuid::new_v4().simple());
-    let song = songs::add(&db, &name, true).await.unwrap();
+    let new_song = songs::NewSong {
+        query: name.clone(),
+        asian_campuses_only: true,
+        ..Default::default()
+    };
+    let song = songs::add(&db, &new_song).await.unwrap();
     assert_eq!(song.query, name.replace("  ", " "));
     assert!(song.asian_campuses_only);
+    assert!(!song.french_campuses_only);
+    let shouted = songs::NewSong {
+        query: name.to_uppercase(),
+        ..Default::default()
+    };
     assert!(matches!(
-        songs::add(&db, &name.to_uppercase(), false).await,
+        songs::add(&db, &shouted).await,
         Err(ApiError::Conflict(_))
     ));
     assert!(

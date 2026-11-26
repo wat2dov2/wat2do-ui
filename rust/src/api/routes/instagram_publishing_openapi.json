@@ -2211,6 +2211,11 @@
           "type": "boolean",
           "title": "Asian Campuses Only",
           "default": false
+        },
+        "french_campuses_only": {
+          "type": "boolean",
+          "title": "French Campuses Only",
+          "default": false
         }
       },
       "additionalProperties": false,
@@ -2235,6 +2240,10 @@
           "type": "boolean",
           "title": "Asian Campuses Only"
         },
+        "french_campuses_only": {
+          "type": "boolean",
+          "title": "French Campuses Only"
+        },
         "created_at": {
           "type": "string",
           "format": "date-time",
@@ -2246,6 +2255,7 @@
         "id",
         "query",
         "asian_campuses_only",
+        "french_campuses_only",
         "created_at"
       ],
       "title": "InstagramSongResponse"

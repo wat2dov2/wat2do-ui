@@ -622,6 +622,12 @@ class InstagramPublishingControl(_ControlModel):
     asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
         max_length=100
     )
+    # French-language campuses, the only ones that get a song an admin marked as French,
+    # and which play nothing else. Listed by hand rather than read from schools.language,
+    # which also marks Memorial (an English campus) French.
+    french_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        max_length=100
+    )
     # When not empty, the asian_song_schools play only these songs (typed like an admin's
     # song list), in place of the songs marked Asian or K-pop. Empty it to go back to them.
     asian_song_override: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(

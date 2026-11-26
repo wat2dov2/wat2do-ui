@@ -94,15 +94,39 @@ fn songs_are_typed_loosely_but_never_blank_or_long() {
     // test_blank_or_long_songs_are_rejected
     assert_eq!(
         parse_song(body(json!({"query": " the weeknd after hours "}))).unwrap(),
-        (" the weeknd after hours ".into(), false)
+        songs::NewSong {
+            query: " the weeknd after hours ".into(),
+            ..Default::default()
+        }
     );
     assert_eq!(
         parse_song(body(
             json!({"query": "twice doughnut", "asian_campuses_only": true})
         ))
         .unwrap(),
-        ("twice doughnut".into(), true)
+        songs::NewSong {
+            query: "twice doughnut".into(),
+            asian_campuses_only: true,
+            ..Default::default()
+        }
     );
+    assert_eq!(
+        parse_song(body(
+            json!({"query": "angèle - bruxelles je t'aime", "french_campuses_only": true})
+        ))
+        .unwrap(),
+        songs::NewSong {
+            query: "angèle - bruxelles je t'aime".into(),
+            french_campuses_only: true,
+            ..Default::default()
+        }
+    );
+    let both = issues(parse_song(body(json!({
+        "query": "a",
+        "asian_campuses_only": true,
+        "french_campuses_only": true,
+    }))));
+    assert_eq!(both[0]["type"], "value_error");
     for (query, kind) in [
         ("", "string_too_short"),
         ("   ", "string_pattern_mismatch"),

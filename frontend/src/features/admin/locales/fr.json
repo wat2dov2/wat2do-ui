@@ -392,6 +392,8 @@
         "add": "Ajouter une chanson",
         "asianCampusesOnly": "Campus asiatiques seulement",
         "asianCampuses": "Campus asiatiques",
+        "frenchCampusesOnly": "Campus francophones seulement",
+        "frenchCampuses": "Campus francophones",
         "help": "Quelques minutes après la publication d'un carrousel, l'émulateur ajoute une de ces chansons à la publication, en les essayant dans un ordre aléatoire.",
         "label": "chansons",
         "columns": {

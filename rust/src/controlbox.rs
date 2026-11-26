@@ -352,6 +352,9 @@ pub struct InstagramPublishing {
     pub stats_media_limit: usize,
     pub stats_history_days: i64,
     pub asian_song_schools: Vec<String>,
+    /// French-language campuses, the only ones that play the songs marked
+    /// French, and only those (read by the Mac's music step).
+    pub french_song_schools: Vec<String>,
     /// When not empty, the `asian_song_schools` play only these songs, in
     /// place of the ones marked Asian or K-pop (read by the Mac's music step).
     pub asian_song_override: Vec<String>,

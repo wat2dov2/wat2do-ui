@@ -6,9 +6,10 @@ carousel, its ``ig finish`` move (``services/instagram_sessions/moves.py``) call
 ``finish``: it opens the live post, likes and reposts it, and tries the songs in the
 day's rotation order: Instagram's music search finds candidates and Claude Haiku picks
 the track the admin meant, or none so the next song is tried. The control box's
-``asian_song_schools`` play only the songs marked Asian or K-pop (or, while
-``asian_song_override`` lists any, only those), and every other school plays only the rest. Each day the rotation moves one song on, so every school in a group
-gets the same song that day. On the first try it also comments a GIF: Haiku names a
+``french_song_schools`` play only the songs marked French, its ``asian_song_schools`` only the songs marked Asian or K-pop (or, while
+``asian_song_override`` lists any, only those), and every other school plays only the
+rest. Each day the rotation moves one song on, so every school in a group gets the same
+song that day. On the first try it also comments a GIF: Haiku names a
 movie or show scene that fits the carousel's first event (or none), and picks a real
 movie or show clip from GIPHY's results (or none, so nothing is commented). The same
 edit tags the post with the school's own place: the first one Instagram's location
@@ -86,14 +87,27 @@ def list_songs() -> list[dict[str, Any]]:
 
 
 def _songs_for(school: str | None, songs: list[dict[str, Any]]) -> list[str]:
-    """Asian campuses play only the Asian and K-pop songs, or the control box's
-    ``asian_song_override`` while it lists any; every other campus the rest."""
-    asian_campus = school in _CONTROL.asian_song_schools
-    if asian_campus and _CONTROL.asian_song_override:
-        return list(_CONTROL.asian_song_override)
-    return [
-        song["query"] for song in songs if bool(song.get("asian_campuses_only")) == asian_campus
-    ]
+    """French-language campuses play only the French songs; Asian campuses only the Asian
+    and K-pop songs, or the control box's ``asian_song_override`` while it lists any;
+    every other campus only the songs marked neither."""
+    if school in _CONTROL.french_song_schools:
+        group = "french"
+    elif school in _CONTROL.asian_song_schools:
+        if _CONTROL.asian_song_override:
+            return list(_CONTROL.asian_song_override)
+        group = "asian"
+    else:
+        group = "general"
+    return [song["query"] for song in songs if _song_group(song) == group]
+
+
+def _song_group(song: dict[str, Any]) -> str:
+    """The one group of campuses a song plays at (the table allows at most one flag)."""
+    if song.get("french_campuses_only"):
+        return "french"
+    if song.get("asian_campuses_only"):
+        return "asian"
+    return "general"
 
 
 def rotation(songs: Sequence[str], day: date) -> list[str]:

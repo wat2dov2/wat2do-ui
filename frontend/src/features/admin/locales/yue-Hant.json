@@ -392,6 +392,8 @@
         "add": "加歌",
         "asianCampusesOnly": "只限亞裔校園",
         "asianCampuses": "亞裔校園",
+        "frenchCampusesOnly": "只限法語校園",
+        "frenchCampuses": "法語校園",
         "help": "輪播帖發佈幾分鐘之後，模擬器會用隨機次序試呢啲歌，幫帖子加其中一首。",
         "label": "首歌",
         "columns": {

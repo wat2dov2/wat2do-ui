@@ -21,12 +21,18 @@ export function InstagramSongsPanel() {
     useInstagramSongs();
   const [query, setQuery] = useState("");
   const [asianCampusesOnly, setAsianCampusesOnly] = useState(false);
+  const [frenchCampusesOnly, setFrenchCampusesOnly] = useState(false);
 
   const submit = async () => {
     try {
-      await addSong({ query: query.trim(), asian_campuses_only: asianCampusesOnly });
+      await addSong({
+        query: query.trim(),
+        asian_campuses_only: asianCampusesOnly,
+        french_campuses_only: frenchCampusesOnly,
+      });
       setQuery("");
       setAsianCampusesOnly(false);
+      setFrenchCampusesOnly(false);
     } catch (addError) {
       toast({
         title: t("admin.instagramPublishing.songs.addError"),
@@ -101,10 +107,28 @@ export function InstagramSongsPanel() {
                 id="instagram-song-asian-campuses"
                 checked={asianCampusesOnly}
                 disabled={isAdding}
-                onCheckedChange={(checked) => setAsianCampusesOnly(checked === true)}
+                onCheckedChange={(checked) => {
+                  // A song plays at one group of campuses at most.
+                  setAsianCampusesOnly(checked === true);
+                  if (checked === true) setFrenchCampusesOnly(false);
+                }}
               />
               <Label htmlFor="instagram-song-asian-campuses">
                 {t("admin.instagramPublishing.songs.asianCampusesOnly")}
+              </Label>
+            </Stack>
+            <Stack direction="horizontal" gap={2} align="center">
+              <Checkbox
+                id="instagram-song-french-campuses"
+                checked={frenchCampusesOnly}
+                disabled={isAdding}
+                onCheckedChange={(checked) => {
+                  setFrenchCampusesOnly(checked === true);
+                  if (checked === true) setAsianCampusesOnly(false);
+                }}
+              />
+              <Label htmlFor="instagram-song-french-campuses">
+                {t("admin.instagramPublishing.songs.frenchCampusesOnly")}
               </Label>
             </Stack>
             <p className="text-sm text-muted-foreground">
@@ -137,6 +161,9 @@ export function InstagramSongsPanel() {
                 <span>{song.query}</span>
                 {song.asian_campuses_only && (
                   <Badge variant="muted">{t("admin.instagramPublishing.songs.asianCampuses")}</Badge>
+                )}
+                {song.french_campuses_only && (
+                  <Badge variant="muted">{t("admin.instagramPublishing.songs.frenchCampuses")}</Badge>
                 )}
               </Stack>
             </TableCell>

@@ -392,6 +392,8 @@
         "add": "Aggiungi brano",
         "asianCampusesOnly": "Solo campus asiatici",
         "asianCampuses": "Campus asiatici",
+        "frenchCampusesOnly": "Solo campus francofoni",
+        "frenchCampuses": "Campus francofoni",
         "help": "Qualche minuto dopo la pubblicazione di un carosello, l'emulatore aggiunge uno di questi brani al post, provandoli in ordine casuale.",
         "label": "brani",
         "columns": {

@@ -44,5 +44,6 @@
   "stats_media_limit": 25,
   "stats_history_days": 30,
   "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"],
+  "french_song_schools": ["udem", "ulaval", "uqam"],
   "asian_song_override": ["The Weeknd - Hong Kong", "Hong Kong The Weeknd"]
 }

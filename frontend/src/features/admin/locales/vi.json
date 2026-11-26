@@ -392,6 +392,8 @@
         "add": "Thêm bài hát",
         "asianCampusesOnly": "Chỉ các trường đông sinh viên châu Á",
         "asianCampuses": "Trường đông sinh viên châu Á",
+        "frenchCampusesOnly": "Chỉ các campus nói tiếng Pháp",
+        "frenchCampuses": "Các campus nói tiếng Pháp",
         "help": "Vài phút sau khi băng chuyền được đăng, trình giả lập thêm một trong các bài hát này vào bài đăng, thử chúng theo thứ tự ngẫu nhiên.",
         "label": "bài hát",
         "columns": {
