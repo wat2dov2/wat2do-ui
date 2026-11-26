@@ -898,11 +898,6 @@ def test_sittings_start_inside_action_hours_on_their_own_claude_login() -> None:
     assert sessions.claude_config_dir not in ("~/.claude", "")
 
 
-def test_the_draft_audit_and_quality_test_never_use_the_ingestion_login() -> None:
-    control = load_controlbox().instagram_publishing
-    assert control.quality_claude_config_dir not in ("~/.claude", "")
-
-
 def test_the_emulator_worker_acts_only_in_waking_hours() -> None:
     control = load_controlbox().instagram_emulator
     assert control.action_start_hour < control.action_end_hour

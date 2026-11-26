@@ -141,6 +141,37 @@ def test_a_run_switches_to_the_account_and_keeps_the_full_report_on_the_mac(monk
     assert not module.waiting()
 
 
+def test_a_failed_run_keeps_why_on_the_mac_and_fails(monkeypatch, tmp_path):
+    _controls(monkeypatch, agent_schools=("tmu",))
+
+    class _Device:
+        def wake(self):
+            pass
+
+        def use_android_user(self, user):
+            pass
+
+        def use_account(self, user, account):
+            pass
+
+        def release_screen(self):
+            pass
+
+    def run_agent(prompt, **kwargs):
+        raise module.ClaudeCodeError("failed (exit 1)", "error_max_turns")
+
+    monkeypatch.setattr(module, "EmulatorDevice", _Device)
+    monkeypatch.setattr(module, "run_agent", run_agent)
+    monkeypatch.setattr(module, "exclusive", _held)
+    with pytest.raises(module.ClaudeCodeError):
+        module.handle(module.Notification.parse(DISPATCH))
+    (kept,) = (tmp_path / f"{datetime.now(module.TORONTO).date()}.jsonl").read_text().splitlines()
+    assert json.loads(kept)["report"] == {
+        "case": "error",
+        "problems": "failed (exit 1): error_max_turns",
+    }
+
+
 def test_a_waiting_run_is_seen_by_the_worker_until_it_ends():
     with module._waiting():
         assert module.waiting()

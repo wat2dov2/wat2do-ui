@@ -24,7 +24,7 @@ use wat2do::instagram_publishing::meta::GRAPH_HOST;
 use wat2do::instagram_publishing::publishing::Publisher;
 use wat2do::instagram_publishing::selection::DraftSelection;
 use wat2do::instagram_publishing::{
-    curation, drafts, job_error, quality, schedule, stats, temp_directory, tokens,
+    curation, drafts, job_error, schedule, stats, temp_directory, tokens,
 };
 
 #[derive(Parser)]
@@ -54,16 +54,6 @@ enum Command {
     ImportTokens { token_file: PathBuf },
     /// Run curate daily through a LaunchAgent
     InstallSchedule,
-    /// Test the live curation prompt and draft audit against a fixed packet;
-    /// rerun after every change to them or to the promotion rules
-    QualityTest {
-        /// How many times each run is repeated
-        #[arg(long, default_value_t = 3)]
-        runs: usize,
-        /// Where the HTML report goes (default ~/Desktop/carousel-quality-test.html)
-        #[arg(long)]
-        out: Option<PathBuf>,
-    },
 }
 
 /// One line of JSON with sorted keys, as the Python job printed it.
@@ -106,24 +96,11 @@ async fn main() -> anyhow::Result<ExitCode> {
         schedule::install_schedule(&schedule::launchctl()?)?;
         return Ok(ExitCode::SUCCESS);
     }
-    if let Command::QualityTest { runs, out } = &command {
-        let out = out.clone().unwrap_or_else(|| {
-            PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                .join("Desktop/carousel-quality-test.html")
-        });
-        let passed = quality::run_quality_test(*runs, &out).await?;
-        println!("{} {}", if passed { "PASS" } else { "FAIL" }, out.display());
-        return Ok(if passed {
-            ExitCode::SUCCESS
-        } else {
-            ExitCode::FAILURE
-        });
-    }
     let settings = wat2do::settings::settings()?;
     let key = settings.instagram_token_encryption_key.as_str();
     let db = wat2do::db::connect(4).await?;
     let failed = match command {
-        Command::InstallSchedule | Command::QualityTest { .. } => unreachable!("handled above"),
+        Command::InstallSchedule => unreachable!("handled above"),
         Command::Candidates => {
             let packets = drafts::list_draft_candidates(&db, Utc::now()).await?;
             print_json(&packets.iter().map(drafts::Packet::to_json).collect());

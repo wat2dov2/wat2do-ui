@@ -19,7 +19,16 @@ from typing import Any
 
 
 class ClaudeCodeError(RuntimeError):
-    """Claude Code did not run, or finished without a structured answer."""
+    """Claude Code did not run, or finished without a structured answer.
+
+    ``detail`` holds what Claude Code itself said (its last words and the end of its
+    stderr). It is kept out of the message, since it may quote what the agent read;
+    a caller keeps it only where such words may be stored.
+    """
+
+    def __init__(self, message: str, detail: str = "") -> None:
+        super().__init__(message)
+        self.detail = detail
 
 
 class ClaudeLimited(ClaudeCodeError):
@@ -91,11 +100,12 @@ def run_agent(
         printed = {}
     if printed.get("api_error_status") == 429:
         raise ClaudeLimited(f"hit Claude's usage limit ({printed.get('result') or ''})")
+    detail = f"{printed.get('subtype') or ''} {printed.get('result') or ''} {result.stderr[-1000:]}"
     if result.returncode:
-        raise ClaudeCodeError(f"failed (exit {result.returncode})")
+        raise ClaudeCodeError(f"failed (exit {result.returncode})", detail.strip())
     answer = printed.get("structured_output")
     if not isinstance(answer, dict):
-        raise ClaudeCodeError("gave no answer")
+        raise ClaudeCodeError("gave no answer", detail.strip())
     return answer
 
 

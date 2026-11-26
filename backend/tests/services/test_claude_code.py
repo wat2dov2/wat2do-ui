@@ -17,7 +17,9 @@ def test_agent_gets_only_its_tools_and_no_secrets(monkeypatch, tmp_path):
 
     def run(command, **kwargs):
         calls.append((command, kwargs))
-        return SimpleNamespace(returncode=0, stdout=json.dumps({"structured_output": {"ok": 1}}))
+        return SimpleNamespace(
+            stderr="", returncode=0, stdout=json.dumps({"structured_output": {"ok": 1}})
+        )
 
     monkeypatch.setattr(claude_code.subprocess, "run", run)
 
@@ -45,10 +47,11 @@ def test_agent_gets_only_its_tools_and_no_secrets(monkeypatch, tmp_path):
 @pytest.mark.parametrize(
     ("result", "message"),
     [
-        (SimpleNamespace(returncode=2, stdout=""), "exit 2"),
-        (SimpleNamespace(returncode=0, stdout="oops"), "no answer"),
+        (SimpleNamespace(stderr="", returncode=2, stdout=""), "exit 2"),
+        (SimpleNamespace(stderr="", returncode=0, stdout="oops"), "no answer"),
         (
             SimpleNamespace(
+                stderr="",
                 returncode=1,
                 stdout=json.dumps({"is_error": True, "api_error_status": 500, "result": "x"}),
             ),
@@ -96,7 +99,9 @@ def test_a_run_turned_away_by_the_usage_limit_is_claude_limited(monkeypatch, tmp
     monkeypatch.setattr(
         claude_code.subprocess,
         "run",
-        lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stdout=json.dumps(printed)),
+        lambda *_args, **_kwargs: SimpleNamespace(
+            stderr="", returncode=1, stdout=json.dumps(printed)
+        ),
     )
     with pytest.raises(claude_code.ClaudeLimited, match="resets 5:10am"):
         claude_code.run_agent(

@@ -94,3 +94,25 @@ def test_a_reader_that_stops_answering_fails_the_read_in_time():
         assert not reader.running
     finally:
         reader.stop()
+
+
+# Sets a field when its view ID shows, the way ScreenReader.java answers "set".
+SETTING = f"""
+import sys
+print({END!r}, flush=True)
+for line in sys.stdin:
+    _, view_id, path = line.split(" ", 2)
+    print("set" if view_id.endswith("/edit_media_caption") else "missing", flush=True)
+    print({END!r}, flush=True)
+"""
+
+
+def test_a_field_is_set_only_when_it_shows():
+    reader, _started, _adb = _reader(SETTING)
+    try:
+        assert reader.set_text(
+            "com.instagram.android:id/edit_media_caption", "/data/local/tmp/t.txt"
+        )
+        assert not reader.set_text("com.instagram.android:id/other", "/data/local/tmp/t.txt")
+    finally:
+        reader.stop()
