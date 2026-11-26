@@ -1,9 +1,12 @@
-//! Every few minutes: rerun the failed Process Notifications runs that can now succeed.
+//! Every few minutes: rerun the failed "Handle notification" runs that can now succeed.
 //!
-//! A run fails when the Brave worker is paused (a logout it is still recovering from) or
-//! down, or when its school's account is held for a person or missing from Brave. A pass
-//! reruns nothing while the worker cannot run digests, and leaves a run alone while its
-//! account cannot run yet, so a rerun is spent only when it can succeed: each run is
+//! A post run fails when the Brave worker is paused (a logout it is still recovering from)
+//! or down, or when its school's account is held for a person or missing from Brave. A pass
+//! reruns no post run while the worker cannot run digests, and leaves one alone while its
+//! account cannot run yet, so a rerun is spent only when it can succeed. The notification
+//! agent's runs ("Handle <category> - <account>") never use Brave, so they are reran
+//! whatever Brave's state (one that fails while the emulator is busy or Claude is limited
+//! succeeds later, and finds an answered thread answered). Each run is
 //! reran at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, at most
 //! `reruns_per_pass` a pass (each switches Brave's account, and a burst of switches gets
 //! the session logged out), so a backlog drains steadily once the worker recovers. The worker logs itself back in;
@@ -71,6 +74,12 @@ pub enum RunAccount {
     Unnamed,
     /// A notification without its routing (" - "): a rerun can never succeed.
     Unroutable,
+}
+
+/// Whether the run is the notification agent's ("Handle <category> - <account>"), which
+/// runs on the emulator and never needs Brave.
+pub fn agent_run(title: &str) -> bool {
+    title.trim().starts_with("Handle ")
 }
 
 pub fn run_account(title: &str) -> RunAccount {
@@ -248,9 +257,11 @@ pub fn retry_failed_notifications(
             ..Readiness::default()
         },
     };
-    if let Some(blocked) = readiness.blocked {
+    if let Some(blocked) = &readiness.blocked {
         result["blocked"] = json!(blocked);
-        return result;
+        if !failed.iter().any(|run| agent_run(&run.title)) {
+            return result;
+        }
     }
     let mut state = load_state(state_path);
     prune(&mut state, now(), control().lookback_hours);
@@ -272,6 +283,11 @@ pub fn retry_failed_notifications(
             .cloned()
             .unwrap_or_else(|| json!({"count": 0, "last_at": 0.0}));
         let count = number(entry.get("count")) as i64;
+        let agent = agent_run(&run.title);
+        if !agent && readiness.blocked.is_some() {
+            push(&mut result, "waiting", &run.id);
+            continue;
+        }
         let account = run_account(&run.title);
         if account == RunAccount::Unroutable {
             push(&mut result, "skipped", &run.id);
@@ -294,6 +310,7 @@ pub fn retry_failed_notifications(
             continue;
         }
         if let RunAccount::Named(account) = &account
+            && !agent
             && let Some(why) = readiness.unavailable.get(account)
         {
             push(&mut result, "waiting", &run.id);

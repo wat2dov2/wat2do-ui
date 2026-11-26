@@ -43,17 +43,18 @@ maintainability.
 
 Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
-the GitHub `process-notification` workflow directly, and on the Mac's emulator.
+the GitHub "Handle notification" workflow (`.github/workflows/handle-notification.yml`) directly, and on the Mac's emulator.
 `backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each notification the emulator gets to `~/.local/state/wat2do/notification-log/notifications.jsonl` and sends each new `post` and `subscription_daily_digest` one as the same `new_instagram_post` repository dispatch the phones send (`services/notification_dispatch.py`, `controlbox/notification_recording.json`).
+Each new notification in `agent_push_categories` (direct messages, message requests, story mentions, comments) goes out instead as an `instagram_interaction` dispatch carrying only its category, school account, sender's name and time, never its text, for the notification agent (below).
 It does not check whether a phone already sent a notification; the workflow records each recipient and push ID once.
 A stopped Android user gets no notifications, so every `start_users_every_seconds` it starts each user that holds an account and has stopped, in the background (`am start-user -w`, never switched to the front).
 Beyond that it only listens: no tap, never the emulator's lock.
-It keeps only a direct message's push category, Android user, recipient and times, never its sender or text, and never dispatches one.
+A direct message's line in the file keeps only its push category, Android user, recipient and times, never its sender or text.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
-The repository and its Actions logs are public: the workflow processes only `post` and `subscription_daily_digest` notifications, its `route` job ends every other category (direct messages included) with a notice naming only the category, and a notification payload never enters an `env:` block, a log line or an artifact.
+The repository and its Actions logs are public: the workflow's binary processes only `post` and `subscription_daily_digest` notifications, its `route` job hands an `instagram_interaction` dispatch to the notification agent's job and ends every other category (the phones' direct messages included) with a notice naming only the category, and a notification payload (a message's text, a sender's name) never enters an `env:` block, a run name, a log line or an artifact.
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.
 The processor is Rust (`rust/src/ingestion`, binary `wat2do-ingest`); its LaunchAgent `io.wat2do.ingestion.process` runs `cargo run --release` against the runtime checkout, so a kickstart builds and runs that checkout's code and `prompt.md`.
@@ -83,7 +84,7 @@ Partner banners are data only: a person adds a partner to `partners.json`, and n
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the
-`process-notification` job may expand that notification's CacheEntID through one
+`process-post` job may expand that notification's CacheEntID through one
 existing, human-authenticated browser tab before recording notification media.
 CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
@@ -123,7 +124,7 @@ Once a password has been submitted, a refusal, a challenge, a code that never ca
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge holds that account for a person.
 A digest whose account is missing and cannot log in yet marks it missing (`accounts_missing` in `wat2do-browser status`) until its login is allowed again or a digest finds it in Brave.
-`io.wat2do.notification-retry` reruns failed Process Notifications runs: none while the worker is paused or down, never one whose account is held or missing, each run at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, and at most `reruns_per_pass` a pass, since each rerun switches Brave's account and a burst of switches gets the whole session logged out.
+`io.wat2do.notification-retry` reruns failed "Handle notification" runs: no post run while the worker is paused or down, never one whose account is held or missing (the notification agent's runs, named "Handle <category> - <account>", never use Brave and are reran whatever its state), each run at most `max_reruns_per_run` times, `rerun_spacing_minutes` apart, and at most `reruns_per_pass` a pass, since each rerun switches Brave's account and a burst of switches gets the whole session logged out.
 Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
 The worker may create, keep and replace those jars and log the accounts in to them itself, typing the Keychain password and the emailed code over CDP on an owner-only Unix socket; neither, nor any jar's contents, is ever logged, copied elsewhere or put on a command line.
 An account counts as logged in when its jar holds a non-empty `sessionid`.
@@ -136,13 +137,12 @@ Every served account reads Following lists at its own pace (Brave's `following_*
 Brave's pauses and holds never stop the lane, Brave's queue recovery leaves the lane's running jobs to it while its heartbeat is fresh, and the lane's reads never touch Brave's Following pace or backoff; a session Instagram logged out makes its jar forget the login.
 At most every `ramp_interval_minutes` (kept in the queue across restarts) the lane logs one more account in, the accounts with the most digests first, within the budgets above and never spending the day's last `ramp_reserved_logins` logins, which Brave's relogins need.
 Every login's budget check and record happen in one queue transaction, and from the first keystroke of a Lightpanda password on, any failure pauses that account for a person.
-School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
 It visits one school account at a time: it picks the account with the most urgent work (a sitting that is due, then follows), switches the app to it once, and does everything that account needs before moving on.
 A sitting is one school account's whole Instagram turn, done by a Claude session (`backend/services/instagram_sessions/sitting.py`, Tony's decision on 2026-11-21 after carousels waited hours for their likes and songs between the old 9:35 publish job and the worker).
 From `controlbox/instagram_sessions.json` `start_hour`:`start_minute` every school account gets one sitting a day, schools with a carousel ready to post first; a carousel posted outside a sitting (the admin's Publish button) that still waits for its like and song brings its school's sitting forward, retried `music_retry_minutes` after a failed try.
 The worker holds the emulator on the account for the whole sitting and runs Claude Code (`prompt.md`, `controlbox/instagram_sessions.json` `model`, on the second Claude login in `claude_config_dir` so a sitting never spends the login ingestion runs on, at most `sitting_timeout_minutes`) with one tool: the `ig` command (`moves.py`), whose moves run as the worker's children under its hold (`WAT2DO_EMULATOR_HELD`).
-In one go the sitting posts the day's draft (`ig post`, which runs `wat2do-instagram publish-draft <school>`), likes, reposts, comments on, tags and sets the song of the post right away (`ig finish`), shares its events' original posts to the story (`ig stories`), then goes through every DM thread with something new since the day before (unread, or their message newest and under a day old).
+In one go the sitting posts the day's draft (`ig post`, which runs `wat2do-instagram publish-draft <school>`), likes, reposts, comments on, tags and sets the song of the post right away (`ig finish`), shares its events' original posts to the story (`ig stories`), then sends the claim-link follow-ups that are due (below); it answers no direct message.
 Every move logs when it started and ended and how it went to `~/.local/state/wat2do/instagram-sittings/<date>.jsonl`, never a message's text, and each sitting's report goes to the same file, so every step of every post can be traced afterwards.
 A sitting that breaks off (Claude Code fails or times out) is tried again, at most `sitting_attempts` sittings a day.
 Sittings happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`.
@@ -158,15 +158,22 @@ Its test account sits in `controlbox/instagram_emulator.json` `hidden_school_acc
 A switcher row whose name Instagram lost (it reads only its activity, "1 chat and 22 more") is tapped, and the inbox title confirms which account it was; a switch the app answered that never reached the account only rests that account, and never restarts the emulator.
 A switch that fails while Android is still starting (its first user not yet running unlocked, which can take minutes after `sys.boot_completed` on a busy Mac) only waits: it neither rests the account nor counts toward a restart, and a restart waits for the same before the worker goes on; failed switches restart the emulator only once Android has been up `restart_min_uptime_seconds`, since for a while after a boot Android's own process can stop answering for minutes and a restart only starts that over (2026-11-23: after the Mac restarted, the emulator restarted every 5 to 15 minutes for three hours).
 Instagram's "You've been logged out of <account>" dialog, which covers the app until answered, is acknowledged with OK and logged, so the Android user's other accounts go on; the logged-out account needs a person to log in again.
-In a sitting, `ig inbox` lists the main inbox and message requests, and `ig read` opens a thread by tapping its row and reads who sent each message, its text and any shared post from the screen the app draws.
-A shared post's link is copied and read back through the thread's composer, and only the pasted link is deleted again, so a draft waiting there for a person stays exactly as it was.
-A message request is accepted only when a draft is typed in it, or when reading a post it shares needs the composer.
-Claude decides each thread from the facts about Wat2Do its prompt lists: sharing a post or reel to our story (any account's, if it is appropriate and not out of date, `ig share`), featuring it in an upcoming carousel (`ig feature`), correcting a listing the club says is wrong (`ig correction`), leaving a club that asks out of carousels (`ig opt-out`), a plain reply (questions, an event already over), or nothing (traps, spam, "thanks").
-The automation sends one kind of direct message only: the claim-link message to a club that asked us to repost, share or feature its post (Tony, 2026-11-24), and only as a follow-up: at least `controlbox/instagram_dms.json` `claim_follow_up_hours` after its sitting shared or featured that post (from the sitting logs), with our message still the newest in the thread and no claim link ever sent there, never alongside the reply to the request (Tony, 2026-11-25); `ig inbox` marks such threads `claim_due`. Every other reply is typed by `ig draft` into its thread and left there unsent, and a person reads every such draft and sends it (Tony, 2026-11-21).
-A draft lives in its thread on the emulator only, which has no window: `backend/scripts/review_dm_drafts.py <school>` waits for the worker's current job, opens that account's inbox and shows the emulator in a scrcpy window, holding the emulator until the window closes.
-A thread where a club asked us to repost, share or feature its post gets the claim-link message instead of a drafted reply: `ig claim "<name>" <their username>` types its club's own claim link (from its outreach lead; one is made if the unclaimed club has none) into the thread at a person's pace, confirms it in the composer and sends it, saying we will keep featuring their events and asking them to claim their club; the link is never printed or logged. A claim-link draft an earlier sitting left waiting is sent as it is only when its token is one of that club's own, a thread holding any other unsent reply is left for a person, and each account sends at most `controlbox/instagram_dms.json` `claim_sends_per_account_per_day` a day, each a random `claim_send_gap_min_seconds` to `claim_send_gap_max_seconds` after its last.
-A club gets its claim message once ever (every day's sitting log is checked), and only in its own thread: every move opens its thread from the inbox row each time (`ThreadReader.open_thread`) and refuses unless the thread's header names it, and `ig claim` also needs the thread's sender to be the club's handle, not in `public.instagram_excluded_clubs` (`refuse_if_excluded`) and with no message on screen asking us to stop, and checks the header again just before Send (2026-11-25: a claim went into the thread an earlier read had left open, UWaterloo ViVA's, a club that had asked to be left out).
-A sitting reads every claim link as `[claim link]`, and `ig draft` leaves a thread that already holds an unsent claim link as it is (`ig claim` sends it).
+The notification agent answers direct messages, message requests, story mentions and comments as they arrive (Tony's design, 2026-11-25): the workflow's `handle` job runs on the Mac's own emulator runner (label `wat2do-macmini-emulator`, one run at a time, so a burst queues on GitHub instead of fighting over the phone; a concurrency group would cancel all but the newest waiting run), from the runtime checkout, `backend/jobs/handle_instagram_notification.py run` with the dispatch on stdin.
+It (`backend/services/instagram_sessions/notification.py`) waits its turn for the emulator's lock (unfollows and follows stop between profiles for it), switches the app to the account and runs Claude Code on its prompt, read afresh each run from the Mac's local `~/wat2do-data/prompts/instagram_sessions/notification_prompt.md` (prompts never live in the repository; the sittings' model and second login, at most `controlbox/instagram_sessions.json` `notification_timeout_minutes`) with the same `ig` command, and prints only the case and the moves made; the full report, reply included, stays in `~/.local/state/wat2do/notification-agent/<date>.jsonl` on the Mac.
+`controlbox/instagram_dms.json` `agent_enabled` is its kill switch (false makes every run a no-op), and while `agent_schools` names any school only those accounts are handled.
+`ig inbox` lists the main inbox and message requests, and `ig read` opens a thread by tapping its row and reads who sent each message, its text and any shared post from the screen the app draws.
+A shared post's link is copied and read back through the thread's composer, and only the pasted link is deleted again.
+Claude decides each thread from the facts about Wat2Do its prompt lists, and only for what any student at the school could attend or use, with broad appeal for a carousel: boosting a post or reel they shared (`ig boost`: like, repost, an upcoming carousel and our story), featuring it in an upcoming carousel (`ig feature`), correcting a listing (`ig correction`), leaving a club that asks out (`ig opt-out`, then `ig mute`, which turns off our notifications of its posts, stories and reels), a short reply (`ig reply`), a heart on their newest message (`ig heart`, for thanks and reactions), accepting a real club's or student's request (`ig accept`), or nothing (traps, spam).
+Every move opens its thread from the inbox row each time (`ThreadReader.open_thread`) and refuses unless the thread's header names it (2026-11-25: a claim went into the thread an earlier read had left open, UWaterloo ViVA's, a club that had asked to be left out).
+A thread whose sender is in `public.instagram_excluded_clubs` (`refuse_if_excluded`), or whose messages ask us to stop, take something down, ask first or not track them (`asks_to_be_left_out`), gets nothing from any move but the opt-out and its one acknowledgement.
+A thread gets at most one reply and one heart within `thread_repeat_hours`, a post is boosted once, and each account does at most `replies_per_account_per_day`, `boosts_per_account_per_day` and `hearts_per_account_per_day` of them a day; every move others can see waits a random `send_wait_min_seconds` to `send_wait_max_seconds` first and types one character at a time.
+A reply clears whatever the composer held before (an old draft is never sent), types its text and taps Send only once the composer shows exactly that text and the header still names the thread.
+After every move but a plain look, Instagram's "Confirm you're human", a suspected-automation or "Try again later" notice, an action limit or a login screen stops the move and rests the account's notification handling `challenge_pause_hours` (`notification.pause`), and no move acts for it meanwhile; no move ever types a code or a password.
+`handle_instagram_notification.py dry-run` runs the same prompt over recorded threads with moves that read the recording and only say what they would do.
+The claim-link message to a club that asked us to repost, share or feature its post (Tony, 2026-11-24) is only a follow-up, sent by the daily sitting: at least `controlbox/instagram_dms.json` `claim_follow_up_hours` after we boosted, shared or featured that post (from the sitting logs), with our message still the newest in the thread and no claim link ever sent there, never alongside the reply to the request (Tony, 2026-11-25); `ig inbox` marks such threads `claim_due`.
+`ig claim "<name>" <their username>` types its club's own claim link (from its outreach lead; one is made if the unclaimed club has none) into the thread at a person's pace, confirms it in the composer and sends it, saying we will keep featuring their events and asking them to claim their club; the link is never printed or logged. A claim-link draft left waiting is sent as it is only when its token is one of that club's own, a thread holding any other unsent text is left alone, and each account sends at most `controlbox/instagram_dms.json` `claim_sends_per_account_per_day` a day, each a random `claim_send_gap_min_seconds` to `claim_send_gap_max_seconds` after its last.
+A club gets its claim message once ever (every day's sitting log is checked), and only in its own thread: `ig claim` also needs the thread's sender to be the club's handle, not left out, and checks the header again just before Send.
+Every claim link reads as `[claim link]`.
 Clubs want story reposts and carousel spots, so replies never ask about adding things
 to the site.
 A story repost or carousel request sets `events.carousel_requested_at` on the events
@@ -181,12 +188,12 @@ A carousel shows at most `controlbox/instagram_publishing.json` `maximum_slides_
 A correction queues the club's words as a `dm` row in `public.ingestion_items`, and the
 ingestion agent corrects only the listings it clearly refers to.
 An opt-out adds the sender to `public.instagram_excluded_clubs`.
-A story request is shared first and its reply drafted after.
+A story request is shared first and its reply sent after.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
 It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`, which builds the notification recorder's `notification-reader.jar` too.
-Each draft is confirmed by seeing it in the thread's composer, and no move but `ig claim` (which sends only the claim-link message) can tap Send.
+Each message is confirmed by seeing it in the thread's composer before Send, and `ig tap` can never tap Send.
 The emulator also likes, reposts and adds music to our own carousels right after the API
 posts them, since the API can do none of these: the sitting's `ig finish` opens the live post, likes it, reposts it unless the Repost icon already shows its check mark, then
 Edit, Add audio,
@@ -221,10 +228,10 @@ Approving creates the school's club for the handle unless one exists, and queues
 The emulator worker checks `follows_due` from the database, then calls `follow_due` with the emulator on the school's account.
 `follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
-Only the worker taps the emulator, holding its lock for one visit at a time; a sitting's moves run under that hold.
+Only the worker and the notification agent's runs tap the emulator, each holding its lock for one visit or run at a time; a sitting's or run's moves run under that hold.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
-Code, not the model, has the final say: a post can be shared or featured only when they shared it in the thread with its owner readable, an opt-out needs a readable sender, and a draft with a
+Code, not the model, has the final say: a post can be boosted, shared or featured only when they shared it in the thread with its owner readable, an opt-out needs a readable sender, and a reply with a
 tag, a link outside wat2do.io, an email address other than `controlbox/instagram_dms.json`
 `contact_email` or a long number is not typed at all.
 A sitting stops at "Confirm you're human", a login screen or an action limit and reports it for a person; it never types a code or a password.

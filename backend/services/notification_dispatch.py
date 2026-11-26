@@ -1,11 +1,14 @@
-"""Start the notification workflow for the post notifications the Mac's emulator gets.
+"""Start the "Handle notification" workflow for the notifications the Mac's emulator gets.
 
-The recorder (``services/notification_recording.py``) hands over each new notification
-whose Instagram push category is in ``controlbox/notification_recording.json``
-``dispatch_push_categories`` (posts and daily digests, never a direct message), and this
-sends it as the ``new_instagram_post`` repository dispatch the phones' Automate flow sends,
-which starts the ``process-notification`` workflow. It does not check whether a phone sent
-the same notification: the workflow already records each recipient and push ID once.
+The recorder (``services/notification_recording.py``) hands over each new notification.
+One whose Instagram push category is in ``controlbox/notification_recording.json``
+``dispatch_push_categories`` (posts and daily digests) is sent whole as the
+``new_instagram_post`` repository dispatch the phones' Automate flow sends. It does not
+check whether a phone sent the same notification: the workflow already records each
+recipient and push ID once. One in ``agent_push_categories`` (direct messages, message
+requests, story mentions, comments) is sent as an ``instagram_interaction`` dispatch for
+the workflow's notification agent, carrying only its category, school account, the
+sender's name and its time, never its text.
 
 A notification is sent once per intended recipient and push ID. One that cannot be sent
 waits in ``dispatch.json`` beside the recorder's file and is tried again, oldest first,
@@ -23,6 +26,7 @@ import re
 import subprocess
 import time
 from collections.abc import Callable
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +39,8 @@ CONTROL = controlbox.notification_recording
 # gh ends an API error with GitHub's status, as in "gh: Not Found (HTTP 404)".
 _HTTP_STATUS = re.compile(r"\(HTTP (\d{3})\)")
 _REFUSED = "422"
+# Android's title for a notification: a direct message's or comment's sender.
+_TITLE = "android.title"
 _EMPTY: dict[str, Any] = {"handled": {}, "waiting": []}
 
 
@@ -46,15 +52,11 @@ class DispatchRefused(DispatchError):
     """GitHub answered 422: it refused the payload, or took a burst of dispatches for spam."""
 
 
-def dispatch(extras: dict[str, Any]) -> None:
-    """Start the process-notification workflow for one notification, as the phones do.
+def dispatch(body: dict[str, Any]) -> None:
+    """Send one repository dispatch (``body``, from ``payload``) to start the workflow.
 
     ``gh`` carries the Mac user's own GitHub login, so no token is kept here.
     """
-    body = {
-        "event_type": CONTROL.dispatch_event_type,
-        "client_payload": {"notification_dict": extras},
-    }
     try:
         completed = subprocess.run(
             [
@@ -87,14 +89,34 @@ def dispatch(extras: dict[str, Any]) -> None:
     raise DispatchError(f"HTTP {status.group(1)}")
 
 
-def wanted(notification: Notification) -> bool:
-    """Whether the workflow takes this notification: a dispatched category, with the
-    recipient and push ID it routes and records by."""
-    return (
-        notification.category in CONTROL.dispatch_push_categories
-        and bool(notification.recipient_id)
-        and bool(notification.push_id)
-    )
+def payload(notification: Notification, account: str) -> dict[str, Any] | None:
+    """The dispatch that starts the workflow for this notification, or None when the
+    workflow does not take it.
+
+    A post or digest goes whole, with the recipient and push ID the workflow routes and
+    records it by. A direct message, request, mention or comment goes to the agent with
+    only its category, school account, sender's name (Android's title for it) and time.
+    """
+    if not notification.recipient_id or not notification.push_id:
+        return None
+    if notification.category in CONTROL.dispatch_push_categories:
+        return {
+            "event_type": CONTROL.dispatch_event_type,
+            "client_payload": {"notification_dict": notification.extras},
+        }
+    if notification.category in CONTROL.agent_push_categories and account:
+        return {
+            "event_type": CONTROL.agent_dispatch_event_type,
+            "client_payload": {
+                "category": notification.category,
+                "account": account,
+                "sender": notification.text(_TITLE),
+                "received_at": datetime.fromtimestamp(
+                    notification.posted_at / 1000, timezone.utc
+                ).isoformat(timespec="seconds"),
+            },
+        }
+    return None
 
 
 def _key(notification: Notification) -> str:
@@ -129,9 +151,11 @@ class Dispatcher:
     def __len__(self) -> int:
         return len(self._waiting)
 
-    def offer(self, notification: Notification) -> bool:
-        """Queue a notification the workflow takes, once; True when it was queued."""
-        if not wanted(notification):
+    def offer(self, notification: Notification, account: str = "") -> bool:
+        """Queue a notification the workflow takes, once; True when it was queued.
+        ``account`` is the school account it was meant for, when known."""
+        body = payload(notification, account)
+        if body is None:
             return False
         key = _key(notification)
         if key in self._handled or any(item["key"] == key for item in self._waiting):
@@ -141,7 +165,7 @@ class Dispatcher:
                 "key": key,
                 "category": notification.category,
                 "recipient_id": notification.recipient_id,
-                "extras": notification.extras,
+                "body": body,
                 "refusals": 0,
             }
         )
@@ -156,7 +180,7 @@ class Dispatcher:
         for item in list(self._waiting):
             self._space_out()
             try:
-                self._send(item["extras"])
+                self._send(item["body"])
             except DispatchError as exc:
                 self._pause_after(item, exc)
                 return
@@ -251,7 +275,7 @@ def _readable(state: Any) -> bool:
         and all(
             isinstance(item, dict)
             and isinstance(item.get("key"), str)
-            and isinstance(item.get("extras"), dict)
+            and isinstance(item.get("body"), dict)
             and isinstance(item.get("refusals"), int)
             for item in state["waiting"]
         )

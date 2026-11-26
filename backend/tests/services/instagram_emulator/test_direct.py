@@ -210,24 +210,72 @@ class _DraftDevice:
         self.backs += 1
 
 
-def test_a_draft_is_typed_and_left_unsent() -> None:
+def _opened(device):
+    return THREAD_READER(device, THREAD, lambda: None)
+
+
+def test_a_reply_is_typed_confirmed_and_sent() -> None:
     device = _DraftDevice()
-    THREAD_READER(device, THREAD, lambda: None).draft("just shared it, good luck with the event!")
-    assert device.typed == "just shared it, good luck with the event!"
-    # Only the composer is touched; the keyboard and then the thread are closed.
-    assert device.taps == ["row_thread_composer_edittext"]
+    _opened(device).send_reply("Sure, done!")
+    assert device.sent == ["Sure, done!"]
+    assert device.taps == [
+        "row_thread_composer_edittext",
+        "row_thread_composer_send_button_container",
+    ]
+    # The keyboard, then the thread, are closed.
     assert device.backs == 2
 
 
-def test_a_request_is_accepted_to_show_its_composer(monkeypatch) -> None:
+def test_a_reply_never_goes_into_another_thread_left_open() -> None:
+    device = _DraftDevice(header=("UWaterloo ViVA Club", ""))
+    with pytest.raises(module.ThreadMismatch):
+        _opened(device).send_reply("Sure, done!")
+    assert device.sent == [] and device.taps == [] and device.typed == ""
+
+
+def test_a_stale_draft_is_cleared_and_never_sent() -> None:
+    device = _DraftDevice()
+    device.typed = "an old draft nobody approved"
+    _opened(device).send_reply("Sure, done!")
+    assert device.sent == ["Sure, done!"]
+
+
+def test_a_request_must_be_accepted_before_a_reply() -> None:
+    with pytest.raises(module.EmulatorError, match="accept it first"):
+        _opened(_DraftDevice(request=True)).send_reply("Sure!")
+
+
+def test_a_reply_that_does_not_show_in_the_composer_is_never_sent() -> None:
+    device = _DraftDevice(echo=False)
+    with pytest.raises(module.EmulatorError, match="did not show"):
+        _opened(device).send_reply("hi")
+    assert device.sent == []
+
+
+def test_a_request_is_accepted_once(monkeypatch) -> None:
     device = _DraftDevice(request=True)
 
     def accept(dev):
         dev.accepted = True
 
     monkeypatch.setattr(module, "accept_request", accept)
-    THREAD_READER(device, THREAD, lambda: None).draft("sure, send it here")
-    assert device.accepted and device.typed == "sure, send it here"
+    assert _opened(device).accept() is True
+    assert _opened(device).accept() is False
+
+
+@pytest.mark.parametrize(
+    ("said", "left_out"),
+    [
+        ("please stop featuring our events", True),
+        ("Can you ask us first before you post?", True),
+        ("We don't want to be tracked", True),
+        ("could you repost this?", False),
+        ("thank you so much!", False),
+    ],
+)
+def test_asking_to_be_left_out_is_read_from_their_words(said, left_out) -> None:
+    assert module.asks_to_be_left_out([{"from": "them", "text": said}]) is left_out
+    assert module.asks_to_be_left_out([{"from": "us", "text": said}]) is False
 
 
 TOKEN = "0f6b3c1e-1234"
@@ -363,28 +411,6 @@ def test_nothing_is_sent_once_the_thread_on_screen_changed() -> None:
     with pytest.raises(module.ThreadMismatch):
         _send_claim(device)
     assert device.sent == []
-
-
-def test_a_draft_is_never_typed_into_another_thread_left_open() -> None:
-    device = _DraftDevice(header=("UWaterloo ViVA Club", ""))
-    with pytest.raises(module.ThreadMismatch):
-        THREAD_READER(device, THREAD, lambda: None).draft("just shared it!")
-    assert device.typed == "" and device.taps == []
-
-
-def test_a_draft_that_does_not_show_in_the_composer_fails() -> None:
-    with pytest.raises(module.EmulatorError, match="did not show"):
-        THREAD_READER(_DraftDevice(echo=False), THREAD, lambda: None).draft("hi")
-
-
-def test_a_thread_holding_an_unsent_claim_draft_is_left_as_it_is() -> None:
-    device = _DraftDevice()
-    waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/0f6b3c1e-1234 Thank you!"
-    device.typed = waiting
-    with pytest.raises(module.DraftWaiting):
-        THREAD_READER(device, THREAD, lambda: None).draft("just shared it!")
-    assert device.typed == waiting
-    assert device.taps == [] and device.backs == 0
 
 
 class _ComposerDevice:

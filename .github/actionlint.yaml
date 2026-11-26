@@ -3,3 +3,4 @@ self-hosted-runner:
   labels:
     - wat2do-macmini-browser
     - wat2do-macmini-deploy
+    - wat2do-macmini-emulator

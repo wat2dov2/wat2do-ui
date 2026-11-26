@@ -7,5 +7,14 @@
   "claim_sends_per_account_per_day": 6,
   "claim_send_gap_min_seconds": 90,
   "claim_send_gap_max_seconds": 240,
-  "claim_follow_up_hours": 24
+  "claim_follow_up_hours": 24,
+  "agent_enabled": false,
+  "agent_schools": [],
+  "replies_per_account_per_day": 15,
+  "boosts_per_account_per_day": 10,
+  "hearts_per_account_per_day": 30,
+  "send_wait_min_seconds": 20,
+  "send_wait_max_seconds": 90,
+  "thread_repeat_hours": 24,
+  "challenge_pause_hours": 24
 }

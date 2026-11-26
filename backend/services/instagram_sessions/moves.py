@@ -6,11 +6,16 @@ emulator the worker already holds for it (``WAT2DO_EMULATOR_HELD``), and prints 
 JSON object. Each move appends when it started and ended and how it went to the day's
 sitting log, never a message's text.
 
-Replies are typed into their thread and left there for a person to read and send. The
-one direct message a move sends is the claim-link message (``ig claim``) to a club that
-asked us to repost or feature its post (Tony, 2026-11-24): only as a follow-up about a day
-after we did it (Tony, 2026-11-25), paced, capped per account and sent at most once to
-each club, only in that club's own thread.
+The notification agent (``notification.py``) uses the same command for one DM, mention
+or comment at a time: its moves reply, react with a heart, boost a shared post, accept a
+request, mute an account that asked to be left out, and send the claim-link message
+(``ig claim``) to a club that asked us to repost or feature its post (Tony, 2026-11-24),
+at most once to each club. Every move that others can see waits a random pause first,
+stays within its daily cap per account, works only in the thread it names, refuses a
+thread whose sender asked to be left out, and stops at any challenge Instagram shows,
+which pauses the account (``notification.pause``). With ``WAT2DO_NOTIFICATION_DRY_RUN``
+set, the moves read a recorded thread instead and only say what they would do
+(``_dry_run``).
 """
 
 from __future__ import annotations
@@ -44,18 +49,23 @@ from core.tables import (
 )
 from services import school_service
 from services.ingestion import items
-from services.instagram_accounts import school_account_username
+from services.instagram_accounts import android_user, school_account_username
+from services.instagram_emulator.audio import like_and_repost
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, exclusive
 from services.instagram_emulator.direct import (
     CLAIM_LINK,
+    LeftOut,
     ThreadReader,
+    asks_to_be_left_out,
     exclude_club,
     plain_handle,
     refuse_if_excluded,
 )
+from services.instagram_emulator.following import FollowingReader
 from services.instagram_emulator.inbox import open_row, read_inbox
 from services.instagram_emulator.story import share_to_story
 from services.instagram_publishing import music, stories
+from services.instagram_sessions import notification
 
 EMULATOR = controlbox.instagram_emulator
 DMS = controlbox.instagram_dms
@@ -85,9 +95,28 @@ _ADDRESS = re.compile(r"(?:https?://)?(?:[a-z0-9-]+\.)+[a-z]{2,}\S*", re.IGNOREC
 _OUR_ADDRESS = re.compile(r"^(?:https?://)?(?:[a-z0-9-]+\.)?wat2do\.io(?:/\S*)?$", re.IGNORECASE)
 # A long number may be a code or a phone number a message tried to smuggle out.
 _DIGITS = re.compile(r"\d{5,}")
-# Anything that sends a message or a post to someone; a person does all sending.
+# Anything that sends a message or a post to someone: only a move's own code taps it.
 _SENDS = re.compile(r"^(?:send|send post|send separately|send to)$", re.IGNORECASE)
 _PLAIN_QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"'})
+# Moves that act on the account, refused while its notification handling is paused.
+_ACTING = frozenset(
+    {
+        "reply",
+        "heart",
+        "boost",
+        "accept",
+        "mute",
+        "claim",
+        "share",
+        "feature",
+        "correction",
+        "opt-out",
+    }
+)
+# Moves that only read what is on the device.
+_READING = frozenset({"status", "inbox", "read", "screen", "shot"})
+# How far back the daily caps and the per-thread repeats look.
+_LOG_DAYS = 2
 
 
 class MoveError(RuntimeError):
@@ -112,7 +141,7 @@ def school() -> str:
 
 
 def user() -> int:
-    return EMULATOR.android_user_by_school[school()]
+    return android_user(school())
 
 
 # --- the carousel ------------------------------------------------------------------
@@ -208,34 +237,6 @@ def read(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     return {"thread": args.thread, "stale": reader.stale, "messages": messages}
 
 
-def draft(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
-    """Type a reply into the thread and leave it there, unsent, for a person to send.
-
-    ``--claim`` adds the claim-link message for the club behind that username after the
-    reply. The link carries the club's claim token, so it goes straight into the thread
-    and never into the move's output or log.
-    """
-    parts = []
-    if args.text.strip():
-        reply = safe_reply(args.text)
-        if reply is None:
-            raise MoveError(
-                "Refused: the reply must be plain text up to "
-                f"{DMS.reply_max_characters} characters, with no tag, no email but "
-                f"{DMS.contact_email}, no link outside wat2do.io and no long number"
-            )
-        parts.append(reply)
-    club = None
-    if args.claim:
-        target = claim_target(args.claim)
-        club = target.name
-        parts.append(_claim_message(target.token))
-    if not parts:
-        raise MoveError("Nothing to type: give --text, --claim or both")
-    _reader(device, args.thread).draft(" ".join(parts))
-    return {"thread": args.thread, "claim_for": club, "status": "typed, not sent"}
-
-
 def claim(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     """Send the club behind ``username`` its claim-link message in the thread.
 
@@ -302,7 +303,7 @@ def _claimed_before(club_id: int, name: str) -> bool:
 def _requests_handled() -> dict[str, datetime]:
     """When this account last shared or featured a post each thread asked for, by thread."""
     handled: dict[str, datetime] = {}
-    for entry in _logged(("share", "feature")):
+    for entry in _logged(("share", "feature", "boost")):
         ended = datetime.fromisoformat(entry["ended"])
         handled[entry.get("thread", "")] = max(ended, handled.get(entry.get("thread", ""), ended))
     return handled
@@ -365,6 +366,88 @@ def opt_out(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
         raise MoveError("The sender's username could not be read")
     exclude_club(handle, reason=f"Asked in {school_account_username(school())}'s DMs")
     return {"status": "left out of carousels", "club": handle}
+
+
+# --- the notification agent's moves ------------------------------------------------
+
+
+def reply(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Send a short reply in the thread: at most one per thread within
+    ``thread_repeat_hours`` and ``replies_per_account_per_day`` a day. A thread whose
+    sender asked to be left out gets only the acknowledgement of that opt-out."""
+    text = safe_reply(args.text)
+    if text is None:
+        raise MoveError(
+            "Refused: the reply must be plain text up to "
+            f"{DMS.reply_max_characters} characters, with no tag, no email but "
+            f"{DMS.contact_email}, no link outside wat2do.io and no long number"
+        )
+    _once_per_thread("reply", args.thread)
+    _within_cap("reply", DMS.replies_per_account_per_day)
+    reader = _reader(device, args.thread)
+    thread = reader.read()
+    if _left_out(thread) and not _done("opt-out", thread=args.thread):
+        raise MoveError("Refused: they asked to be left out; only an opt-out is acknowledged")
+    _pace()
+    reader.send_reply(text)
+    return {"thread": args.thread, "status": "reply sent"}
+
+
+def heart(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """React with a heart to their newest message, once per thread within
+    ``thread_repeat_hours``."""
+    _once_per_thread("heart", args.thread)
+    _within_cap("heart", DMS.hearts_per_account_per_day)
+    reader = _reader(device, args.thread)
+    _refuse_if_left_out(reader.read())
+    _pace()
+    reader.heart()
+    return {"thread": args.thread, "status": "hearted their newest message"}
+
+
+def boost(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Like and repost a post they shared in the thread, put its events in an upcoming
+    carousel and share it to our story; each post once."""
+    if any(entry.get("post") == args.post for entry in _logged(("boost",))):
+        raise MoveError("Refused: this post was already boosted")
+    _within_cap("boost", DMS.boosts_per_account_per_day)
+    reader = _reader(device, args.thread)
+    thread = reader.read()
+    _refuse_if_left_out(thread)
+    url = _shared_in(thread, args.post)
+    if device.free_data_megabytes() < EMULATOR.min_free_data_megabytes:
+        raise MoveError("The emulator is low on storage; story shares wait")
+    _pace()
+    liked = True
+    try:
+        like_and_repost(device, user(), url)
+    except EmulatorError:
+        # The story share matters most; a like that failed is reported, not retried.
+        liked = False
+    items.request_carousel(url, school=school())
+    share_to_story(device, school(), url)
+    return {"status": "shared to the story", "post": url, "liked_and_reposted": liked}
+
+
+def accept(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Accept the thread's message request."""
+    reader = _reader(device, args.thread)
+    _refuse_if_left_out(reader.read())
+    _pace()
+    accepted = reader.accept()
+    return {"thread": args.thread, "status": "accepted" if accepted else "not a request"}
+
+
+def mute(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    """Turn off our notifications of the sender's posts, stories and reels, so nothing
+    of theirs is picked up again (after ``ig opt-out``)."""
+    handle = sender(_reader(device, args.thread).read())
+    if not handle:
+        raise MoveError("The sender's username could not be read")
+    _pace()
+    reader = FollowingReader(device, user(), profile_wait_seconds=EMULATOR.screen_wait_seconds)
+    outcome = reader.mute(handle)
+    return {"status": outcome, "account": handle}
 
 
 # --- looking and touching ----------------------------------------------------------
@@ -525,6 +608,77 @@ def _reader(device: EmulatorDevice, thread: str) -> ThreadReader:
     return ThreadReader(device, thread, lambda: open_row(device, user(), thread))
 
 
+def _left_out(thread: list[dict[str, Any]]) -> bool:
+    """Whether the sender asked to be left out: their club is excluded, or their own
+    words in the thread ask us to stop or to ask first."""
+    if asks_to_be_left_out(thread):
+        return True
+    handle = sender(thread)
+    try:
+        if handle:
+            refuse_if_excluded(handle)
+    except LeftOut:
+        return True
+    return False
+
+
+def _refuse_if_left_out(thread: list[dict[str, Any]]) -> None:
+    if _left_out(thread):
+        raise MoveError("Refused: they asked to be left out; nothing is done in this thread")
+
+
+def _shared_in(thread: list[dict[str, Any]], url: str) -> str:
+    """``url`` when they shared it in this thread with its owner readable."""
+    if not any(
+        item.get("from") == "them"
+        and item.get("shared_url") == url
+        and plain_handle(item.get("shared_owner"))
+        for item in thread
+    ):
+        raise MoveError("That post was not shared by them in this thread")
+    return url
+
+
+def _entries(move: str) -> list[dict[str, Any]]:
+    """This account's successful ``move``s in the last ``_LOG_DAYS`` days' logs."""
+    today = datetime.now(TORONTO).date()
+    days = [today - timedelta(days=offset) for offset in range(_LOG_DAYS)]
+    return _logged((move,), [LOG_DIR / f"{day.isoformat()}.jsonl" for day in days])
+
+
+def _done(move: str, *, thread: str | None = None, hours: float | None = None) -> bool:
+    """Whether ``move`` succeeded (in ``thread``) within ``hours`` (``thread_repeat_hours``)."""
+    since = datetime.now(timezone.utc) - timedelta(hours=hours or DMS.thread_repeat_hours)
+    return any(
+        datetime.fromisoformat(entry["ended"]) >= since
+        and (thread is None or entry.get("thread") == thread)
+        for entry in _entries(move)
+    )
+
+
+def _once_per_thread(move: str, thread: str) -> None:
+    if _done(move, thread=thread):
+        raise MoveError(
+            f"Refused: this thread already got a {move} in the last {DMS.thread_repeat_hours} h"
+        )
+
+
+def _within_cap(move: str, cap: int) -> None:
+    today = datetime.now(TORONTO).date()
+    sent = [
+        entry
+        for entry in _entries(move)
+        if datetime.fromisoformat(entry["ended"]).astimezone(TORONTO).date() == today
+    ]
+    if len(sent) >= cap:
+        raise MoveError(f"This account has done its {cap} {move} moves for today")
+
+
+def _pace() -> None:
+    """A person's pause before anything others can see, so the account never acts in a burst."""
+    time.sleep(random.uniform(DMS.send_wait_min_seconds, DMS.send_wait_max_seconds))
+
+
 def _without_claim_links(text: str) -> str:
     """A claim link carries its club's token, which a sitting never needs to see: one we
     typed shows in its thread and in the inbox once the draft or message is there."""
@@ -534,15 +688,7 @@ def _without_claim_links(text: str) -> str:
 def _their_share(device: EmulatorDevice, thread: str, url: str) -> str:
     """``url`` when they shared it in this thread with its owner readable; a message
     can be written to trick Claude, so acting on a post needs proof from the thread."""
-    messages = _reader(device, thread).read()
-    if not any(
-        item.get("from") == "them"
-        and item.get("shared_url") == url
-        and plain_handle(item.get("shared_owner"))
-        for item in messages
-    ):
-        raise MoveError("That post was not shared by them in this thread")
-    return url
+    return _shared_in(_reader(device, thread).read(), url)
 
 
 def _today() -> str:
@@ -637,18 +783,26 @@ MOVES: dict[str, Callable[[EmulatorDevice, argparse.Namespace], dict[str, Any]]]
     "stories": share_stories,
     "inbox": inbox,
     "read": read,
-    "draft": draft,
     "claim": claim,
     "share": share,
     "feature": feature,
     "correction": correction,
     "opt-out": opt_out,
+    "reply": reply,
+    "heart": heart,
+    "boost": boost,
+    "accept": accept,
+    "mute": mute,
     "screen": screen,
     "shot": shot,
     "tap": tap,
     "back": back,
     "scroll": scroll,
 }
+# Moves whose answer the log keeps (never a message's text).
+_LOGGED_RESULTS = frozenset(
+    {"post", "finish", "stories", "share", "claim", "feature", "boost", "accept", "mute"}
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -656,16 +810,15 @@ def parser() -> argparse.ArgumentParser:
     commands = parse.add_subparsers(dest="move", required=True)
     for name in ("status", "post", "finish", "stories", "inbox", "screen", "shot", "back"):
         commands.add_parser(name)
-    for name in ("read", "correction", "opt-out"):
+    for name in ("read", "correction", "opt-out", "heart", "accept", "mute"):
         commands.add_parser(name).add_argument("thread")
-    reply = commands.add_parser("draft")
-    reply.add_argument("thread")
-    reply.add_argument("--text", required=True)
-    reply.add_argument("--claim")
+    answer = commands.add_parser("reply")
+    answer.add_argument("thread")
+    answer.add_argument("--text", required=True)
     send = commands.add_parser("claim")
     send.add_argument("thread")
     send.add_argument("username")
-    for name in ("share", "feature"):
+    for name in ("share", "feature", "boost"):
         action = commands.add_parser(name)
         action.add_argument("thread")
         action.add_argument("--post", required=True)
@@ -681,14 +834,26 @@ def main(argv: list[str] | None = None) -> int:
     # Claude reads only the move's JSON answer, not the libraries' request logs.
     logging.disable(logging.INFO)
     args = parser().parse_args(argv)
+    if args.move == "claim" and os.environ.get(notification.RUN):
+        print(json.dumps({"error": "Refused: a claim is only a follow-up from the daily sitting"}))
+        return 1
+    recording = os.environ.get(notification.DRY_RUN)
+    if recording:
+        print(json.dumps(_dry_run(args, Path(recording)), ensure_ascii=False, default=str))
+        return 0
     started = datetime.now(timezone.utc)
     entry: dict[str, Any] = {"school": school(), "move": args.move, "started": started.isoformat()}
     if getattr(args, "thread", None):
         entry["thread"] = args.thread
+    if getattr(args, "post", None):
+        entry["post"] = args.post
     device = EmulatorDevice()
     try:
         with exclusive():
-            result = MOVES[args.move](device, args)
+            try:
+                result = _move(device, args)
+            finally:
+                _stop_at_a_challenge(device, args.move)
         entry["ok"] = True
         code = 0
     except (MoveError, EmulatorError) as exc:
@@ -696,11 +861,66 @@ def main(argv: list[str] | None = None) -> int:
         entry.update(ok=False, error=str(exc)[:200])
         code = 1
     entry["ended"] = datetime.now(timezone.utc).isoformat()
-    if args.move in ("post", "finish", "stories", "share", "draft", "claim", "feature"):
+    if args.move in _LOGGED_RESULTS:
         entry["result"] = {k: v for k, v in result.items() if k not in ("messages",)}
     _log(entry)
     print(json.dumps(result, ensure_ascii=False, default=str))
     return code
+
+
+def _move(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
+    paused = notification.paused_until(school())
+    if args.move in _ACTING and paused is not None:
+        raise MoveError(
+            f"Refused: this account's notification handling is paused until {paused} "
+            "after Instagram showed a challenge"
+        )
+    return MOVES[args.move](device, args)
+
+
+def _stop_at_a_challenge(device: EmulatorDevice, move: str) -> None:
+    """After any move but a plain look, a challenge, an action limit or a login screen
+    pauses the account and stops the move, so nothing pushes through it."""
+    if move in _READING - {"read"}:
+        return
+    try:
+        shown = device.challenge()
+    except EmulatorError:
+        return
+    if shown is not None:
+        notification.pause(school(), shown)
+        raise MoveError(
+            f"Stopped: Instagram showed {shown!r}. This account rests for "
+            f"{DMS.challenge_pause_hours} h; stop now and report it in problems"
+        )
+
+
+def _dry_run(args: argparse.Namespace, recording: Path) -> dict[str, Any]:
+    """What the move would do, from a recorded thread (``notification.DryRun``); nothing
+    touches the emulator or the database."""
+    recorded = json.loads(recording.read_text())
+    thread = recorded["messages"]
+    if args.move == "inbox":
+        return {"threads": recorded["inbox"]}
+    if args.move == "read":
+        if args.thread != recorded["thread"]:
+            return {"error": "The DM thread is no longer in the inbox"}
+        return {"thread": args.thread, "stale": False, "messages": thread}
+    if args.move == "reply" and safe_reply(args.text) is None:
+        return {"error": "Refused: the reply is not safe to send"}
+    if args.move in ("boost", "share", "feature"):
+        try:
+            _shared_in(thread, args.post)
+        except MoveError as exc:
+            return {"error": str(exc)}
+    if args.move in ("reply", "heart", "boost", "accept", "claim", "share", "feature"):
+        if asks_to_be_left_out(thread) and not (
+            args.move == "reply" and "opt-out" in recorded.get("done", [])
+        ):
+            return {"error": "Refused: they asked to be left out; nothing is done in this thread"}
+    recorded.setdefault("done", []).append(args.move)
+    recording.write_text(json.dumps(recorded))
+    return {"thread": getattr(args, "thread", None), "status": f"{args.move} done"}
 
 
 if __name__ == "__main__":

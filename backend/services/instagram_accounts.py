@@ -40,3 +40,25 @@ def school_account_username(school_slug: str) -> str:
     if not _USERNAME_PATTERN.fullmatch(username) or not _WAT2DO_ACCOUNT_PATTERN.fullmatch(username):
         raise ValueError("Instagram browser account username is invalid")
     return username
+
+
+def school_for_account(username: str) -> str | None:
+    """The school whose emulator account this is (a hidden school's test account too),
+    or None when no school's account has this name."""
+    emulator = controlbox.instagram_emulator
+    for slug, account in emulator.hidden_school_accounts.items():
+        if account.username == username:
+            return slug
+    slug = username.removeprefix("wat2do.")
+    if username.startswith("wat2do.") and slug in emulator.android_user_by_school:
+        return slug
+    return None
+
+
+def android_user(school_slug: str) -> int:
+    """The emulator's Android user that holds the school's account."""
+    emulator = controlbox.instagram_emulator
+    hidden = emulator.hidden_school_accounts.get(school_slug)
+    return (
+        hidden.android_user if hidden is not None else emulator.android_user_by_school[school_slug]
+    )

@@ -19,7 +19,8 @@ def _notification(category="post", push_id="push-1", recipient=RECIPIENT):
         PUSH_CATEGORY: category,
         PUSH_ID: push_id,
         RECIPIENT_ID: recipient,
-        "android.text": "posted",
+        "android.title": "PRIVATE_SENDER",
+        "android.text": "PRIVATE_TEXT",
     }
     return Notification(
         android_user=10,
@@ -60,14 +61,32 @@ def _dispatcher(tmp_path, send, clock=None):
 
 
 def test_only_what_the_workflow_takes_is_queued(tmp_path):
-    dispatcher, _ = _dispatcher(tmp_path, send=lambda extras: None)
+    dispatcher, _ = _dispatcher(tmp_path, send=lambda body: None)
     assert dispatcher.offer(_notification("post"))
     assert dispatcher.offer(_notification("subscription_daily_digest", push_id="push-2"))
-    assert not dispatcher.offer(_notification("direct_v2_text", push_id="push-3"))
-    assert not dispatcher.offer(_notification("like", push_id="push-4"))
+    assert dispatcher.offer(_notification("direct_v2_text", push_id="push-3"), "wat2do.tmu")
+    assert dispatcher.offer(_notification("comment", push_id="push-4"), "wat2do.tmu")
+    # A message for an account the recorder has not learned yet cannot be routed.
+    assert not dispatcher.offer(_notification("direct_v2_text", push_id="push-5"))
+    assert not dispatcher.offer(_notification("direct_v2_user_reaction", push_id="push-6"), "x")
+    assert not dispatcher.offer(_notification("like", push_id="push-7"))
     assert not dispatcher.offer(_notification(push_id=""))
     assert not dispatcher.offer(_notification(recipient=""))
-    assert len(dispatcher) == 2
+    assert len(dispatcher) == 4
+
+
+def test_a_message_goes_to_the_agent_with_its_sender_but_never_its_text():
+    body = module.payload(_notification("direct_v2_text"), "wat2do.tmu")
+    assert body == {
+        "event_type": "instagram_interaction",
+        "client_payload": {
+            "category": "direct_v2_text",
+            "account": "wat2do.tmu",
+            "sender": "PRIVATE_SENDER",
+            "received_at": "2025-11-10T18:40:00+00:00",
+        },
+    }
+    assert "PRIVATE_TEXT" not in json.dumps(body)
 
 
 def test_each_notification_is_sent_once_with_its_extras(tmp_path):
@@ -76,7 +95,9 @@ def test_each_notification_is_sent_once_with_its_extras(tmp_path):
     post = _notification()
     dispatcher.offer(post)
     dispatcher.send_due()
-    assert sent == [post.extras]
+    assert sent == [
+        {"event_type": "new_instagram_post", "client_payload": {"notification_dict": post.extras}}
+    ]
     assert not dispatcher.offer(post)
     # Remembered across a restart too.
     again, _ = _dispatcher(tmp_path, send=sent.append)
@@ -151,13 +172,11 @@ def test_dispatch_sends_the_phones_payload_through_gh(monkeypatch):
         return subprocess.CompletedProcess(args, 0, "", "")
 
     monkeypatch.setattr(module.subprocess, "run", run)
-    module.dispatch({"a": 1})
+    body = {"event_type": "new_instagram_post", "client_payload": {"notification_dict": {"a": 1}}}
+    module.dispatch(body)
     args, kwargs = calls[0]
     assert args[:3] == ["gh", "api", f"repos/{module.CONTROL.github_repo}/dispatches"]
-    assert json.loads(kwargs["input"]) == {
-        "event_type": "new_instagram_post",
-        "client_payload": {"notification_dict": {"a": 1}},
-    }
+    assert json.loads(kwargs["input"]) == body
 
 
 @pytest.mark.parametrize(

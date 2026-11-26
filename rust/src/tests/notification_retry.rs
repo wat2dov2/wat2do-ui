@@ -20,7 +20,7 @@ use crate::instagram_notifications::test_support::{FakeHost, HostCall, failed};
 fn control_with(change: impl FnOnce(&mut crate::controlbox::NotificationRetry)) {
     overrides::notification_retry(|control| {
         control.github_repo = "owner/repo".into();
-        control.workflow_name = "Process Notifications".into();
+        control.workflow_name = "Handle notification".into();
         control.lookback_hours = 36;
         control.reruns_per_day = 20;
         control.max_reruns_per_run = 3;
@@ -142,7 +142,7 @@ fn test_no_failed_runs_reads_nothing_else() {
         *services.listed.borrow(),
         vec![(
             "owner/repo".to_owned(),
-            "Process Notifications".to_owned(),
+            "Handle notification".to_owned(),
             36,
             1000.0
         )]
@@ -221,6 +221,31 @@ fn test_a_run_waits_while_its_account_cannot_run() {
     let result = retry_at(&services, &state, 1000.0 + 60.0);
     assert_eq!(services.reran(), vec!["1", "3"]);
     assert_eq!(ids(&result, "waiting"), vec!["2"], "reran a minute ago");
+}
+
+#[test]
+fn test_agent_runs_are_reran_while_brave_cannot_run() {
+    // The notification agent works on the emulator; Brave's pause and holds are not its own.
+    control_with(|_| {});
+    let directory = tempfile::tempdir().unwrap();
+    let state = directory.path().join("state.json");
+    let runs = vec![
+        titled("1", "Handle direct_v2_text - wat2do.sfu"),
+        titled("2", "ubcaseac and 138 others - wat2do.ubc"),
+    ];
+    let readiness = Readiness {
+        blocked: Some("the Instagram browser worker is paused: logged out".to_owned()),
+        unavailable: BTreeMap::from([("wat2do.sfu".to_owned(), "held".to_owned())]),
+    };
+    let services = FakeRetry::new(runs, Some(readiness));
+
+    let result = retry(&services, &state);
+
+    assert_eq!(services.reran(), vec!["1"]);
+    assert_eq!(ids(&result, "waiting"), vec!["2"]);
+    assert!(result["blocked"].is_string());
+    assert!(agent_run("Handle comment - wat2do.utsc"));
+    assert!(!agent_run("uwcsclub - wat2do.uwaterloo"));
 }
 
 #[test]
@@ -397,14 +422,8 @@ fn test_list_failed_runs_filters_by_lookback() {
     let (host, calls) = gh_host(rows.to_string());
     let now = parse_created_at(&json!("2026-10-29T18:00:00Z")).unwrap();
 
-    let runs = list_failed_runs(
-        host.as_ref(),
-        "owner/repo",
-        "Process Notifications",
-        36,
-        now,
-    )
-    .unwrap();
+    let runs =
+        list_failed_runs(host.as_ref(), "owner/repo", "Handle notification", 36, now).unwrap();
 
     assert_eq!(
         runs.iter().map(|run| run.id.as_str()).collect::<Vec<_>>(),
@@ -419,7 +438,7 @@ fn test_list_failed_runs_filters_by_lookback() {
             "--repo",
             "owner/repo",
             "--workflow",
-            "Process Notifications",
+            "Handle notification",
             "--status",
             "failure",
             "--limit",

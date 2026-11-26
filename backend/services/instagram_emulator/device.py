@@ -116,6 +116,25 @@ def labels(*names: str) -> re.Pattern[str]:
     return re.compile("^(?:" + "|".join(re.escape(name) for name in names) + r")(?:\b|$)")
 
 
+# What Instagram shows when it doubts the account is a person or limits what it does, and
+# its login screen. A move that meets one stops, and the account rests: pushing through
+# is what gets accounts locked (2026-11-20: two challenges after one outreach DM each).
+_CHALLENGES = labels(
+    "Confirm you're human",
+    "Confirm it's you",
+    "Help us confirm",
+    "We suspect automated",
+    "Try again later",
+    "Try Again Later",
+    "We restrict certain activity",
+    "We limit how often",
+    "Action blocked",
+    "Action Blocked",
+    "Forgot password?",
+    "Enter confirmation code",
+)
+
+
 INBOX_URL = "instagram://direct-inbox"
 # Instagram is moving accounts to a new inbox header with a large auto-sized title.
 _INBOX_TITLE = re.compile(r"^(igds_action_bar_title|action_bar_large_title_auto_size)$")
@@ -369,6 +388,16 @@ class EmulatorDevice:
         if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
             prompt = self.find(_WAIT, nodes)
         return prompt
+
+    def challenge(self) -> str | None:
+        """What Instagram shows instead of going on, when it shows a challenge, an action
+        limit or its login screen; a message in a DM thread saying the same never counts."""
+        nodes = self.screen()
+        messages = [node for node in nodes if node.resource_id == "message_list"]
+        for node in nodes:
+            if node.labelled(_CHALLENGES) and not any(node.inside(box) for box in messages):
+                return node.label[:120]
+        return None
 
     def wait_until_gone(self, pattern: re.Pattern[str], *, seconds: float) -> None:
         deadline = self._monotonic() + seconds

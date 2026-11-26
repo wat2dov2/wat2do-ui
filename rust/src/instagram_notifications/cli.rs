@@ -259,7 +259,7 @@ pub enum Command {
     Install,
     /// Install this binary and the daily LaunchAgent that reruns failed notification runs
     InstallRetrySchedule,
-    /// Log Brave back in and rerun failed Process Notifications runs, once
+    /// Rerun failed "Handle notification" runs that can now succeed, once
     RetryFailedNotifications,
     /// Show worker health and queue quantities by school
     Status {

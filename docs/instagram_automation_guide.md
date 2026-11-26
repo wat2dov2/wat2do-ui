@@ -1,7 +1,7 @@
 # Instagram Automation Commands
 
 The active collection path uses Instagram notifications on a physical Android phone running Automate.
-Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the notification ledger.
+Automate triggers the GitHub "Handle notification" workflow, which records each exact post URL in the notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
 An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
@@ -58,7 +58,7 @@ So the workflow processes only `post` and `subscription_daily_digest` notificati
 ### Emulator notifications
 
 Instagram also pushes many of the school accounts' notifications to the Mac's Android emulator, where the worker keeps the accounts active.
-The emulator records them in a local file and starts the workflow for each new post and daily digest, alongside the phones.
+The emulator records them in a local file and starts the workflow for each new post and daily digest, alongside the phones, and for each direct message, request, mention and comment (below).
 `jobs/record_instagram_notifications.py run` (LaunchAgent `io.wat2do.notification-recorder`, installed with `install-schedule` from the runtime checkout) appends one JSON line per notification to `~/.local/state/wat2do/notification-log/notifications.jsonl`, rotated at `file_max_bytes` with `file_backup_count` old files kept (`controlbox/notification_recording.json`).
 A line holds `recorded_at`, `posted_at`, `android_user`, `recipient_id`, `account` (the school's username once a notification has named it), Instagram's push `category`, the Android `channel` and every `extras` value that JSON can carry.
 A direct message, recognized by its push category or channel (`direct_message_markers`), Android's message category or a conversation's style, keeps only its category, Android user, recipient and times, with `direct_message: true`; its sender, title and text never reach the file.
@@ -67,7 +67,7 @@ Group summaries only repeat the notifications under them and are skipped.
 Each new notification whose push category is in `dispatch_push_categories` (`post`, `subscription_daily_digest`), and that carries a recipient and push ID, is sent through `gh api` as the phones' `new_instagram_post` repository dispatch to `github_repo` (`services/notification_dispatch.py`).
 No check is made against the phones: the workflow records each recipient and push ID once, so a notification both devices send is processed once.
 Each is sent once per recipient and push ID; one that cannot be sent waits in `dispatch.json` beside the log and is tried again, oldest first, `send_spacing_seconds` apart, after a pause that doubles from `retry_first_seconds` to `retry_longest_seconds`, and one GitHub refuses `refusals_before_drop` times is dropped.
-A direct message is never dispatched.
+A direct message is dispatched only to the notification agent, without its text (see "Direct messages, mentions and comments").
 
 The listener is `NotificationReader.java` (`services/instagram_emulator`), a root `app_process` program that registers with Android's notification service as a system listener for every Android user at once; it never dismisses or opens a notification, never taps the emulator and never holds the emulator's lock.
 Only running Android users get notifications. Stock Android keeps at most three users running, stopping the least recently used background user whenever the worker switches another to the front, and stops any background user after 30 minutes; with four users that left one stopped at every moment, and the churn stalled Android and had the worker restart the emulator many times a day.
@@ -380,7 +380,7 @@ The browser lock remains the same lock used by older direct-resolution workflows
 Priority scheduling applies only once notification callers submit through the shared queue.
 An older direct-resolution workflow waiting on the lock does not participate in queue priority.
 
-The `process-notification` workflow submits a collapsed digest to the shared worker's queued resolver automatically.
+The "Handle notification" workflow submits a collapsed digest to the shared worker's queued resolver automatically.
 
 ## Android phone setup
 
@@ -388,7 +388,7 @@ Install Instagram and Automate on the physical Android phone through Google Play
 An authorized human must complete Instagram login, two-factor prompts, security challenges, and Automate flow import.
 Keep the phone to three accounts or fewer and do not add them to a shared Accounts Center.
 Import the established Automate notification listener flow and grant Automate notification access when Android asks.
-The flow dispatches each Instagram notification to the `process-notification` workflow.
+The flow dispatches each Instagram notification to the "Handle notification" workflow.
 
 For each logged-in Instagram account, enable USB debugging, open the consolidated `All profiles you follow` screen on the phone, and run the existing bell configuration against the phone's serial from `adb devices`:
 
@@ -592,40 +592,47 @@ Production retains logs for seven days under the existing log retention policy.
 Only allowlisted job metadata is sent; raw worker output, notification payloads, cookies, and credentials are excluded.
 Existing local job history is not backfilled; lifecycle events begin when the updated worker runs.
 
-## Direct messages
+## Direct messages, mentions and comments: the notification agent
 
-Clubs sometimes DM a school account to ask Wat2Do to share their post.
-The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
-Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
-The workflow's `route` job ends them, like every category but `post` and `subscription_daily_digest`, with a notice naming only the category, so no later step ever holds a message: each school's daily sitting reads its inbox instead.
+Each direct message, message request, story mention and comment a school account gets is handled as it arrives, by one Claude session per notification (Tony's design, 2026-11-25).
+The emulator's recorder sends each new notification whose push category is in `agent_push_categories` (`controlbox/notification_recording.json`) as an `instagram_interaction` repository dispatch whose payload is only `category`, `account` (the school account), `sender` (Android's title for it: the sender's display name) and `received_at`.
+Reactions, likes, follows, notes and Instagram's own promotions are not dispatched.
+The phones' Automate flow forwards DMs too, as `new_instagram_post`; the workflow's `route` job ends those with a notice naming only the category, as before.
 
-Nothing sends a direct message for Wat2Do: replies are typed into their thread and left there unsent, and a person reads every draft and sends it (Tony, 2026-11-21).
-A draft stays in its thread after leaving it and after Instagram is restarted, and only that emulator shows it: run `.venv/bin/python scripts/review_dm_drafts.py <school>` from `backend/` (after `brew install scrcpy`) to see that account's inbox in a window, read each draft and send it; the worker waits until the window closes.
+The "Handle notification" workflow (`.github/workflows/handle-notification.yml`) names such a run `Handle <category> - <account>` and gives it to its `handle` job on the Mac's emulator runner (`wat2do-scraper-2`, label `wat2do-macmini-emulator`).
+That runner takes one run at a time, so a burst of notifications queues on GitHub; a concurrency group would keep only the newest waiting run and cancel the others.
+The job pipes the dispatch from the event file into `backend/jobs/handle_instagram_notification.py run` in `~/wat2do-runtime/backend`, so the sender never enters `env:` or the log, and the job prints only the case letter, the move names and whether it replied or claimed.
 
-In the sitting, Claude works as the school in the Instagram app on the Mac's Android emulator, never in Brave, while the worker holds the emulator's lock for the whole sitting:
+The handler (`backend/services/instagram_sessions/notification.py`):
 
-1. `ig inbox` lists the main inbox and message requests; Claude reads (`ig read`) each thread with something new since the day before: the latest `thread_item_limit` messages from the screen, who sent each one, its text, and the owner and link of any shared post (copied with the post's own Copy link).
-   The link is pasted at the end of the thread's composer, read back and deleted again character by character, so an unsent draft already in the composer is never cleared.
-2. Claude picks what the thread needs by `backend/services/instagram_sessions/prompt.md` and acts through one move: `ig share` (story), `ig feature` (carousel), `ig correction`, `ig opt-out`, or nothing.
-3. `ig share` and `ig feature` act only on a post they shared in the thread with its owner readable. Both request a carousel spot: `events.carousel_requested_at` is set on events already listed from the shared post, or the post is queued in `public.ingestion_items` with `carousel_requested_at`, and the ingestion agent marks the events it describes (a post read before without a listing of its own is read again). `ig share` then opens the shared post, taps Share, Add to story and Your story, and waits for the editor to close.
-4. `ig correction` queues what the club wrote since our last message as a ready `dm` row in `public.ingestion_items`; the ingestion agent corrects only the listings it clearly refers to and never creates one from it.
-5. `ig opt-out` adds the sender to `public.instagram_excluded_clubs`.
-6. `ig draft` types the reply into the thread, unsent; `--claim <username>` adds the claim-link message for a club that asked us to repost, share or feature its post, its claim link typed straight into the thread and never printed or logged.
-   A thread already holding an unsent claim link is refused and left as it is, and `ig inbox` and `ig read` show every claim link as `[claim link]`.
+1. Does nothing when `controlbox/instagram_dms.json` `agent_enabled` is false (the kill switch), when `agent_schools` names schools and this is not one, or while the account rests after a challenge (`~/.local/state/wat2do/notification-agent/paused.json`).
+2. Waits for the emulator's lock behind the worker (the worker's follows stop between profiles while a run waits), switches the app to the account and runs Claude Code with its prompt, read afresh each run from the Mac's local `~/wat2do-data/prompts/instagram_sessions/notification_prompt.md` (never in the repository), on the sittings' model and second Claude login, at most `notification_timeout_minutes`.
+3. Keeps the full report (case, moves, reply text, problems) in `~/.local/state/wat2do/notification-agent/<date>.jsonl`, owner-only.
 
+Claude reads the thread on the emulator with `ig read` and picks one case: a repost request with the post (`ig boost`, a short `ig reply`, then `ig claim`), a repost request without it (asks for the post), a carousel request (`ig feature`), a correction (`ig correction`), an opt-out (`ig opt-out`, `ig mute`, one acknowledgement), thanks or a reaction (`ig heart`), a real question, an event already over, a partnership (points to `contact_email`), a group-only or niche event (a polite no), or nothing for every trap.
+It boosts and features only what any student at the school could attend or use, and features only events with broad appeal.
+
+The moves keep it safe whatever Claude decides:
+
+- Every move that types or taps in a thread opens it afresh from the inbox and checks its header shows that thread (`direct.require_thread`), and refuses otherwise.
+- A thread whose sender is in `public.instagram_excluded_clubs`, or whose messages ask us to stop, take something down or ask first, gets nothing but the opt-out and its one acknowledgement.
+- One reply and one heart per thread within `thread_repeat_hours`; each post boosted once; at most `replies_per_account_per_day`, `boosts_per_account_per_day` and `hearts_per_account_per_day` per account a day.
+- Every move others can see waits a random `send_wait_min_seconds` to `send_wait_max_seconds`, and text is typed one character at a time and confirmed in the composer before Send. Whatever the composer held before is cleared, never sent.
+- A reply is plain ASCII up to `reply_max_characters`, with no tag, no link outside wat2do.io, no email but `contact_email` and no long number.
+- After each move, a challenge, an action limit or a login screen stops it and rests the account's notification handling for `challenge_pause_hours`.
+- Every move logs its times and outcome, never a message's text, to `~/.local/state/wat2do/instagram-sittings/<date>.jsonl`.
+
+`ig boost` and `ig feature` act only on a post they shared in the thread with its owner readable; both request a carousel spot (`events.carousel_requested_at`, or the post queued in `public.ingestion_items` with the request).
+`ig correction` queues what the club wrote since our last message as a ready `dm` row in `public.ingestion_items`; the ingestion agent corrects only the listings it clearly refers to.
+`ig opt-out` adds the sender to `public.instagram_excluded_clubs`, and `ig mute` sets our notifications of their posts, stories and reels to Off.
+`ig claim` sends the club's own claim-link message; its link is never printed or logged, and `ig read` shows every claim link as `[claim link]`.
 When Instagram has limited an account's messages, its threads show "You can't send messages at this time" where the composer would be, and `ig read` refuses them.
 
-Daily carousel drafts always include requested events among the candidates, however long ago they were added, until a carousel publishes them or they pass, and the curation prompt picks them first.
+To try a prompt change without touching the phone, run the dry run over recorded threads (one JSON line per school, as an inbox read writes them):
+`.venv/bin/python jobs/handle_instagram_notification.py dry-run <threads.jsonl> --out <decisions.jsonl>` from `backend/`.
+Its moves read the recording, apply the same refusals and only say what they would do; the decisions file holds the replies, so keep it local.
 
-Any account's post may go to the story; Claude judges whether it is appropriate and still current.
-Code then requires the post to be shared in the thread with its owner readable, and an opt-out to have a readable sender.
-A reply is folded to one line of plain ASCII the emulator can type, and one with a tag, a link outside wat2do.io, an email address other than `contact_email`, a long number or more than `reply_max_characters` is not typed at all; no move taps Send.
-A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^row_thread_composer_edittext$`.
-Every move logs when it started and ended and how it went to `~/.local/state/wat2do/instagram-sittings/<date>.jsonl`, never a message's text, with each sitting's report.
-Each typed reply is confirmed by seeing it appear in the thread.
-A reply or story repost that cannot be confirmed pauses the worker for a person to check the thread and story, and it is never sent twice.
-DM text is never logged.
-
+The daily sitting does no direct messages.
 
 ## Lightpanda sessions: digests and Following reads
 

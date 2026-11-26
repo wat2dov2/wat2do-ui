@@ -3,9 +3,10 @@
 From the control box's start time each morning, every school account gets one sitting
 a day, schools with a carousel to post first. Claude Code takes the emulator on that
 account and does everything in one go (``prompt.md``): it posts the day's carousel,
-likes and reposts it, sets its song, place and club tags, comments a GIF, shares each
-event's original post to the story, then goes through every direct message and types
-its replies into their threads unsent, for a person to read and send. A carousel
+likes and reposts it, sets its song, place and club tags, comments a GIF, and shares
+each event's original post to the story, then sends the claim-link follow-ups that are
+due. Direct messages are otherwise not part of it: the notification agent
+(``notification.py``) answers each as it arrives. A carousel
 posted outside a sitting (the admin's Publish button) brings its school's sitting
 forward to do the same after the post.
 
@@ -41,7 +42,6 @@ log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_sessions
 EMULATOR = controlbox.instagram_emulator
 PUBLISHING = controlbox.instagram_publishing
-DMS = controlbox.instagram_dms
 TORONTO = ZoneInfo("America/Toronto")
 HERE = Path(__file__).parent
 PROMPT = (HERE / "prompt.md").read_text()
@@ -53,11 +53,10 @@ REPORT_SCHEMA: dict[str, Any] = {
         "posted": {"type": "boolean"},
         "finished": {"type": "boolean"},
         "stories": {"type": "string"},
-        "drafts": {"type": "integer"},
         "claims_sent": {"type": "integer"},
         "problems": {"type": "string"},
     },
-    "required": ["posted", "finished", "stories", "drafts", "claims_sent", "problems"],
+    "required": ["posted", "finished", "stories", "claims_sent", "problems"],
     "additionalProperties": False,
 }
 
@@ -146,9 +145,6 @@ def _prompt(school: str, moment: datetime) -> str:
         "school_name": record.name if record else school,
         "school_url": f"https://{school}.wat2do.io",
         "today": moment.strftime("%A, %B %-d, %Y"),
-        "contact_email": DMS.contact_email,
-        "reply_max_characters": str(DMS.reply_max_characters),
-        "max_thread_age_days": str(DMS.max_thread_age_days),
         "minimum_slides": str(PUBLISHING.minimum_event_slides),
     }
     prompt = PROMPT

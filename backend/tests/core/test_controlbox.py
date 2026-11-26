@@ -49,7 +49,7 @@ def test_notification_retry_control_is_loaded() -> None:
     # Failed runs are reran within minutes of the worker recovering, not once a day.
     assert control.interval_minutes <= 15
     assert control.github_repo == "wat2dov2/wat2do-ui"
-    assert control.workflow_name == "Process Notifications"
+    assert control.workflow_name == "Handle notification"
 
 
 def test_invalid_notification_retry_interval_is_rejected(tmp_path) -> None:
