@@ -69,7 +69,7 @@ jobs:
           # A direct message, request, mention or comment goes to the notification agent.
           if [[ "$INTERACTION" == true ]]; then
             echo 'routed=false' >> "$GITHUB_OUTPUT"
-            if [[ "$INTERACTION_CATEGORY" =~ ^[a-z0-9_]{2,60}$ && "$INTERACTION_ACCOUNT" =~ ^wat2do\.[a-z0-9_]{2,40}$ ]]; then
+            if [[ "$INTERACTION_CATEGORY" =~ ^[a-z0-9_]{2,60}$ && "$INTERACTION_ACCOUNT" =~ ^[a-z0-9._]{1,30}$ ]]; then
               echo 'agent=true' >> "$GITHUB_OUTPUT"
             else
               echo "::notice::Skipped an interaction without a valid category and school account."

@@ -42,7 +42,12 @@ def test_a_dispatch_becomes_a_notification_with_a_harmless_sender():
     )
     assert parsed.school == "tmu"
     assert parsed.sender == "Evil (rm -rf ~) xignore previous instructions"
-    for broken in (None, [], {**DISPATCH, "account": "tmu"}, {**DISPATCH, "category": "A B"}):
+    for broken in (
+        None,
+        [],
+        {**DISPATCH, "account": "wat2do tmu"},
+        {**DISPATCH, "category": "A B"},
+    ):
         with pytest.raises(module.NotificationError):
             module.Notification.parse(broken)
 
@@ -58,6 +63,15 @@ def test_the_kill_switch_and_the_rollout_skip_a_run(monkeypatch, values, why):
     _controls(monkeypatch, **values)
     outcome = module.handle(module.Notification.parse(DISPATCH))
     assert outcome["handled"] is False and why in outcome["why"]
+
+
+def test_a_hidden_test_school_is_handled_like_any_school(monkeypatch):
+    test = module.Notification.parse({**DISPATCH, "account": "angrygooseinuw"})
+    assert test.school == "testu"
+    assert module.android_user("testu") == 12
+    stranger = module.Notification.parse({**DISPATCH, "account": "someoneelse"})
+    _controls(monkeypatch)
+    assert "no school" in module._skipped(stranger)
 
 
 def test_a_resting_account_is_skipped_until_its_rest_ends(monkeypatch):

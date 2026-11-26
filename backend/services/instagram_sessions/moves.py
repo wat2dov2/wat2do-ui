@@ -49,7 +49,7 @@ from core.tables import (
 )
 from services import school_service
 from services.ingestion import items
-from services.instagram_accounts import school_account_username
+from services.instagram_accounts import android_user, school_account_username
 from services.instagram_emulator.audio import like_and_repost
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, exclusive
 from services.instagram_emulator.direct import (
@@ -141,7 +141,7 @@ def school() -> str:
 
 
 def user() -> int:
-    return EMULATOR.android_user_by_school[school()]
+    return android_user(school())
 
 
 # --- the carousel ------------------------------------------------------------------

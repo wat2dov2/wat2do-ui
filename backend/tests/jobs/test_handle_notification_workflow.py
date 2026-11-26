@@ -474,7 +474,11 @@ def test_an_interaction_goes_to_the_agent_and_never_to_post_processing(
 
 @pytest.mark.parametrize(
     ("category", "account"),
-    [("direct_v2_text", "utsc"), ("direct_v2_text", ""), ("Direct; rm", "wat2do.utsc")],
+    [
+        ("direct_v2_text", "wat2do.utsc; rm -rf ~"),
+        ("direct_v2_text", ""),
+        ("Direct; rm", "wat2do.utsc"),
+    ],
 )
 def test_an_interaction_without_a_valid_category_or_account_is_skipped(
     runner, monkeypatch, category, account

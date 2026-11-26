@@ -38,7 +38,7 @@ from core.controlbox import controlbox
 from core.launch_agents import atomic_write
 from services import school_service
 from services.claude_code import claude_environment, run_agent
-from services.instagram_accounts import school_account_username
+from services.instagram_accounts import android_user, school_account_username, school_for_account
 from services.instagram_emulator.device import EmulatorDevice, exclusive
 
 SESSIONS = controlbox.instagram_sessions
@@ -68,7 +68,7 @@ REPORT_SCHEMA: dict[str, Any] = {
     "required": ["case", "actions", "replied", "problems"],
     "additionalProperties": False,
 }
-_ACCOUNT = re.compile(r"^wat2do\.([a-z0-9_]{2,40})$")
+_ACCOUNT = re.compile(r"^[a-z0-9._]{1,30}$")
 _CATEGORY = re.compile(r"^[a-z0-9_]{2,60}$")
 # A sender's name is a stranger's display name: it reaches Claude only quoted, with
 # nothing that could close the quote or start a shell expansion.
@@ -101,9 +101,8 @@ class Notification:
 
     @property
     def school(self) -> str:
-        match = _ACCOUNT.match(self.account)
-        assert match is not None
-        return match.group(1)
+        """The school whose account got it (a hidden test school's too), or ""."""
+        return school_for_account(self.account) or ""
 
 
 def handle(notification: Notification, *, now: datetime | None = None) -> dict[str, Any]:
@@ -116,12 +115,13 @@ def handle(notification: Notification, *, now: datetime | None = None) -> dict[s
     skipped = _skipped(notification)
     if skipped:
         return {"handled": False, "why": skipped}
+    school = notification.school
     with _waiting(), exclusive():
         device = EmulatorDevice()
         device.wake()
-        user = EMULATOR.android_user_by_school[notification.school]
+        user = android_user(school)
         device.use_android_user(user)
-        device.use_account(user, school_account_username(notification.school))
+        device.use_account(user, school_account_username(school))
         # Each move starts its own screen reader; only one may be connected at a time.
         device.release_screen()
         report = _run(notification, moment, {"WAT2DO_EMULATOR_HELD": "1"})
@@ -160,8 +160,8 @@ def public(report: dict[str, Any]) -> dict[str, Any]:
 def _skipped(notification: Notification) -> str:
     if not DMS.agent_enabled:
         return "notification handling is turned off (instagram_dms.json agent_enabled)"
-    if notification.school not in EMULATOR.android_user_by_school:
-        return "no emulator account for this school"
+    if not notification.school:
+        return "no school's emulator account has this name"
     if DMS.agent_schools and notification.school not in DMS.agent_schools:
         return "this school is not in the rollout yet (instagram_dms.json agent_schools)"
     paused = paused_until(notification.school)
