@@ -23,7 +23,9 @@ def state(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module.school_service,
         "get_school",
-        lambda slug: SimpleNamespace(name="Toronto Metropolitan University"),
+        lambda slug: SimpleNamespace(
+            name="Toronto Metropolitan University", language="fr" if slug == "udem" else "en"
+        ),
     )
 
 
@@ -62,6 +64,13 @@ def test_the_kill_switch_and_the_rollout_skip_a_run(monkeypatch, values, why):
     _controls(monkeypatch, **values)
     outcome = module.handle(module.Notification.parse(DISPATCH))
     assert outcome["handled"] is False and why in outcome["why"]
+
+
+def test_a_french_school_is_never_handled_even_when_listed(monkeypatch):
+    _controls(monkeypatch, agent_schools=("udem", "tmu"))
+    french = module.Notification.parse({**DISPATCH, "account": "wat2do.udem"})
+    assert module._skipped(french) == "no DMs on French schools (schools.language)"
+    assert module._skipped(module.Notification.parse(DISPATCH)) == ""
 
 
 def test_a_hidden_test_school_is_handled_like_any_school(monkeypatch):

@@ -13,7 +13,9 @@ report stays in ``~/.local/state/wat2do/notification-agent/<date>.jsonl``; what 
 prints is only the case and the moves made.
 
 ``controlbox/instagram_dms.json`` ``agent_enabled`` is the kill switch, and while
-``agent_schools`` names schools only their accounts are handled. A challenge, an action
+``agent_schools`` names schools only their accounts are handled. A French-language
+school's account (``schools.language``) is never handled, even when listed, since it
+never sends a DM (Tony, 2026-11-26). A challenge, an action
 limit or a login screen pauses one account (``pause``) for ``challenge_pause_hours``.
 ``dry_run`` runs the same prompt over a recorded thread, with moves that only say what
 they would do.
@@ -41,6 +43,7 @@ from services import school_service
 from services.claude_code import ClaudeCodeError, claude_environment, run_agent
 from services.instagram_accounts import android_user, school_account_username, school_for_account
 from services.instagram_emulator.device import EmulatorDevice, exclusive
+from services.instagram_emulator.direct import dms_refused
 
 SESSIONS = controlbox.instagram_sessions
 DMS = controlbox.instagram_dms
@@ -170,6 +173,8 @@ def _skipped(notification: Notification) -> str:
         return "no school's emulator account has this name"
     if DMS.agent_schools and notification.school not in DMS.agent_schools:
         return "this school is not in the rollout yet (instagram_dms.json agent_schools)"
+    if dms_refused(notification.school):
+        return "no DMs on French schools (schools.language)"
     paused = paused_until(notification.school)
     if paused is not None:
         return f"this account rests until {paused} after an Instagram challenge"

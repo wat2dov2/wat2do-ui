@@ -60,7 +60,7 @@ class _Reader:
     hearts: list[str] = []
     thread: list[dict] = []
 
-    def __init__(self, device, thread, opener):
+    def __init__(self, device, school, thread, opener):
         self.stale = False
         self.name = thread
 
@@ -474,6 +474,32 @@ def test_a_refused_move_exits_nonzero_with_its_reason(monkeypatch, capsys, reade
     monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
     assert moves.main(["reply", "TMU Pre-Vet Club", "--text", "dm @x"]) == 1
     assert "Refused" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_a_french_school_sends_no_dm_and_logs_no_text(monkeypatch, tmp_path, capsys, reader):
+    monkeypatch.setenv("WAT2DO_SITTING_SCHOOL", "udem")
+    monkeypatch.setattr(
+        moves.school_service, "get_school", lambda slug: SimpleNamespace(id=3, language="fr")
+    )
+    reader.thread = [{"from": "them", "text": "merci!", "sender": "clubudem"}]
+    monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
+    assert moves.main(["reply", "Club UdeM", "--text", "Avec plaisir!"]) == 1
+    assert json.loads(capsys.readouterr().out) == {"error": "no DMs on French schools"}
+    assert moves.main(["claim", "Club UdeM", "clubudem"]) == 1
+    assert json.loads(capsys.readouterr().out) == {"error": "no DMs on French schools"}
+    assert reader.replies == [] and reader.sent == []
+    logged = next((tmp_path / "log").glob("*.jsonl")).read_text()
+    assert "Avec plaisir" not in logged and "merci" not in logged
+    # Its sitting is never told a claim follow-up is due.
+    _log_request_handled(hours_ago=moves.DMS.claim_follow_up_hours + 4, thread="Club UdeM")
+    row = SimpleNamespace(
+        name="Club UdeM", preview="", age_days=1.0, unread=False, request=False, ours=True
+    )
+    monkeypatch.setattr(
+        moves, "read_inbox", lambda device, user, requests: [] if requests else [row]
+    )
+    monkeypatch.setattr(moves, "user", lambda: 10)
+    assert moves.inbox(object(), _args())["threads"][0]["claim_due"] is False
 
 
 def test_ig_stories_answers_and_logs_why_each_post_was_not_shared(monkeypatch, tmp_path, capsys):

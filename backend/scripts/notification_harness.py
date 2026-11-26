@@ -42,7 +42,11 @@ sys.path.insert(0, str(BACKEND_DIRECTORY))
 from core.controlbox import controlbox  # noqa: E402
 from core.database import get_sb  # noqa: E402
 from core.tables import INSTAGRAM_EXCLUDED_CLUBS  # noqa: E402
-from services.instagram_accounts import android_user, school_account_username  # noqa: E402
+from services.instagram_accounts import (  # noqa: E402
+    android_user,
+    school_account_username,
+    school_for_account,
+)
 from services.instagram_emulator import direct  # noqa: E402
 from services.instagram_emulator.device import (  # noqa: E402
     EmulatorDevice,
@@ -381,6 +385,8 @@ def _send(device: EmulatorDevice, scenario: Scenario, post: str, sends: dict[str
 
 
 def _send_one(device: EmulatorDevice, sender: str, kind: str, value: str) -> None:
+    # Our own accounts send these DMs: never a French-language school's.
+    direct.refuse_dms(school_for_account(sender) or "")
     with exclusive():
         device.wake()
         device.use_android_user(USER)
@@ -600,7 +606,9 @@ def _check(
         device.use_android_user(USER)
         device.use_account(USER, TEST_ACCOUNT)
         name = _thread_name(device, scenario.sender)
-        thread = direct.ThreadReader(device, name, lambda: open_row(device, USER, name)).read()
+        thread = direct.ThreadReader(
+            device, SCHOOL, name, lambda: open_row(device, USER, name)
+        ).read()
         shot = SHOTS / f"{scenario.id}-{int(time.time())}.png"
         shot.write_bytes(device.screenshot())
         device.reset_app(USER)

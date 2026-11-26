@@ -1,10 +1,24 @@
+from types import SimpleNamespace
+
 import pytest
 
 from services.instagram_emulator import direct as module
 from services.instagram_emulator.device import Node
 
 POST = "https://www.instagram.com/p/ABC123/"
+SCHOOL = "brocku"
 THREAD_READER = module.ThreadReader
+
+
+@pytest.fixture(autouse=True)
+def languages(monkeypatch):
+    """Each school's language, as ``schools.language`` holds it."""
+    language = {"brocku": "en", "udem": "fr"}
+    monkeypatch.setattr(
+        module.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(language=language[slug]) if slug in language else None,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -211,7 +225,7 @@ class _DraftDevice:
 
 
 def _opened(device):
-    return THREAD_READER(device, THREAD, lambda: None)
+    return THREAD_READER(device, SCHOOL, THREAD, lambda: None)
 
 
 def test_a_reply_is_typed_confirmed_and_sent() -> None:
@@ -231,6 +245,19 @@ def test_a_reply_never_goes_into_another_thread_left_open() -> None:
     with pytest.raises(module.ThreadMismatch):
         _opened(device).send_reply("Sure, done!")
     assert device.sent == [] and device.taps == [] and device.typed == ""
+
+
+@pytest.mark.parametrize("school", ["udem", "unknown"])
+def test_a_french_school_never_sends_a_dm(school) -> None:
+    device = _DraftDevice()
+    opened = []
+    reader = THREAD_READER(device, school, THREAD, lambda: opened.append(THREAD))
+    with pytest.raises(module.NoDms, match="^no DMs on French schools$"):
+        reader.send_reply("Bien sûr!")
+    with pytest.raises(module.NoDms):
+        reader.send_claim(CLAIM, handle=THREAD, tokens=frozenset({TOKEN}))
+    # Refused before the thread was even opened: nothing typed, tapped or sent.
+    assert opened == [] and device.sent == [] and device.taps == [] and device.typed == ""
 
 
 def test_a_stale_draft_is_cleared_and_never_sent() -> None:
@@ -284,7 +311,7 @@ SEND = "row_thread_composer_send_button_container"
 
 
 def _send_claim(device, message=CLAIM, *, thread=THREAD, handle=THREAD, tokens=(TOKEN,)):
-    return THREAD_READER(device, thread, lambda: None).send_claim(
+    return THREAD_READER(device, SCHOOL, thread, lambda: None).send_claim(
         message, handle=handle, tokens=frozenset(tokens)
     )
 
@@ -332,7 +359,7 @@ def test_a_claim_is_never_typed_into_another_thread_left_open() -> None:
 def test_the_thread_is_opened_from_its_row_every_time() -> None:
     opened = []
     device = _DraftDevice()
-    THREAD_READER(device, THREAD, lambda: opened.append(THREAD)).send_claim(
+    THREAD_READER(device, SCHOOL, THREAD, lambda: opened.append(THREAD)).send_claim(
         CLAIM, handle=THREAD, tokens=frozenset({TOKEN})
     )
     assert opened == [THREAD] and device.sent == [CLAIM]
@@ -453,27 +480,27 @@ class _ComposerDevice:
 def test_reading_a_shared_link_leaves_a_waiting_draft_as_it_was() -> None:
     waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/abc Thank you!"
     device = _ComposerDevice(waiting)
-    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link() == POST
     assert device.text == waiting and not device.cleared
 
 
 def test_a_link_pasted_inside_a_draft_is_taken_out_again() -> None:
     device = _ComposerDevice("Hey there, thanks!", cursor=4)
     device.move_to_end = lambda: None  # the cursor stays where the tap put it
-    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link() == POST
     assert device.text == "Hey there, thanks!"
 
 
 def test_an_empty_composer_is_cleared_after_its_hint_was_replaced() -> None:
     device = _ComposerDevice()
-    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link() == POST
     assert device.cleared and device.text == ""
 
 
 def test_a_draft_that_changes_while_the_link_is_read_fails_loudly() -> None:
     device = _ComposerDevice("Thanks for reaching out!", delete_extra=1)
     with pytest.raises(module.EmulatorError, match="unsent draft changed"):
-        THREAD_READER(device, THREAD, lambda: None)._read_back_link()
+        THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link()
 
 
 def _thread(*messages):
@@ -589,7 +616,7 @@ class _ScrollingDevice:
 
 
 def _reader(device, monkeypatch):
-    reader = THREAD_READER(device, "Laurier Audiology Association", lambda: None)
+    reader = THREAD_READER(device, SCHOOL, "Laurier Audiology Association", lambda: None)
     links = []
 
     def shared_link(from_bottom, owner):
@@ -658,14 +685,14 @@ class _ProfileDevice:
 
 def test_an_online_sender_is_named_by_their_profile() -> None:
     device = _ProfileDevice()
-    username = THREAD_READER(device, THREAD, lambda: None)._profile_username()
+    username = THREAD_READER(device, SCHOOL, THREAD, lambda: None)._profile_username()
     assert username == "laurier_audiology_association"
     assert device.backs == 2
 
 
 def test_a_group_chat_has_no_one_sender() -> None:
     device = _ProfileDevice(group=True)
-    assert THREAD_READER(device, THREAD, lambda: None)._profile_username() is None
+    assert THREAD_READER(device, SCHOOL, THREAD, lambda: None)._profile_username() is None
     assert device.backs == 1
 
 
@@ -779,10 +806,10 @@ def test_a_request_is_named_by_its_prompt_and_then_by_its_username() -> None:
     assert module._names_thread(REQUEST, "wat2do.brocku")
     assert not module._names_thread(REQUEST, "Wat2Do | Sharing events @ utsg")
     # Accepted: the prompt is gone, and the username the header showed still names it.
-    reader = module.ThreadReader(object(), "Wat2Do | Sharing events @ brocku", lambda: None)
+    reader = module.ThreadReader(object(), SCHOOL, "Wat2Do | Sharing events @ brocku", lambda: None)
     reader._require_thread(REQUEST)
     reader._require_thread(REQUEST[:4])
     with pytest.raises(module.ThreadMismatch):
         module.ThreadReader(
-            object(), "Wat2Do | Sharing events @ brocku", lambda: None
+            object(), SCHOOL, "Wat2Do | Sharing events @ brocku", lambda: None
         )._require_thread(REQUEST[:4])

@@ -10,6 +10,9 @@ at a person's pace.
 Every move works on the thread it names and no other: the thread is opened from its
 inbox row each time and its header must name it before anything is read or typed
 (2026-11-25: claim messages went into whatever thread an earlier read had left open).
+
+A French-language school's account (``schools.language``) never sends a DM (Tony,
+2026-11-26): every send here refuses with ``NoDms`` before the thread is even opened.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from typing import Any
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import INSTAGRAM_EXCLUDED_CLUBS
+from services import school_service
 from services.instagram_emulator.device import (
     EmulatorDevice,
     EmulatorError,
@@ -96,6 +100,10 @@ class ReplyWaiting(EmulatorError):
     """The thread holds an unsent reply of ours (no claim link) that a person has yet to send."""
 
 
+class NoDms(EmulatorError):
+    """The account is a French-language school's, so nothing was typed or sent."""
+
+
 class ThreadMismatch(EmulatorError):
     """The thread on screen is not the one asked for, so nothing was typed or sent in it."""
 
@@ -110,8 +118,12 @@ class ClaimRefused(EmulatorError):
 
 
 class ThreadReader:
-    def __init__(self, device: EmulatorDevice, thread: str, opener: Callable[[], None]) -> None:
+    def __init__(
+        self, device: EmulatorDevice, school: str, thread: str, opener: Callable[[], None]
+    ) -> None:
         self._device = device
+        # The school whose account the thread is in, which decides whether it may send.
+        self._school = school
         # The thread's name as its inbox row shows it, which its header shows too.
         self._thread = thread
         # The username a request's header shows once its prompt named the thread by the
@@ -158,6 +170,7 @@ class ThreadReader:
         tapped only once the composer shows exactly ``text`` and the header still names
         the thread, and the composer must be empty after.
         """
+        refuse_dms(self._school)
         nodes = self.open_thread()
         composer = self._device.find(_COMPOSER, nodes)
         if composer is None:
@@ -223,6 +236,7 @@ class ThreadReader:
         pause, once the header still names the thread, and the composer must no longer
         hold the claim link.
         """
+        refuse_dms(self._school)
         nodes = self.open_thread()
         sender = _sender(nodes)
         if sender is None:
@@ -715,6 +729,19 @@ def _side(node: Node) -> str:
 
 def _as_typed(text: str) -> str:
     return " ".join(text.casefold().split())
+
+
+def dms_refused(school: str) -> bool:
+    """Whether the school's account may never send a DM: a French-language school
+    (``schools.language``, Tony 2026-11-26), or a school the database does not know."""
+    record = school_service.get_school(school)
+    return record is None or record.language == "fr"
+
+
+def refuse_dms(school: str) -> None:
+    """Raise ``NoDms`` when the school's account may never send a DM."""
+    if dms_refused(school):
+        raise NoDms("no DMs on French schools")
 
 
 def refuse_if_excluded(sender: str) -> None:

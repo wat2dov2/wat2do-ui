@@ -66,8 +66,10 @@ from services.instagram_emulator.direct import (
     LeftOut,
     ThreadReader,
     asks_to_be_left_out,
+    dms_refused,
     exclude_club,
     plain_handle,
+    refuse_dms,
     refuse_if_excluded,
 )
 from services.instagram_emulator.following import FollowingReader
@@ -126,6 +128,8 @@ _ACTING = frozenset(
         "pin-comment",
     }
 )
+# Moves that send a DM, refused outright on a French-language school's account.
+_MESSAGING = frozenset({"reply", "claim"})
 # Moves that only read what is on the device, or never touch it.
 _READING = frozenset({"status", "inbox", "read", "screen", "shot", "milestones", "comments"})
 # How many of the account's newest posts ``ig comments`` reads.
@@ -253,6 +257,7 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
     rows.update({row.name: row for row in read_inbox(device, user(), requests=True)})
     handled = _requests_handled()
     claimed = {entry.get("thread") for entry in _logged(("claim",))}
+    messaging = not dms_refused(school())
     return {
         "threads": [
             {
@@ -263,7 +268,8 @@ def inbox(device: EmulatorDevice, _args: argparse.Namespace) -> dict[str, Any]:
                 "request": row.request,
                 "ours_last": row.ours,
                 # A claim follows up a request we handled a day ago, once nothing is new.
-                "claim_due": row.ours
+                "claim_due": messaging
+                and row.ours
                 and row.name not in claimed
                 and _follow_up_due(handled.get(row.name)),
             }
@@ -741,7 +747,7 @@ def claim_target(handle: str) -> ClaimTarget:
 
 
 def _reader(device: EmulatorDevice, thread: str) -> ThreadReader:
-    return ThreadReader(device, thread, lambda: open_row(device, user(), thread))
+    return ThreadReader(device, school(), thread, lambda: open_row(device, user(), thread))
 
 
 def _club_events(handle: str) -> list[dict[str, Any]]:
@@ -1165,6 +1171,8 @@ def _move(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
             f"Refused: this account's notification handling is paused until {paused} "
             "after Instagram showed a challenge"
         )
+    if args.move in _MESSAGING:
+        refuse_dms(school())
     return MOVES[args.move](device, args)
 
 
