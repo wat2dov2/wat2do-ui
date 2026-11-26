@@ -552,7 +552,7 @@ mod tests {
         assert_eq!(events[0]["poster_file"], "posters/17.jpg");
         assert_eq!(events[1]["poster_file"], Value::Null);
         assert_eq!(document["language"], "fr");
-        assert_eq!(document["sticker_labels"][0], "Gratuit");
+        assert_eq!(document["sticker_labels"][0], "Entrée Gratuite");
         // As Python wrote it: one-space indent, the poster last.
         assert!(text.contains(
             "\n   \"carousel_requested_at\": null,\n   \"source_post\": null,\n   \"poster_file\": \"posters/17.jpg\"\n"
@@ -570,7 +570,7 @@ mod tests {
         let refused =
             selection_from_answer(&packet(), &answer(&["Free Pizza", "Cozy Vibes"])).unwrap_err();
         assert!(refused.to_string().contains("\"Cozy Vibes\" is not in"));
-        assert_eq!(sticker_labels(None)[0], "Free");
+        assert_eq!(sticker_labels(None)[0], "Free Entry");
         for labels in INSTAGRAM_PUBLISHING.sticker_labels.values() {
             assert_eq!(
                 crate::instagram_publishing::selection::validate_labels(labels)

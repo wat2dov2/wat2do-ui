@@ -59,13 +59,18 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Stickers
 
-Pick each event's sticker labels only from `sticker_labels` in `packet.json`, copied exactly; never write a label of your own. Aim for three or four labels per event that the event's details support, and never more than four.
-- Prioritize price, included or explicitly free food, prizes, learning, networking and entry requirements over generic hype.
-- Use `Free` (French: `Gratuit`) unless the event states a cost; then use `Paid Entry` (French: `Entrée Payante`).
-- Use `Reg. Required` (French: `Inscription Requise`) when registration is required.
-- Use `Free Pizza` instead of `Free Food` only when the event says pizza, and never both on one event.
+Stickers tell a student at a glance what they get or do at the event, so every slide needs several.
+Pick each event's sticker labels only from `sticker_labels` in `packet.json`, copied exactly; never write a label of your own.
+Give every event three or four labels, never more than four.
+Pick at least two whenever the event's title, description or poster supports two, which nearly every event does: its price is one, and the food, prizes, music, activity, setting or audience it mentions is another.
+A single sticker is only for an event that truly says almost nothing beyond its title, time and place.
+- Read the whole event for them: price and entry, registration, food and drinks, prizes and giveaways, music, DJs and dancing, what you do or make there, whether it is outdoors, late, formal or in costume, who it suits, and age limits.
+- Use `Free Entry` (French: `Entrée Gratuite`) unless the event states a cost or a ticket price; then use `Paid Entry` (French: `Entrée Payante`).
+- Use `Reg. Required` (French: `Inscription Requise`) when registration, an RSVP or a sign-up is required.
+- Pick the most specific label that fits: `Free Pizza` over `Free Food` only when the event says pizza, `Cash Prizes` over `Prizes` only when the prize is money, `Live DJ` over `Live Music` for a DJ set, and never both labels of such a pair on one event.
+- `Hands-On` is for making or doing something yourself, and `Take One Home` only when you keep what you make or get; `Beginner Friendly` only when the event welcomes beginners or teaches from scratch; `Bring A Friend` only when the event invites guests, plus-ones or teams of friends.
 - Every label on one event must say something different.
-- Never pick a label the event's title, description or poster does not support; fewer is fine when the event says less.
+- Never pick a label the event's title, description or poster does not support.
 
 ## Cover and caption
 

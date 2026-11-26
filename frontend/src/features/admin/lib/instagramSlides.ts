@@ -200,14 +200,14 @@ function stickerStyle(label: string): { shape: number; styleSeed: number } {
   const normalized = label.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}$]+/gu, " ").trim();
   const families = [
     { shape: 2, words: /\b(reg|registration|rsvp|inscr|inscription)\b/ },
-    { shape: 3, words: /\b(food|pizza|snacks?|meals?|breakfast|lunch|dinner|tea|coffee|drink|refreshments|bbq|repas|nourriture|cafe|collation|boisson)\b/ },
+    { shape: 3, words: /\b(food|pizza|snacks?|meals?|breakfast|lunch|dinner|tea|coffee|drinks?|refreshments|bbq|repas|nourriture|cafe|collations?|boissons?)\b/ },
     { shape: 0, words: /\b(free|gratuit|gratuite)\b|\$|\b(entry|admission|cost|price|paid|tickets?|tarif|prix|entree|billet)\b/ },
     { shape: 1, words: /\b(prizes?|cash|awards?|gifts?|giveaways?|lots?|cadeaux|recompenses)\b/ },
     { shape: 9, words: /\b(meet|friends?|networking|network|people|social|rencontre|reseautage|amis)\b/ },
     { shape: 6, words: /\b(workshop|learn|skills?|training|prep|expert|atelier|formation)\b/ },
     { shape: 7, words: /\b(games?|quiz|trivia|play|jeux|jeu)\b/ },
+    { shape: 8, words: /\b(show|music|live|performance|concert|spectacle|musique|dj|mic|micro|karaoke|dancing|danse)\b/ },
     { shape: 5, words: /\b(welcome|open|everyone|bienvenue|tous)\b/ },
-    { shape: 8, words: /\b(show|music|live|performance|concert|spectacle|musique)\b/ },
   ];
   const family = families.find(({ words }) => words.test(normalized));
   const hash = [...normalized].reduce((value, char) => (Math.imul(value, 31) + char.charCodeAt(0)) >>> 0, 0);
