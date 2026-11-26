@@ -225,6 +225,8 @@ A story share waits while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
 The emulator's LaunchAgents (the keep-alive, the worker and the notification recorder) are Standard processes, never Background: launchd runs a Background agent and its children at the lowest CPU priority, so a busy Mac (Spotlight re-indexing, a Rust build, ingestion agents) starved Android until it rebooted itself (2026-11-23).
 The emulator's keep-alive LaunchAgent (`scripts/instagram_emulator.py`, `io.wat2do.instagram-emulator`) boots it whenever adb cannot see it and stops it to boot again once Android has answered no `adb shell` command for `controlbox/instagram_emulator.json` `unresponsive_restart_seconds`, since a hung Android still shows in adb (2026-11-18: hung 13 hours, every notification and carousel follow-up lost).
+It also restarts it, under the emulator's lock so no job is cut off mid-step, once qemu has used at least `spin_cpu_percent` of the Mac's CPU while Android used at most `spin_guest_cpu_percent` for `spin_restart_seconds` straight: with `-gpu host` qemu's render threads can get stuck spinning in `EglContext::~EglContext` (2026-11-25: 480-630% for about 9 hours while Android sat idle, and the Mac throttled for heat).
+A stop kills qemu outright when it has not exited `stop_wait_seconds` after the console's `emu kill`, which can answer OK while qemu keeps running.
 Once a day, from `reclaim_hour` (before the morning's sittings), the worker
 deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the

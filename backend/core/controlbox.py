@@ -1222,6 +1222,15 @@ class InstagramEmulatorControl(_ControlModel):
     # An emulator whose Android has answered no shell command for this long is hung
     # and is stopped, to boot again. It must cover a boot, during which nothing answers.
     unresponsive_restart_seconds: int = Field(ge=300, le=7200)
+    # qemu at spin_cpu_percent or more (100 is one Mac core) while Android uses at most
+    # spin_guest_cpu_percent of its own cores, for spin_restart_seconds straight, is
+    # qemu's render threads spinning, and the emulator is restarted under its lock.
+    spin_cpu_percent: int = Field(ge=100, le=3200)
+    spin_guest_cpu_percent: int = Field(ge=0, le=3200)
+    spin_restart_seconds: int = Field(ge=300, le=86_400)
+    # A stopped emulator whose qemu has not exited this long after the console's kill
+    # is killed outright.
+    stop_wait_seconds: int = Field(ge=5, le=600)
     # The Instagram app holds at most ten accounts per Android user, so school
     # accounts are spread across the emulator's users.
     android_user_by_school: dict[
