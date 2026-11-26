@@ -16,8 +16,10 @@ use futures_util::StreamExt;
 use serde_json::{Map, Value, json};
 use sqlx::PgPool;
 
+use super::audit;
 use super::drafts::{
-    Candidate, NEEDS_REVIEW, Outcome, Packet, list_draft_candidates, save_review_draft,
+    Candidate, NEEDS_REVIEW, Outcome, Packet, daily_batch, list_draft_candidates, local_date,
+    save_review_draft,
 };
 use super::selection::{CAPTION_INTRO_LIMIT, DraftSelection, SelectionError};
 use super::{Refused, error_message};
@@ -83,6 +85,7 @@ pub fn answer_schema() -> Value {
 /// at a time, and count the outcomes.
 pub async fn curate_all(db: &PgPool) -> Result<BTreeMap<String, i64>> {
     claude::remove_leftovers(WORKDIR_PREFIX);
+    audit::remove_leftovers();
     let packets: Vec<Packet> = list_draft_candidates(db, chrono::Utc::now())
         .await?
         .into_iter()
@@ -131,13 +134,34 @@ pub async fn curate_school(db: &PgPool, packet: &Packet) -> Result<Outcome> {
         .tempdir()
         .context("could not make the curation folder")?;
     write_packet(db, workdir.path(), packet).await?;
-    let ask = async |prompt: &str| run(prompt, workdir.path()).await;
-    answer_with_retries(ask, save).await
+    let ask = async |prompt: &str| run(prompt, workdir.path(), claude::claude_environment()).await;
+    let outcome = answer_with_retries(ask, save).await?;
+    if outcome == Outcome::Saved {
+        audit_saved_draft(db, packet).await;
+    }
+    Ok(outcome)
+}
+
+/// Check the draft just saved against the promotion rules before a sitting
+/// can post it; an audit that fails is logged and leaves the draft as saved.
+async fn audit_saved_draft(db: &PgPool, packet: &Packet) {
+    let day = local_date(packet.window_end);
+    let audited = match daily_batch(db, &packet.account_key, day).await {
+        Ok(Some((batch_id, _))) => audit::audit_draft(db, batch_id).await,
+        Ok(None) => Ok(()),
+        Err(error) => Err(error),
+    };
+    if let Err(error) = audited {
+        tracing::error!(
+            "Instagram draft audit failed for {}: {error:#}",
+            packet.account_key
+        );
+    }
 }
 
 /// Ask, save, and ask again with the reason while an answer is refused, at
 /// most `curation_attempts` times.
-async fn answer_with_retries(
+pub(super) async fn answer_with_retries(
     ask: impl AsyncFn(&str) -> Result<Map<String, Value>>,
     save: impl AsyncFn(&Map<String, Value>) -> Result<Outcome>,
 ) -> Result<Outcome> {
@@ -181,7 +205,10 @@ async fn save_answer(db: &PgPool, packet: &Packet, answer: &Map<String, Value>) 
     Ok(outcome)
 }
 
-fn selection_from_answer(packet: &Packet, answer: &Map<String, Value>) -> Result<DraftSelection> {
+pub(super) fn selection_from_answer(
+    packet: &Packet,
+    answer: &Map<String, Value>,
+) -> Result<DraftSelection> {
     let open = packet.open.as_ref().context("no candidates")?;
     let caption_intro = answer
         .get("caption_intro")
@@ -286,7 +313,7 @@ async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()
 
 /// `packet.json`'s text: the school, its language, the default intro, the
 /// slide count, each event with its poster file, and the excluded clubs.
-fn packet_document(
+pub(super) fn packet_document(
     packet: &Packet,
     language: Value,
     poster_files: &[Option<String>],
@@ -370,8 +397,13 @@ async fn fetch_and_shrink(url: &str, folder: &Path, event_id: i64, path: &Path) 
     Ok(())
 }
 
-/// `_run`: one agent with Read access to the folder only.
-async fn run(prompt: &str, workdir: &Path) -> Result<Map<String, Value>> {
+/// `_run`: one agent with Read access to the folder only, on the login
+/// `env` names.
+pub(super) async fn run(
+    prompt: &str,
+    workdir: &Path,
+    env: std::collections::HashMap<String, String>,
+) -> Result<Map<String, Value>> {
     let control = &*INSTAGRAM_PUBLISHING;
     let schema = answer_schema();
     claude::run_agent(
@@ -384,7 +416,7 @@ async fn run(prompt: &str, workdir: &Path) -> Result<Map<String, Value>> {
             allowed_tools: &["Read(./**)"],
             schema: &schema,
             timeout: Duration::from_secs_f64(control.curation_timeout_seconds),
-            env: claude::claude_environment(),
+            env,
         },
     )
     .await

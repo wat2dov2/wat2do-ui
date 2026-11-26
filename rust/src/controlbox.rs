@@ -336,6 +336,12 @@ pub struct InstagramPublishing {
     pub curation_poster_pixels: u32,
     pub curation_hours: Vec<u32>,
     pub curation_minute: u32,
+    /// The agent that checks each saved draft against the promotion rules.
+    pub draft_audit_model: String,
+    pub draft_audit_timeout_seconds: f64,
+    /// The Claude login (`CLAUDE_CONFIG_DIR`) the draft audit and the curation
+    /// quality test run on, never the one ingestion runs on.
+    pub quality_claude_config_dir: String,
     pub poster_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
     pub music_model: String,
