@@ -2,6 +2,7 @@ package io.wat2do;
 
 import android.app.UiAutomation;
 import android.graphics.Point;
+import android.os.Bundle;
 import android.view.Display;
 import android.view.accessibility.AccessibilityNodeInfo;
 import java.io.BufferedReader;
@@ -9,7 +10,9 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -26,6 +29,10 @@ import java.util.concurrent.TimeoutException;
  * is read, the longest wait for that in milliseconds (a screen that never settles, such
  * as a playing video, is then read as it is), and the file the dump goes through.
  * A line with only the end marker follows every read, and the first one says it is ready.
+ *
+ * <p>A line "set VIEW_ID FILE" instead sets the text of the active window's field with that
+ * view ID to the UTF-8 text in FILE (what `adb shell input text` cannot type, such as a
+ * caption with emoji) and prints "set" or "missing" before the end marker.
  */
 public final class ScreenReader {
     private static final String END = "<<wat2do-screen-end>>";
@@ -66,7 +73,15 @@ public final class ScreenReader {
             BufferedReader requests = new BufferedReader(new InputStreamReader(System.in));
             out.println(END);
             out.flush();
-            while (requests.readLine() != null) {
+            String request;
+            while ((request = requests.readLine()) != null) {
+                if (request.startsWith("set ")) {
+                    String[] parts = request.split(" ", 3);
+                    out.println(setText(automation, parts[1], new File(parts[2])));
+                    out.println(END);
+                    out.flush();
+                    continue;
+                }
                 try {
                     automation.waitForIdle(quietMillis, waitMillis);
                 } catch (TimeoutException ignored) {
@@ -91,5 +106,24 @@ public final class ScreenReader {
         } finally {
             shell.getMethod("disconnect").invoke(wrapper);
         }
+    }
+
+    private static String setText(UiAutomation automation, String viewId, File text)
+            throws Exception {
+        AccessibilityNodeInfo root = automation.getRootInActiveWindow();
+        if (root == null) {
+            return "missing";
+        }
+        List<AccessibilityNodeInfo> fields = root.findAccessibilityNodeInfosByViewId(viewId);
+        if (fields.isEmpty()) {
+            return "missing";
+        }
+        Bundle arguments = new Bundle();
+        arguments.putCharSequence(
+                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                new String(Files.readAllBytes(text.toPath()), StandardCharsets.UTF_8));
+        boolean done =
+                fields.get(0).performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
+        return done ? "set" : "missing";
     }
 }

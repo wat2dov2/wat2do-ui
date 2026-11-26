@@ -18,6 +18,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 import threading
 import time
 import weakref
@@ -54,6 +55,8 @@ _held = threading.local()
 # Every device's screen reader; the end of each hold on the emulator stops them, so
 # Android's accessibility service is connected only while a job drives the app.
 _readers: weakref.WeakSet[ScreenReader] = weakref.WeakSet()
+# Where ``set_text`` leaves the text it puts into a field.
+_REMOTE_TEXT = "/data/local/tmp/wat2do-text.txt"
 # Set to "1" in a child process whose parent holds the emulator's lock for it.
 EMULATOR_HELD = "WAT2DO_EMULATOR_HELD"
 _RESTART_POLL_SECONDS = 5
@@ -468,6 +471,19 @@ class EmulatorDevice:
     def back(self) -> None:
         self.pause()
         self.adb("shell", "input", "keyevent", "KEYCODE_BACK")
+
+    def set_text(self, resource_id: str, text: str) -> None:
+        """Put ``text`` into the field with that view ID at once, the way a paste would:
+        for long text with characters ``adb shell input text`` cannot type (a caption's
+        emoji). Short replies are always typed (``type_text``)."""
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".txt") as local:
+            local.write(text)
+            local.flush()
+            self.adb("push", local.name, _REMOTE_TEXT)
+        self.pause()
+        view_id = f"{CONTROL.instagram_package}:id/{resource_id}"
+        if not self._reader.set_text(view_id, _REMOTE_TEXT):
+            raise EmulatorError(f"No {resource_id} field is on screen to set")
 
     def type_text(self, text: str) -> None:
         """Type into the focused field one character at a time, at a person's pace."""

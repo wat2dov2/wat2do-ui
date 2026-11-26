@@ -77,6 +77,18 @@ class ScreenReader:
             raise ScreenReaderError("The screen reader stopped") from exc
         return self._answer().decode("utf-8", errors="replace").strip()
 
+    def set_text(self, view_id: str, remote_file: str) -> bool:
+        """Set the text of the active window's field with ``view_id`` to the UTF-8 text in
+        ``remote_file`` on the device; False when no such field shows."""
+        if not self.running:
+            self._start()
+        try:
+            self._process.write(f"set {view_id} {remote_file}\n".encode())
+        except DeviceProgramStopped as exc:
+            self.stop()
+            raise ScreenReaderError("The screen reader stopped") from exc
+        return self._answer().decode().strip() == "set"
+
     def stop(self) -> None:
         """End the device-side process, which disconnects from the accessibility service."""
         self._process.stop()

@@ -158,3 +158,57 @@ def test_requests_are_opened_from_their_link_when_there_is_one() -> None:
     device = _InboxDevice(INBOX)
     inbox.read_inbox(device, 0, requests=True)
     assert device.tapped == ["Requests, 2 unread messages"]
+
+
+# angrygooseinuw's inbox on 2026-11-25: no tabs, a "Requests (1)" link, then a privacy
+# prompt before the requests show.
+LINKED_INBOX = [_node("", (794, 858, 1038, 942), description="Requests (1)")]
+
+
+def test_a_requests_link_with_a_count_opens_and_its_privacy_prompt_is_put_off() -> None:
+    device = _InboxDevice([*LINKED_INBOX, _node("", (251, 1624, 828, 1750), description="Not now")])
+    inbox.read_inbox(device, 0, requests=True)
+    assert device.tapped == ["Requests (1)", "Not now"]
+
+
+# wat2do.uwaterloo's inbox search for "viva" on 2026-11-25: the old chat, then accounts.
+SEARCHED = [
+    _node("viva", (147, 143, 833, 259), "search_bar_real_field"),
+    _node("UWaterloo ViVA Club", (237, 327, 603, 374), "row_inbox_username"),
+    _node("v1vaclub", (237, 374, 1043, 421), "row_inbox_digest"),
+    _node("More accounts", (42, 474, 340, 600), "header_text"),
+    _node("UWaterloo ViVA Club", (237, 618, 430, 665), "row_inbox_username"),
+    _node("", (0, 2185, 1080, 2316), "row_thread_composer_edittext"),
+]
+
+
+class _SearchDevice(_InboxDevice):
+    def __init__(self, found):
+        super().__init__([])
+        self.found = found
+        self.typed = []
+
+    def tap_when(self, pattern):
+        self.tapped.append(pattern.pattern)
+
+    def wait_for(self, pattern):
+        return next((n for n in SEARCHED if n.labelled(pattern)), SEARCHED[0])
+
+    def tap(self, node):
+        self.tapped.append((node.text or node.description, node.bounds[1]))
+
+    def type_text(self, text):
+        self.typed.append(text)
+
+    def watch(self, look):
+        return look(SEARCHED if self.found else SEARCHED[3:4])
+
+
+def test_an_old_thread_opens_from_the_inbox_search_only_among_chats() -> None:
+    device = _SearchDevice(found=True)
+    assert inbox._open_by_search(device, 0, "UWaterloo ViVA Club")
+    assert device.typed == ["UWaterloo ViVA Club"]
+    # The chat above "More accounts", never a suggested account below it.
+    assert ("UWaterloo ViVA Club", 327) in device.tapped
+    assert ("UWaterloo ViVA Club", 618) not in device.tapped
+    assert not inbox._open_by_search(_SearchDevice(found=False), 0, "UWaterloo ViVA Club")

@@ -38,7 +38,7 @@ from core.controlbox import controlbox
 from core.launch_agents import atomic_write
 from core.prompts import render_prompt
 from services import school_service
-from services.claude_code import claude_environment, run_agent
+from services.claude_code import ClaudeCodeError, claude_environment, run_agent
 from services.instagram_accounts import android_user, school_account_username, school_for_account
 from services.instagram_emulator.device import EmulatorDevice, exclusive
 
@@ -124,7 +124,13 @@ def handle(notification: Notification, *, now: datetime | None = None) -> dict[s
         device.use_account(user, school_account_username(school))
         # Each move starts its own screen reader; only one may be connected at a time.
         device.release_screen()
-        report = _run(notification, moment, {"WAT2DO_EMULATOR_HELD": "1"})
+        try:
+            report = _run(notification, moment, {"WAT2DO_EMULATOR_HELD": "1"})
+        except ClaudeCodeError as exc:
+            # Why it failed stays on the Mac, where its words may be read; the run fails.
+            failure = f"{exc}: {exc.detail}" if exc.detail else str(exc)
+            _keep(notification, {"case": "error", "problems": failure[:4000]}, moment)
+            raise
     _keep(notification, report, moment)
     return public(report)
 

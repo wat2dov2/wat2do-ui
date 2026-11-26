@@ -28,6 +28,7 @@ import html
 import json
 import random
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -71,9 +72,8 @@ REPORT = Path.home() / "Desktop/notification-agent-test.html"
 SHOTS = Path.home() / ".local/state/wat2do/notification-agent/harness"
 _PROFILE_TITLE = re.compile(r"^action_bar_title$")
 _MESSAGE = labels("Message")
-_SEARCH = re.compile(r"^(?:Search|search_edit_text)")
-_SEND = re.compile(r"^Send$")
 _POLL_SECONDS = 20
+REPOSITORY = "wat2dov2/wat2do-ui"
 
 
 @dataclass(frozen=True)
@@ -97,7 +97,7 @@ class Scenario:
 
 # A post any student could attend, shared for the repost scenarios (a real club's public
 # post, never one of ours); --post replaces it.
-DEFAULT_POST = "https://www.instagram.com/p/DgITQXIoQyu/"
+DEFAULT_POST = "https://www.instagram.com/p/De447IwH-fU/"
 
 SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
@@ -408,13 +408,29 @@ def _open_profile_thread(device: EmulatorDevice, handle: str) -> None:
 
 
 def _share_post(device: EmulatorDevice, url: str, handle: str) -> None:
+    """Send the post to ``handle`` from the post's share sheet: search, pick the row whose
+    username is exactly the handle, check it is the only chat selected, then Send."""
     device.open_instagram(USER, url)
     device.tap_when(direct._SHARE)
-    device.tap_when(_SEARCH)
+    device.tap(_required(device.watch(lambda nodes: _by_id(nodes, "search_edit_text"))))
     device.type_text(handle)
-    device.tap_when(re.compile(rf"^{re.escape(handle)}"))
-    device.tap_when(_SEND)
+    row = device.watch(
+        lambda nodes: next(
+            (n for n in nodes if n.resource_id == "row_user_secondary_name" and n.label == handle),
+            None,
+        )
+    )
+    device.tap(_required(row))
+    nodes = device.screen()
+    selected = [n for n in nodes if n.label.endswith(" Chat selected")]
+    if len(selected) != 1:
+        raise EmulatorError(f"{len(selected)} chats are selected in the share sheet, not 1")
+    device.tap(_required(_by_id(nodes, "direct_send_button_multi_select")))
     device.pause()
+
+
+def _by_id(nodes: list[Any], resource_id: str) -> Any:
+    return next((node for node in nodes if node.resource_id == resource_id), None)
 
 
 def _prepare(device: EmulatorDevice, scenario: Scenario) -> None:
@@ -435,7 +451,13 @@ def _prepare(device: EmulatorDevice, scenario: Scenario) -> None:
 
 
 def _thread_names(device: EmulatorDevice) -> list[str]:
-    return [row.name for row in read_inbox(device, USER, requests=False)]
+    """Every thread in the test account's main inbox and message requests: a first
+    message from an account it does not follow arrives as a request."""
+    return [
+        row.name
+        for requests in (False, True)
+        for row in read_inbox(device, USER, requests=requests)
+    ]
 
 
 def _thread_name(device: EmulatorDevice, sender: str) -> str:
@@ -451,15 +473,43 @@ def _thread_name(device: EmulatorDevice, sender: str) -> str:
 def _wait_for_reports(
     scenario: Scenario, since: datetime, wait_minutes: float
 ) -> list[dict[str, Any]]:
+    """The agent's reports since the scenario began, once at least one is in and no run
+    for the test account is still queued or running. Instagram notifies a burst in one
+    thread once or a few times, so the number of runs is not known in advance."""
     deadline = time.monotonic() + wait_minutes * 60
-    expected = sum(1 for kind, _ in scenario.steps if kind in ("dm", "share"))
     found: list[dict[str, Any]] = []
     while time.monotonic() < deadline:
         found = _reports(since)
-        if found and len(found) >= expected:
+        if found and not _runs_pending():
             break
         time.sleep(_POLL_SECONDS)
     return found
+
+
+def _runs_pending() -> bool:
+    """Whether a "Handle notification" run for the test account is queued or running."""
+    listed = subprocess.run(
+        [
+            "gh",
+            "run",
+            "list",
+            "--repo",
+            REPOSITORY,
+            "--workflow",
+            "Handle notification",
+            "--limit",
+            "10",
+            "--json",
+            "name,status",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return any(
+        run["name"].endswith(f" - {TEST_ACCOUNT}") and run["status"] != "completed"
+        for run in json.loads(listed.stdout)
+    )
 
 
 def _reports(since: datetime) -> list[dict[str, Any]]:

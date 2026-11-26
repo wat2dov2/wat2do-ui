@@ -16,8 +16,17 @@ from core.controlbox import controlbox
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
 
 CONTROL = controlbox.instagram_dms
-_REQUESTS_TAB = re.compile(r"^Requests(?:, .*)?$")
-_TABS = re.compile(r"^(?:All|Primary|General|Requests)(?:, .*)?$")
+# The tab reads "Requests, 2 unread messages"; an inbox without tabs has a "Requests (1)"
+# link above its threads instead (angrygooseinuw, 2026-11-25).
+_REQUESTS_TAB = re.compile(r"^Requests(?: \(\d+\))?(?:, .*)?$")
+_TABS = re.compile(r"^(?:All|Primary|General|Requests)(?: \(\d+\))?(?:, .*)?$")
+# The inbox's search: its box, the field it opens, and the header of the accounts it
+# suggests below the chats it found.
+_INBOX_SEARCH = re.compile(r"^(?:Search or ask Meta AI|Ask Meta AI or Search|Search)$")
+_SEARCH_FIELD = re.compile(r"^search_bar_real_field$")
+_MORE_ACCOUNTS = re.compile(r"^More accounts$")
+# Opening requests can first ask about message privacy; it is put off, never changed.
+_NOT_NOW = re.compile(r"^Not now$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
 # The same banner says when Instagram has limited the account's messages.
@@ -73,7 +82,8 @@ def read_inbox(device: EmulatorDevice, user: int, *, requests: bool) -> list[Inb
 
 
 def open_row(device: EmulatorDevice, user: int, name: str) -> None:
-    """Open the thread with ``name`` from the main inbox, or from requests if it is there.
+    """Open the thread with ``name`` from the main inbox, or from requests if it is there,
+    else from the inbox's search, which finds a chat however old it is.
 
     A request moves to the main inbox once accepted, so both lists are searched.
     """
@@ -83,12 +93,48 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
         for _scroll in range(CONTROL.inbox_scrolls + 1):
             row = next((node for node in _row_nodes(device.screen()) if _name(node) == name), None)
             if row is not None:
-                device.tap(row)
-                device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_REQUEST_PROMPT.pattern}"))
-                device.pause()
+                _enter(device, row)
                 return
             device.scroll_down()
-    raise EmulatorError("The DM thread is no longer in the inbox")
+    if not _open_by_search(device, user, name):
+        raise EmulatorError("The DM thread is no longer in the inbox")
+
+
+def _enter(device: EmulatorDevice, row: Node) -> None:
+    device.tap(row)
+    device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_REQUEST_PROMPT.pattern}"))
+    device.pause()
+
+
+def _open_by_search(device: EmulatorDevice, user: int, name: str) -> bool:
+    """Open an existing chat named ``name`` from the inbox's search (its chats list above
+    "More accounts", which are only accounts to start a chat with); False when none shows.
+    Only the name is typed, into the search field."""
+    _open_list(device, user, requests=False)
+    device.tap_when(_INBOX_SEARCH)
+    device.tap(device.wait_for(_SEARCH_FIELD))
+    device.type_text(name)
+
+    def chat(nodes: list[Node]) -> Node | None:
+        accounts_top = min(
+            (node.bounds[1] for node in nodes if node.labelled(_MORE_ACCOUNTS)), default=10**6
+        )
+        return next(
+            (
+                node
+                for node in nodes
+                if node.resource_id == "row_inbox_username"
+                and node.text == name
+                and node.bounds[3] <= accounts_top
+            ),
+            None,
+        )
+
+    row = device.watch(chat)
+    if row is None:
+        return False
+    _enter(device, row)
+    return True
 
 
 def accept_request(device: EmulatorDevice) -> None:
@@ -126,6 +172,10 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
         return False
     device.tap(link)
     device.pause()
+    later = device.find(_NOT_NOW)
+    if later is not None:
+        device.tap(later)
+        device.pause()
     return True
 
 
