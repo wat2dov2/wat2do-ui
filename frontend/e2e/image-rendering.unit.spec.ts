@@ -478,6 +478,64 @@ test.describe("Instagram raster preparation", () => {
     expect(renderToStaticMarkup(renderedSlide!)).not.toContain(description);
   });
 
+  test("a claimed club's handle ends in the website's blue check, cut right before it when long", async () => {
+    // A tall poster gives the narrowest header, where a 29-character handle cannot fit.
+    const poster = await sharp({ create: { width: 720, height: 1280, channels: 3, background: "#ecc2f0" } }).png().toBuffer();
+    globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/png" } });
+    const handle = "uwaterloo.engineering.society";
+    const slide = async (verified: boolean) => {
+      const response = await POST(request({ kind: "event", school: "uwaterloo", event: {
+        id: 43, tz: "America/Toronto", category: "Arts & Culture", title: "Hack the Night",
+        club: "Engineering Society", ig_handle: handle, verified, source_image_url: posterUrl,
+      } }));
+      expect(response.status).toBe(200);
+      return { output: Buffer.from(await response.arrayBuffer()), model: renderedSlide!.props.model as { author: string; verifiedLabel: string }, markup: renderToStaticMarkup(renderedSlide!) };
+    };
+    // With no place or time, the author line sits centred in the 604px card's header, right of the avatar.
+    const authorLine = async (output: Buffer) => {
+      const left = 380, top = 100, width = 842 - left, height = 60;
+      const pixels = await sharp(output).extract({ left, top, width, height }).removeAlpha().raw().toBuffer();
+      let textRight = -1, checkLeft = Infinity, checkPixels = 0;
+      for (let index = 0; index < pixels.length; index += 3) {
+        const x = left + (index / 3) % width;
+        const [r, g, b] = [pixels[index], pixels[index + 1], pixels[index + 2]];
+        if ([29, 155, 240].every((value, channel) => Math.abs([r, g, b][channel] - value) <= 40)) { checkPixels++; checkLeft = Math.min(checkLeft, x); }
+        else if (r < 80 && g < 80 && b < 80) textRight = Math.max(textRight, x);
+      }
+      return { textRight, checkLeft, checkPixels };
+    };
+
+    const verified = await slide(true);
+    const artifact = test.info().outputPath("verified-event-slide.png");
+    writeFileSync(artifact, verified.output);
+    await test.info().attach("verified-event-slide", { path: artifact, contentType: "image/png" });
+    const tokens = readFileSync(new URL("../src/styles/decorative-tokens.css", import.meta.url), "utf8");
+    const websiteBlue = tokens.match(/--badge-verified:\s*(#[0-9a-f]{6})/i)![1];
+    expect(verified.model.verifiedLabel).toBe("Verified");
+    expect(verified.markup).toContain('aria-label="Verified"');
+    expect(verified.markup).toContain(`fill="${websiteBlue}"`);
+    expect(verified.model.author).toMatch(/^uwaterloo\.engineering\.s.*…$/);
+    const line = await authorLine(verified.output);
+    expect(line.checkPixels).toBeGreaterThan(300);
+    // The check follows the "…" by the 8px gap (plus the glyphs' own side bearings), as
+    // Instagram places its own, instead of waiting at the end of the line (about 30px).
+    expect(line.checkLeft - line.textRight).toBeGreaterThanOrEqual(8);
+    expect(line.checkLeft - line.textRight).toBeLessThanOrEqual(20);
+
+    const unclaimed = await slide(false);
+    expect(unclaimed.model.verifiedLabel).toBe("");
+    expect(unclaimed.markup).not.toContain("aria-label=");
+    expect(unclaimed.model.author).toMatch(/^uwaterloo\.engineering\.soc.*…$/);
+    expect((await authorLine(unclaimed.output)).checkPixels).toBe(0);
+  });
+
+  test("a claimed club's check reads in the school's language", async () => {
+    const { buildEventSlideModel } = slideLayout();
+    const event = { id: 44, tz: "America/Toronto", category: "Arts & Culture", title: "Soirée ciné", ig_handle: "cineclub.udem", school: "udem" };
+    expect((await buildEventSlideModel({ ...event, verified: true }, "fr")).verifiedLabel).toBe("Vérifié");
+    expect((await buildEventSlideModel({ ...event, verified: null }, "fr")).verifiedLabel).toBe("");
+  });
+
   test("published artwork has a branded inset, blank white footer and stable stickers", async () => {
     const poster = await sharp({ create: { width: 1080, height: 1350, channels: 3, background: "#ef5014" } }).png().toBuffer();
     const fetched: string[] = [];

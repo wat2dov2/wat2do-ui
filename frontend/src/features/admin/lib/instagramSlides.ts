@@ -39,6 +39,21 @@ export const SLIDE_POSTER_REGIONS = {
   outro: { width: 224, height: 280 },
 } as const;
 
+/** The event header's avatar-to-text gap, and the club's handle or name beside it. */
+export const SLIDE_HEADER_GAP = 20;
+export const SLIDE_AUTHOR_TEXT = { fontSize: 32, fontWeight: 700 } as const;
+/** The website's verified check after a claimed club's name: a little taller than the capitals, as Instagram draws its own. */
+export const SLIDE_VERIFIED_CHECK = { size: 30, gap: 8 } as const;
+
+/**
+ * How wide the author may print in an event slide's header: the card's inner
+ * width (the poster's) less the avatar, its gap, and the check when there is one.
+ */
+export function eventSlideAuthorWidth(poster: { width: number }, verified: boolean): number {
+  const check = verified ? SLIDE_VERIFIED_CHECK.size + SLIDE_VERIFIED_CHECK.gap : 0;
+  return poster.width - SLIDE_POSTER_REGIONS.avatar.width - SLIDE_HEADER_GAP - check;
+}
+
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
 export interface SlideEvent {
   id: number;
@@ -52,6 +67,8 @@ export interface SlideEvent {
   ig_handle?: string | null;
   club_ig?: string | null;
   club_logo_url?: string | null;
+  /** Whether the event's club is claimed (`claimed_club!` on the API), as the website's check shows it. */
+  verified?: boolean | null;
   school?: string | null;
   source_image_url?: string | null;
   dtstart_utc?: string | null;
@@ -75,6 +92,8 @@ export interface EventSlideModel {
   location: string;
   /** Instagram handle, or the club name when no handle is known. */
   author: string;
+  /** The localized "Verified" label when the club is claimed, drawn as the website's blue check after the author; empty when it is not. */
+  verifiedLabel: string;
   avatarSrc: string;
   poster: { width: number; height: number };
   /** The school's public domain, also used in the artwork review library. */
@@ -292,6 +311,7 @@ export async function buildEventSlideModel(
     timeLine: text(timeLine),
     location: text(event.location),
     author: handle || text(event.club, siteName),
+    verifiedLabel: event.verified ? t("events.verified") : "",
     avatarSrc,
     poster,
     siteName,

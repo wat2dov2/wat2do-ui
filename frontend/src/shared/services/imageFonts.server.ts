@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { parse, type Font } from "@shuding/opentype.js";
 
 // Images drawn on the server (carousel slides, link previews) are set in
 // Satoshi, the site's face. Every weight the templates ask for is loaded,
@@ -38,4 +39,43 @@ export function loadImageFonts() {
     })),
   );
   return fontsPromise;
+}
+
+/** The faces satori parses from the same files, keyed by weight. */
+let facesPromise: Promise<Map<ImageFontWeight, Font>> | null = null;
+
+function loadImageFaces() {
+  facesPromise ??= loadImageFonts().then(fonts => new Map(fonts.map(({ weight, data }) => [
+    weight,
+    parse(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), { lowMemory: true }),
+  ])));
+  return facesPromise;
+}
+
+const ELLIPSIS = "…";
+
+/**
+ * `text` as one line of at most `maxWidth` pixels: whole, or cut after the
+ * grapheme where satori's own ellipsis would cut it, with "…" appended.
+ *
+ * satori ellipsizes inside a box that keeps the full width, which leaves a gap
+ * of up to a glyph after the "…". Cutting the text here instead lets its box end
+ * exactly where its last glyph does, so whatever follows (a verified check)
+ * sits right after it. Widths are measured as satori lays text out: each
+ * grapheme's advance, from the same font engine and files.
+ */
+export async function fitImageText(
+  text: string,
+  maxWidth: number,
+  { fontSize, fontWeight }: { fontSize: number; fontWeight: ImageFontWeight },
+): Promise<string> {
+  const face = (await loadImageFaces()).get(fontWeight);
+  if (!face) throw new Error(`Satoshi ${fontWeight} is not loaded for image text`);
+  const graphemes = [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].map(({ segment }) => segment);
+  const widths = graphemes.map(grapheme => face.getAdvanceWidth(grapheme, fontSize));
+  if (widths.reduce((sum, width) => sum + width, 0) <= maxWidth) return text;
+  const room = maxWidth - face.getAdvanceWidth(ELLIPSIS, fontSize);
+  let kept = 1;
+  for (let used = widths[0]; kept < graphemes.length && used + widths[kept] <= room; kept++) used += widths[kept];
+  return `${graphemes.slice(0, kept).join("").trimEnd()}${ELLIPSIS}`;
 }

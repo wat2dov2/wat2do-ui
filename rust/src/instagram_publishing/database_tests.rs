@@ -468,6 +468,28 @@ async fn a_claimed_batch_is_drawn_from_live_events_and_posted() {
         )
         .await,
     ];
+    // Mahjong Night's club is claimed (it has an owner), so its slide draws the
+    // website's verified check; the others' club is not.
+    let owner = Uuid::new_v4();
+    sqlx::query("INSERT INTO public.users (id, auth_id, email, role) VALUES ($1, $2, $3, 'user')")
+        .bind(owner)
+        .bind(Uuid::new_v4().to_string())
+        .bind(format!("{}@example.com", owner.simple()))
+        .execute(&db)
+        .await
+        .unwrap();
+    sqlx::query(
+        "WITH club AS (INSERT INTO public.clubs (club_name, school_id, created_by, status, submitted) \
+             VALUES ($1, $2, $3, 'approved', true) RETURNING id) \
+         UPDATE public.events SET club_id = (SELECT id FROM club) WHERE id = $4",
+    )
+    .bind(format!("Claimed club {}", owner.simple()))
+    .bind(school)
+    .bind(owner)
+    .bind(ids[0] as i32)
+    .execute(&db)
+    .await
+    .unwrap();
     let id = batch(&db, school, &slug, unique_day(), "ready_for_review", &ids).await;
 
     let image = jpeg();
@@ -517,6 +539,9 @@ async fn a_claimed_batch_is_drawn_from_live_events_and_posted() {
     );
     assert_eq!(renders[1]["event"]["id"], ids[0]);
     assert_eq!(renders[1]["school"], slug.as_str());
+    // `claimed_club!`, the website's one verified rule, read live at publish time.
+    assert_eq!(renders[1]["event"]["verified"], true);
+    assert_eq!(renders[2]["event"]["verified"], false);
     assert_eq!(
         site.recorded()[0].header("authorization"),
         Some("Bearer render-secret")

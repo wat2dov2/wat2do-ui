@@ -10,19 +10,21 @@ import {
   OutroSlideTemplate,
 } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import {
+  SLIDE_AUTHOR_TEXT,
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
   buildCoverSlideModel,
   buildEventSlideModel,
   buildOutroSlideModel,
+  eventSlideAuthorWidth,
   fitEventSlidePoster,
   selectOutroEvents,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
-import { loadImageFonts } from "@/shared/services/imageFonts.server";
+import { fitImageText, loadImageFonts } from "@/shared/services/imageFonts.server";
 import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 export const runtime = "nodejs";
@@ -147,7 +149,9 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
       school: schoolRecord,
       poster: dimensions?.width && dimensions.height ? fitEventSlidePoster(dimensions.width, dimensions.height) : undefined,
     });
-    return <EventSlideTemplate model={model} />;
+    // A long handle ends in "…" right before the verified check, as on Instagram.
+    const author = await fitImageText(model.author, eventSlideAuthorWidth(model.poster, Boolean(model.verifiedLabel)), SLIDE_AUTHOR_TEXT);
+    return <EventSlideTemplate model={{ ...model, author }} />;
   }
 
   if (slide.kind === "outro") {

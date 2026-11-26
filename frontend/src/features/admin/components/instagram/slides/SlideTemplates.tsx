@@ -16,6 +16,9 @@ import {
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
   SLIDE_STICKER_SIZE,
+  SLIDE_HEADER_GAP,
+  SLIDE_AUTHOR_TEXT,
+  SLIDE_VERIFIED_CHECK,
   OUTRO_GRID_COLUMNS,
   OUTRO_GRID_ROWS,
   OUTRO_CARD_MAX_SCALE,
@@ -32,6 +35,9 @@ const LIGHT = {
   foreground: "#171717",
   mutedForeground: "#5c5c5c",
 } as const;
+
+/** The website's verified check colours, from `--badge-verified` in styles/decorative-tokens.css. */
+const VERIFIED = { fill: "#1d9bf0", check: "#ffffff" } as const;
 
 /** Both slides fill the frame and set their own colours on top of it. */
 const slideFrame: React.CSSProperties = {
@@ -84,6 +90,20 @@ function SlideAvatar({ src, author, size, renderPoster }: { src: string; author:
   </div>;
 }
 
+/**
+ * The website's verified check (`ClubVerifiedCheck`: lucide `BadgeCheck`, blue
+ * badge, white tick) after a claimed club's name. Satori cannot draw the lucide
+ * component, so its two paths are repeated here.
+ */
+function SlideVerifiedCheck({ label }: { label: string }) {
+  return (
+    <svg width={SLIDE_VERIFIED_CHECK.size} height={SLIDE_VERIFIED_CHECK.size} viewBox="0 0 24 24" role="img" aria-label={label} style={{ flexShrink: 0 }}>
+      <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" fill={VERIFIED.fill} stroke={VERIFIED.fill} strokeWidth="2" strokeLinejoin="round" />
+      <path d="m9 12 2 2 4-4" fill="none" stroke={VERIFIED.check} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** One reusable, deliberately playful sticker silhouette, chosen by the label’s meaning. */
 function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number] }) {
   const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF", "#FFD4A8", "#B8EEE4", "#FFC8B8", "#E8EDAD", "#CDD9FF"];
@@ -123,10 +143,15 @@ export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: 
     <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64, alignItems: "center", justifyContent: "center" }}>
       <CoverDoodleField icons={model.doodleIcons} />
       <div style={{ display: "flex", flexDirection: "column", position: "relative", width: cardWidth, height: SLIDE_EVENT_HEADER_HEIGHT + poster.height + SLIDE_EVENT_FOOTER_HEIGHT, flexShrink: 0, backgroundColor: LIGHT.surface, borderRadius: 28, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, height: SLIDE_EVENT_HEADER_HEIGHT, padding: `12px ${SLIDE_CARD_INSET}px`, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: SLIDE_HEADER_GAP, height: SLIDE_EVENT_HEADER_HEIGHT, padding: `12px ${SLIDE_CARD_INSET}px`, flexShrink: 0 }}>
           <SlideAvatar src={model.avatarSrc} author={model.author} size={SLIDE_POSTER_REGIONS.avatar.width} renderPoster={renderPoster} />
           <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 3 }}>
-            <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
+            {/* The render route cuts a long author to fit (eventSlideAuthorWidth) so the
+                check follows its last glyph; the clamp only guards the browser preview. */}
+            <div style={{ display: "flex", alignItems: "center", gap: SLIDE_VERIFIED_CHECK.gap, minWidth: 0 }}>
+              <p style={{ ...clampText(1), flexShrink: 1, minWidth: 0, ...SLIDE_AUTHOR_TEXT, lineHeight: 1.2, maxHeight: 39 }}>{model.author}</p>
+              {model.verifiedLabel ? <SlideVerifiedCheck label={model.verifiedLabel} /> : null}
+            </div>
             {model.location ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29 }}>{model.location}</p> : null}
             {schedule ? <p style={{ ...clampText(1), fontSize: 24, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{schedule}</p> : null}
           </div>
