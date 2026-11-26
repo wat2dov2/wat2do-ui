@@ -133,6 +133,8 @@ def _environment(school: str, workdir: str) -> dict[str, str]:
             "CLAUDE_CONFIG_DIR": os.path.expanduser(CONTROL.claude_config_dir),
             "WAT2DO_SITTING_SCHOOL": school,
             "WAT2DO_SITTING_DIR": workdir,
+            # A move outlasting Claude Code's two-minute default went to the background.
+            "BASH_DEFAULT_TIMEOUT_MS": str(CONTROL.move_timeout_minutes * 60_000),
             # The worker holds the emulator for the whole sitting, so moves never wait on it.
             "WAT2DO_EMULATOR_HELD": "1",
         }

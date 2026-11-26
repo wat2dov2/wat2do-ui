@@ -1249,6 +1249,9 @@ class InstagramSessionsControl(_ControlModel):
     limit_pause_minutes: int = Field(ge=5, le=720)
     # The notification agent runs on the same model and login, at most this long a run.
     notification_timeout_minutes: int = Field(ge=2, le=120)
+    # How long Claude Code lets one `ig` move run before moving it to the background: a
+    # move paces itself like a person (a reply waits and types for minutes).
+    move_timeout_minutes: int = Field(ge=2, le=10)
     # A post's like record gets a thank-you story only from this many likes; a smaller
     # record is kept without one.
     milestone_minimum_likes: int = Field(ge=1, le=100_000)

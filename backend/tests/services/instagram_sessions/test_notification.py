@@ -134,6 +134,8 @@ def test_a_run_switches_to_the_account_and_keeps_the_full_report_on_the_mac(monk
     assert seen["env"]["WAT2DO_SITTING_SCHOOL"] == "tmu"
     assert seen["env"][module.RUN] == "1"
     assert seen["env"]["CLAUDE_CONFIG_DIR"].endswith(".claude-second")
+    # A paced move may run for minutes before Claude Code moves it to the background.
+    assert int(seen["env"]["BASH_DEFAULT_TIMEOUT_MS"]) >= 5 * 60_000
     assert "sender: TMU Pre-Vet Club\n" in seen["prompt"] and "{{" not in seen["prompt"]
     (kept,) = (tmp_path / f"{datetime.now(module.TORONTO).date()}.jsonl").read_text().splitlines()
     assert json.loads(kept)["report"]["replied"] == "Sure, done!"

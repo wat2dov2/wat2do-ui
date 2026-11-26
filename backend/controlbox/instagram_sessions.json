@@ -7,6 +7,7 @@
   "sitting_attempts": 2,
   "limit_pause_minutes": 30,
   "notification_timeout_minutes": 20,
+  "move_timeout_minutes": 10,
   "milestone_minimum_likes": 10,
   "milestone_window_hours": 28
 }

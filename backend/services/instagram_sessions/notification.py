@@ -188,6 +188,8 @@ def _run(notification: Notification, moment: datetime, extra: dict[str, str]) ->
             "CLAUDE_CONFIG_DIR": os.path.expanduser(SESSIONS.claude_config_dir),
             "WAT2DO_SITTING_SCHOOL": notification.school,
             "WAT2DO_SITTING_DIR": workdir,
+            # A move outlasting Claude Code's two-minute default went to the background.
+            "BASH_DEFAULT_TIMEOUT_MS": str(SESSIONS.move_timeout_minutes * 60_000),
             RUN: "1",
             **extra,
         }
