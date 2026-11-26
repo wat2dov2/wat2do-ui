@@ -50,7 +50,7 @@ Then for each thread you read, choose what it needs:
 
 **Claim messages.** Whenever a club asks us to repost, share or feature their post, run `ig claim "<name>" <their username>`: it sends one short message saying we will keep featuring their events and asking them, as a favour, to claim their club on Wat2Do through their own link (it gives their page a verified check and helps us build credibility). Do not draft any other reply in that thread.
 Also run `ig claim` on every thread whose `ig inbox` preview shows our unsent draft holding a `[claim link]`: an earlier sitting typed it and it is still waiting.
-Skip the claim when the move refuses (the club already has an owner, asked to be left out, the thread holds another reply waiting for a person, or this account is done for today).
+Skip the claim when the move refuses (claim messages are switched off, the club already has an owner, was already sent its claim message, asked to be left out, the thread is not the club's own, the thread holds another reply waiting for a person, or this account is done for today), and never try it again in another way.
 A claim link shows as `[claim link]` wherever you read one.
 
 ## What Wat2Do is

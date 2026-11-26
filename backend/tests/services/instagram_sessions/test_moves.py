@@ -3,10 +3,18 @@ from types import SimpleNamespace
 
 import pytest
 
+from services.instagram_emulator import direct as direct_module
 from services.instagram_emulator.device import Node
 from services.instagram_sessions import moves
 
 TOKEN = "0f6b3c1e-1234-4c5d-9e8f-abcdefabcdef"
+PRE_VET = moves.ClaimTarget(
+    club_id=41,
+    name="TMU Pre-Vet Club",
+    handle="tmuprevet",
+    token=TOKEN,
+    tokens=frozenset({TOKEN}),
+)
 
 
 @pytest.fixture(autouse=True)
@@ -48,17 +56,17 @@ def test_a_safe_reply_is_plain_one_line_ascii():
 
 class _Reader:
     drafts: list[str] = []
-    sent: list[str] = []
+    sent: list[tuple] = []
     thread: list[dict] = []
 
-    def __init__(self, device, opener):
+    def __init__(self, device, thread, opener):
         self.stale = False
 
     def draft(self, text):
         _Reader.drafts.append(text)
 
-    def send_claim(self, text):
-        _Reader.sent.append(text)
+    def send_claim(self, text, *, handle, tokens):
+        _Reader.sent.append((text, handle, tokens))
         return "typed and sent the claim message"
 
     def read(self):
@@ -74,12 +82,20 @@ def reader(monkeypatch):
     return _Reader
 
 
+@pytest.fixture
+def claims_on(monkeypatch):
+    """Claim messages as they were sent before 2026-11-25 switched them off."""
+    monkeypatch.setattr(
+        moves, "DMS", moves.DMS.model_copy(update={"claim_sends_per_account_per_day": 6})
+    )
+
+
 def _args(**values):
     return SimpleNamespace(**{"thread": "TMU Pre-Vet Club", "text": "", "claim": None, **values})
 
 
 def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
-    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     result = moves.draft(object(), _args(text="happy to share it!", claim="tmuprevet"))
     (typed,) = reader.drafts
     assert typed.startswith("happy to share it! Hey! We're happy to keep featuring your events.")
@@ -87,10 +103,21 @@ def test_a_claim_draft_types_the_link_but_never_prints_it(monkeypatch, reader):
     assert TOKEN not in json.dumps(result)
 
 
-def test_a_claim_sends_the_clubs_own_link_but_never_prints_it(monkeypatch, reader):
-    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+def test_claims_stay_switched_off(monkeypatch, reader):
+    # Off since 2026-11-25, when claims went into other clubs' threads.
+    assert moves.DMS.claim_sends_per_account_per_day == 0
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
+    with pytest.raises(moves.MoveError, match="switched off"):
+        moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
+    assert reader.sent == []
+
+
+def test_a_claim_sends_the_clubs_own_link_but_never_prints_it(monkeypatch, reader, claims_on):
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     result = moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
-    (sent,) = reader.sent
+    ((sent, handle, tokens),) = reader.sent
+    # The reader checks the thread is the club's own and any waiting draft is its link.
+    assert handle == "tmuprevet" and tokens == {TOKEN}
     assert "keep featuring your events" in sent and "claim your club" in sent
     assert f"https://tmu.wat2do.io/claim/{TOKEN}" in sent
     assert result["status"] == "typed and sent the claim message"
@@ -119,16 +146,16 @@ def _log_claims(count, minutes_ago):
         )
 
 
-def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader):
-    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+def test_an_account_sends_at_most_its_daily_claims(monkeypatch, reader, claims_on):
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     _log_claims(moves.DMS.claim_sends_per_account_per_day, minutes_ago=60)
     with pytest.raises(moves.MoveError, match="for today"):
         moves.claim(object(), SimpleNamespace(thread="TMU Pre-Vet Club", username="tmuprevet"))
     assert reader.sent == []
 
 
-def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader):
-    monkeypatch.setattr(moves, "claim_token", lambda handle: ("TMU Pre-Vet Club", TOKEN))
+def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader, claims_on):
+    monkeypatch.setattr(moves, "claim_target", lambda handle: PRE_VET)
     slept = []
     monkeypatch.setattr(moves.time, "sleep", slept.append)
     _log_claims(1, minutes_ago=0)
@@ -136,6 +163,116 @@ def test_a_claim_waits_out_the_gap_after_the_last_send(monkeypatch, reader):
     (wait,) = slept
     assert moves.DMS.claim_send_gap_min_seconds - 5 <= wait <= moves.DMS.claim_send_gap_max_seconds
     assert len(reader.sent) == 1
+
+
+class _Table:
+    """One table of a fake database: filters by ``eq``, records inserts."""
+
+    def __init__(self, rows, inserted):
+        self.rows = rows
+        self.inserted = inserted
+        self.filters = {}
+        self.row = None
+
+    def select(self, *_columns):
+        return self
+
+    def eq(self, column, value):
+        self.filters[column] = value
+        return self
+
+    def ilike(self, *_args):
+        return self
+
+    def limit(self, _count):
+        return self
+
+    def insert(self, row):
+        self.row = {**row, "claim_token": "new-token"}
+        self.inserted.append(self.row)
+        return self
+
+    def execute(self):
+        if self.row is not None:
+            rows = [self.row]
+        else:
+            rows = [r for r in self.rows if all(r.get(k) == v for k, v in self.filters.items())]
+        return SimpleNamespace(data=rows)
+
+
+@pytest.fixture
+def database(monkeypatch):
+    tables = {
+        "clubs": [
+            {
+                "id": 41,
+                "school_id": 7,
+                "club_name": "TMU Pre-Vet Club",
+                "ig": "@TMUPreVet",
+                "created_by": None,
+            }
+        ],
+        "instagram_excluded_clubs": [],
+        "club_members": [],
+        "outreach_leads": [
+            {"club_id": 41, "claim_token": "old-token", "status": "claimed"},
+            {"club_id": 41, "claim_token": TOKEN, "status": "new"},
+        ],
+    }
+    inserted: list[dict] = []
+    db = SimpleNamespace(table=lambda name: _Table(tables[name], inserted))
+    monkeypatch.setattr(moves, "get_sb", lambda: db)
+    monkeypatch.setattr(direct_module, "get_sb", lambda: db)
+    return SimpleNamespace(tables=tables, inserted=inserted)
+
+
+def test_a_claim_target_carries_every_token_of_its_club(database):
+    target = moves.claim_target("tmuprevet")
+    assert (target.club_id, target.handle, target.token) == (41, "tmuprevet", TOKEN)
+    assert target.tokens == {"old-token", TOKEN.casefold()}
+    assert database.inserted == []
+
+
+def test_a_club_that_asked_to_be_left_out_has_no_claim_target(database):
+    database.tables["instagram_excluded_clubs"].append({"ig_handle": "tmuprevet"})
+    with pytest.raises(moves.EmulatorError, match="left out"):
+        moves.claim_target("tmuprevet")
+
+
+def _log_sent_claim(day, result):
+    moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {"school": "tmu", "move": "claim", "ok": True, "ended": f"{day}T15:00:00+00:00"}
+    with (moves.LOG_DIR / f"{day}.jsonl").open("a") as log:
+        log.write(json.dumps({**entry, "result": result}) + "\n")
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        # A send logged since 2026-11-25 names the club by its ID...
+        {"thread": "tmuprevet", "claim_for": "Renamed Club", "club_id": 41},
+        # ...and one logged before by its name only.
+        {"thread": "TMU Pre-Vet Club", "claim_for": "TMU Pre-Vet Club"},
+    ],
+)
+def test_a_club_is_sent_its_claim_message_once_ever(database, result):
+    _log_sent_claim("2026-11-20", result)
+    with pytest.raises(moves.MoveError, match="already sent"):
+        moves.claim_target("tmuprevet")
+
+
+def test_another_schools_or_a_failed_claim_does_not_count_as_sent(database):
+    moves.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    with (moves.LOG_DIR / "2026-11-20.jsonl").open("a") as log:
+        for school, ok in (("uwo", True), ("tmu", False)):
+            entry = {
+                "school": school,
+                "move": "claim",
+                "ok": ok,
+                "ended": "2026-11-20T15:00:00+00:00",
+            }
+            log.write(json.dumps({**entry, "result": {"club_id": 41}}) + "\n")
+    assert moves.claim_target("tmuprevet").club_id == 41
 
 
 def test_a_sitting_never_sees_a_claim_link_it_reads(monkeypatch, reader):

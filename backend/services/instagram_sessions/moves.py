@@ -8,7 +8,8 @@ sitting log, never a message's text.
 
 Replies are typed into their thread and left there for a person to read and send. The
 one direct message a move sends is the claim-link message (``ig claim``) to a club that
-asked us to repost or feature its post (Tony, 2026-11-24), paced and capped per account.
+asked us to repost or feature its post (Tony, 2026-11-24), paced, capped per account and
+sent at most once to each club, only in that club's own thread.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ import sys
 import time
 import unicodedata
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -35,7 +37,6 @@ from core.database import get_sb
 from core.tables import (
     CLUB_MEMBERS,
     CLUBS,
-    INSTAGRAM_EXCLUDED_CLUBS,
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
     OUTREACH_LEADS,
@@ -44,7 +45,13 @@ from services import school_service
 from services.ingestion import items
 from services.instagram_accounts import school_account_username
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, exclusive
-from services.instagram_emulator.direct import CLAIM_LINK, ThreadReader, exclude_club
+from services.instagram_emulator.direct import (
+    CLAIM_LINK,
+    ThreadReader,
+    exclude_club,
+    plain_handle,
+    refuse_if_excluded,
+)
 from services.instagram_emulator.inbox import open_row, read_inbox
 from services.instagram_emulator.story import share_to_story
 from services.instagram_publishing import music, stories
@@ -84,6 +91,19 @@ _PLAIN_QUOTES = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"'})
 
 class MoveError(RuntimeError):
     """The move refused or failed; its message is printed for Claude to read."""
+
+
+@dataclass(frozen=True)
+class ClaimTarget:
+    """An unclaimed club of this school that may get its claim link."""
+
+    club_id: int
+    name: str
+    handle: str
+    # The claim token its link carries.
+    token: str
+    # Every claim token of its outreach leads: a draft typed earlier may carry any of them.
+    tokens: frozenset[str]
 
 
 def school() -> str:
@@ -200,8 +220,9 @@ def draft(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
         parts.append(reply)
     club = None
     if args.claim:
-        club, token = claim_token(args.claim)
-        parts.append(_claim_message(token))
+        target = claim_target(args.claim)
+        club = target.name
+        parts.append(_claim_message(target.token))
     if not parts:
         raise MoveError("Nothing to type: give --text, --claim or both")
     _reader(device, args.thread).draft(" ".join(parts))
@@ -211,11 +232,15 @@ def draft(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
 def claim(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     """Send the club behind ``username`` its claim-link message in the thread.
 
-    The one DM a sitting sends. A claim-link draft already waiting there is sent as it
-    is. Each account sends at most ``claim_sends_per_account_per_day`` a day, each a
-    random ``claim_send_gap_*_seconds`` after its last, so it never sends in a burst.
+    The one DM a sitting sends, at most once to each club, and only in the club's own
+    thread (``ThreadReader.send_claim`` checks the thread before touching it). A claim-link
+    draft already waiting there is sent as it is when it carries the club's own link. Each
+    account sends at most ``claim_sends_per_account_per_day`` a day, each a random
+    ``claim_send_gap_*_seconds`` after its last, so it never sends in a burst.
     """
-    club, token = claim_token(args.username)
+    if DMS.claim_sends_per_account_per_day == 0:
+        raise MoveError("Claim messages are switched off; send nothing")
+    target = claim_target(args.username)
     sent_today = _claims_sent_today()
     if len(sent_today) >= DMS.claim_sends_per_account_per_day:
         raise MoveError("This account sent its claim messages for today; try again tomorrow")
@@ -224,8 +249,15 @@ def claim(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
         wait = gap - (datetime.now(timezone.utc) - max(sent_today)).total_seconds()
         if wait > 0:
             time.sleep(wait)
-    outcome = _reader(device, args.thread).send_claim(_claim_message(token))
-    return {"thread": args.thread, "claim_for": club, "status": outcome}
+    outcome = _reader(device, args.thread).send_claim(
+        _claim_message(target.token), handle=target.handle, tokens=target.tokens
+    )
+    return {
+        "thread": args.thread,
+        "claim_for": target.name,
+        "club_id": target.club_id,
+        "status": outcome,
+    }
 
 
 def _claim_message(token: str) -> str:
@@ -237,7 +269,24 @@ def _claim_message(token: str) -> str:
 
 def _claims_sent_today() -> list[datetime]:
     """When this account's claim messages went out today, from the sitting log."""
-    path = LOG_DIR / f"{_today()}.jsonl"
+    return [
+        datetime.fromisoformat(entry["ended"])
+        for entry in _claims_sent(LOG_DIR / f"{_today()}.jsonl")
+    ]
+
+
+def _claimed_before(club_id: int, name: str) -> bool:
+    """Whether this account ever sent the club its claim message, from every sitting log.
+    Logs from before 2026-11-25 name the club only (``claim_for``)."""
+    return any(
+        entry["result"].get("club_id") == club_id or entry["result"].get("claim_for") == name
+        for path in sorted(LOG_DIR.glob("*.jsonl"))
+        for entry in _claims_sent(path)
+    )
+
+
+def _claims_sent(path: Path) -> list[dict[str, Any]]:
+    """This account's claim moves that sent their message, from one day's sitting log."""
     if not path.exists():
         return []
     sent = []
@@ -247,7 +296,7 @@ def _claims_sent_today() -> list[datetime]:
         except ValueError:
             continue
         if entry.get("school") == school() and entry.get("move") == "claim" and entry.get("ok"):
-            sent.append(datetime.fromisoformat(entry["ended"]))
+            sent.append({**entry, "result": entry.get("result") or {}})
     return sent
 
 
@@ -373,7 +422,10 @@ def plain(text: str) -> str:
 
 def sender(thread: list[dict[str, Any]]) -> str:
     """The other account's username, or "" when the screen never showed it."""
-    return next((_handle(item.get("sender")) for item in thread if _handle(item.get("sender"))), "")
+    return next(
+        (plain_handle(item.get("sender")) for item in thread if plain_handle(item.get("sender"))),
+        "",
+    )
 
 
 def their_latest_words(thread: list[dict[str, Any]]) -> str:
@@ -386,10 +438,10 @@ def their_latest_words(thread: list[dict[str, Any]]) -> str:
     )
 
 
-def claim_token(handle: str) -> tuple[str, str]:
-    """The club's name and claim token: the club this school lists under ``handle``,
-    unclaimed and not left out, with an outreach lead made for it if it has none."""
-    wanted = _handle(handle)
+def claim_target(handle: str) -> ClaimTarget:
+    """The club this school lists under ``handle``, unclaimed, not left out and never sent
+    its claim message, with an outreach lead made for it if it has none."""
+    wanted = plain_handle(handle)
     record = school_service.get_school(school())
     if record is None:
         raise MoveError("This school is not in the database")
@@ -402,23 +454,17 @@ def claim_token(handle: str) -> tuple[str, str]:
         .ilike("ig", f"%{wanted}")
         .execute()
     ).data or []
-    club = next((c for c in clubs if _handle(c.get("ig")) == wanted), None)
+    club = next((c for c in clubs if plain_handle(c.get("ig")) == wanted), None)
     if club is None:
         raise MoveError(f"No club at this school has the Instagram account {wanted}")
-    excluded = (
-        get_sb()
-        .table(INSTAGRAM_EXCLUDED_CLUBS)
-        .select("ig_handle")
-        .eq("ig_handle", wanted)
-        .execute()
-    ).data
+    refuse_if_excluded(wanted)
     members = (
         get_sb().table(CLUB_MEMBERS).select("club_id").eq("club_id", club["id"]).limit(1).execute()
     ).data
-    if excluded:
-        raise MoveError("This club asked to be left out; send it nothing")
     if club.get("created_by") or members:
         raise MoveError("This club already has an owner, so it has nothing to claim")
+    if _claimed_before(club["id"], club["club_name"]):
+        raise MoveError("This club was already sent its claim message; send it nothing more")
     leads = (
         get_sb()
         .table(OUTREACH_LEADS)
@@ -434,15 +480,18 @@ def claim_token(handle: str) -> tuple[str, str]:
             .insert({"club_id": club["id"], "notes": "Claim link drafted in a DM sitting."})
             .execute()
         ).data[0]
-    return club["club_name"], lead["claim_token"]
-
-
-def _handle(value: object) -> str:
-    return str(value or "").strip().lstrip("@").casefold()
+        leads.append(lead)
+    return ClaimTarget(
+        club_id=club["id"],
+        name=club["club_name"],
+        handle=wanted,
+        token=str(lead["claim_token"]),
+        tokens=frozenset(str(lead["claim_token"]).casefold() for lead in leads),
+    )
 
 
 def _reader(device: EmulatorDevice, thread: str) -> ThreadReader:
-    return ThreadReader(device, lambda: open_row(device, user(), thread))
+    return ThreadReader(device, thread, lambda: open_row(device, user(), thread))
 
 
 def _without_claim_links(text: str) -> str:
@@ -458,7 +507,7 @@ def _their_share(device: EmulatorDevice, thread: str, url: str) -> str:
     if not any(
         item.get("from") == "them"
         and item.get("shared_url") == url
-        and _handle(item.get("shared_owner"))
+        and plain_handle(item.get("shared_owner"))
         for item in messages
     ):
         raise MoveError("That post was not shared by them in this thread")

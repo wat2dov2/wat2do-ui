@@ -6,6 +6,10 @@ text, and any post or reel shared in it. A reply is typed into the thread at a
 person's pace and left there unsent: a person reads every draft and sends it. The one
 message that is sent is the claim-link message to a club that asked us to feature it
 (Tony, 2026-11-24).
+
+Every move works on the thread it names and no other: the thread is opened from its
+inbox row each time and its header must name it before anything is read or typed
+(2026-11-25: claim messages went into whatever thread an earlier read had left open).
 """
 
 from __future__ import annotations
@@ -33,7 +37,19 @@ _SEND_BUTTON = re.compile(r"^row_thread_composer_send_button_container$")
 # An empty composer reads as a short rotating hint, such as "Message…".
 _COMPOSER_HINT = re.compile(r"^[^.!?\n]{1,40}…$")
 # A club's claim link, which carries its claim token.
-CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/\S+", re.IGNORECASE)
+CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/([0-9a-f-]+)\S*", re.IGNORECASE)
+# A message asking us to stop featuring them, in English or French.
+_OPT_OUT = re.compile(
+    r"\b(?:stop|quit)\s+(?:post|shar|repost|featur|includ|promot|tagg)"
+    r"|\b(?:don['’]?t|do not|no longer|not)\s+(?:to\s+)?(?:be\s+)?"
+    r"(?:post|shar|repost|featur|includ|promot|tag)"
+    r"|\bremove\s+(?:us|our)\b|\btake\s+(?:us|it|them|this|these|our\s+\w+)\s+(?:down|off)\b"
+    r"|\bleave\s+us\s+out\b|\bopt(?:ing)?[\s-]?out\b|\bunsubscribe\b"
+    r"|\bne\s+(?:pas|plus)\s+(?:nous\s+)?(?:publier|partager|republier|mettre)"
+    r"|\b(?:arr[eê]te[rz]?|cessez)\s+de\s+(?:publier|partager|republier)"
+    r"|\b(?:retire[rz]?|enlever|enlevez)\s+(?:nous|notre|nos)\b",
+    re.IGNORECASE,
+)
 _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
 _POST_LINK = re.compile(r"^https://www\.instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)/")
@@ -76,17 +92,31 @@ class ReplyWaiting(EmulatorError):
     """The thread holds an unsent reply of ours (no claim link) that a person has yet to send."""
 
 
+class ThreadMismatch(EmulatorError):
+    """The thread on screen is not the one asked for, so nothing was typed or sent in it."""
+
+
+class LeftOut(EmulatorError):
+    """The thread's club asked to be left out, so nothing was typed or sent to it."""
+
+
+class ClaimRefused(EmulatorError):
+    """The claim link waiting in the thread is not its club's own, so nothing was sent."""
+
+
 class ThreadReader:
-    def __init__(self, device: EmulatorDevice, opener: Callable[[], None]) -> None:
+    def __init__(self, device: EmulatorDevice, thread: str, opener: Callable[[], None]) -> None:
         self._device = device
-        # Brings the thread back on screen, e.g. after a story repost leaves it.
+        # The thread's name as its inbox row shows it, which its header shows too.
+        self._thread = thread
+        # Opens the thread from its inbox row, e.g. after a story repost leaves it.
         self._opener = opener
         # Whether the newest dated message on screen is over a week old; set by read.
         self.stale = False
 
     def read(self) -> list[dict[str, Any]]:
         """The thread's newest messages, oldest first, with each shared post's link."""
-        nodes = self._open()
+        nodes = self.open_thread()
         # A limited account can send nothing, so its threads are not read.
         raise_if_messaging_limited(nodes)
         self.stale = _newest_message_is_old(nodes)
@@ -117,10 +147,7 @@ class ThreadReader:
         thread's unsent text as its draft. A thread already holding an unsent claim link
         is left untouched until a person has read and sent it.
         """
-        nodes = self._screen_in_thread()
-        if self._device.find(_COMPOSER, nodes) is None:
-            accept_request(self._device)
-            nodes = self._screen_in_thread()
+        nodes = self._composer_shown(self.open_thread())
         composer = _required(self._device.find(_COMPOSER, nodes))
         if CLAIM_LINK.search(composer.text):
             raise DraftWaiting(
@@ -136,21 +163,44 @@ class ThreadReader:
         self._device.back()
         self._device.back()
 
-    def send_claim(self, message: str) -> str:
-        """Send the club its claim-link message, the one DM the automation sends.
+    def send_claim(self, message: str, *, handle: str, tokens: frozenset[str]) -> str:
+        """Send the club behind ``handle`` its claim-link message, the one DM the
+        automation sends.
 
-        A claim-link draft an earlier sitting typed is sent as it is; an empty composer gets
-        ``message`` typed at a person's pace, confirmed in the composer. A composer holding
-        any other unsent text is a reply waiting for a person and is left alone. Send is
-        tapped after a pause, and the composer must no longer hold the claim link.
+        The thread is opened from its inbox row and must be the club's own: its header
+        names the thread and its sender is ``handle``, a club that never asked to be left
+        out (in ``instagram_excluded_clubs`` or in a message on screen). A claim-link
+        draft an earlier sitting typed is sent as it is only when its token is one of
+        ``tokens``, the club's own; an empty composer gets ``message`` typed at a
+        person's pace, confirmed in the composer. A composer holding any other unsent
+        text is a reply waiting for a person and is left alone. Send is tapped after a
+        pause, once the header still names the thread, and the composer must no longer
+        hold the claim link.
         """
-        nodes = self._screen_in_thread()
-        if self._device.find(_COMPOSER, nodes) is None:
-            accept_request(self._device)
-            nodes = self._screen_in_thread()
+        nodes = self.open_thread()
+        sender = _sender(nodes)
+        if sender is None:
+            # While they are online the header shows only their display name.
+            sender = self._profile_username()
+            nodes = self.open_thread()
+        if plain_handle(sender) != plain_handle(handle):
+            raise ThreadMismatch(
+                f"This thread's sender is {sender or 'unreadable'}, not {handle}, "
+                "so nothing was sent"
+            )
+        refuse_if_excluded(sender)
+        if any(m["from"] == "them" and _OPT_OUT.search(m["text"]) for m in _messages(nodes)):
+            raise LeftOut("They asked in this thread to be left out, so nothing was sent")
+        nodes = self._composer_shown(nodes)
         composer = _required(self._device.find(_COMPOSER, nodes))
+        waiting = CLAIM_LINK.search(composer.text)
         typed = False
-        if CLAIM_LINK.search(composer.text):
+        if waiting:
+            if waiting.group(1).casefold() not in tokens:
+                raise ClaimRefused(
+                    "The claim link waiting in this thread belongs to another club, "
+                    "so nothing was sent"
+                )
             outcome = "sent the claim message that was waiting in the thread"
         elif not composer.text.strip() or _COMPOSER_HINT.match(composer.text.strip()):
             self._device.tap(composer)
@@ -165,7 +215,9 @@ class ThreadReader:
                 "This thread holds another unsent reply waiting for a person, so nothing was sent"
             )
         self._device.pause()
-        self._device.tap(_required(self._device.find(_SEND_BUTTON)))
+        nodes = self._device.screen()
+        self._require_thread(nodes)
+        self._device.tap(_required(self._device.find(_SEND_BUTTON, nodes)))
         self._device.pause()
         if CLAIM_LINK.search(_required(self._device.find(_COMPOSER)).text):
             raise EmulatorError("The claim message was still in the composer after Send")
@@ -174,13 +226,38 @@ class ThreadReader:
             self._device.back()
         return outcome
 
-    def _open(self) -> list[Node]:
+    def open_thread(self) -> list[Node]:
+        """Open the thread from its inbox row, every time, and return its screen once its
+        header names it; any other thread on screen raises ``ThreadMismatch``."""
         self._opener()
-        return self._device.screen()
+        nodes = self._device.screen()
+        self._require_thread(nodes)
+        return nodes
+
+    def _require_thread(self, nodes: list[Node]) -> None:
+        if not _in_thread(nodes) or not _names_thread(nodes, self._thread):
+            raise ThreadMismatch(
+                f"The thread on screen is not {self._thread!r}, so nothing was done in it"
+            )
+
+    def _composer_shown(self, nodes: list[Node]) -> list[Node]:
+        """The thread's screen with its composer: a message request shows it only once
+        accepted, and the thread must still be the one asked for after that."""
+        if self._device.find(_COMPOSER, nodes) is not None:
+            return nodes
+        accept_request(self._device)
+        nodes = self._device.screen()
+        self._require_thread(nodes)
+        return nodes
 
     def _screen_in_thread(self) -> list[Node]:
+        """The screen, back in the thread asked for: it is opened again from its inbox row
+        when another screen shows, and any other thread on screen is refused."""
         nodes = self._device.screen()
-        return nodes if _in_thread(nodes) else self._open()
+        if not _in_thread(nodes):
+            return self.open_thread()
+        self._require_thread(nodes)
+        return nodes
 
     def _with_shared_links(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Copy the links of their newest few shared posts.
@@ -197,7 +274,7 @@ class ThreadReader:
         if shares:
             # Reading a link leaves the thread wherever the app put it; start again from
             # its newest messages, with the share cut off at the top as before.
-            self._open()
+            self.open_thread()
         return self._revealed(messages)
 
     def _revealed(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -306,6 +383,28 @@ def _inserted(before: str, after: str) -> str | None:
 
 def _in_thread(nodes: list[Node]) -> bool:
     return any(node.resource_id == "message_list" for node in nodes)
+
+
+def _names_thread(nodes: list[Node], thread: str) -> bool:
+    """Whether the thread's header shows ``thread``, the name its inbox row shows: its
+    title, or its username under the title or on its avatar."""
+    wanted = _as_name(thread)
+    header = [
+        node.label.removeprefix("Open story of ")
+        for node in nodes
+        if node.resource_id in ("header_title", "header_subtitle", "header_avatar")
+    ]
+    return bool(wanted) and any(_as_name(label) == wanted for label in header)
+
+
+def _as_name(text: str) -> str:
+    # Instagram wraps some names in invisible direction marks.
+    return " ".join(text.replace("\u200e", "").replace("\u200f", "").casefold().split())
+
+
+def plain_handle(value: object) -> str:
+    """An Instagram username as stored: no "@", in lower case."""
+    return str(value or "").strip().lstrip("@").casefold()
 
 
 def _their_shares(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -496,10 +595,24 @@ def _as_typed(text: str) -> str:
     return " ".join(text.casefold().split())
 
 
+def refuse_if_excluded(sender: str) -> None:
+    """Raise ``LeftOut`` when the thread's sender asked to be left out: nothing is typed
+    or sent to a club in ``instagram_excluded_clubs``."""
+    excluded = (
+        get_sb()
+        .table(INSTAGRAM_EXCLUDED_CLUBS)
+        .select("ig_handle")
+        .eq("ig_handle", plain_handle(sender))
+        .execute()
+    ).data
+    if excluded:
+        raise LeftOut(f"{sender} asked to be left out; send it nothing")
+
+
 def exclude_club(ig_handle: str, *, reason: str) -> None:
     """Leave a club out of every carousel from now on; asking again changes nothing."""
     get_sb().table(INSTAGRAM_EXCLUDED_CLUBS).upsert(
-        {"ig_handle": (ig_handle or "").strip().lstrip("@").lower(), "reason": reason},
+        {"ig_handle": plain_handle(ig_handle), "reason": reason},
         on_conflict="ig_handle",
         ignore_duplicates=True,
     ).execute()
