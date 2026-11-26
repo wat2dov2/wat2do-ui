@@ -8,9 +8,9 @@ public; the full report stays in ``~/.local/state/wat2do/notification-agent/``.
 
 ``dry-run <threads.jsonl>`` runs the same prompt over recorded inbox reads (one JSON line
 per school: ``{"school", "threads": [{"name", "request", "messages", ...}]}``), one run per
-thread with messages, with moves that only say what they would do. It writes each
-thread's decision to ``--out`` (a local, owner-only file: it holds the replies) and prints
-the case counts.
+thread with messages, with moves that only say what they would do. It appends each
+thread's decision to ``--out`` (a local, owner-only file: it holds the replies), going on
+from where an earlier run stopped, and prints the case counts.
 """
 
 from __future__ import annotations
@@ -48,37 +48,50 @@ def run() -> int:
 
 
 def dry_run(threads: Path, out: Path, schools: set[str]) -> int:
-    decisions = []
-    for line in threads.read_text().splitlines():
-        record = json.loads(line)
-        if schools and record["school"] not in schools:
-            continue
-        inbox = [
-            {key: thread.get(key) for key in ("name", "preview", "age_days", "unread", "request")}
-            | {"ours_last": thread.get("ours_last")}
-            for thread in record["threads"]
-        ]
-        for thread in record["threads"]:
-            if not thread.get("messages"):
+    """Each thread's decision is appended to ``out`` as soon as it is made, so a run that
+    stops goes on from where it was; threads already decided there are skipped."""
+    decided = set()
+    if out.exists():
+        for line in out.read_text().splitlines():
+            decision = json.loads(line)
+            decided.add((decision["school"], decision["thread"]))
+    descriptor = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(descriptor, "a") as handle:
+        for line in threads.read_text().splitlines():
+            record = json.loads(line)
+            if schools and record["school"] not in schools:
                 continue
-            event = notification.Notification(
-                category="direct_v2_pending" if thread.get("request") else "direct_v2_text",
-                account=f"wat2do.{record['school']}",
-                sender=thread["name"],
-                received_at="",
-            )
-            recording = {"thread": thread["name"], "messages": thread["messages"], "inbox": inbox}
-            try:
-                report = notification.dry_run(event, recording)
-            except ClaudeCodeError as exc:
-                report = {"case": "error", "problems": str(exc)}
-            decisions.append({"school": record["school"], "thread": thread["name"], **report})
-            print(record["school"], thread["name"], report.get("case"), flush=True)
-    descriptor = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(descriptor, "w") as handle:
-        for decision in decisions:
-            handle.write(json.dumps(decision, ensure_ascii=False) + "\n")
-    print(json.dumps(Counter(decision.get("case") for decision in decisions)))
+            inbox = [
+                {key: thread.get(key) for key in ("name", "preview", "age_days", "unread")}
+                | {"request": thread.get("request"), "ours_last": thread.get("ours_last")}
+                for thread in record["threads"]
+            ]
+            for thread in record["threads"]:
+                if not thread.get("messages") or (record["school"], thread["name"]) in decided:
+                    continue
+                event = notification.Notification(
+                    category="direct_v2_pending" if thread.get("request") else "direct_v2_text",
+                    account=f"wat2do.{record['school']}",
+                    sender=thread["name"],
+                    received_at="",
+                )
+                recording = {
+                    "thread": thread["name"],
+                    "messages": thread["messages"],
+                    "inbox": inbox,
+                }
+                try:
+                    report = notification.dry_run(event, recording)
+                except ClaudeCodeError as exc:
+                    report = {"case": "error", "problems": str(exc)}
+                handle.write(
+                    json.dumps({"school": record["school"], "thread": thread["name"], **report})
+                    + "\n"
+                )
+                handle.flush()
+                print(record["school"], thread["name"], report.get("case"), flush=True)
+    cases = Counter(json.loads(line).get("case") for line in out.read_text().splitlines())
+    print(json.dumps(cases))
     return 0
 
 
