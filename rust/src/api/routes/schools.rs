@@ -354,7 +354,7 @@ pub async fn search_schools(
              s.language, s.faculties, s.location_examples, \
              COALESCE((SELECT json_agg(json_build_array(d.domain, d.is_primary)) \
                        FROM public.school_email_domains d WHERE d.school_id = s.id), '[]') AS domains \
-             FROM public.schools s ORDER BY s.name",
+             FROM public.schools s WHERE NOT s.hidden ORDER BY s.name",
         )
         .fetch_all(&state.db)
     })
@@ -388,7 +388,7 @@ pub async fn get_school(
         sqlx::query_as::<_, SchoolRow>(
             "SELECT slug, name, city, primary_color, secondary_color, timezone, language, \
              faculties, location_examples, recipient_id, semester_start, semester_end \
-             FROM public.schools WHERE slug = $1 LIMIT 1",
+             FROM public.schools WHERE slug = $1 AND NOT hidden LIMIT 1",
         )
         .bind(&slug)
         .fetch_optional(&state.db)

@@ -1213,6 +1213,13 @@ class InstagramSessionsControl(_ControlModel):
     limit_pause_minutes: int = Field(ge=5, le=720)
 
 
+class HiddenSchoolAccountControl(_ControlModel):
+    """A hidden school's test Instagram account on the emulator."""
+
+    android_user: int = Field(ge=0)
+    username: str = Field(pattern=r"^[a-z0-9._]{1,30}$")
+
+
 class InstagramEmulatorControl(_ControlModel):
     # The Android emulator whose Instagram app shares posts to school stories.
     serial: str = Field(pattern=r"^emulator-[0-9]{4,5}$")
@@ -1239,6 +1246,13 @@ class InstagramEmulatorControl(_ControlModel):
     android_user_by_school: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")], Annotated[int, Field(ge=0)]
     ] = Field(min_length=1)
+    # Hidden schools' (``schools.hidden``) test accounts, also held in the app: the
+    # notification recorder starts their Android users and names their notifications, so
+    # the notification workflow gets them, but no worker visit, sitting or follow crawl
+    # ever reads this map.
+    hidden_school_accounts: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")], HiddenSchoolAccountControl
+    ]
     adb_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # A user switch is waited for until the user is in front and unlocked, at most this long;
     # an account switch settles this long before its inbox is opened.
@@ -1302,12 +1316,21 @@ class InstagramEmulatorControl(_ControlModel):
             )
         if {path.split("/")[0] for path in self.instagram_cache_paths} & _INSTAGRAM_LOGIN_FOLDERS:
             raise ValueError("Deleting Instagram's settings or databases would log it out")
+        if set(self.android_user_by_school) & set(self.hidden_school_accounts):
+            raise ValueError("A hidden school's account cannot be a worker account too")
         if (
-            Counter(self.android_user_by_school.values()).most_common(1)[0][1]
+            Counter(self.android_users_by_account()).most_common(1)[0][1]
             > _INSTAGRAM_ACCOUNTS_PER_APP
         ):
             raise ValueError("An Android user can hold at most ten Instagram accounts")
         return self
+
+    def android_users_by_account(self) -> list[int]:
+        """The Android user of every account the app holds, hidden schools' included."""
+        return [
+            *self.android_user_by_school.values(),
+            *(account.android_user for account in self.hidden_school_accounts.values()),
+        ]
 
 
 class OutreachFormalityControl(_ControlModel):

@@ -68,6 +68,10 @@ _LOCK_NAME = "recorder.lock"
 # Instagram names the account a notification is for in its subText, as on the phones.
 _SUBTEXT = "android.subText"
 _SCHOOL_ACCOUNT = re.compile(r"^wat2do\.[a-z0-9._]{1,30}$")
+# Hidden schools' test accounts are named in their notifications too.
+_HIDDEN_SCHOOL_ACCOUNTS = frozenset(
+    account.username for account in EMULATOR.hidden_school_accounts.values()
+)
 _TEMPLATE = "android.template"
 # Android's category for a message (Notification.CATEGORY_MESSAGE).
 _MESSAGE = "msg"
@@ -173,7 +177,9 @@ class NotificationLog:
 
     def _learn_account(self, notification: Notification) -> None:
         subtext = notification.text(_SUBTEXT)
-        if notification.recipient_id and _SCHOOL_ACCOUNT.match(subtext):
+        if notification.recipient_id and (
+            _SCHOOL_ACCOUNT.match(subtext) or subtext in _HIDDEN_SCHOOL_ACCOUNTS
+        ):
             self._accounts[notification.recipient_id] = subtext
 
     def _append(self, line: bytes) -> None:
@@ -311,7 +317,7 @@ class Recorder:
         ):
             return
         self._users_checked_at = now
-        for user in sorted(set(EMULATOR.android_user_by_school.values())):
+        for user in sorted(set(EMULATOR.android_users_by_account())):
             try:
                 if self._device.user_started(user):
                     continue

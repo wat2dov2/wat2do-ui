@@ -171,6 +171,7 @@ async fn quiet_school_handles(pool: &PgPool) -> Result<IndexMap<String, String>>
            LEFT JOIN public.instagram_notifications AS n ON n.school_id = s.id \
              AND n.push_category IN ('post', 'subscription_daily_digest') \
              AND n.first_seen_at > now() - interval '30 days' \
+           WHERE NOT s.hidden \
            GROUP BY s.id, s.slug \
          ), quiet AS ( \
            SELECT * FROM last_post \
