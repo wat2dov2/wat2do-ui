@@ -136,6 +136,14 @@ class _InboxDevice:
     def scroll_down(self):
         pass
 
+    def wait_for(self, pattern):
+        # The requests list's title shows once it opened, unless a prompt is in front.
+        title = _node("Message requests", (189, 170, 657, 233), "action_bar_title")
+        return next((n for n in self.screen_nodes if n.labelled(pattern)), title)
+
+    def watch(self, look):
+        return look(self.screen_nodes)
+
 
 # wat2do.queensu's short inbox on 2026-10-25: one thread, no tabs and no Requests link.
 SHORT_INBOX = _row(

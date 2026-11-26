@@ -25,6 +25,8 @@ _TABS = re.compile(r"^(?:All|Primary|General|Requests)(?: \(\d+\))?(?:, .*)?$")
 _INBOX_SEARCH = re.compile(r"^(?:Search or ask Meta AI|Ask Meta AI or Search|Search)$")
 _SEARCH_FIELD = re.compile(r"^search_bar_real_field$")
 _MORE_ACCOUNTS = re.compile(r"^More accounts$")
+_REQUESTS_TITLE = re.compile(r"^Message requests$")
+_NO_REQUESTS = re.compile(r"^No message requests$|^You don't have any message requests")
 # Opening requests can first ask about message privacy; it is put off, never changed.
 _NOT_NOW = re.compile(r"^Not now$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
@@ -171,11 +173,12 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     if link is None:
         return False
     device.tap(link)
-    device.pause()
-    later = device.find(_NOT_NOW)
-    if later is not None:
-        device.tap(later)
-        device.pause()
+    # The list opens a moment after its title, or behind a privacy prompt.
+    shown = device.wait_for(re.compile(f"{_REQUESTS_TITLE.pattern}|{_NOT_NOW.pattern}"))
+    if shown.labelled(_NOT_NOW):
+        device.tap(shown)
+        device.wait_for(_REQUESTS_TITLE)
+    device.watch(lambda nodes: _row_nodes(nodes) or device.find(_NO_REQUESTS, nodes))
     return True
 
 
