@@ -114,6 +114,9 @@ class ThreadReader:
         self._device = device
         # The thread's name as its inbox row shows it, which its header shows too.
         self._thread = thread
+        # The username a request's header shows once its prompt named the thread by the
+        # sender's display name: after accepting, only the username is on screen.
+        self._username: str | None = None
         # Opens the thread from its inbox row, e.g. after a story repost leaves it.
         self._opener = opener
         # Whether the newest dated message on screen is over a week old; set by read.
@@ -284,7 +287,10 @@ class ThreadReader:
         return nodes
 
     def _require_thread(self, nodes: list[Node]) -> None:
-        if not _in_thread(nodes) or not _names_thread(nodes, self._thread):
+        if _in_thread(nodes) and _request_names(nodes, self._thread):
+            self._username = _header_title(nodes)
+        names = [self._thread, *([self._username] if self._username else [])]
+        if not _in_thread(nodes) or not any(_names_thread(nodes, name) for name in names):
             raise ThreadMismatch(
                 f"The thread on screen is not {self._thread!r}, so nothing was done in it"
             )
@@ -434,6 +440,21 @@ def _in_thread(nodes: list[Node]) -> bool:
     return any(node.resource_id == "message_list" for node in nodes)
 
 
+def _request_names(nodes: list[Node], thread: str) -> bool:
+    """Whether a message request's prompt ("Accept message request from <name>") names
+    ``thread``: a request's header shows only the sender's username, and the prompt their
+    display name, the name a notification gives."""
+    return any(
+        node.resource_id == "thread_disabled_title"
+        and _as_name(node.text.removeprefix("Accept message request from ")) == _as_name(thread)
+        for node in nodes
+    )
+
+
+def _header_title(nodes: list[Node]) -> str | None:
+    return next((node.label for node in nodes if node.resource_id == "header_title"), None)
+
+
 def _names_thread(nodes: list[Node], thread: str) -> bool:
     """Whether the thread's header shows ``thread``, the name its inbox row shows: its
     title, or its username under the title or on its avatar."""
@@ -443,7 +464,9 @@ def _names_thread(nodes: list[Node], thread: str) -> bool:
         for node in nodes
         if node.resource_id in ("header_title", "header_subtitle", "header_avatar")
     ]
-    return bool(wanted) and any(_as_name(label) == wanted for label in header)
+    return bool(wanted) and (
+        any(_as_name(label) == wanted for label in header) or _request_names(nodes, thread)
+    )
 
 
 def _as_name(text: str) -> str:

@@ -275,7 +275,15 @@ class _RequestsDevice:
                 *_row(940, "wat2do.mit, hey could you repost this ·, 2h", "wat2do.mit"),
                 *_row(1139, "wat2do.utsg, hi! can you feature ·, 1h", "wat2do.utsg"),
             ]
-        return [_node(self.TITLES[self.open], (304, 156, 650, 204), "header_title")]
+        # A request's header shows the username; its prompt names the display name.
+        return [
+            _node(self.open, (304, 156, 650, 204), "header_title"),
+            _node(
+                f"Accept message request from {self.TITLES[self.open]}",
+                (42, 1910, 1038, 2001),
+                "thread_disabled_title",
+            ),
+        ]
 
     def tap(self, node):
         self.open = node.description.split(", ")[0]

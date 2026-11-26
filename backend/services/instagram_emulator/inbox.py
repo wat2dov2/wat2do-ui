@@ -115,8 +115,9 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
 
 
 def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
-    """Open the message request whose thread header names ``name``, looking into each
-    request in turn (the sender is not told a request was opened); False when none is."""
+    """Open the message request whose thread names ``name`` (its header, or its prompt
+    "Accept message request from <display name>"), looking into each request in turn
+    (the sender is not told a request was opened); False when none is."""
     if not _open_list(device, user, requests=True):
         return False
     looked: set[str] = set()
@@ -126,10 +127,12 @@ def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
             return False
         looked.add(_name(rows[0]))
         _enter(device, rows[0])
-        title = next(
-            (node.label for node in device.screen() if node.resource_id == "header_title"), ""
+        nodes = device.screen()
+        title = next((node.label for node in nodes if node.resource_id == "header_title"), "")
+        prompt = next(
+            (node.text for node in nodes if node.resource_id == "thread_disabled_title"), ""
         )
-        if title == name:
+        if name in (title, prompt.removeprefix("Accept message request from ")):
             return True
         device.back()
         device.wait_for(_REQUESTS_TITLE)

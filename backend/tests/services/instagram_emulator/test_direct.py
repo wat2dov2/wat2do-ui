@@ -757,3 +757,32 @@ def test_a_heart_goes_on_their_newest_message_once() -> None:
 def test_a_heart_that_never_shows_fails() -> None:
     with pytest.raises(module.EmulatorError, match="did not show the heart"):
         _opened(_HeartDevice(HEART_CHAT, shows=False)).heart()
+
+
+# angrygooseinuw's request from wat2do.brocku on 2026-11-26: the header shows the
+# username, the prompt the display name a notification gives.
+REQUEST = [
+    _node("Back", (0, 128, 147, 275), "header_left_button"),
+    _node("wat2do.brocku", (304, 156, 572, 204), "header_title"),
+    _node("Business chat", (304, 204, 902, 246), "header_subtitle"),
+    _node("", (0, 275, 1080, 1900), "message_list"),
+    _node(
+        "Accept message request from Wat2Do | Sharing events @ brocku",
+        (42, 1910, 1038, 2001),
+        "thread_disabled_title",
+    ),
+]
+
+
+def test_a_request_is_named_by_its_prompt_and_then_by_its_username() -> None:
+    assert module._names_thread(REQUEST, "Wat2Do | Sharing events @ brocku")
+    assert module._names_thread(REQUEST, "wat2do.brocku")
+    assert not module._names_thread(REQUEST, "Wat2Do | Sharing events @ utsg")
+    # Accepted: the prompt is gone, and the username the header showed still names it.
+    reader = module.ThreadReader(object(), "Wat2Do | Sharing events @ brocku", lambda: None)
+    reader._require_thread(REQUEST)
+    reader._require_thread(REQUEST[:4])
+    with pytest.raises(module.ThreadMismatch):
+        module.ThreadReader(
+            object(), "Wat2Do | Sharing events @ brocku", lambda: None
+        )._require_thread(REQUEST[:4])
