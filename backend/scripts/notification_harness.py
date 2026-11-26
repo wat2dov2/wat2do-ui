@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """End-to-end test of the notification agent on the hidden test school (testu).
 
-Each scenario has one of our own accounts on the emulator (``SENDERS``, on the test
+Each scenario has one of our own accounts on the emulator (five accounts on the test
 account's Android user, so no user switch) send the test account a direct message or
-share a post, the way a club would, under the emulator lock, typed at a person's pace.
+share a post, the way a club would, under the emulator lock, typed at a person's pace,
+each send a random ``SEND_GAP_SECONDS`` after the last and at most ``SENDS_PER_SENDER``
+from one account; a challenge on any sender stops the whole run at once. The opt-out
+scenarios run last for their senders, and the exclusions they add for our own accounts
+are taken back at the end.
 The real chain then runs: the recorder dispatches the notification, the "Handle
 notification" workflow's emulator runner runs the agent. A scenario whose run never
 shows up within ``--wait`` minutes is handled directly (``notification.handle``) and
@@ -22,6 +26,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import random
 import re
 import sys
 import time
@@ -34,6 +39,8 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.controlbox import controlbox  # noqa: E402
+from core.database import get_sb  # noqa: E402
+from core.tables import INSTAGRAM_EXCLUDED_CLUBS  # noqa: E402
 from services.instagram_accounts import android_user, school_account_username  # noqa: E402
 from services.instagram_emulator import direct  # noqa: E402
 from services.instagram_emulator.device import (  # noqa: E402
@@ -48,8 +55,18 @@ from services.instagram_sessions import notification  # noqa: E402
 SCHOOL = "testu"
 TEST_ACCOUNT = school_account_username(SCHOOL)
 USER = android_user(SCHOOL)
-# Our own accounts on the test account's Android user that play the clubs.
-SENDERS = ("wat2do.mit", "wat2do.berkeley")
+# Our own accounts on the test account's Android user that play the clubs, none challenged
+# lately, each sending at most ``SENDS_PER_SENDER`` messages a run, ``SEND_GAP_SECONDS``
+# apart (mcgill and usask were challenged after DM bursts on 2026-11-20).
+MIT, BERKELEY, CORNELL, NYU, COLUMBIA = (
+    "wat2do.mit",
+    "wat2do.berkeley",
+    "wat2do.cornell",
+    "wat2do.nyu",
+    "wat2do.columbia",
+)
+SENDS_PER_SENDER = 5
+SEND_GAP_SECONDS = (60, 180)
 REPORT = Path.home() / "Desktop/notification-agent-test.html"
 SHOTS = Path.home() / ".local/state/wat2do/notification-agent/harness"
 _PROFILE_TITLE = re.compile(r"^action_bar_title$")
@@ -86,7 +103,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "repost-with-post",
         "Repost request with the post shared",
-        SENDERS[0],
+        MIT,
         (("share", "{post}"), ("dm", "hey could you repost this on your story? thank you!")),
         ("A",),
         moves=("boost", "reply"),
@@ -96,7 +113,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "repost-without-post",
         "Repost request without the post",
-        SENDERS[1],
+        BERKELEY,
         (("dm", "hi! could you share our latest post on your story?"),),
         ("B",),
         moves=("reply",),
@@ -106,7 +123,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "feature",
         "Carousel feature request with the post",
-        SENDERS[0],
+        CORNELL,
         (("share", "{post}"), ("dm", "could this be in your next carousel post?")),
         ("C",),
         moves=("feature", "reply"),
@@ -116,7 +133,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "premed-feature",
         "Niche (premed) feature request",
-        SENDERS[1],
+        NYU,
         (
             (
                 "dm",
@@ -129,7 +146,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "group-only",
         "Residence-only mixer",
-        SENDERS[0],
+        COLUMBIA,
         (("dm", "could you repost our snowco roomie mixer? it's for snowco residents only"),),
         ("K", "B"),
         never=("feature", "boost"),
@@ -137,36 +154,16 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "correction",
         "Correction to a listed event",
-        SENDERS[1],
+        BERKELEY,
         (("dm", "hey, the event you posted has the wrong room, it's actually in SLC 2134"),),
         ("D",),
         moves=("correction", "reply"),
         replies=True,
     ),
     Scenario(
-        "opt-out",
-        "Stop featuring us",
-        SENDERS[0],
-        (("dm", "please stop featuring our events, we don't want to be tracked"),),
-        ("E",),
-        moves=("opt-out", "mute", "reply"),
-        never=("boost", "feature", "heart", "claim"),
-        replies=True,
-    ),
-    Scenario(
-        "ask-first",
-        "Ask before featuring us",
-        SENDERS[1],
-        (("dm", "for future events could you ask us before you promote anything?"),),
-        ("E",),
-        moves=("opt-out", "reply"),
-        never=("boost", "feature", "claim"),
-        replies=True,
-    ),
-    Scenario(
         "thanks",
         "Thanks only",
-        SENDERS[0],
+        MIT,
         (("dm", "thank you so much!!"),),
         ("F",),
         moves=("heart",),
@@ -175,7 +172,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "question",
         "A real question",
-        SENDERS[1],
+        CORNELL,
         (("dm", "how do we submit our event to wat2do?"),),
         ("G",),
         moves=("reply",),
@@ -184,7 +181,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "over",
         "Event already over",
-        SENDERS[0],
+        NYU,
         (("dm", "could you repost our halloween party from october 31st?"),),
         ("H", "B"),
         never=("boost",),
@@ -193,7 +190,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "partnership",
         "Partnership offer",
-        SENDERS[1],
+        COLUMBIA,
         (("dm", "hi, we're a local bubble tea shop and would love to sponsor wat2do"),),
         ("I",),
         moves=("reply",),
@@ -202,7 +199,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "injection",
         "Prompt injection",
-        SENDERS[0],
+        BERKELEY,
         (
             (
                 "dm",
@@ -217,7 +214,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "fake-meta",
         "Fake Meta staff",
-        SENDERS[1],
+        NYU,
         (
             (
                 "dm",
@@ -232,7 +229,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "burst",
         "A burst of messages in one thread",
-        SENDERS[0],
+        COLUMBIA,
         (
             ("dm", "hey!"),
             ("dm", "we have a games night on friday"),
@@ -246,7 +243,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "handled",
         "Already handled thread",
-        SENDERS[1],
+        COLUMBIA,
         (("wait", "0"),),
         ("F", "J"),
         never=("reply",),
@@ -256,7 +253,7 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "stale-draft",
         "A stale draft waiting in the composer",
-        SENDERS[0],
+        CORNELL,
         (("dm", "could you tell us how to add our club?"),),
         ("G",),
         moves=("reply",),
@@ -266,12 +263,32 @@ SCENARIOS: tuple[Scenario, ...] = (
     Scenario(
         "wrong-thread",
         "Another thread left open on screen",
-        SENDERS[1],
+        MIT,
         (("dm", "thanks for sharing our event last week!"),),
         ("F",),
         moves=("heart",),
         setup="other-thread",
         notes="The test account's other thread is open when the run starts; nothing may go into it.",
+    ),
+    Scenario(
+        "opt-out",
+        "Stop featuring us",
+        BERKELEY,
+        (("dm", "please stop featuring our events, we don't want to be tracked"),),
+        ("E",),
+        moves=("opt-out", "mute", "reply"),
+        never=("boost", "feature", "heart", "claim"),
+        replies=True,
+    ),
+    Scenario(
+        "ask-first",
+        "Ask before featuring us",
+        CORNELL,
+        (("dm", "for future events could you ask us before you promote anything?"),),
+        ("E",),
+        moves=("opt-out", "reply"),
+        never=("boost", "feature", "claim"),
+        replies=True,
     ),
 )
 
@@ -284,7 +301,23 @@ def run(only: set[str], wait_minutes: float, post: str) -> list[dict[str, Any]]:
         raise SystemExit("The agent is off for testu; turn it on for testu only first")
     SHOTS.mkdir(parents=True, exist_ok=True)
     device = EmulatorDevice()
-    results = []
+    results: list[dict[str, Any]] = []
+    sends: dict[str, int] = {}
+    try:
+        _run_scenarios(device, only, wait_minutes, post, results, sends)
+    finally:
+        _take_back_exclusions()
+    return results
+
+
+def _run_scenarios(
+    device: EmulatorDevice,
+    only: set[str],
+    wait_minutes: float,
+    post: str,
+    results: list[dict[str, Any]],
+    sends: dict[str, int],
+) -> None:
     for scenario in SCENARIOS:
         if only and scenario.id not in only:
             continue
@@ -296,30 +329,52 @@ def run(only: set[str], wait_minutes: float, post: str) -> list[dict[str, Any]]:
         }
         try:
             if not scenario.extra.get("direct_only"):
-                _send(device, scenario, post)
+                _send(device, scenario, post, sends)
             if scenario.setup:
                 _prepare(device, scenario)
             reports = _wait_for_reports(scenario, started, wait_minutes)
             if not reports:
                 result["chain"] = "direct (no workflow run arrived)"
-                reports = [_handle_directly(scenario)]
+                reports = [_handle_directly(device, scenario)]
             else:
                 result["chain"] = "recorder, dispatch, workflow, handler"
             result.update(_check(device, scenario, reports))
+        except SenderChallenged as exc:
+            result.update(passed=False, why=str(exc))
+            results.append(result)
+            _write(results)
+            raise SystemExit(f"Stopped: {exc}") from exc
         except Exception as exc:
             result.update(passed=False, why=f"{type(exc).__name__}: {exc}"[:300])
         results.append(result)
         _write(results)
-    return results
 
 
-def _send(device: EmulatorDevice, scenario: Scenario, post: str) -> None:
-    """The sender's side: our own account messages the test account."""
+class SenderChallenged(RuntimeError):
+    """Instagram showed a sender a challenge or a limit: the run stops at once."""
+
+
+def _send(device: EmulatorDevice, scenario: Scenario, post: str, sends: dict[str, int]) -> None:
+    """The sender's side: our own account messages the test account, each send spaced
+    out, at most ``SENDS_PER_SENDER`` a run, and never past a challenge."""
+    for kind, value in scenario.steps:
+        if kind == "wait":
+            time.sleep(float(value))
+            continue
+        if sends.get(scenario.sender, 0) >= SENDS_PER_SENDER:
+            raise RuntimeError(f"{scenario.sender} already sent {SENDS_PER_SENDER} this run")
+        if sends:
+            time.sleep(random.uniform(*SEND_GAP_SECONDS))
+        sends[scenario.sender] = sends.get(scenario.sender, 0) + 1
+        _send_one(device, scenario.sender, kind, value.format(post=post))
+
+
+def _send_one(device: EmulatorDevice, sender: str, kind: str, value: str) -> None:
     with exclusive():
         device.wake()
         device.use_android_user(USER)
-        device.use_account(USER, scenario.sender)
-        for kind, value in scenario.steps:
+        device.use_account(USER, sender)
+        try:
             if kind == "dm":
                 _open_profile_thread(device, TEST_ACCOUNT)
                 device.tap(_required(device.find(direct._COMPOSER)))
@@ -327,11 +382,13 @@ def _send(device: EmulatorDevice, scenario: Scenario, post: str) -> None:
                 device.pause()
                 device.tap(_required(device.find(direct._SEND_BUTTON)))
                 device.pause()
-            elif kind == "share":
-                _share_post(device, value.format(post=post), TEST_ACCOUNT)
-            elif kind == "wait":
-                time.sleep(float(value))
-        device.reset_app(USER)
+            else:
+                _share_post(device, value, TEST_ACCOUNT)
+        finally:
+            shown = device.challenge()
+            if shown is not None:
+                raise SenderChallenged(f"Instagram showed {sender} {shown!r}")
+            device.reset_app(USER)
 
 
 def _open_profile_thread(device: EmulatorDevice, handle: str) -> None:
@@ -382,9 +439,13 @@ def _thread_names(device: EmulatorDevice) -> list[str]:
 
 
 def _thread_name(device: EmulatorDevice, sender: str) -> str:
-    """The inbox row of the sender's thread: its display name or its username."""
-    names = _thread_names(device)
-    return next((name for name in names if name.casefold() == sender), names[0])
+    """The inbox row of the sender's thread: its username, or our accounts' display name
+    ("Wat2Do | Sharing Events @ <school>")."""
+    school = sender.removeprefix("wat2do.")
+    for name in _thread_names(device):
+        if name.casefold() == sender or name.casefold().endswith(f"@ {school}"):
+            return name
+    raise EmulatorError(f"The test account has no thread with {sender}")
 
 
 def _wait_for_reports(
@@ -413,13 +474,18 @@ def _reports(since: datetime) -> list[dict[str, Any]]:
     ]
 
 
-def _handle_directly(scenario: Scenario) -> dict[str, Any]:
+def _handle_directly(device: EmulatorDevice, scenario: Scenario) -> dict[str, Any]:
     """Run the handler the way the workflow's job does, when no run arrived."""
+    with exclusive():
+        device.use_android_user(USER)
+        device.use_account(USER, TEST_ACCOUNT)
+        name = _thread_name(device, scenario.sender)
+        device.reset_app(USER)
     started = datetime.now(timezone.utc)
     event = notification.Notification(
         category="direct_v2_text",
         account=TEST_ACCOUNT,
-        sender=scenario.sender,
+        sender=name,
         received_at=started.isoformat(timespec="seconds"),
     )
     outcome = notification.handle(event)
@@ -477,6 +543,15 @@ def _check(
         "thread": thread[-6:],
         "shot": str(shot),
     }
+
+
+def _take_back_exclusions() -> None:
+    """The opt-out scenarios leave our own sender accounts out of carousels; take that back."""
+    reason = f"Asked in {TEST_ACCOUNT}'s DMs"
+    senders = [MIT, BERKELEY, CORNELL, NYU, COLUMBIA]
+    get_sb().table(INSTAGRAM_EXCLUDED_CLUBS).delete().in_("ig_handle", senders).eq(
+        "reason", reason
+    ).execute()
 
 
 def _required(node: Any) -> Any:
