@@ -83,6 +83,9 @@ class _AcceptingDevice:
     def tap_when(self, pattern):
         self.tapped.append(pattern.pattern)
 
+    def screen(self):
+        return [_node("", (168, 345, 1038, 395), "ig_text", "Search or ask Meta AI")]
+
     def tap(self, node):
         self.tapped.append(node.resource_id)
 
@@ -203,6 +206,9 @@ class _SearchDevice(_InboxDevice):
 
     def tap_when(self, pattern):
         self.tapped.append(pattern.pattern)
+
+    def screen(self):
+        return [_node("", (168, 345, 1038, 395), "ig_text", "Search or ask Meta AI")]
 
     def wait_for(self, pattern):
         return next((n for n in SEARCHED if n.labelled(pattern)), SEARCHED[0])

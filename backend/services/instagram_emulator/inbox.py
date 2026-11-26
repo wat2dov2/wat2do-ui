@@ -115,7 +115,10 @@ def _open_by_search(device: EmulatorDevice, user: int, name: str) -> bool:
     "More accounts", which are only accounts to start a chat with); False when none shows.
     Only the name is typed, into the search field."""
     _open_list(device, user, requests=False)
-    device.tap_when(_INBOX_SEARCH)
+    search = _scrolled_up_to(device, _INBOX_SEARCH)
+    if search is None:
+        raise EmulatorError("The inbox's search box never showed")
+    device.tap(search)
     device.tap(device.wait_for(_SEARCH_FIELD))
     device.type_text(name)
 
@@ -185,16 +188,23 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
 
 
 def _requests_link(device: EmulatorDevice) -> Node | None:
-    """The Requests tab or link. The inbox reopens where it was last scrolled, so it is
-    scrolled back up until the link or the top of the list ("Messages") shows."""
+    """The Requests tab or link, scrolled back into view: the inbox reopens where it was
+    last scrolled. None once the top of the list ("Messages") shows without it."""
+    return _scrolled_up_to(device, _REQUESTS_TAB, stop=_MESSAGES_HEADER)
+
+
+def _scrolled_up_to(
+    device: EmulatorDevice, pattern: re.Pattern[str], *, stop: re.Pattern[str] | None = None
+) -> Node | None:
+    """Scroll the inbox up until a control matching ``pattern`` shows; None when ``stop``
+    shows first or scrolling up changes nothing (the top)."""
     seen: list[Node] | None = None
     for _ in range(2 * (CONTROL.inbox_scrolls + 1) + 1):
         nodes = device.screen()
-        link = device.find(_REQUESTS_TAB, nodes)
-        if link is not None or device.find(_MESSAGES_HEADER, nodes) is not None:
-            return link
+        found = device.find(pattern, nodes)
+        if found is not None or (stop is not None and device.find(stop, nodes) is not None):
+            return found
         if nodes == seen:
-            # Scrolling up changed nothing: this is the top, and it has no link.
             return None
         seen = nodes
         device.scroll_up()
