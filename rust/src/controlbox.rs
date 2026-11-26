@@ -167,6 +167,7 @@ pub struct Ingestion {
     pub profile_renderer: String,
     pub profile_render_timeout_seconds: f64,
     pub quiet_school_hours: u64,
+    pub quiet_school_digest_hours: u64,
     pub quiet_school_lanes: usize,
     pub quiet_school_read_delay_seconds: f64,
     pub quiet_school_reread_hours: u64,

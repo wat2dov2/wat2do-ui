@@ -1092,6 +1092,9 @@ class IngestionControl(_ControlModel):
     # logged out (this many at a time, spaced out), each again only after the reread hours, and
     # their posts from the last few days are queued (rust/src/ingestion/quiet_schools.rs).
     quiet_school_hours: int = Field(ge=1, le=168)
+    # A bell push carries one post and the digest the day's, so a school whose last digest
+    # is older than this is read the same way even while bell pushes keep coming.
+    quiet_school_digest_hours: int = Field(ge=1, le=168)
     quiet_school_lanes: int = Field(ge=0, le=8)
     quiet_school_read_delay_seconds: float = Field(ge=0, le=600, allow_inf_nan=False)
     quiet_school_reread_hours: int = Field(ge=1, le=168)

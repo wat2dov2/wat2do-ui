@@ -3,8 +3,11 @@
 //! Almost every post reaches ingestion through a notification: the daily
 //! `subscription_daily_digest` push or a per-post bell push. Instagram decides when to
 //! send those, and some days a school gets none at all (TMU on 2026-11-15, with eleven
-//! others). So a school whose last `post` or digest notification is older than
-//! `quiet_school_hours` has its followed clubs' public profiles rendered logged out
+//! others). A bell push carries one post while the digest carries the day's, so a school
+//! can get bell pushes and still miss most posts (uwaterloo had no digest from 11-24 to
+//! 11-26 but bell pushes every few hours). So a school whose last `post` or digest
+//! notification is older than `quiet_school_hours`, or whose last digest is older than
+//! `quiet_school_digest_hours`, has its followed clubs' public profiles rendered logged out
 //! (`fetch::fetch_profile_posts`, the same Lightpanda render the club logos use), and
 //! each post from the last `quiet_school_post_days` days joins the ingestion queue like
 //! a notified post. A post already queued keeps its row, so nothing is read twice.
@@ -161,12 +164,16 @@ fn recent_posts(posts: &[GridPost], today: chrono::NaiveDate, days: i64) -> Vec<
 
 /// Active followed accounts (an event within `quiet_school_active_days`, or followed
 /// within `quiet_school_new_follow_days`) of every school without a `post` or digest
-/// notification for `quiet_school_hours`, by handle. Schools take turns, one club each,
-/// quietest school first, and each school's clubs with the newest events go first.
+/// notification for `quiet_school_hours`, or without a digest for
+/// `quiet_school_digest_hours`, by handle. Schools that missed their digest come before
+/// the ones only quiet for `quiet_school_hours` (their evening digest is likely still to
+/// come). Within that, schools take turns, one club each, the school longest without a
+/// digest first, and each school's clubs with the newest events go first.
 async fn quiet_school_handles(pool: &PgPool) -> Result<IndexMap<String, String>> {
     let rows: Vec<(String, String)> = sqlx::query_as(
         "WITH last_post AS ( \
-           SELECT s.id, s.slug, max(n.first_seen_at) AS seen \
+           SELECT s.id, s.slug, max(n.first_seen_at) AS seen, \
+             max(n.first_seen_at) FILTER (WHERE n.push_category = 'subscription_daily_digest') AS digest_seen \
            FROM public.schools AS s \
            LEFT JOIN public.instagram_notifications AS n ON n.school_id = s.id \
              AND n.push_category IN ('post', 'subscription_daily_digest') \
@@ -176,13 +183,15 @@ async fn quiet_school_handles(pool: &PgPool) -> Result<IndexMap<String, String>>
          ), quiet AS ( \
            SELECT * FROM last_post \
            WHERE seen IS NULL OR seen < now() - make_interval(hours => $1) \
+             OR digest_seen IS NULL OR digest_seen < now() - make_interval(hours => $4) \
          ), club_activity AS ( \
            SELECT c.school_id, lower(c.ig) AS handle, max(e.added_at) AS newest \
            FROM public.clubs AS c JOIN public.events AS e ON e.club_id = c.id \
            WHERE c.school_id IN (SELECT id FROM quiet) AND c.ig IS NOT NULL \
            GROUP BY c.school_id, lower(c.ig) \
          ), active AS ( \
-           SELECT f.handle, q.slug, q.seen, \
+           SELECT f.handle, q.slug, q.digest_seen, \
+             (q.digest_seen IS NULL OR q.digest_seen < now() - make_interval(hours => $4)) AS missed, \
              row_number() OVER (PARTITION BY f.school_id ORDER BY a.newest DESC NULLS LAST, f.handle) AS turn \
            FROM public.instagram_follow_candidates AS f \
            JOIN quiet AS q ON q.id = f.school_id \
@@ -191,11 +200,12 @@ async fn quiet_school_handles(pool: &PgPool) -> Result<IndexMap<String, String>>
              AND (a.newest > now() - make_interval(days => $2) \
                OR f.followed_at > now() - make_interval(days => $3)) \
          ) \
-         SELECT handle, slug FROM active ORDER BY turn, seen NULLS FIRST, slug",
+         SELECT handle, slug FROM active ORDER BY missed DESC, turn, digest_seen NULLS FIRST, slug",
     )
     .bind(i32::try_from(INGESTION.quiet_school_hours).unwrap_or(i32::MAX))
     .bind(INGESTION.quiet_school_active_days)
     .bind(INGESTION.quiet_school_new_follow_days)
+    .bind(i32::try_from(INGESTION.quiet_school_digest_hours).unwrap_or(i32::MAX))
     .fetch_all(pool)
     .await?;
     let mut handles = IndexMap::new();
