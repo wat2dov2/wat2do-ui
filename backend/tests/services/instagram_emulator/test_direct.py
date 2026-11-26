@@ -7,6 +7,32 @@ POST = "https://www.instagram.com/p/ABC123/"
 THREAD_READER = module.ThreadReader
 
 
+@pytest.fixture(autouse=True)
+def excluded(monkeypatch):
+    """The handles in instagram_excluded_clubs; none unless a test adds one."""
+    handles: set[str] = set()
+
+    class _Query:
+        def __init__(self):
+            self.handle = None
+
+        def select(self, *_columns):
+            return self
+
+        def eq(self, _column, value):
+            self.handle = value
+            return self
+
+        def execute(self):
+            rows = [{"ig_handle": self.handle}] if self.handle in handles else []
+            return type("Result", (), {"data": rows})()
+
+    monkeypatch.setattr(
+        module, "get_sb", lambda: type("Db", (), {"table": lambda _self, _name: _Query()})()
+    )
+    return handles
+
+
 def _newest_is_ours(nodes, text):
     """Whether our message is the newest one read off the screen."""
     messages = module._messages(nodes)
@@ -105,13 +131,21 @@ def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
     assert _newest_is_ours(chat, reply)
 
 
-class _DraftDevice:
-    """A thread whose composer shows whatever was typed; records every key and tap."""
+THREAD = "spihc.waterloo"
 
-    def __init__(self, *, request=False, echo=True, sends=True):
+
+class _DraftDevice:
+    """A thread whose composer shows whatever was typed; records every key and tap.
+
+    ``header`` is the thread on screen: its title and, under it, its username.
+    """
+
+    def __init__(self, *, request=False, echo=True, sends=True, header=(THREAD, ""), said=()):
         self.request = request
         self.echo = echo
         self.sends = sends
+        self.header = header
+        self.said = said
         self.typed = ""
         self.sent = []
         self.taps = []
@@ -119,7 +153,16 @@ class _DraftDevice:
         self.accepted = False
 
     def screen(self):
-        thread = [_node("", (0, 275, 1080, 1431), "message_list")]
+        title, username = self.header
+        thread = [
+            _node(title, (304, 156, 650, 204), "header_title"),
+            _node(username, (304, 204, 650, 246), "header_subtitle"),
+            _node("", (0, 275, 1080, 1431), "message_list"),
+            *(
+                _node(text, (179, 400 + 100 * i, 882, 480 + 100 * i))
+                for i, text in enumerate(self.said)
+            ),
+        ]
         if not self.request or self.accepted:
             shown = self.typed if self.echo else ""
             thread.append(
@@ -154,7 +197,7 @@ class _DraftDevice:
 
 def test_a_draft_is_typed_and_left_unsent() -> None:
     device = _DraftDevice()
-    THREAD_READER(device, lambda: None).draft("just shared it, good luck with the event!")
+    THREAD_READER(device, THREAD, lambda: None).draft("just shared it, good luck with the event!")
     assert device.typed == "just shared it, good luck with the event!"
     # Only the composer is touched; the keyboard and then the thread are closed.
     assert device.taps == ["row_thread_composer_edittext"]
@@ -168,17 +211,24 @@ def test_a_request_is_accepted_to_show_its_composer(monkeypatch) -> None:
         dev.accepted = True
 
     monkeypatch.setattr(module, "accept_request", accept)
-    THREAD_READER(device, lambda: None).draft("sure, send it here")
+    THREAD_READER(device, THREAD, lambda: None).draft("sure, send it here")
     assert device.accepted and device.typed == "sure, send it here"
 
 
-CLAIM = "Hey! We're happy to keep featuring your events. https://tmu.wat2do.io/claim/0f6b3c1e-1234 Thank you!"
+TOKEN = "0f6b3c1e-1234"
+CLAIM = f"Hey! We're happy to keep featuring your events. https://tmu.wat2do.io/claim/{TOKEN} Thank you!"
 SEND = "row_thread_composer_send_button_container"
+
+
+def _send_claim(device, message=CLAIM, *, thread=THREAD, handle=THREAD, tokens=(TOKEN,)):
+    return THREAD_READER(device, thread, lambda: None).send_claim(
+        message, handle=handle, tokens=frozenset(tokens)
+    )
 
 
 def test_a_claim_message_is_typed_into_an_empty_thread_and_sent() -> None:
     device = _DraftDevice()
-    outcome = THREAD_READER(device, lambda: None).send_claim(CLAIM)
+    outcome = _send_claim(device)
     assert device.sent == [CLAIM]
     assert device.taps == ["row_thread_composer_edittext", SEND]
     # The keyboard and then the thread are closed.
@@ -189,7 +239,7 @@ def test_a_claim_message_is_typed_into_an_empty_thread_and_sent() -> None:
 def test_a_claim_draft_left_waiting_is_sent_as_it_is() -> None:
     device = _DraftDevice()
     device.typed = CLAIM
-    outcome = THREAD_READER(device, lambda: None).send_claim("a different message")
+    outcome = _send_claim(device, "a different message")
     assert device.sent == [CLAIM]
     assert device.taps == [SEND] and device.backs == 1
     assert outcome == "sent the claim message that was waiting in the thread"
@@ -199,18 +249,102 @@ def test_a_thread_holding_another_unsent_reply_sends_nothing() -> None:
     device = _DraftDevice()
     device.typed = "hey, welcome! could you send the post here?"
     with pytest.raises(module.ReplyWaiting):
-        THREAD_READER(device, lambda: None).send_claim(CLAIM)
+        _send_claim(device)
     assert device.sent == [] and device.taps == []
 
 
 def test_a_claim_still_in_the_composer_after_send_fails_loudly() -> None:
     with pytest.raises(module.EmulatorError, match="still in the composer"):
-        THREAD_READER(_DraftDevice(sends=False), lambda: None).send_claim(CLAIM)
+        _send_claim(_DraftDevice(sends=False))
+
+
+def test_a_claim_is_never_typed_into_another_thread_left_open() -> None:
+    # 2026-11-25: a read left UWaterloo ViVA's thread open, and SPIHC's claim went into it.
+    device = _DraftDevice(header=("UWaterloo ViVA Club", ""))
+    with pytest.raises(module.ThreadMismatch):
+        _send_claim(device)
+    assert device.typed == "" and device.sent == [] and device.taps == []
+
+
+def test_the_thread_is_opened_from_its_row_every_time() -> None:
+    opened = []
+    device = _DraftDevice()
+    THREAD_READER(device, THREAD, lambda: opened.append(THREAD)).send_claim(
+        CLAIM, handle=THREAD, tokens=frozenset({TOKEN})
+    )
+    assert opened == [THREAD] and device.sent == [CLAIM]
+
+
+def test_a_thread_whose_sender_is_not_the_club_sends_nothing() -> None:
+    # Concordia 2026-11-25: C.U.T.E.A.'s thread got the students' union's claim.
+    device = _DraftDevice(header=("C.U.T.E.A. 🍃", "cutea.concordia"))
+    with pytest.raises(module.ThreadMismatch, match="not csuconcordia"):
+        _send_claim(device, thread="C.U.T.E.A. 🍃", handle="csuconcordia")
+    assert device.sent == [] and device.taps == []
+
+
+def test_a_sender_who_asked_to_be_left_out_gets_nothing(excluded) -> None:
+    excluded.add("v1vaclub")
+    device = _DraftDevice(header=("UWaterloo ViVA Club", "v1vaclub"))
+    with pytest.raises(module.LeftOut):
+        _send_claim(device, thread="UWaterloo ViVA Club", handle="v1vaclub")
+    assert device.sent == [] and device.taps == []
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Hi, please don't post our events anymore",
+        "Could you stop featuring us?",
+        "We would prefer not to be posted, thank you",
+        "Can you take our post down?",
+        "Merci de ne plus publier nos evenements",
+    ],
+)
+def test_a_thread_asking_to_be_left_out_gets_nothing(said) -> None:
+    device = _DraftDevice(said=(said,))
+    with pytest.raises(module.LeftOut):
+        _send_claim(device)
+    assert device.sent == [] and device.taps == []
+
+
+def test_a_request_to_share_is_not_taken_for_leaving_out() -> None:
+    device = _DraftDevice(said=("Hey! Could you share our post to your story?",))
+    assert _send_claim(device) == "typed and sent the claim message"
+
+
+def test_a_waiting_claim_draft_for_another_club_is_never_sent() -> None:
+    device = _DraftDevice()
+    device.typed = "Hey! https://tmu.wat2do.io/claim/aaaa-bbbb Thank you!"
+    with pytest.raises(module.ClaimRefused, match="another club"):
+        _send_claim(device)
+    assert device.sent == [] and device.taps == []
+
+
+def test_nothing_is_sent_once_the_thread_on_screen_changed() -> None:
+    device = _DraftDevice()
+    type_text = device.type_text
+
+    def type_and_leave(text):
+        type_text(text)
+        device.header = ("UWaterloo ViVA Club", "")
+
+    device.type_text = type_and_leave
+    with pytest.raises(module.ThreadMismatch):
+        _send_claim(device)
+    assert device.sent == []
+
+
+def test_a_draft_is_never_typed_into_another_thread_left_open() -> None:
+    device = _DraftDevice(header=("UWaterloo ViVA Club", ""))
+    with pytest.raises(module.ThreadMismatch):
+        THREAD_READER(device, THREAD, lambda: None).draft("just shared it!")
+    assert device.typed == "" and device.taps == []
 
 
 def test_a_draft_that_does_not_show_in_the_composer_fails() -> None:
     with pytest.raises(module.EmulatorError, match="did not show"):
-        THREAD_READER(_DraftDevice(echo=False), lambda: None).draft("hi")
+        THREAD_READER(_DraftDevice(echo=False), THREAD, lambda: None).draft("hi")
 
 
 def test_a_thread_holding_an_unsent_claim_draft_is_left_as_it_is() -> None:
@@ -218,7 +352,7 @@ def test_a_thread_holding_an_unsent_claim_draft_is_left_as_it_is() -> None:
     waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/0f6b3c1e-1234 Thank you!"
     device.typed = waiting
     with pytest.raises(module.DraftWaiting):
-        THREAD_READER(device, lambda: None).draft("just shared it!")
+        THREAD_READER(device, THREAD, lambda: None).draft("just shared it!")
     assert device.typed == waiting
     assert device.taps == [] and device.backs == 0
 
@@ -263,27 +397,27 @@ class _ComposerDevice:
 def test_reading_a_shared_link_leaves_a_waiting_draft_as_it_was() -> None:
     waiting = "Hey! One small ask: https://tmu.wat2do.io/claim/abc Thank you!"
     device = _ComposerDevice(waiting)
-    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
     assert device.text == waiting and not device.cleared
 
 
 def test_a_link_pasted_inside_a_draft_is_taken_out_again() -> None:
     device = _ComposerDevice("Hey there, thanks!", cursor=4)
     device.move_to_end = lambda: None  # the cursor stays where the tap put it
-    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
     assert device.text == "Hey there, thanks!"
 
 
 def test_an_empty_composer_is_cleared_after_its_hint_was_replaced() -> None:
     device = _ComposerDevice()
-    assert THREAD_READER(device, lambda: None)._read_back_link() == POST
+    assert THREAD_READER(device, THREAD, lambda: None)._read_back_link() == POST
     assert device.cleared and device.text == ""
 
 
 def test_a_draft_that_changes_while_the_link_is_read_fails_loudly() -> None:
     device = _ComposerDevice("Thanks for reaching out!", delete_extra=1)
     with pytest.raises(module.EmulatorError, match="unsent draft changed"):
-        THREAD_READER(device, lambda: None)._read_back_link()
+        THREAD_READER(device, THREAD, lambda: None)._read_back_link()
 
 
 def _thread(*messages):
@@ -399,7 +533,7 @@ class _ScrollingDevice:
 
 
 def _reader(device, monkeypatch):
-    reader = THREAD_READER(device, lambda: None)
+    reader = THREAD_READER(device, "Laurier Audiology Association", lambda: None)
     links = []
 
     def shared_link(from_bottom, owner):
@@ -468,14 +602,14 @@ class _ProfileDevice:
 
 def test_an_online_sender_is_named_by_their_profile() -> None:
     device = _ProfileDevice()
-    username = THREAD_READER(device, lambda: None)._profile_username()
+    username = THREAD_READER(device, THREAD, lambda: None)._profile_username()
     assert username == "laurier_audiology_association"
     assert device.backs == 2
 
 
 def test_a_group_chat_has_no_one_sender() -> None:
     device = _ProfileDevice(group=True)
-    assert THREAD_READER(device, lambda: None)._profile_username() is None
+    assert THREAD_READER(device, THREAD, lambda: None)._profile_username() is None
     assert device.backs == 1
 
 
