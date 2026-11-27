@@ -497,6 +497,20 @@ def test_an_empty_composer_is_cleared_after_its_hint_was_replaced() -> None:
     assert device.cleared and device.text == ""
 
 
+def test_a_draft_of_links_left_by_earlier_reads_is_cleared_first() -> None:
+    junk = POST + "?fqnt=MTE5YTQw" + POST + "?knvt=MTE5YTQw"
+    device = _ComposerDevice(junk)
+    assert THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link() == POST
+    assert device.text == ""
+
+
+def test_a_link_that_will_not_leave_the_composer_fails_loudly() -> None:
+    device = _ComposerDevice()
+    device.clear_field = lambda: None
+    with pytest.raises(module.EmulatorError, match="would not leave"):
+        THREAD_READER(device, SCHOOL, THREAD, lambda: None)._read_back_link()
+
+
 def test_a_draft_that_changes_while_the_link_is_read_fails_loudly() -> None:
     device = _ComposerDevice("Thanks for reaching out!", delete_extra=1)
     with pytest.raises(module.EmulatorError, match="unsent draft changed"):

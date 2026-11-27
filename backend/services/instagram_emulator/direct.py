@@ -40,6 +40,8 @@ _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _SEND_BUTTON = re.compile(r"^row_thread_composer_send_button_container$")
 # An empty composer reads as a short rotating hint, such as "Message…".
 _COMPOSER_HINT = re.compile(r"^[^.!?\n]{1,40}…$")
+# A draft that is nothing but Instagram post links, run together.
+_JUNK_DRAFT = re.compile(r"(?:https://www\.instagram\.com/(?:p|reel)/[A-Za-z0-9_-]+/\S*?)+")
 # A club's claim link, which carries its claim token.
 CLAIM_LINK = re.compile(r"https?://[a-z0-9-]+\.wat2do\.io/claim/([0-9a-f-]+)\S*", re.IGNORECASE)
 # A message asking us to stop featuring them, to ask first or not to track them, in
@@ -422,18 +424,34 @@ class ThreadReader:
         composer = _required(self._device.find(_COMPOSER))
         before = composer.text
         self._device.tap(composer)
+        if _JUNK_DRAFT.fullmatch(before.strip()):
+            # Only post links: what an earlier read pasted and never took out again
+            # (2026-11-27: ubc threads held three, a person opening them saw only those).
+            self._clear_composer()
+            before = _required(self._device.find(_COMPOSER)).text
         self._device.move_to_end()
         self._device.paste()
         self._device.pause()
         after = _required(self._device.find(_COMPOSER)).text
         pasted = _inserted(before, after)
         if pasted is None:
-            self._device.clear_field()
+            self._clear_composer()
             return after
         self._device.delete_backward(len(pasted))
         if _required(self._device.find(_COMPOSER)).text != before:
             raise EmulatorError("The thread's unsent draft changed while its shared link was read")
         return pasted
+
+
+    def _clear_composer(self) -> None:
+        """Empty the composer, and make sure it is: a link left behind would sit in the
+        thread as our draft for anyone opening it to see."""
+        for _ in range(2):
+            self._device.clear_field()
+            self._device.pause()
+            if _composer_empty(_required(self._device.find(_COMPOSER)).text):
+                return
+        raise EmulatorError("The pasted link would not leave the thread's composer")
 
 
 def _inserted(before: str, after: str) -> str | None:
