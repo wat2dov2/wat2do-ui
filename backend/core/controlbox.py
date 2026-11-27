@@ -947,9 +947,10 @@ class MaintenanceControl(_ControlModel):
     ingestion_silence_minutes: int = Field(ge=10, le=1440)
     school_dark_min_baseline: int = Field(ge=1)
     school_dark_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
-    # A school with no daily digest for `school_digest_hours` (the quiet-school lane's
-    # own limit) should still be read by that lane: under `school_low_ratio` of its
-    # baseline, the lane is not covering it.
+    # A school with no daily digest for `school_digest_hours` should still be read by the
+    # quiet-school lane: under `school_low_ratio` of its baseline, the lane is not
+    # covering it. Keep it a few hours past the lane's own `quiet_school_digest_hours`,
+    # so the lane has had time to read the school before the watchdog judges it.
     school_low_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
     school_digest_hours: int = Field(ge=1, le=96)
     brave_heartbeat_max_seconds: int = Field(ge=30, le=7200)
