@@ -659,6 +659,22 @@ def test_restart_waits_for_android_to_finish_starting_after_the_boot() -> None:
     assert commands[-2] == ["shell", "input", "keyevent", "KEYCODE_WAKEUP"]
 
 
+def test_a_challenge_is_seen_only_on_its_own_android_user() -> None:
+    challenge = (
+        "  mCurrentFocus=Window{3bbba76 u12 com.instagram.android/"
+        "com.instagram.challenge.activity.ChallengeActivity}\n"
+    )
+    inbox = (
+        "  mCurrentFocus=Window{60b0a6a u12 com.instagram.android/"
+        "com.instagram.mainactivity.InstagramMainActivity}\n"
+    )
+    assert _device([(0, challenge)], []).on_challenge(12)
+    assert not _device([(0, challenge)], []).on_challenge(11)
+    assert not _device([(0, inbox)], []).on_challenge(12)
+    # Android that answers nothing is not a challenge; the restart rule handles it.
+    assert not _device([(1, "")], []).on_challenge(12)
+
+
 def test_uptime_is_read_from_android() -> None:
     commands = []
     assert _device([(0, "1234.56 4000.00\n")], commands).uptime_seconds() == 1234.56

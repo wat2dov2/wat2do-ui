@@ -138,6 +138,9 @@ _CHALLENGES = labels(
 )
 
 
+_CHALLENGE_ACTIVITY = "com.instagram.challenge.activity.ChallengeActivity"
+
+
 INBOX_URL = "instagram://direct-inbox"
 # Instagram is moving accounts to a new inbox header with a large auto-sized title.
 _INBOX_TITLE = re.compile(r"^(igds_action_bar_title|action_bar_large_title_auto_size)$")
@@ -703,6 +706,21 @@ class EmulatorDevice:
             return "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", "0")
         except EmulatorError:
             return False
+
+    def on_challenge(self, user: int) -> bool:
+        """Whether the Android user's screen is Instagram's challenge (checkpoint) page.
+
+        Instagram puts a checkpoint such as "Your email may not be secure" over the
+        account the app is on, and brings it back each time the app starts, so no switch
+        on that Android user can reach the inbox until a person clears it. A restart
+        cannot either (2026-11-27: wat2do.uwindsor's checkpoint restarted the emulator
+        three times in 80 minutes).
+        """
+        try:
+            focus = self.adb("shell", "dumpsys window | grep -m1 mCurrentFocus")
+        except EmulatorError:
+            return False
+        return f" u{user} " in focus and _CHALLENGE_ACTIVITY in focus
 
     def uptime_seconds(self) -> float:
         """How long Android has been up since the emulator last booted."""

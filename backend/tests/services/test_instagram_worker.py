@@ -14,13 +14,17 @@ NIGHT = datetime(2026, 10, 28, 3, 0).astimezone()
 
 
 class _Device:
-    def __init__(self, unreachable=(), lost=(), starting=False, uptime=86400.0):
+    def __init__(self, unreachable=(), lost=(), starting=False, uptime=86400.0, challenged=()):
         self.accounts = []
         self.unreachable = set(unreachable)
         self.lost = set(lost)
         self.starting = starting
         self.uptime = uptime
+        self.challenged = set(challenged)
         self.restarts = 0
+
+    def on_challenge(self, user):
+        return user in self.challenged
 
     def adb(self, *args):
         return "0\n"
@@ -186,6 +190,21 @@ def test_an_account_the_app_cannot_reach_never_restarts_the_emulator(due, monkey
     # The emulator answered every step, so a restart could not help; each account rests.
     assert device.restarts == 0
     assert set(worker._switch_rested_until) == set(lost)
+
+
+def test_a_challenge_on_the_android_user_never_restarts_the_emulator(due, monkeypatch):
+    in_a_row = worker.CONTROL.switch_failures_before_restart
+    stuck = sorted(worker.CONTROL.android_user_by_school)[: in_a_row + 1]
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: stuck)
+    due.sittings = list(stuck)
+    users = {worker.CONTROL.android_user_by_school[school] for school in stuck}
+    device = _Device(unreachable={f"wat2do.{school}" for school in stuck}, challenged=users)
+    for _ in stuck:
+        worker.visit_next(device, DAY)
+    # Only a person can clear Instagram's checkpoint; each account rests instead.
+    assert device.restarts == 0
+    assert worker._switch_failures == 0
+    assert set(worker._switch_rested_until) == set(stuck)
 
 
 def test_a_sitting_due_elsewhere_comes_before_this_accounts_follows(due):

@@ -227,6 +227,15 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
         if isinstance(exc, AccountNotSwitched):
             # The emulator answered every step; restarting it cannot bring the account back.
             return False
+        if device.on_challenge(user):
+            # Instagram holds the account the app is on behind a checkpoint that comes
+            # back on every start; only a person can clear it, so a restart never helps.
+            log.warning(
+                "Instagram shows a challenge on Android user %s; %s waits for a person",
+                user,
+                school,
+            )
+            return False
         _switch_failures += 1
         _switch_errors.append(f"{school} (Android user {user}): {exc}")
         if _switch_failures >= CONTROL.switch_failures_before_restart and _restart_helps(device):
