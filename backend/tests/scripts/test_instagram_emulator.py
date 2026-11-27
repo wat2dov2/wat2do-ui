@@ -180,15 +180,18 @@ def _offline_checks():
 
 def test_an_android_without_network_is_restarted_under_the_lock(monkeypatch, clock, held):
     # A short outage, or one the network comes back from, is left alone.
+    radios_on = [("shell", "svc", "data", "enable"), ("shell", "svc", "wifi", "enable")]
     device = _Device([True] * (_offline_checks() + 3))
     device.network = iter([False] * _offline_checks() + [True, False, False])
     _run(monkeypatch, device)
-    assert device.commands == []
+    # Each outage first turns the radios back on.
+    assert device.commands == radios_on * 2
     assert held == []
     device = _Device([True] * (_offline_checks() + 2))
     device.network = iter([False] * (_offline_checks() + 2))
     _run(monkeypatch, device)
-    assert device.commands == [("emu", "kill")]
+    # The check after the restart finds it still offline and turns the radios on again.
+    assert device.commands == [*radios_on, ("emu", "kill"), *radios_on]
     assert held == ["held", "released"]
     (line,) = clock.read_text().splitlines()
     assert "Android had no network for 10 min" in line

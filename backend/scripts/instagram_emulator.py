@@ -13,8 +13,9 @@ qemu's render threads can get stuck spinning in ``EglContext::~EglContext`` (on
 2026-11-25 qemu ran at 480-630% for about 9 hours while Android sat mostly idle).
 It also restarts it, under the lock too, once Android has reached no Instagram server
 for ``offline_restart_seconds``: on 2026-11-27 its network interfaces stayed down for
-hours while it answered every shell command, and every story posted then stayed on the
-phone.
+hours (through four restarts) while it answered every shell command, and every story
+posted then stayed on the phone. Mobile data and Wi-Fi are turned back on as soon as the
+network is found down, before the restart.
 Any other emulator that answers is left alone, even one someone started by hand.
 ``install-schedule`` installs it as a macOS LaunchAgent that keeps no logs.
 """
@@ -279,11 +280,23 @@ class OfflineWatch:
             return None
         if self._since is None:
             self._since = now
+            _radios_on(device)
         if now - self._since < CONTROL.offline_restart_seconds:
             return None
         minutes = round((now - self._since) / 60)
         self._since = None
         return f"Android had no network for {minutes} min"
+
+
+def _radios_on(device: EmulatorDevice) -> None:
+    """Turn mobile data and Wi-Fi back on: the emulator reaches the internet through its
+    emulated carrier, so data left off keeps it offline across restarts. Each command
+    does nothing when that radio is already on."""
+    for radio in ("data", "wifi"):
+        try:
+            device.adb("shell", "svc", radio, "enable")
+        except EmulatorError:
+            pass
 
 
 def _spinning(earlier: _Sample, later: _Sample) -> bool:
