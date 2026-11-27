@@ -19,6 +19,8 @@ class _Device:
     def __init__(self, answers, *, android_busy=0.5):
         self._answers = iter(answers)
         self.online = True
+        # Whether Android reaches Instagram, check by check; online once these run out.
+        self.network = iter(())
         self.commands = []
         self.android_busy = android_busy
         self._busy = 0.0
@@ -29,6 +31,9 @@ class _Device:
 
     def is_online(self):
         return self.online
+
+    def has_network(self):
+        return next(self.network, True)
 
     def adb(self, *args):
         if args == ("shell", "cat", "/proc/stat"):
@@ -167,6 +172,26 @@ def test_qemu_spinning_while_android_idles_is_restarted_under_the_lock(monkeypat
     assert held == ["held", "released"]
     (line,) = clock.read_text().splitlines()
     assert "qemu used 550% CPU while Android used 50% for 15 min" in line
+
+
+def _offline_checks():
+    return keep_alive.CONTROL.offline_restart_seconds // keep_alive.CONTROL.keep_alive_check_seconds
+
+
+def test_an_android_without_network_is_restarted_under_the_lock(monkeypatch, clock, held):
+    # A short outage, or one the network comes back from, is left alone.
+    device = _Device([True] * (_offline_checks() + 3))
+    device.network = iter([False] * _offline_checks() + [True, False, False])
+    _run(monkeypatch, device)
+    assert device.commands == []
+    assert held == []
+    device = _Device([True] * (_offline_checks() + 2))
+    device.network = iter([False] * (_offline_checks() + 2))
+    _run(monkeypatch, device)
+    assert device.commands == [("emu", "kill")]
+    assert held == ["held", "released"]
+    (line,) = clock.read_text().splitlines()
+    assert "Android had no network for 10 min" in line
 
 
 def test_a_busy_android_or_a_quiet_qemu_never_counts_as_a_spin(monkeypatch, clock, held):

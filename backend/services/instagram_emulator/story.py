@@ -90,6 +90,7 @@ def share_to_story(
     """
     if not _POST_URL.fullmatch(media_url):
         raise EmulatorError("Only an exact Instagram post or reel can go to a story")
+    _require_network(device, "nothing was shared")
     user = android_user(school)
     if sticker is not None:
         device.put_photo(user, sticker)
@@ -103,6 +104,13 @@ def share_to_story(
     _decline_facebook_sharing(device)
     # The editor closes once Instagram has taken the story for upload.
     device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
+    # Offline, the editor closes all the same and the story stays on the phone.
+    _require_network(device, "the story may not have gone up")
+
+
+def _require_network(device: EmulatorDevice, outcome: str) -> None:
+    if not device.has_network():
+        raise EmulatorError(f"The emulator has no network, so {outcome}")
 
 
 def _decline_facebook_sharing(device: EmulatorDevice) -> None:
@@ -181,6 +189,7 @@ def share_photo(
     The picture becomes the gallery's newest photo and is shared to Instagram's story
     the way the gallery's Share does, which opens it in the story editor.
     """
+    _require_network(device, "nothing was shared")
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / _STORY_PHOTO
         path.write_bytes(photo)
@@ -206,6 +215,7 @@ def share_photo(
     device.tap_when(_POST_TO_STORY)
     _decline_facebook_sharing(device)
     device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
+    _require_network(device, "the story may not have gone up")
 
 
 def _gallery_uri(device: EmulatorDevice, user: int, name: str) -> str:

@@ -73,6 +73,14 @@ def test_a_screen_that_cannot_be_read_raises() -> None:
         _device([], [], attempts).screen()
 
 
+def test_the_network_works_while_android_pings_instagram() -> None:
+    commands = []
+    assert _device([(0, "1 packets transmitted, 1 received")], commands).has_network()
+    assert commands[0][-7:] == ["shell", "ping", "-c", "1", "-W", "5", "i.instagram.com"]
+    # "connect: Network is unreachable" exits non-zero.
+    assert not _device([(2, "")], []).has_network()
+
+
 def test_labels_match_a_control_name_but_not_a_longer_word() -> None:
     share = module.labels("Send post", "Share")
     assert module.Node("", "Send post. Button.", (0, 0, 1, 1)).labelled(share)

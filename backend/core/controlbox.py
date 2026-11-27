@@ -1388,6 +1388,9 @@ class InstagramEmulatorControl(_ControlModel):
     spin_cpu_percent: int = Field(ge=100, le=3200)
     spin_guest_cpu_percent: int = Field(ge=0, le=3200)
     spin_restart_seconds: int = Field(ge=300, le=86_400)
+    # An Android that answers but has reached no Instagram server for this long has lost
+    # its network, which a restart brings back, and is restarted under its lock.
+    offline_restart_seconds: int = Field(ge=300, le=7200)
     # A stopped emulator whose qemu has not exited this long after the console's kill
     # is killed outright.
     stop_wait_seconds: int = Field(ge=5, le=600)

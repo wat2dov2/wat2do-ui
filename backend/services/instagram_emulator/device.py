@@ -60,6 +60,8 @@ _REMOTE_TEXT = "/data/local/tmp/wat2do-text.txt"
 # Set to "1" in a child process whose parent holds the emulator's lock for it.
 EMULATOR_HELD = "WAT2DO_EMULATOR_HELD"
 _RESTART_POLL_SECONDS = 5
+# The Instagram app's API host: Android's ping of it tells its network works.
+_NETWORK_CHECK_HOST = "i.instagram.com"
 # How often a wait reads the screen again; a read of a screen that has gone still is
 # almost free, and one still changing waits for it to settle first.
 _POLL_SECONDS = 0.5
@@ -240,6 +242,17 @@ class EmulatorDevice:
         device while every shell command times out, so only this tells it is alive."""
         try:
             self.adb("shell", "true")
+        except EmulatorError:
+            return False
+        return True
+
+    def has_network(self) -> bool:
+        """Whether Android reaches Instagram's servers. Android can answer while its
+        network is down: on 2026-11-27 the emulator ran for hours with no interface up,
+        and a story posted then only stays on the phone, though the editor closes as if
+        it went up."""
+        try:
+            self.adb("shell", "ping", "-c", "1", "-W", "5", _NETWORK_CHECK_HOST)
         except EmulatorError:
             return False
         return True

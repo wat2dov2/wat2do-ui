@@ -11,6 +11,10 @@ qemu has used at least ``spin_cpu_percent`` of the Mac's CPU while Android used 
 ``spin_guest_cpu_percent`` for ``spin_restart_seconds`` straight: with ``-gpu host``
 qemu's render threads can get stuck spinning in ``EglContext::~EglContext`` (on
 2026-11-25 qemu ran at 480-630% for about 9 hours while Android sat mostly idle).
+It also restarts it, under the lock too, once Android has reached no Instagram server
+for ``offline_restart_seconds``: on 2026-11-27 its network interfaces stayed down for
+hours while it answered every shell command, and every story posted then stayed on the
+phone.
 Any other emulator that answers is left alone, even one someone started by hand.
 ``install-schedule`` installs it as a macOS LaunchAgent that keeps no logs.
 """
@@ -61,6 +65,7 @@ def launch_agent_payload() -> dict[str, Any]:
 def run() -> None:
     device = EmulatorDevice()
     spin = SpinWatch()
+    offline = OfflineWatch()
     emulator: subprocess.Popen[bytes] | None = None
     answered_at = time.monotonic()
     while True:
@@ -68,11 +73,11 @@ def run() -> None:
             emulator = None
         if device.answers():
             answered_at = time.monotonic()
-            spinning = spin.check(device)
-            if spinning:
+            reason = offline.check(device) or spin.check(device)
+            if reason:
                 # Waits until no job holds the emulator, so none is cut off mid-step.
                 with exclusive():
-                    log_restart(spinning)
+                    log_restart(reason)
                     stop(device, emulator)
                 emulator = None
                 answered_at = time.monotonic()
@@ -257,6 +262,28 @@ class SpinWatch:
             f"qemu used {qemu:.0f}% CPU while Android used {android_percent:.0f}% for "
             f"{round((sample.at - start.at) / 60)} min (render threads spinning)"
         )
+
+
+class OfflineWatch:
+    """Times how long Android has reached no Instagram server; once that is
+    ``offline_restart_seconds``, the check says why the emulator needs a restart."""
+
+    def __init__(self) -> None:
+        self._since: float | None = None
+
+    def check(self, device: EmulatorDevice) -> str | None:
+        """Why the emulator should restart now, or None while its network works."""
+        now = time.monotonic()
+        if device.has_network():
+            self._since = None
+            return None
+        if self._since is None:
+            self._since = now
+        if now - self._since < CONTROL.offline_restart_seconds:
+            return None
+        minutes = round((now - self._since) / 60)
+        self._since = None
+        return f"Android had no network for {minutes} min"
 
 
 def _spinning(earlier: _Sample, later: _Sample) -> bool:

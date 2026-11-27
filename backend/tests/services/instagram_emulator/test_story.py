@@ -34,6 +34,8 @@ class _Device(EmulatorDevice):
         clock = iter(range(0, 10_000))
         super().__init__(sleep=lambda _seconds: None, monotonic=lambda: next(clock))
         self.screens = list(screens)
+        # Whether each network check finds Android online, check by check.
+        self.network = iter(())
         self.taps = []
         self.photos = []
         self.drags = []
@@ -43,6 +45,9 @@ class _Device(EmulatorDevice):
 
     def screen(self):
         return self.screens[0]
+
+    def has_network(self):
+        return next(self.network, True)
 
     def _press(self, node, hold_ms):
         self.taps.append(node.text)
@@ -95,6 +100,23 @@ def test_an_editor_that_never_closes_is_not_reported_as_posted(screens) -> None:
     device = screens(HOME, POST_PAGE, SHARE_SHEET, EDITOR, EDITOR)
     with pytest.raises(EmulatorError, match="kept showing"):
         module.share_to_story(device, "columbia", POST)
+
+
+def test_nothing_is_shared_while_the_emulator_is_offline(screens) -> None:
+    device = screens(HOME, POST_PAGE, SHARE_SHEET, EDITOR, POST_PAGE)
+    device.network = iter([False])
+    with pytest.raises(EmulatorError, match="no network, so nothing was shared"):
+        module.share_to_story(device, "columbia", POST)
+    assert device.taps == []
+
+
+def test_a_story_posted_as_the_network_drops_is_not_reported_as_posted(screens) -> None:
+    # Offline, the editor closes all the same and the story stays on the phone.
+    device = screens(HOME, POST_PAGE, SHARE_SHEET, EDITOR, POST_PAGE)
+    device.network = iter([True, False])
+    with pytest.raises(EmulatorError, match="may not have gone up"):
+        module.share_to_story(device, "columbia", POST)
+    assert device.taps[-1] == "Your story"
 
 
 @pytest.mark.parametrize(

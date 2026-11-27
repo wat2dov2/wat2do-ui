@@ -21,6 +21,7 @@
   "spin_cpu_percent": 300,
   "spin_guest_cpu_percent": 200,
   "spin_restart_seconds": 900,
+  "offline_restart_seconds": 600,
   "stop_wait_seconds": 60,
   "android_user_by_school": {
     "yorku": 0,
