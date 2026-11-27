@@ -469,9 +469,40 @@ def test_an_inbox_covered_by_a_sheet_is_reopened_after_back(monkeypatch) -> None
     monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
     monkeypatch.setattr(device, "back", lambda: backs.append(1))
+    monkeypatch.setattr(device, "on_challenge", lambda user: False)
     monkeypatch.setattr(device, "screen", lambda: _inbox("wat2do.ubc") if backs else sheet)
     assert device.open_inbox(11) == "wat2do.ubc"
     assert backs == [1]
+
+
+def test_an_inbox_behind_a_checkpoint_is_reported_before_back(monkeypatch) -> None:
+    device = _device([], [])
+    checkpoint = [module.Node("Your email may not be secure", "", (126, 1683, 954, 1841))]
+    backs = []
+    clock = iter(range(0, 10_000, 5))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "back", lambda: backs.append(1))
+    monkeypatch.setattr(device, "on_challenge", lambda user: user == 12)
+    monkeypatch.setattr(device, "screen", lambda: checkpoint)
+    with pytest.raises(module.AccountChallenged):
+        device.open_inbox(12)
+    # Back would show the inbox for a moment and hide the checkpoint from the check.
+    assert backs == []
+
+
+def test_a_switch_behind_a_checkpoint_stops_without_starting_the_app_afresh(monkeypatch) -> None:
+    device = _device([], [])
+    resets = []
+
+    def open_inbox(user):
+        raise module.AccountChallenged("Instagram shows a challenge instead of the inbox")
+
+    monkeypatch.setattr(device, "open_inbox", open_inbox)
+    monkeypatch.setattr(device, "reset_app", resets.append)
+    with pytest.raises(module.AccountChallenged):
+        device.use_account(12, "wat2do.columbia")
+    assert resets == []
 
 
 def test_a_switch_attempt_that_fails_starts_the_app_afresh(monkeypatch) -> None:

@@ -37,6 +37,7 @@ from core.controlbox import controlbox
 from services.instagram_accounts import school_account_username
 from services.instagram_emulator.device import (
     CONTROL,
+    AccountChallenged,
     AccountNotSwitched,
     EmulatorDevice,
     EmulatorError,
@@ -227,7 +228,7 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
         if isinstance(exc, AccountNotSwitched):
             # The emulator answered every step; restarting it cannot bring the account back.
             return False
-        if device.on_challenge(user):
+        if isinstance(exc, AccountChallenged):
             # Instagram holds the account the app is on behind a checkpoint that comes
             # back on every start; only a person can clear it, so a restart never helps.
             log.warning(

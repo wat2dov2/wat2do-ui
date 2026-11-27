@@ -23,9 +23,6 @@ class _Device:
         self.challenged = set(challenged)
         self.restarts = 0
 
-    def on_challenge(self, user):
-        return user in self.challenged
-
     def adb(self, *args):
         return "0\n"
 
@@ -43,6 +40,8 @@ class _Device:
             raise worker.EmulatorError("Instagram's DM inbox could not be opened")
         if account in self.lost:
             raise worker.AccountNotSwitched("Instagram did not switch to the account")
+        if account in self.challenged:
+            raise worker.AccountChallenged("Instagram shows a challenge instead of the inbox")
         self.accounts.append(account)
 
     def restart(self):
@@ -197,8 +196,7 @@ def test_a_challenge_on_the_android_user_never_restarts_the_emulator(due, monkey
     stuck = sorted(worker.CONTROL.android_user_by_school)[: in_a_row + 1]
     monkeypatch.setattr(worker, "_visit_order", lambda current_user: stuck)
     due.sittings = list(stuck)
-    users = {worker.CONTROL.android_user_by_school[school] for school in stuck}
-    device = _Device(unreachable={f"wat2do.{school}" for school in stuck}, challenged=users)
+    device = _Device(challenged={f"wat2do.{school}" for school in stuck})
     for _ in stuck:
         worker.visit_next(device, DAY)
     # Only a person can clear Instagram's checkpoint; each account rests instead.

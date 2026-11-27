@@ -86,6 +86,13 @@ class AccountNotSwitched(EmulatorError):
     account itself is the problem (not in the switcher), not a stalled emulator."""
 
 
+class AccountChallenged(EmulatorError):
+    """Instagram holds the account the app is on behind a checkpoint, back on every
+    start, so no account on that Android user can be reached until a person clears it.
+    A restart cannot (2026-11-27: wat2do.uwindsor's checkpoint restarted the emulator
+    four times in two hours)."""
+
+
 _Seen = TypeVar("_Seen")
 
 
@@ -135,6 +142,7 @@ _CHALLENGES = labels(
     "Action Blocked",
     "Forgot password?",
     "Enter confirmation code",
+    "Your email may not be secure",
 )
 
 
@@ -797,6 +805,8 @@ class EmulatorDevice:
                 # A tap while the account sheet is still sliding up can miss, leaving the
                 # sheet open; the next attempt notices and switches again.
                 self.tap(self._account_in_switcher(account_username, attempt))
+            except AccountChallenged:
+                raise
             except EmulatorError:
                 self.reset_app(user)
                 continue
@@ -834,6 +844,10 @@ class EmulatorDevice:
             try:
                 return self.wait_for(_INBOX_TITLE).text.strip()
             except EmulatorError:
+                # Checked before Back, which shows the inbox for a moment before the
+                # checkpoint comes back over it.
+                if self.on_challenge(user):
+                    raise AccountChallenged("Instagram shows a challenge instead of the inbox")
                 # The link can land before the app is ready right after a switch, or an
                 # account sheet left open can cover the inbox; Back closes either.
                 self.back()
