@@ -442,7 +442,6 @@ class ThreadReader:
             raise EmulatorError("The thread's unsent draft changed while its shared link was read")
         return pasted
 
-
     def _clear_composer(self) -> None:
         """Empty the composer, and make sure it is: a link left behind would sit in the
         thread as our draft for anyone opening it to see."""
