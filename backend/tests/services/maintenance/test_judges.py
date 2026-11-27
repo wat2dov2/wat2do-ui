@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from core.controlbox import controlbox
-from services.maintenance import judges
+from services.maintenance import judges, readings
 
 CONTROL = controlbox.maintenance.model_copy(
     update={
@@ -173,6 +173,7 @@ def test_a_burst_of_worker_errors_is_red():
 def _recorder(**changes):
     reading = {
         "last_any_minutes": 2,
+        "awake_silence_minutes": 2,
         "user_hours": {"0": 0.1, "10": 1.5, "11": 3.0, "12": 0.5},
         "expected_users": [0, 10, 11, 12],
         "digest_hours": 20,
@@ -187,11 +188,32 @@ def test_a_recorder_hearing_every_user_is_green():
 
 
 def test_a_silent_recorder_or_android_user_is_red():
-    assert _recorder(last_any_minutes=120).status == "red"
+    assert _recorder(last_any_minutes=120, awake_silence_minutes=120).status == "red"
+    assert _recorder(last_any_minutes=None, awake_silence_minutes=None).status == "red"
     check = _recorder(user_hours={"0": 0.1, "10": 1.5, "11": 15.0, "12": 0.5})
     assert check.status == "red"
     assert "Android user 11" in check.summary
     assert _recorder(user_hours={"0": 0.1, "10": 1.5, "11": 3.0}).status == "red"
+
+
+def test_a_recorder_silent_only_through_the_night_is_green():
+    assert _recorder(last_any_minutes=280, awake_silence_minutes=10).status == "green"
+
+
+def test_night_silence_does_not_count():
+    def at(day: int, hour: int, minute: int = 0) -> datetime:
+        return datetime(2026, 11, day, hour, minute, tzinfo=readings.TORONTO)
+
+    # 22:53 to 03:41: only the 67 minutes before midnight count.
+    assert readings.awake_minutes(at(26, 22, 53), at(27, 3, 41), 8) == 67
+    # 02:06 to 09:41: only the 101 minutes after 8:00 count.
+    assert readings.awake_minutes(at(14, 2, 6), at(14, 9, 41), 8) == 101
+    # A two-day outage loses each night's 8 hours.
+    assert readings.awake_minutes(at(17, 12), at(19, 12), 8) == (48 - 16) * 60
+    # Daytime silence counts in full.
+    assert readings.awake_minutes(at(21, 13, 28), at(21, 15), 8) == 92
+    # The fall-back night is 9 elapsed hours, all of them quiet.
+    assert readings.awake_minutes(at(1, 0), at(1, 8), 8) == 0
 
 
 def test_no_digest_for_too_long_is_red():

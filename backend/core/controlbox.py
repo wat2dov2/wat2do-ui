@@ -958,7 +958,10 @@ class MaintenanceControl(_ControlModel):
     brave_job_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
     brave_job_min_jobs: int = Field(ge=1)
     brave_error_lines_per_hour: int = Field(ge=1)
+    # Instagram is quiet at night: silence between local midnight and
+    # `recorder_quiet_until_hour` does not count toward `recorder_silence_minutes`.
     recorder_silence_minutes: int = Field(ge=10, le=1440)
+    recorder_quiet_until_hour: int = Field(ge=0, le=12)
     recorder_user_silence_hours: int = Field(ge=1, le=72)
     digest_silence_hours: int = Field(ge=1, le=96)
     dispatch_waiting_max: int = Field(ge=1)

@@ -165,7 +165,7 @@ def recorder(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     red: list[str] = []
     yellow: list[str] = []
     last = reading["last_any_minutes"]
-    if last is None or last > control.recorder_silence_minutes:
+    if last is None or reading["awake_silence_minutes"] > control.recorder_silence_minutes:
         red.append(
             "nothing recorded ever" if last is None else f"nothing recorded for {last:.0f} min"
         )

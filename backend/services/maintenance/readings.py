@@ -17,7 +17,7 @@ import sqlite3
 import subprocess
 import tempfile
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -331,6 +331,21 @@ def _read_recorded() -> Recorded:
     return recorded
 
 
+def awake_minutes(start: datetime, end: datetime, quiet_until_hour: int) -> float:
+    """Minutes from start to end, leaving out each Toronto night from midnight to
+    `quiet_until_hour`, when hardly any Instagram notification arrives."""
+    start, end = start.astimezone(timezone.utc), end.astimezone(timezone.utc)
+    minutes = (end - start).total_seconds() / 60
+    day = start.astimezone(TORONTO).date()
+    while day <= end.astimezone(TORONTO).date():
+        night_start = datetime.combine(day, time(0), TORONTO).astimezone(timezone.utc)
+        night_end = datetime.combine(day, time(quiet_until_hour), TORONTO).astimezone(timezone.utc)
+        overlap = (min(end, night_end) - max(start, night_start)).total_seconds() / 60
+        minutes -= max(0.0, overlap)
+        day += timedelta(days=1)
+    return minutes
+
+
 def recorder(context: Context) -> dict[str, Any]:
     emulator = controlbox.instagram_emulator
     recorded = context.recorded()
@@ -342,6 +357,9 @@ def recorder(context: Context) -> dict[str, Any]:
         "last_any_minutes": None
         if any_last is None
         else (context.now - any_last).total_seconds() / 60,
+        "awake_silence_minutes": None
+        if any_last is None
+        else awake_minutes(any_last, context.now, context.control.recorder_quiet_until_hour),
         "user_hours": {
             user: (context.now - at).total_seconds() / 3600 for user, at in last.items()
         },
