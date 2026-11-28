@@ -38,9 +38,14 @@ export function titleSvgSpellsTitle(svg: string, title: string): boolean {
     .every(word => drawn.includes(word));
 }
 
-/** The drawing an event's title shows as, or null when it has none or it does not spell the title. */
-export function eventTitleSvg(event: { title: string; title_svg?: string | null }): string | null {
-  return event.title_svg && titleSvgSpellsTitle(event.title_svg, event.title) ? event.title_svg : null;
+/**
+ * The drawing an event's title shows as, or null when it has none, it does not
+ * spell the title, or the event is not featured: only featured events show a
+ * drawn title (Tony, 2026-11-27), wherever they appear.
+ */
+export function eventTitleSvg(event: { title: string; title_svg?: string | null; featured?: boolean }): string | null {
+  if (!event.featured || !event.title_svg) return null;
+  return titleSvgSpellsTitle(event.title_svg, event.title) ? event.title_svg : null;
 }
 
 const TAG = /<(\/?)([a-zA-Z]+)\b([^>]*?)(\/?)>/g;

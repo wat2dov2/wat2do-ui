@@ -49,9 +49,15 @@ test("a drawing standing off to one side is moved to the middle of its view box"
   expect(centerTitleSvg(unmeasured)).toBe(unmeasured);
 });
 
-test("an event shows its drawing only when the drawing spells its title", () => {
+test("a featured event shows its drawing only when the drawing spells its title", () => {
   const drawing = svg("NETWORKING WITH KPMG");
-  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: drawing })).toBe(drawing);
-  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: svg("NETWORKING WITH") })).toBeNull();
-  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: null })).toBeNull();
+  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: drawing, featured: true })).toBe(drawing);
+  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: svg("NETWORKING WITH"), featured: true })).toBeNull();
+  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: null, featured: true })).toBeNull();
+});
+
+test("an event that is not featured never shows a drawn title", () => {
+  const drawing = svg("NETWORKING WITH KPMG");
+  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: drawing, featured: false })).toBeNull();
+  expect(eventTitleSvg({ title: "Networking with KPMG", title_svg: drawing })).toBeNull();
 });
