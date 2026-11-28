@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from core.config import settings
 from core.controlbox import MaintenanceControl, controlbox
 from core.launch_agents import CLAUDE_CODE_PATH, INSTAGRAM_BROWSER_BINARY
+from services import notification_recording
 from services.claude_code import claude_environment, remove_run_folder
 from services.instagram_accounts import school_account_username
 from services.instagram_emulator.device import adb_path
@@ -43,8 +44,6 @@ _FOLLOWING_REFUSAL = re.compile(
     r"|Instagram asked for a login on a Following read)"
 )
 _LIMIT = re.compile(r"usage limit|weekly limit|hit your .{0,20}limit", re.IGNORECASE)
-# The recorder's file grows a few MB a day; its tail covers the longest silence judged.
-_RECORDER_TAIL_BYTES = 12 * 1024 * 1024
 
 
 class Context:
@@ -55,13 +54,13 @@ class Context:
         self.state = state
         self.now = now
         self.local = now.astimezone(TORONTO)
-        self._recorded: Recorded | None = None
+        self._recorded: notification_recording.Recorded | None = None
         self._log_texts: dict[Path, tuple[str, float]] = {}
 
-    def recorded(self) -> Recorded:
+    def recorded(self) -> notification_recording.Recorded:
         """The notification recorder's recent lines, read once per pass."""
         if self._recorded is None:
-            self._recorded = _read_recorded()
+            self._recorded = notification_recording.read_recorded(NOTIFICATION_LOG)
         return self._recorded
 
     def run(
@@ -385,56 +384,6 @@ def ingestion_processor(context: Context) -> dict[str, Any]:
         "running": running,
         "limit_lines": sum(1 for line in text.splitlines() if _LIMIT.search(line)),
     }
-
-
-def _tail_lines(path: Path, size: int) -> list[str]:
-    with path.open("rb") as handle:
-        handle.seek(max(0, path.stat().st_size - size))
-        lines = handle.read().decode("utf-8", "replace").splitlines()
-    return lines[1:] if path.stat().st_size > size else lines
-
-
-def _recorded_lines() -> list[str]:
-    """The recorder's last `_RECORDER_TAIL_BYTES`, reaching into the newest rotated file
-    when the current one is shorter (right after a rotation it is nearly empty, and every
-    account would look silent)."""
-    current = NOTIFICATION_LOG / "notifications.jsonl"
-    lines = _tail_lines(current, _RECORDER_TAIL_BYTES) if current.exists() else []
-    short = _RECORDER_TAIL_BYTES - (current.stat().st_size if current.exists() else 0)
-    rotated = NOTIFICATION_LOG / "notifications.jsonl.1"
-    if short > 0 and rotated.exists():
-        lines = _tail_lines(rotated, short) + lines
-    return lines
-
-
-class Recorded:
-    """When the recorder last heard each Android user and each account, and each
-    account's last digest."""
-
-    def __init__(self) -> None:
-        self.by_user: dict[str, datetime] = {}
-        self.by_account: dict[str, datetime] = {}
-        self.digest_by_account: dict[str, datetime] = {}
-
-
-def _read_recorded() -> Recorded:
-    recorded = Recorded()
-    for line in _recorded_lines():
-        try:
-            row = json.loads(line)
-            at = datetime.fromisoformat(row["recorded_at"])
-        except (ValueError, KeyError, TypeError):
-            continue
-        user = str(row.get("android_user"))
-        recorded.by_user[user] = max(at, recorded.by_user.get(user, at))
-        account = row.get("account")
-        if account:
-            recorded.by_account[account] = max(at, recorded.by_account.get(account, at))
-        if row.get("category") == "subscription_daily_digest" and account:
-            recorded.digest_by_account[account] = max(
-                at, recorded.digest_by_account.get(account, at)
-            )
-    return recorded
 
 
 def awake_minutes(start: datetime, end: datetime, quiet_until_hour: int) -> float:

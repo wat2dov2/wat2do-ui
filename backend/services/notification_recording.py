@@ -253,6 +253,62 @@ def _readable(state: Any) -> bool:
     )
 
 
+# The file grows a few MB a day; its tail covers the longest silence anyone judges.
+RECENT_BYTES = 12 * 1024 * 1024
+
+
+class Recorded:
+    """When the recorder last heard each Android user and each account, and each
+    account's last digest."""
+
+    def __init__(self) -> None:
+        self.by_user: dict[str, datetime] = {}
+        self.by_account: dict[str, datetime] = {}
+        self.digest_by_account: dict[str, datetime] = {}
+
+
+def read_recorded(directory: Path = DIRECTORY) -> Recorded:
+    """What the last ``RECENT_BYTES`` of the file in ``directory`` say about who was heard
+    when (the maintenance watchdog's checks and the notification pull read it)."""
+    recorded = Recorded()
+    for line in _recent_lines(directory):
+        try:
+            row = json.loads(line)
+            at = datetime.fromisoformat(row["recorded_at"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        user = str(row.get("android_user"))
+        recorded.by_user[user] = max(at, recorded.by_user.get(user, at))
+        account = row.get("account")
+        if account:
+            recorded.by_account[account] = max(at, recorded.by_account.get(account, at))
+        if row.get("category") == "subscription_daily_digest" and account:
+            recorded.digest_by_account[account] = max(
+                at, recorded.digest_by_account.get(account, at)
+            )
+    return recorded
+
+
+def _recent_lines(directory: Path) -> list[str]:
+    """The file's last ``RECENT_BYTES``, reaching into the newest rotated file when the
+    current one is shorter (right after a rotation it is nearly empty, and every account
+    would look silent)."""
+    current = directory / FILE_NAME
+    lines = _tail_lines(current, RECENT_BYTES) if current.exists() else []
+    short = RECENT_BYTES - (current.stat().st_size if current.exists() else 0)
+    rotated = directory / f"{FILE_NAME}.1"
+    if short > 0 and rotated.exists():
+        lines = _tail_lines(rotated, short) + lines
+    return lines
+
+
+def _tail_lines(path: Path, size: int) -> list[str]:
+    with path.open("rb") as handle:
+        handle.seek(max(0, path.stat().st_size - size))
+        lines = handle.read().decode("utf-8", "replace").splitlines()
+    return lines[1:] if path.stat().st_size > size else lines
+
+
 class Recorder:
     """Keeps a reader listening on the emulator, writes what it hears and starts the
     workflow for its posts."""

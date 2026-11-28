@@ -1818,6 +1818,46 @@ class CompetitorPainPointsControl(_ControlModel):
         return self
 
 
+class NotificationPullControl(_ControlModel):
+    """The notification pull: reading a school account's inbox, message requests and
+    newest posts' comments on the emulator when Instagram stopped pushing it anything,
+    and handing what is new to the notification agent as a pushed notification would.
+
+    Instagram's servers sometimes stop pushing to an account for days while everything on
+    the phone is fine (wat2do.berkeley from 2026-11-18; 41 gaps of 30 to 120 h across the
+    accounts since 11-10), and then nobody reads its DMs, requests, mentions or comments.
+    """
+
+    # The LaunchAgent runs at minute of every interval_hours from start_hour through
+    # end_hour, Toronto time (the Mac's clock).
+    start_hour: int = Field(ge=0, le=23)
+    end_hour: int = Field(ge=0, le=23)
+    interval_hours: int = Field(ge=1, le=24)
+    minute: int = Field(ge=0, le=59)
+    # An account the recorder heard nothing from (any notification) for this long is read.
+    silence_hours: int = Field(ge=1, le=168)
+    # At most this many accounts are read a run, the ones read longest ago first.
+    accounts_per_run: int = Field(ge=1, le=60)
+    # At most this many dispatches go out for one account a run; the rest wait for the next.
+    dispatches_per_account: int = Field(ge=1, le=50)
+    # An unread thread the pull dispatched, or the agent or a sitting handled, this recently
+    # is not dispatched again.
+    thread_repeat_hours: int = Field(ge=1, le=48)
+    # A dispatch the agent has not handled yet counts as on its way for this long.
+    pending_hours: int = Field(ge=1, le=72)
+    # A comment the pull dispatched, or the agent handled, is remembered this long.
+    comment_remember_days: int = Field(ge=1, le=60)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=300)
+
+    @model_validator(mode="after")
+    def _hours(self) -> NotificationPullControl:
+        if self.start_hour > self.end_hour:
+            raise ValueError("start_hour cannot be after end_hour")
+        if self.thread_repeat_hours > self.pending_hours:
+            raise ValueError("thread_repeat_hours cannot exceed pending_hours")
+        return self
+
+
 class NotificationRetryControl(_ControlModel):
     """Rerunning failed "Handle notification" workflow runs once they can succeed.
 
@@ -2006,6 +2046,7 @@ class ControlBox(_ControlModel):
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     notification_retry: NotificationRetryControl
+    notification_pull: NotificationPullControl
     notification_recording: NotificationRecordingControl
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl

@@ -105,18 +105,29 @@ def payload(notification: Notification, account: str) -> dict[str, Any] | None:
             "client_payload": {"notification_dict": notification.extras},
         }
     if notification.category in CONTROL.agent_push_categories and account:
-        return {
-            "event_type": CONTROL.agent_dispatch_event_type,
-            "client_payload": {
-                "category": notification.category,
-                "account": account,
-                "sender": _sender(notification, account),
-                "received_at": datetime.fromtimestamp(
-                    notification.posted_at / 1000, timezone.utc
-                ).isoformat(timespec="seconds"),
-            },
-        }
+        return agent_payload(
+            notification.category,
+            account,
+            _sender(notification, account),
+            datetime.fromtimestamp(notification.posted_at / 1000, timezone.utc),
+        )
     return None
+
+
+def agent_payload(category: str, account: str, sender: str, at: datetime) -> dict[str, Any]:
+    """The ``instagram_interaction`` dispatch for the notification agent: only the
+    category, school account, sender's name and time, never a message's text. The
+    recorder sends one for each pushed DM, request, mention and comment, and the
+    notification pull (``services/instagram_sessions/pull.py``) for each it finds itself."""
+    return {
+        "event_type": CONTROL.agent_dispatch_event_type,
+        "client_payload": {
+            "category": category,
+            "account": account,
+            "sender": sender,
+            "received_at": at.astimezone(timezone.utc).isoformat(timespec="seconds"),
+        },
+    }
 
 
 def _sender(notification: Notification, account: str) -> str:
