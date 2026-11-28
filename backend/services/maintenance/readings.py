@@ -432,16 +432,8 @@ def recorder(context: Context) -> dict[str, Any]:
 ACCOUNT_WAITS = STATE / "maintenance/account_waits.json"
 
 
-def account_notifications(context: Context) -> dict[str, Any]:
-    """How long ago the recorder heard each school account on the emulator, whatever the
-    notification (a post, a digest, a like, a message)."""
-    emulator = controlbox.instagram_emulator
-    excluded = set(context.control.account_silence_excluded)
-    last = context.recorded().by_account
-    accounts = {
-        school_account_username(school): user
-        for school, user in emulator.android_user_by_school.items()
-    }
+def account_waits(context: Context) -> dict[str, str]:
+    """The accounts in ``ACCOUNT_WAITS`` whose ``until`` is still ahead, each with its reason."""
     try:
         waits = json.loads(ACCOUNT_WAITS.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -454,6 +446,20 @@ def account_notifications(context: Context) -> dict[str, Any]:
             continue
         if until.tzinfo is not None and until > context.now:
             waiting[account] = str(wait.get("reason") or "waiting on Tony")[:200]
+    return waiting
+
+
+def account_notifications(context: Context) -> dict[str, Any]:
+    """How long ago the recorder heard each school account on the emulator, whatever the
+    notification (a post, a digest, a like, a message)."""
+    emulator = controlbox.instagram_emulator
+    excluded = set(context.control.account_silence_excluded)
+    last = context.recorded().by_account
+    accounts = {
+        school_account_username(school): user
+        for school, user in emulator.android_user_by_school.items()
+    }
+    waiting = account_waits(context)
     return {
         "accounts": {
             account: {
@@ -580,9 +586,15 @@ def emulator(context: Context) -> dict[str, Any]:
                 restarts += datetime.fromisoformat(line.split(" ", 1)[0]) >= since
             except ValueError:
                 continue
+    # A logged-out account waiting on Tony (a checkpoint the agent may not clear) is
+    # yellow, so it does not start the agent again every debounce window.
+    waits = account_waits(context)
     return {
         "adb_state": state,
-        "missing_logins": sorted(missing),
+        "missing_logins": sorted(account for account in missing if account not in waits),
+        "waiting_logins": {
+            account: waits[account] for account in sorted(missing) if account in waits
+        },
         "qemu_cpu_percent": cpu,
         "restarts_24h": restarts,
     }

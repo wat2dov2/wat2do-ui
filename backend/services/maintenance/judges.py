@@ -297,6 +297,10 @@ def emulator(reading: dict[str, Any], control: MaintenanceControl) -> Check:
         red.append(
             f"accounts not logged in on the emulator: {', '.join(reading['missing_logins'])}"
         )
+    yellow += [
+        f"{account} not logged in on the emulator, waiting: {reason}"
+        for account, reason in reading.get("waiting_logins", {}).items()
+    ]
     if reading["restarts_24h"] > control.emulator_restarts_per_day:
         red.append(f"emulator restarted {reading['restarts_24h']} times in 24 h")
     elif reading["restarts_24h"]:

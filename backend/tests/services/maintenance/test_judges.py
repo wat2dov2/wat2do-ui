@@ -443,6 +443,9 @@ def test_emulator_checks():
     check = _emulator(missing_logins=["wat2do.mcgill"])
     assert check.status == "red"
     assert "wat2do.mcgill" in check.summary
+    waiting = _emulator(waiting_logins={"wat2do.sfu": "checkpoint, Tony must clear it"})
+    assert waiting.status == "yellow"
+    assert "wat2do.sfu" in waiting.summary
     assert _emulator(restarts_24h=2).status == "yellow"
     assert _emulator(restarts_24h=7).status == "red"
     assert _emulator(qemu_cpu_percent=520.0).status == "yellow"
