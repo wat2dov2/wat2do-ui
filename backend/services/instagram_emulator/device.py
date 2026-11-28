@@ -33,6 +33,7 @@ from typing import TypeVar
 from PIL import Image
 
 from core.controlbox import controlbox
+from services.instagram_emulator import logins
 from services.instagram_emulator.screen_reader import ScreenReader, ScreenReaderError
 
 log = logging.getLogger(__name__)
@@ -149,6 +150,10 @@ _CHALLENGES = labels(
 
 
 _CHALLENGE_ACTIVITY = "com.instagram.challenge.activity.ChallengeActivity"
+# The challenge page's top-right Menu offers "Log out <account>" for the account it holds.
+_CHALLENGE_MENU = re.compile(r"^Menu$")
+_LOG_OUT_HELD = re.compile(r"^Log out (?P<account>[\w.]+)$")
+_LOG_OUT = re.compile(r"^Log out$")
 
 
 INBOX_URL = "instagram://direct-inbox"
@@ -819,7 +824,12 @@ class EmulatorDevice:
                 # sheet open; the next attempt notices and switches again.
                 self.tap(self._account_in_switcher(account_username, attempt))
             except AccountChallenged:
-                raise
+                # The app starts on a checkpointed account every time: log it out so the
+                # Android user's other accounts can be reached again.
+                held = self.log_out_challenged(user)
+                if held is None or held == account_username:
+                    raise
+                continue
             except EmulatorError:
                 self.reset_app(user)
                 continue
@@ -865,6 +875,49 @@ class EmulatorDevice:
                 # account sheet left open can cover the inbox; Back closes either.
                 self.back()
         raise EmulatorError("Instagram's DM inbox could not be opened")
+
+    def log_out_challenged(self, user: int) -> str | None:
+        """Log out the account Instagram holds behind a checkpoint on the Android user,
+        from the challenge page's Menu, and return its username; None when the page offers
+        no way out ("Your email may not be secure" has no Menu) or the log out failed.
+
+        A checkpoint comes back on every app start, so it cuts off every account on its
+        Android user, and only a person can clear it; logging it out (what a person did
+        on 2026-11-11, 11-20 and 11-26) lets the others work again. Its account-guard
+        breaker opens first, so no login brings it back before a person has cleared the
+        checkpoint (``logins``; 2026-11-27: a password login re-added wat2do.sfu, its
+        checkpoint came straight back, and user 11's nine other accounts were cut off).
+        """
+        try:
+            if not self.on_challenge(user):
+                return None
+            menu = self.find(_CHALLENGE_MENU)
+            if menu is None:
+                return None
+            shown = self.challenge() or "a checkpoint"
+            self.tap(menu)
+            item = self.wait_for(_LOG_OUT_HELD)
+            match = _LOG_OUT_HELD.match(item.label)
+            if match is None:
+                return None
+            account = match["account"]
+            logins.hold_for_person(account, f"Instagram checkpoint on the emulator: {shown}")
+            self.tap(item)
+            self.tap_when(_LOG_OUT)
+            deadline = self._monotonic() + CONTROL.screen_wait_seconds
+            while self.on_challenge(user):
+                if self._monotonic() >= deadline:
+                    raise EmulatorError("Instagram kept showing its challenge after the log out")
+                self._sleep(_POLL_SECONDS)
+        except EmulatorError:
+            log.exception("Could not log the checkpointed account out of Android user %s", user)
+            return None
+        log.warning(
+            "Logged %s out of Android user %s: Instagram holds it behind a checkpoint",
+            account,
+            user,
+        )
+        return account
 
     def _account_in_switcher(self, account_username: str, attempt: int = 0) -> Node:
         """The account's row in the switcher, scrolled into view: a full Android user's

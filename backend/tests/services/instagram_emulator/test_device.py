@@ -508,9 +508,88 @@ def test_a_switch_behind_a_checkpoint_stops_without_starting_the_app_afresh(monk
 
     monkeypatch.setattr(device, "open_inbox", open_inbox)
     monkeypatch.setattr(device, "reset_app", resets.append)
+    # "Your email may not be secure" offers no way to log the account out.
+    monkeypatch.setattr(device, "log_out_challenged", lambda user: None)
     with pytest.raises(module.AccountChallenged):
         device.use_account(12, "wat2do.columbia")
     assert resets == []
+
+
+def _checkpoint_menu(device, monkeypatch, *, menu=True):
+    """A challenge page over wat2do.sfu on user 11 whose Menu logs it out; the taps."""
+    page = [
+        module.Node(
+            "Confirm you're human to use your profile, wat2do.sfu", "", (0, 900, 1080, 1000)
+        )
+    ]
+    if menu:
+        page.append(module.Node("", "Menu", (950, 100, 1050, 200)))
+    sheet = [*page, module.Node("Log out wat2do.sfu", "", (0, 2000, 1080, 2100))]
+    dialog = [
+        module.Node("Log out", "", (600, 1300, 900, 1400), "igds_alert_dialog_primary_button")
+    ]
+    state = {"screen": page, "challenge": True}
+    taps, holds = [], []
+
+    def press(node, hold_ms):
+        taps.append(node.label)
+        if node.label == "Menu":
+            state["screen"] = sheet
+        elif node.label == "Log out wat2do.sfu":
+            state["screen"] = dialog
+        elif node.label == "Log out":
+            state["challenge"] = False
+            state["screen"] = _inbox("wat2do.mun")
+
+    monkeypatch.setattr(device, "screen", lambda: state["screen"])
+    monkeypatch.setattr(device, "on_challenge", lambda user: user == 11 and state["challenge"])
+    monkeypatch.setattr(device, "_press", press)
+    monkeypatch.setattr(
+        module.logins, "hold_for_person", lambda account, reason: holds.append((account, reason))
+    )
+    return taps, holds
+
+
+def test_a_checkpointed_account_is_logged_out_after_its_breaker_opens(monkeypatch) -> None:
+    device = _device([], [])
+    taps, holds = _checkpoint_menu(device, monkeypatch)
+    assert device.log_out_challenged(11) == "wat2do.sfu"
+    assert taps == ["Menu", "Log out wat2do.sfu", "Log out"]
+    assert holds == [
+        (
+            "wat2do.sfu",
+            "Instagram checkpoint on the emulator: "
+            "Confirm you're human to use your profile, wat2do.sfu",
+        )
+    ]
+
+
+def test_a_checkpoint_with_no_menu_is_left_for_a_person(monkeypatch) -> None:
+    device = _device([], [])
+    taps, holds = _checkpoint_menu(device, monkeypatch, menu=False)
+    assert device.log_out_challenged(11) is None
+    assert taps == [] and holds == []
+
+
+def test_a_switch_logs_out_the_checkpointed_account_and_goes_on(monkeypatch) -> None:
+    device = _device([], [])
+    _checkpoint_menu(device, monkeypatch)
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "back", lambda: None)
+    clock = iter(range(0, 10_000, 5))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    device.use_account(11, "wat2do.mun")
+
+
+def test_a_switch_to_the_checkpointed_account_itself_still_fails(monkeypatch) -> None:
+    device = _device([], [])
+    _checkpoint_menu(device, monkeypatch)
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "back", lambda: None)
+    clock = iter(range(0, 10_000, 5))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    with pytest.raises(module.AccountChallenged):
+        device.use_account(11, "wat2do.sfu")
 
 
 def test_a_switch_attempt_that_fails_starts_the_app_afresh(monkeypatch) -> None:

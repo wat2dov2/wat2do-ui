@@ -18,6 +18,10 @@ posted then stayed on the phone. Mobile data and Wi-Fi are turned back on as soo
 network is found down, before the restart.
 Any other emulator that answers is left alone, even one someone started by hand.
 ``install-schedule`` installs it as a macOS LaunchAgent that keeps no logs.
+``may-log-in --account <account>`` says whether a school account may be logged in on the
+emulator again (``services/instagram_emulator/logins.py``); every add-account login,
+by a person or an agent, asks it first, since a login into an account still behind
+Instagram's checkpoint cuts off every account on its Android user.
 """
 
 from __future__ import annotations
@@ -37,6 +41,7 @@ if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.launch_agents import install_launch_agent  # noqa: E402
+from services.instagram_emulator import logins  # noqa: E402
 from services.instagram_emulator.device import (  # noqa: E402
     CONTROL,
     EmulatorDevice,
@@ -328,7 +333,18 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("run", help="Boot the emulator whenever it is not running or hung")
     commands.add_parser("install-schedule", help="Keep run alive through a LaunchAgent")
+    may_log_in = commands.add_parser(
+        "may-log-in", help="Exit 0 when the account may be logged in on the emulator again"
+    )
+    may_log_in.add_argument("--account", required=True)
     args = parser.parse_args()
+    if args.command == "may-log-in":
+        blocked = logins.login_blocked(args.account)
+        if blocked is not None:
+            print(f"Do not log {args.account} in on the emulator: {blocked}")
+            return 1
+        print(f"{args.account} may be logged in on the emulator")
+        return 0
     if args.command == "install-schedule":
         install_launch_agent(
             Path.home() / "Library/LaunchAgents" / f"{LAUNCH_AGENT_LABEL}.plist",
