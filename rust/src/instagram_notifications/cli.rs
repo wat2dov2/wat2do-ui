@@ -278,6 +278,18 @@ pub enum Command {
         #[arg(long)]
         account: String,
     },
+    /// Show each account's guard (Following holds, the day's reads, its breaker), or
+    /// reset or open one account's breaker
+    AccountGuard {
+        #[arg(long)]
+        account: Option<String>,
+        /// A person checked the account: close its breaker and forget its refusals
+        #[arg(long, requires = "account", conflicts_with = "trip")]
+        reset: bool,
+        /// Open the account's breaker for this reason: no automated traffic for it
+        #[arg(long, requires = "account")]
+        trip: Option<String>,
+    },
     Retry {
         #[arg(long)]
         job_id: String,
@@ -390,6 +402,20 @@ fn operate(cli: Cli, services: &dyn CliServices) -> anyhow::Result<Option<Value>
             let prior = queue.account_login_paused(&account)?;
             queue.resume_account_login(&account)?;
             json!({"account": account, "was_paused": prior})
+        }
+        Command::AccountGuard {
+            account,
+            reset,
+            trip,
+        } => {
+            if let Some(account) = account.as_deref() {
+                if reset {
+                    queue.reset_guard(account)?;
+                } else if let Some(reason) = trip.as_deref() {
+                    queue.trip_guard(account, reason)?;
+                }
+            }
+            queue.guard_status(account.as_deref())?
         }
         Command::Retry { job_id } => {
             let job = queue.get(&job_id)?.ok_or_else(|| {

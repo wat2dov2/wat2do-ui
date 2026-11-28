@@ -35,6 +35,13 @@ STATE = Path.home() / ".local/state/wat2do"
 BROWSER_STATE = STATE / "instagram-browser"
 NOTIFICATION_LOG = STATE / "notification-log"
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
+# A Following read Instagram refused, as the Lightpanda lane logs it (the messages in
+# rust/src/instagram_notifications/browser_following.rs).
+_FOLLOWING_REFUSAL = re.compile(
+    r"Lightpanda job \S+ failed for (\S+): (?:Instagram Following read failed with HTTP 429"
+    r"|Instagram refused a Following read|Instagram Following response was not valid JSON"
+    r"|Instagram asked for a login on a Following read)"
+)
 _LIMIT = re.compile(r"usage limit|weekly limit|hit your .{0,20}limit", re.IGNORECASE)
 # The recorder's file grows a few MB a day; its tail covers the longest silence judged.
 _RECORDER_TAIL_BYTES = 12 * 1024 * 1024
@@ -49,6 +56,7 @@ class Context:
         self.now = now
         self.local = now.astimezone(TORONTO)
         self._recorded: Recorded | None = None
+        self._log_texts: dict[Path, tuple[str, float]] = {}
 
     def recorded(self) -> Recorded:
         """The notification recorder's recent lines, read once per pass."""
@@ -71,8 +79,14 @@ class Context:
         return result.stdout
 
     def new_log_text(self, path: Path) -> tuple[str, float]:
-        """What `path` gained since the last pass, and how many hours that covers.
-        The first pass only marks where the file ends."""
+        """What `path` gained since the last pass, and how many hours that covers, read
+        once per pass however many checks ask. The first pass only marks where the file
+        ends."""
+        if path not in self._log_texts:
+            self._log_texts[path] = self._read_new_log_text(path)
+        return self._log_texts[path]
+
+    def _read_new_log_text(self, path: Path) -> tuple[str, float]:
         offsets = self.state.setdefault("offsets", {})
         key = str(path)
         size = path.stat().st_size if path.exists() else 0
@@ -290,6 +304,40 @@ def brave(context: Context) -> dict[str, Any]:
         "jobs": dict(jobs),
         "error_lines": error_lines,
         "log_hours": log_hours,
+    }
+
+
+def following_guard(context: Context) -> dict[str, Any]:
+    """Refused Following reads per account in the last hour, and the accounts whose
+    breaker is open. The Lightpanda lane names the account of each refusal in the
+    worker log; the account guard (`account_guard:<account>` in the queue) counts
+    Brave's too. The larger count for each account is kept."""
+    text, log_hours = context.new_log_text(BROWSER_STATE / "worker.stderr.log")
+    from_log: dict[str, int] = defaultdict(int)
+    for match in _FOLLOWING_REFUSAL.finditer(text):
+        from_log[match.group(1)] += 1
+    per_hour = {
+        account: round(count / log_hours) if log_hours > 1 else count
+        for account, count in from_log.items()
+    }
+    now = context.now.timestamp()
+    tripped: dict[str, str] = {}
+    with sqlite3.connect(
+        f"file:{BROWSER_STATE / 'jobs.sqlite3'}?mode=ro", uri=True, timeout=5
+    ) as db:
+        rows = db.execute(
+            "select key, value from settings where key like 'account_guard:%'"
+        ).fetchall()
+    for key, raw in rows:
+        account = key.removeprefix("account_guard:")
+        guard = json.loads(raw) or {}
+        recent = sum(1 for at in guard.get("refusal_times") or [] if now - at < 3600)
+        per_hour[account] = max(per_hour.get(account, 0), recent)
+        if guard.get("tripped_at") is not None:
+            tripped[account] = guard.get("tripped_reason") or ""
+    return {
+        "refusals_last_hour": {account: count for account, count in per_hour.items() if count},
+        "tripped": tripped,
     }
 
 

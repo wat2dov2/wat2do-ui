@@ -876,6 +876,52 @@ class InstagramDigestControl(_ControlModel):
         return self
 
 
+class FollowerTierControl(_ControlModel):
+    below: int = Field(gt=0)
+    factor: float = Field(gt=0, le=1)
+
+
+class InstagramAccountGuardControl(_ControlModel):
+    """How much each school account may read Following lists, and its breaker.
+
+    The browser worker (``rust/src/instagram_notifications/browser_queue_guard.rs``)
+    reads this file live from the checkout it was built from, so a change applies within
+    seconds without a reinstall. A refusal (429, refused, a page in place of JSON) holds
+    the account's reads ``refusal_hold_hours``, each refusal in a row
+    ``refusal_backoff_factor`` times longer; ``breaker_refusal_streak`` refusals in a row,
+    a login wall, an ended login or a security check open its breaker (no automated
+    traffic until a person resets it).
+    """
+
+    refusal_hold_hours: float = Field(gt=0, le=168)
+    refusal_backoff_factor: float = Field(ge=1, le=10)
+    refusal_max_hold_hours: float = Field(gt=0, le=720)
+    refusal_streak_reset_hours: float = Field(gt=0, le=720)
+    breaker_refusal_streak: int = Field(ge=1, le=50)
+    # A large, established account's Following reads a day and an hour; smaller and
+    # newer accounts get the first matching tier's factor, times new_account_factor.
+    daily_following_reads: float = Field(gt=0, le=20000)
+    hourly_following_reads: float = Field(gt=0, le=3600)
+    minimum_daily_following_reads: float = Field(ge=0, le=20000)
+    follower_tiers: list[FollowerTierControl]
+    new_account_days: float = Field(ge=0, le=3650)
+    new_account_factor: float = Field(gt=0, le=1)
+    # Named accounts' reads a day, in place of the scaled number (0 stops them).
+    account_daily_following_reads: dict[str, float]
+    size_refresh_hours: float = Field(gt=0, le=168)
+
+    @model_validator(mode="after")
+    def validate_hold_and_tiers(self) -> "InstagramAccountGuardControl":
+        if self.refusal_max_hold_hours < self.refusal_hold_hours:
+            raise ValueError("refusal_max_hold_hours must be at least refusal_hold_hours")
+        belows = [tier.below for tier in self.follower_tiers]
+        if belows != sorted(set(belows)):
+            raise ValueError("follower_tiers must be in rising order of below")
+        if any(reads < 0 for reads in self.account_daily_following_reads.values()):
+            raise ValueError("account_daily_following_reads must not be negative")
+        return self
+
+
 class InstagramLightpandaControl(_ControlModel):
     """Lightpanda, the light headless browser that reads Instagram digests per account.
 
@@ -983,6 +1029,9 @@ class MaintenanceControl(_ControlModel):
     brave_job_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
     brave_job_min_jobs: int = Field(ge=1)
     brave_error_lines_per_hour: int = Field(ge=1)
+    # Refused Following reads (429, refused, a page in place of JSON, a login wall) per
+    # account in an hour at or over this turn the following_guard check red.
+    following_errors_per_account_hour: int = Field(ge=1)
     # Instagram is quiet at night: silence between local midnight and
     # `recorder_quiet_until_hour` does not count toward `recorder_silence_minutes`.
     recorder_silence_minutes: int = Field(ge=10, le=1440)
@@ -1956,6 +2005,7 @@ class ControlBox(_ControlModel):
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
     instagram_lightpanda: InstagramLightpandaControl
+    instagram_account_guard: InstagramAccountGuardControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl

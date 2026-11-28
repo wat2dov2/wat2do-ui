@@ -137,14 +137,32 @@ pub fn paused(queue: &BrowserJobQueue, account: &str) -> anyhow::Result<Option<S
         .and_then(|reason| reason.as_str().map(str::to_owned)))
 }
 
-/// Let the account log in again after a person has checked it.
+/// Let the account log in again after a person has checked it, which also closes its
+/// breaker.
 pub fn resume(queue: &BrowserJobQueue, account: &str) -> anyhow::Result<()> {
-    Ok(queue.set_setting(&paused_key(account), Value::Null)?)
+    queue.set_setting(&paused_key(account), Value::Null)?;
+    Ok(queue.reset_guard(account)?)
 }
 
 fn pause(queue: &BrowserJobQueue, account: &str, reason: &str) -> anyhow::Result<LoginResult> {
     queue.set_setting(&paused_key(account), json!(reason))?;
     Ok(LoginResult::Paused(reason.to_owned()))
+}
+
+/// Pause a refused login for a person. A security check (a challenge, a suspension)
+/// also opens the account's breaker, so nothing automated reaches it until a person
+/// has cleared it.
+fn refused(
+    queue: &BrowserJobQueue,
+    account: &str,
+    outcome: PageOutcome,
+    path: &str,
+) -> anyhow::Result<LoginResult> {
+    let reason = refusal(outcome, path);
+    if outcome == PageOutcome::Challenge {
+        queue.trip_guard(account, &reason)?;
+    }
+    pause(queue, account, &reason)
 }
 
 /// Whether today's first-login places are spent.
@@ -267,7 +285,7 @@ async fn answer(
     match outcome(browser).await? {
         Outcome::LoggedIn => return Ok(LoginResult::LoggedIn { new_device }),
         Outcome::Page(PageOutcome::Code, _) => {}
-        Outcome::Page(outcome, path) => return pause(queue, account, &refusal(outcome, &path)),
+        Outcome::Page(outcome, path) => return refused(queue, account, outcome, &path),
     }
     let owned = account.to_owned();
     let code = tokio::task::spawn_blocking(move || {
@@ -298,7 +316,7 @@ async fn answer(
         Outcome::Page(PageOutcome::Code, _) => {
             pause(queue, account, "Instagram did not accept the emailed code")
         }
-        Outcome::Page(outcome, path) => pause(queue, account, &refusal(outcome, &path)),
+        Outcome::Page(outcome, path) => refused(queue, account, outcome, &path),
     }
 }
 

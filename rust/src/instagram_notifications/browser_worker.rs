@@ -881,6 +881,7 @@ impl Worker {
         threads.push(spawn_named("instagram-browser-source_status", move || {
             while !stop.is_set() {
                 worker.collect("source_status", || worker.collect_carousels());
+                worker.collect("account_sizes_status", || worker.refresh_account_sizes());
                 stop.wait(control().source_poll_interval_seconds);
             }
         }));
@@ -899,6 +900,32 @@ impl Worker {
             "source_status",
             json!({"checked_at": self.time(), "result": result}),
         )?;
+        Ok(())
+    }
+
+    /// Keep each school account's follower count and first stats run in the queue, for
+    /// the account guard's shares, once they are `size_refresh_hours` old.
+    fn refresh_account_sizes(&self) -> anyhow::Result<()> {
+        if !self.queue.take_account_sizes_turn()? {
+            return Ok(());
+        }
+        let sizes = self.database()?.run(|pool| async move {
+            sqlx::query_as::<_, (String, i64, f64)>(
+                "SELECT username, (array_agg(followers_count ORDER BY captured_on DESC))[1]::bigint, \
+                        extract(epoch FROM min(captured_on)::timestamptz)::float8 \
+                 FROM public.instagram_account_snapshots \
+                 WHERE username IS NOT NULL AND followers_count IS NOT NULL GROUP BY username",
+            )
+            .fetch_all(&pool)
+            .await
+        })?;
+        let sizes: Vec<(String, u64, f64)> = sizes
+            .into_iter()
+            .map(|(account, followers, first_seen)| {
+                (account, u64::try_from(followers).unwrap_or(0), first_seen)
+            })
+            .collect();
+        self.queue.set_account_sizes(&sizes)?;
         Ok(())
     }
 

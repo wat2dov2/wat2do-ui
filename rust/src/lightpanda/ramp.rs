@@ -9,7 +9,8 @@
 //! Accounts whose Lightpanda login Instagram ended go first (their device is known, so
 //! they spend no first-login place), then the accounts with the most digests in the
 //! last `ramp_lookback_days`, then `ramp_last_accounts` in their listed order. An
-//! account paused for a person, excluded, or whose login could not be tried (no
+//! account paused for a person, excluded, behind its open breaker (an ended login opens
+//! it, so a checkpointed account is never logged back in), or whose login could not be tried (no
 //! Keychain password, no login form) is left out, the last for a day.
 
 use std::sync::Arc;
@@ -78,6 +79,7 @@ pub fn plan(
             || skipped
             || login::paused(queue, &account)?.is_some()
             || queue.account_excluded(&account)?
+            || queue.guard_tripped(&account)?.is_some()
         {
             continue;
         }

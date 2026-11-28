@@ -136,6 +136,13 @@ fn listed_account(user: &Value) -> Option<Value> {
     Some(Value::Object(account))
 }
 
+/// The refusals the account guard (`browser_queue_guard.rs`) counts against the
+/// reading account; a login wall opens its breaker.
+pub const FOLLOWING_HTTP_429: &str = "Instagram Following read failed with HTTP 429";
+pub const FOLLOWING_LOGIN_WALL: &str = "Instagram asked for a login on a Following read";
+pub const FOLLOWING_REFUSED: &str = "Instagram refused a Following read";
+pub const FOLLOWING_INVALID_JSON: &str = "Instagram Following response was not valid JSON";
+
 /// A failed read's sanitized error: only the page's fixed reason and HTTP status.
 pub fn response_failure(payload: &Map<String, Value>) -> BrowserError {
     let status = payload
@@ -144,13 +151,9 @@ pub fn response_failure(payload: &Map<String, Value>) -> BrowserError {
         .and_then(Value::as_i64)
         .filter(|status| (100..=599).contains(status));
     match (payload.get("reason").and_then(Value::as_str), status) {
-        (Some("http_error"), Some(429)) => {
-            BrowserError::rate_limited("Instagram Following read failed with HTTP 429")
-        }
-        (Some("login_required"), _) => {
-            BrowserError::rate_limited("Instagram asked for a login on a Following read")
-        }
-        (Some("blocked"), _) => BrowserError::rate_limited("Instagram refused a Following read"),
+        (Some("http_error"), Some(429)) => BrowserError::rate_limited(FOLLOWING_HTTP_429),
+        (Some("login_required"), _) => BrowserError::rate_limited(FOLLOWING_LOGIN_WALL),
+        (Some("blocked"), _) => BrowserError::rate_limited(FOLLOWING_REFUSED),
         (Some("http_error"), Some(status)) => BrowserError::page_unavailable(format!(
             "Instagram Following read failed with HTTP {status}"
         )),
@@ -160,9 +163,7 @@ pub fn response_failure(payload: &Map<String, Value>) -> BrowserError {
         // A page instead of the API's JSON is Instagram refusing the read (a login or
         // checkpoint page served in place): it holds these reads like any refusal, never
         // retried at once (11-13: Lightpanda asked again every ten seconds, 282 an hour).
-        (Some("invalid_json"), _) => {
-            BrowserError::rate_limited("Instagram Following response was not valid JSON")
-        }
+        (Some("invalid_json"), _) => BrowserError::rate_limited(FOLLOWING_INVALID_JSON),
         (Some("invalid_response"), _) => {
             BrowserError::session("Instagram Following response did not contain an account list")
         }

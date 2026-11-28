@@ -26,6 +26,7 @@ rust/src/ingestion/items.rs
 backend/controlbox/instagram_browser.json
 backend/controlbox/instagram_digest.json
 backend/controlbox/instagram_lightpanda.json
+backend/controlbox/instagram_account_guard.json
 backend/controlbox/notification_retry.json
 backend/controlbox/scraping.json
 backend/controlbox/ingestion.json
