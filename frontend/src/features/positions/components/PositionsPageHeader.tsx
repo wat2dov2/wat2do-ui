@@ -9,7 +9,7 @@ import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import type { ApiLatestAddedItem } from "@/shared/generated";
 
-/** The directory controls the header shows; the route's loading state passes their initial values. */
+/** The directory controls the header shows; the route's loading state passes their kept values. */
 export type PositionsHeaderState = Pick<
   ReturnType<typeof usePositionsPage>,
   | "appliedQueryKey" | "searchQuery" | "setSearchQuery" | "submitSearch" | "clearSearch"

@@ -15,14 +15,13 @@ import {
 } from "@/shared/ui/select";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { translateCategory } from "@/shared/utils/event";
+import type { ClubScope } from "@/features/clubs/store/clubFilters.store";
 
-type ClubScope = "all" | "followed" | "claimed";
-
-/** The directory controls the header shows; the route's loading state passes their initial values. */
+/** The directory controls the header shows; the route's loading state passes their kept values. */
 export type ClubsHeaderState = Pick<
   ReturnType<typeof useClubsPage>,
   | "appliedQueryKey" | "addedSince" | "setAddedSince" | "clearNew"
-  | "searchQuery" | "setSearchQuery" | "submitSearchQuery" | "clearSearchQuery"
+  | "searchQuery" | "setSearchQuery" | "submitSearch" | "clearSearch"
   | "minEvents" | "setMinEvents" | "selectedCategories" | "toggleCategory"
   | "allCategories" | "activeTab" | "setActiveTab"
 >;
@@ -59,8 +58,8 @@ export function ClubsPageHeader({ state, count, disabled }: ClubsPageHeaderProps
         size="lg"
         value={state.searchQuery}
         onChange={state.setSearchQuery}
-        onSubmit={state.submitSearchQuery}
-        onClear={state.clearSearchQuery}
+        onSubmit={state.submitSearch}
+        onClear={state.clearSearch}
         placeholder={t("clubs.searchPlaceholder")}
         submitLabel={t("common.search")}
         clearLabel={t("clubs.clearSearch")}

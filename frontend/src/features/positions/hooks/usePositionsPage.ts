@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useQuery } from "@tanstack/react-query";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { positionDirectoryQueryOptions } from "@/features/positions/api/positions.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { resolveSchool } from "@/shared/constants/schools";
 import { filterPositions } from "@/features/positions/api/positionService";
-import type { Position, PositionType } from "@/shared/types";
+import type { Position } from "@/shared/types";
 import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
-
-type PositionTypeFilter = PositionType | "all";
+import { NO_POSITION_FILTERS, usePositionFiltersStore, type PositionFilters } from "@/features/positions/store/positionFilters.store";
 
 interface UsePositionsPageOptions {
   initialDirectory: PaginatedPositionsResponse | null;
@@ -19,10 +19,10 @@ export function usePositionsPage({
   initialDirectory,
   initialSchool,
 }: UsePositionsPageOptions) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [submittedSearch, setSubmittedSearch] = useState({ query: "", revision: 0 });
-  const [positionType, setPositionType] = useState<PositionTypeFilter>("all");
-  const [addedSince, setAddedSince] = useState<string | null>(null);
+  // The search and filters outlive the page, so coming Back from a club finds them as they were.
+  const { searchQuery, submittedSearch, filters, setSearchQuery, submitSearch, clearSearch, searchFor, setFilters } =
+    usePositionFiltersStore(useShallow((s) => s));
+  const { positionType, addedSince } = filters;
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const school = resolveSchool(initialSchool);
   const query = useQuery({
@@ -47,37 +47,25 @@ export function usePositionsPage({
     filters: { positionType, addedSince },
   }, submittedSearch.revision);
 
-  const submitSearch = useCallback(() => {
-    setSubmittedSearch(previous => ({ query: searchQuery.trim(), revision: previous.revision + 1 }));
-  }, [searchQuery]);
-
-  const clearSearch = useCallback(() => {
-    setSearchQuery("");
-    setSubmittedSearch(previous => ({ query: "", revision: previous.revision + 1 }));
-  }, []);
-
   return {
-    appliedQueryKey: JSON.stringify({ submittedSearch, positionType, addedSince }),
+    appliedQueryKey: JSON.stringify({ submittedSearch, filters }),
     positions,
     total,
     latestAddedPosition: query.data?.latest_added_position ?? null,
     searchLatest: () => {
       const latest = query.data?.latest_added_position;
       if (!latest) return;
-      setSearchQuery(latest.title);
-      setSubmittedSearch(previous => ({ query: latest.title, revision: previous.revision + 1 }));
-      setPositionType("all");
-      setAddedSince(null);
+      searchFor(latest.title, NO_POSITION_FILTERS);
     },
     searchQuery,
     setSearchQuery,
     submitSearch,
     clearSearch,
     positionType,
-    setPositionType,
+    setPositionType: (value: PositionFilters["positionType"]) => setFilters({ positionType: value }),
     addedSince,
-    setAddedSince,
-    clearNew: () => setAddedSince(null),
+    setAddedSince: (value: string | null) => setFilters({ addedSince: value }),
+    clearNew: () => setFilters({ addedSince: null }),
     selectedPosition,
     openPosition: (position: Position) => setSelectedPositionId(position.id),
     closePosition: () => setSelectedPositionId(null),

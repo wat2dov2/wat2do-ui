@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { useRequestSchool } from "@/app/client-providers";
 import { eventFeedQueryOptions } from "@/features/events/api/events.api";
 import { EventHighlightSectionsSkeleton } from "@/features/events/components/EventHighlightSections";
@@ -13,8 +14,10 @@ import { buildEventHighlights } from "@/features/events/lib/eventHighlights";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
 import { ClubList } from "@/features/clubs/components/ClubList";
 import { ClubsPageHeader, type ClubsHeaderState } from "@/features/clubs/components/ClubsPageHeader";
+import { useClubFiltersStore } from "@/features/clubs/store/clubFilters.store";
 import { PositionListSkeleton } from "@/features/positions/components/PositionList";
 import { PositionsPageHeader, type PositionsHeaderState } from "@/features/positions/components/PositionsPageHeader";
+import { usePositionFiltersStore } from "@/features/positions/store/positionFilters.store";
 import { useSearch } from "@/features/search";
 import { feedFilterAvailability, resolveCampusSeasonFilters } from "@/features/search/api/filterService";
 import { Stack } from "@/shared/layout";
@@ -30,7 +33,8 @@ const NO_IDS: number[] = [];
 /*
  * Route fallbacks render each list page's own header and its own loading grid,
  * so the page that replaces them keeps every box in place. Controls start at
- * the values the page itself starts with, and no feed request is made here.
+ * the values the page itself starts with (the search and filters the reader
+ * left, kept in their stores), and no feed request is made here.
  */
 
 function EventsLoading() {
@@ -86,11 +90,11 @@ function EventsLoading() {
 
 function ClubsLoading() {
   const { club_categories: allCategories } = useAppConstants();
+  const { searchQuery, filters } = useClubFiltersStore(useShallow(({ searchQuery, filters }) => ({ searchQuery, filters })));
   const state: ClubsHeaderState = {
-    appliedQueryKey: "", addedSince: null, setAddedSince: ignore, clearNew: ignore,
-    searchQuery: "", setSearchQuery: ignore, submitSearchQuery: ignore, clearSearchQuery: ignore,
-    minEvents: 0, setMinEvents: ignore, selectedCategories: [], toggleCategory: ignore,
-    allCategories, activeTab: "all", setActiveTab: ignore,
+    ...filters, appliedQueryKey: "", setAddedSince: ignore, clearNew: ignore,
+    searchQuery, setSearchQuery: ignore, submitSearch: ignore, clearSearch: ignore,
+    setMinEvents: ignore, toggleCategory: ignore, allCategories, setActiveTab: ignore,
   };
   return (
     <>
@@ -100,15 +104,15 @@ function ClubsLoading() {
   );
 }
 
-const POSITIONS_STATE: PositionsHeaderState = {
-  appliedQueryKey: "", searchQuery: "", setSearchQuery: ignore, submitSearch: ignore, clearSearch: ignore,
-  positionType: "all", setPositionType: ignore, addedSince: null, setAddedSince: ignore, clearNew: ignore,
-};
-
 function PositionsLoading() {
+  const { searchQuery, filters } = usePositionFiltersStore(useShallow(({ searchQuery, filters }) => ({ searchQuery, filters })));
+  const state: PositionsHeaderState = {
+    ...filters, appliedQueryKey: "", searchQuery, setSearchQuery: ignore, submitSearch: ignore, clearSearch: ignore,
+    setPositionType: ignore, setAddedSince: ignore, clearNew: ignore,
+  };
   return (
     <>
-      <PositionsPageHeader state={POSITIONS_STATE} count={null} latest={null} disabled />
+      <PositionsPageHeader state={state} count={null} latest={null} disabled />
       <PositionListSkeleton />
     </>
   );
