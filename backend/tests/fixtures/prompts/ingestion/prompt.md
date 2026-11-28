@@ -20,5 +20,4 @@ source_kind: {{source_kind}}
 source_note: {{source_note}}
 source_url: {{source_url}}
 timezone: {{timezone}}
-title_svg_rules: {{title_svg_rules}}
 today: {{today}}
