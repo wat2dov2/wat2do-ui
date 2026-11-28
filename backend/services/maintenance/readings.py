@@ -205,6 +205,23 @@ def database(context: Context) -> dict[str, Any]:
                   where status = 'approved'
                     and coalesce(decided_at, updated_at) < now() - interval '{control.follow_backlog_days} days')
              )),
+          'post_sweep', (with followed as (
+               select distinct f.handle
+               from instagram_follow_candidates f join schools s on s.id = f.school_id
+               where f.status = 'followed' and not s.hidden
+             ), sweep as (
+               select f.handle, r.read_at, r.due_at
+               from followed f left join instagram_post_sweep r on r.handle = f.handle
+             )
+             select json_build_object(
+               'followed', (select count(*) from sweep),
+               'reads_hour', (select count(*) from sweep where read_at > now() - interval '1 hour'),
+               'reads_day', (select count(*) from sweep where read_at > now() - interval '24 hours'),
+               'due_now', (select count(*) from sweep where due_at is null or due_at <= now()),
+               'overdue', (select count(*) from sweep where due_at is null
+                  or due_at < now() - interval '{control.post_sweep_overdue_hours} hours'),
+               'never_read', (select count(*) from sweep where read_at is null)
+             )),
           'stale_snapshots', (select coalesce(json_agg(a.account_key order by a.account_key), '[]')
              from instagram_publishing_accounts a
              where a.enabled and coalesce((select max(captured_on) from instagram_account_snapshots s
@@ -282,6 +299,22 @@ def follows(rows: dict[str, Any], context: Context) -> dict[str, Any]:
             claimed.append(entry)
     reading["claimed_not_followed"] = claimed
     reading["claimed_waiting"] = waiting
+    return reading
+
+
+def post_sweep(rows: dict[str, Any], context: Context) -> dict[str, Any]:
+    """The sweep's reads and backlog from the database, and its lanes and the logged-out
+    refusals of the last day from the processor's `post_sweep.json`."""
+    reading = dict(rows["post_sweep"])
+    try:
+        state = json.loads((STATE / "ingestion/post_sweep.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        state = None
+    since = context.now.timestamp() - 24 * 3600
+    reading["lanes"] = state["lanes"] if state else None
+    reading["refusals_day"] = (
+        sum(1 for at in state["refusals"] if at > since) if state is not None else None
+    )
     return reading
 
 

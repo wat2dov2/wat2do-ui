@@ -108,7 +108,7 @@ def test_one_school_far_under_its_own_median_is_red():
     assert "uwaterloo 2 (median 60)" in check.summary
 
 
-def test_a_school_without_a_digest_is_red_only_when_the_quiet_lane_misses_it_too():
+def test_a_school_without_a_digest_is_red_only_when_the_post_sweep_misses_it_too():
     low = {"uwaterloo": {"today": 12, "baseline": [60] * 7}}
     assert _ingestion(schools=low).status == "green"
     check = _ingestion(schools=low, no_digest=["uwaterloo"])
@@ -116,6 +116,64 @@ def test_a_school_without_a_digest_is_red_only_when_the_quiet_lane_misses_it_too
     assert "no daily digest for 26 h" in check.summary
     covered = {"uwaterloo": {"today": 40, "baseline": [60] * 7}}
     assert _ingestion(schools=covered, no_digest=["uwaterloo"]).status == "green"
+
+
+def _post_sweep(**changes):
+    reading = {
+        "followed": 20500,
+        "reads_hour": 420,
+        "reads_day": 9800,
+        "due_now": 300,
+        "overdue": 900,
+        "never_read": 120,
+        "lanes": 4,
+        "refusals_day": 1,
+    }
+    reading.update(changes)
+    return judges.post_sweep(reading, CONTROL)
+
+
+def test_a_post_sweep_keeping_up_is_green():
+    check = _post_sweep()
+    assert check.status == "green"
+    assert "420 profiles read in the last hour" in check.summary
+
+
+def test_a_post_sweep_stalled_while_handles_are_due_is_red():
+    stalled = _post_sweep(reads_hour=3, due_now=5000)
+    assert stalled.status == "red"
+    assert "read 3 profiles in the last hour while 5000 are due" in stalled.summary
+    # Nothing due: a quiet hour is not a stall.
+    assert _post_sweep(reads_hour=3, due_now=10).status == "green"
+
+
+def test_a_post_sweep_backlog_is_yellow_then_red():
+    assert _post_sweep(overdue=CONTROL.post_sweep_backlog_yellow).status == "yellow"
+    backlog = _post_sweep(overdue=CONTROL.post_sweep_backlog_red, never_read=3800)
+    assert backlog.status == "red"
+    assert "3800 never read" in backlog.summary
+
+
+def test_logged_out_refusals_are_yellow_then_red():
+    assert _post_sweep(refusals_day=CONTROL.post_sweep_refusals_yellow).status == "yellow"
+    refused = _post_sweep(refusals_day=CONTROL.post_sweep_refusals_red, lanes=1)
+    assert refused.status == "red"
+    assert "lanes now 1" in refused.summary
+    assert _post_sweep(refusals_day=None, lanes=None).status == "yellow"
+
+
+def test_post_sweep_readings_take_lanes_and_the_days_refusals_from_its_state(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setattr(readings, "STATE", tmp_path)
+    (tmp_path / "ingestion").mkdir()
+    day_ago = NOW.timestamp() - 24 * 3600
+    (tmp_path / "ingestion/post_sweep.json").write_text(
+        json.dumps({"lanes": 3, "changed_at": 0, "refusals": [day_ago - 60, day_ago + 60]})
+    )
+    context = SimpleNamespace(now=NOW)
+    reading = readings.post_sweep({"post_sweep": {"reads_hour": 5}}, context)
+    assert reading == {"reads_hour": 5, "lanes": 3, "refusals_day": 1}
 
 
 def test_a_school_with_a_small_baseline_is_never_dark():

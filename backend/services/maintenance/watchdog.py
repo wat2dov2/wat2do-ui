@@ -46,6 +46,7 @@ def _readers(context: readings.Context) -> dict[str, Callable[[], Any]]:
         "brave": lambda: readings.brave(context),
         "following_guard": lambda: readings.following_guard(context),
         "ingestion_processor": lambda: readings.ingestion_processor(context),
+        "post_sweep": database(readings.post_sweep),
         "recorder": lambda: readings.recorder(context),
         "account_notifications": lambda: readings.account_notifications(context),
         "workflow": lambda: readings.workflow(context),

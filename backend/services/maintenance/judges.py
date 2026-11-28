@@ -99,7 +99,7 @@ def ingestion(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     if uncovered:
         red.append(
             f"no daily digest for {control.school_digest_hours} h and few items "
-            f"(the quiet-school lane is not covering them): {', '.join(uncovered)}"
+            f"(the post sweep is not covering them): {', '.join(uncovered)}"
         )
     return verdict(
         "ingestion",
@@ -163,6 +163,43 @@ def following_guard(reading: dict[str, Any], control: MaintenanceControl) -> Che
         for account, reason in sorted(reading["tripped"].items())
     ]
     return verdict("following_guard", red, yellow)
+
+
+def post_sweep(reading: dict[str, Any], control: MaintenanceControl) -> Check:
+    """The logged-out post sweep: reading while handles are due, its backlog of overdue
+    handles, and how often Instagram refused logged-out reads in the last day."""
+    red: list[str] = []
+    yellow: list[str] = []
+    reads, due = reading["reads_hour"], reading["due_now"]
+    if (
+        reads < control.post_sweep_min_reads_per_hour
+        and due >= control.post_sweep_min_reads_per_hour
+    ):
+        red.append(f"post sweep read {reads} profiles in the last hour while {due} are due")
+    overdue = reading["overdue"]
+    backlog = (
+        f"{overdue} followed handles overdue by {control.post_sweep_overdue_hours} h "
+        f"or never read ({reading['never_read']} never read)"
+    )
+    if overdue >= control.post_sweep_backlog_red:
+        red.append(backlog)
+    elif overdue >= control.post_sweep_backlog_yellow:
+        yellow.append(backlog)
+    refusals = reading["refusals_day"]
+    if refusals is None:
+        yellow.append("post sweep has no lane state yet (post_sweep.json)")
+    elif refusals >= control.post_sweep_refusals_red:
+        red.append(f"{refusals} refused logged-out reads in 24 h (lanes now {reading['lanes']})")
+    elif refusals >= control.post_sweep_refusals_yellow:
+        yellow.append(f"{refusals} refused logged-out reads in 24 h (lanes now {reading['lanes']})")
+    return verdict(
+        "post_sweep",
+        red,
+        yellow,
+        f"{reads} profiles read in the last hour ({reading['reads_day']} in 24 h), "
+        f"{reading['lanes']} lanes, {refusals} refusals in 24 h, {overdue} of "
+        f"{reading['followed']} handles overdue",
+    )
 
 
 def ingestion_processor(reading: dict[str, Any], _control: MaintenanceControl) -> Check:
@@ -449,6 +486,7 @@ JUDGES = {
     "brave": brave,
     "following_guard": following_guard,
     "ingestion_processor": ingestion_processor,
+    "post_sweep": post_sweep,
     "recorder": recorder,
     "account_notifications": account_notifications,
     "workflow": workflow,

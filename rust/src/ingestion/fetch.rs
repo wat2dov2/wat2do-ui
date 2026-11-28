@@ -6,10 +6,11 @@
 //! embeds in its public page, projected into the post shape the agent reads.
 //! A profile comes from its public page rendered logged out by Lightpanda.
 
+use std::collections::HashMap;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use chrono::{DateTime, SecondsFormat};
+use chrono::{DateTime, SecondsFormat, Utc};
 use regex::Regex;
 use serde_json::{Map, Value, json};
 use wreq_util::Emulation;
@@ -145,22 +146,34 @@ async fn render_profile(handle: &str) -> Option<String> {
     }
 }
 
-/// A post in a profile's grid: its URL and, when its picture says, the day it was posted.
+/// A post in a profile's grid: its URL and, when the page says, when it was posted.
 #[derive(Debug, PartialEq)]
 pub struct GridPost {
     pub url: String,
-    pub posted_on: Option<chrono::NaiveDate>,
+    pub posted_at: Option<DateTime<Utc>>,
 }
 
-/// `fetch_profile_posts`: the newest posts in a profile's grid, read logged out (none
-/// when the handle is gone, private or did not render); blocked at Instagram's login wall.
-pub async fn fetch_profile_posts(handle: &str) -> Result<Vec<GridPost>, FetchBlocked> {
+/// A public profile that always exists, rendered to tell Instagram's login wall from a
+/// handle that alone shows no profile.
+const CONTROL_HANDLE: &str = "instagram";
+
+/// Whether Instagram serves logged-out profiles right now: the control profile renders.
+/// A page without a profile is Instagram's login wall only when this is false; otherwise
+/// that handle alone has no public profile.
+pub async fn serves_profiles() -> bool {
+    matches!(fetch_profile(CONTROL_HANDLE).await, Ok(Some(_)))
+}
+
+/// `fetch_profile_posts`: the newest posts in a profile's grid, read logged out (none when
+/// the handle is gone or private), or None when Lightpanda did not render the page;
+/// blocked when the page shows no profile (see [`serves_profiles`]).
+pub async fn fetch_profile_posts(handle: &str) -> Result<Option<Vec<GridPost>>, FetchBlocked> {
     let Some(html) = render_profile(handle).await else {
-        return Ok(Vec::new());
+        return Ok(None);
     };
     // The same check fetch_profile makes: a page without profile tags is a wall.
     rendered_profile(&html, handle)?;
-    Ok(grid_posts(&html))
+    Ok(Some(grid_posts(&html)))
 }
 
 static GRID_POST: LazyLock<Regex> = LazyLock::new(|| {
@@ -170,22 +183,60 @@ static GRID_POST: LazyLock<Regex> = LazyLock::new(|| {
 static POSTED_ON: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"alt="[^"]*? on ([A-Z][a-z]+ \d{1,2}, \d{4})"#).expect("valid regex")
 });
+/// Instagram's media IDs start with the milliseconds since this moment, shifted left 23 bits.
+const MEDIA_ID_EPOCH_MS: i64 = 1_314_220_021_721;
 
-/// The grid's posts in page order (pinned first, then newest first), each dated by its
-/// picture's alt text ("Photo by NAME on November 14, 2026."); reels often have none.
+/// The grid's posts in page order (pinned first, then newest first). Each is dated by its
+/// media ID in the page's data, which holds the exact moment it was posted, or else by its
+/// picture's alt text ("Photo by NAME on November 14, 2026.", taken as the end of that day,
+/// so it is never thought older than it is); reels often have neither.
 fn grid_posts(html: &str) -> Vec<GridPost> {
+    let posted = posted_by_code(html);
     let mut posts: Vec<GridPost> = Vec::new();
     for captures in GRID_POST.captures_iter(html) {
         let url = format!("https://www.instagram.com/p/{}/", &captures[1]);
         if posts.iter().any(|post| post.url == url) {
             continue;
         }
-        let posted_on = POSTED_ON
-            .captures(&captures[2])
-            .and_then(|date| chrono::NaiveDate::parse_from_str(&date[1], "%B %d, %Y").ok());
-        posts.push(GridPost { url, posted_on });
+        let posted_at = posted.get(&captures[1]).copied().or_else(|| {
+            POSTED_ON
+                .captures(&captures[2])
+                .and_then(|date| chrono::NaiveDate::parse_from_str(&date[1], "%B %d, %Y").ok())
+                .and_then(|day| day.and_hms_opt(23, 59, 59))
+                .map(|end| end.and_utc())
+        });
+        posts.push(GridPost { url, posted_at });
     }
     posts
+}
+
+/// When each post in the page's embedded data was posted, by shortcode, from its media ID.
+fn posted_by_code(html: &str) -> HashMap<String, DateTime<Utc>> {
+    let mut posted = HashMap::new();
+    for captures in JSON_SCRIPT.captures_iter(html) {
+        let Ok(data) = serde_json::from_str::<Value>(&captures[1]) else {
+            continue;
+        };
+        walk(&data, &mut |node| {
+            let Some(code) = node.get("code").and_then(Value::as_str) else {
+                return;
+            };
+            let id = match node.get("pk") {
+                Some(Value::String(id)) => id.split('_').next().and_then(|id| id.parse().ok()),
+                Some(Value::Number(id)) => id.as_u64(),
+                _ => None,
+            };
+            if let Some(at) = id.and_then(media_posted_at) {
+                posted.entry(code.to_owned()).or_insert(at);
+            }
+        });
+    }
+    posted
+}
+
+fn media_posted_at(id: u64) -> Option<DateTime<Utc>> {
+    let millis = i64::try_from(id >> 23).ok()? + MEDIA_ID_EPOCH_MS;
+    DateTime::from_timestamp_millis(millis)
 }
 
 static OG_TAG: LazyLock<Regex> = LazyLock::new(|| {
@@ -404,17 +455,32 @@ mod tests {
             [
                 GridPost {
                     url: "https://www.instagram.com/p/AAA111/".to_owned(),
-                    posted_on: chrono::NaiveDate::from_ymd_opt(2026, 11, 14),
+                    posted_at: Some("2026-11-14T23:59:59Z".parse().unwrap()),
                 },
                 GridPost {
                     url: "https://www.instagram.com/p/BBB_22/".to_owned(),
-                    posted_on: None,
+                    posted_at: None,
                 },
             ]
         );
     }
 
     use super::*;
+
+    #[test]
+    fn a_post_in_the_pages_data_is_dated_to_the_moment_by_its_media_id() {
+        let html = concat!(
+            r#"<script type="application/json" data-x>{"edges": [{"node": {"pk": "4034120175537296806", "code": "Df8Eu0MIxWm"}}]}</script>"#,
+            r#"<a href="/dalgazette/p/Df8Eu0MIxWm/"><img alt="Photo by The Dalhousie Gazette on November 19, 2026." src="x"></a>"#,
+            r#"<a href="/reel/NODATA/"><img alt="" src="y"></a>"#,
+        );
+        let posts = grid_posts(html);
+        assert_eq!(
+            posts[0].posted_at,
+            Some("2026-11-19T21:43:41.809Z".parse().unwrap())
+        );
+        assert_eq!(posts[1].posted_at, None);
+    }
 
     #[test]
     fn projects_the_fullest_copy_of_the_post() {

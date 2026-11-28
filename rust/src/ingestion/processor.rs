@@ -3,7 +3,8 @@
 //! `fetch_lanes` tasks fill in notified Instagram posts with the logged-out
 //! fetcher; `parallel_agents` tasks each run one Haiku agent on the next ready
 //! row; one more lane reads, logged out, the Instagram profile of each club that
-//! still needs a logo or a real name. A Postgres notification wakes them as soon
+//! still needs a logo or a real name, and the post sweep's lanes read every followed
+//! club's profile for new posts (`post_sweep`). A Postgres notification wakes them as soon
 //! as a row is added or changes; with nothing waiting they sleep.
 //!
 //! When Claude is unavailable (its usage limit turned a run away, or
@@ -28,7 +29,7 @@ use tokio::time::Instant;
 use super::club_logos::{self, ClubLogos, Read, is_blocked};
 use super::fetch::{FetchBlocked, fetch_post};
 use super::items::{self, Item, Stage};
-use super::quiet_schools::{self, QuietSchools};
+use super::post_sweep::{self, Lanes, PostSweep, Read as SweepRead, epoch_seconds};
 use super::stop::Stop;
 use super::{agent, changes, notify, state_directory};
 use crate::claude::{Limited, remove_leftovers};
@@ -65,7 +66,8 @@ enum Lane {
     Fetch,
     Process,
     ClubLogos,
-    QuietSchools,
+    /// The post sweep's lane with this index; it reads only while the sweep has that many.
+    PostSweep(usize),
 }
 
 struct Processor {
@@ -79,7 +81,8 @@ struct Processor {
     agents_paused_until: Mutex<Option<Instant>>,
     agent_failures_in_a_row: AtomicU64,
     club_logos: Mutex<ClubLogos>,
-    quiet_schools: Mutex<QuietSchools>,
+    post_sweep: Mutex<PostSweep>,
+    post_sweep_lanes: Mutex<Lanes>,
 }
 
 impl Processor {
@@ -92,7 +95,7 @@ impl Processor {
             Lane::Fetch => self.fetch_next().await,
             Lane::Process => self.process_next().await,
             Lane::ClubLogos => self.fill_club_logo_next().await,
-            Lane::QuietSchools => self.read_quiet_school_next().await,
+            Lane::PostSweep(lane) => self.sweep_next(lane).await,
         }
     }
 
@@ -201,46 +204,57 @@ impl Processor {
         Ok(true)
     }
 
-    /// Read one followed club of a school Instagram has stopped notifying us about, and
-    /// queue its recent posts (`quiet_schools`); refused reads pause with post fetches.
-    async fn read_quiet_school_next(&self) -> Result<bool> {
+    /// Read one followed club's profile that is due and queue its new posts
+    /// (`post_sweep`); refused reads pause with post fetches.
+    async fn sweep_next(&self, lane: usize) -> Result<bool> {
+        {
+            let mut lanes = self.post_sweep_lanes.lock().await;
+            if let Err(error) = lanes.settle(epoch_seconds()) {
+                tracing::warn!("Post sweep lanes could not be saved ({error:#})");
+            }
+            if lane >= lanes.active() {
+                return Ok(false);
+            }
+        }
         if self.paused(&self.fetch_paused_until).await {
             return Ok(false);
         }
-        let next = self
-            .quiet_schools
-            .lock()
-            .await
-            .take_next(&self.pool)
-            .await?;
-        let Some(taken) = next else {
+        let next = self.post_sweep.lock().await.take_next(&self.pool).await?;
+        let Some(due) = next else {
             return Ok(false);
         };
-        let (handle, school) = (&taken.handle, &taken.school);
-        match quiet_schools::read_handle(&self.pool, handle, school).await {
-            Ok(queued) => {
-                self.count("quiet_school_read").await;
-                if queued > 0 {
-                    tracing::info!(%handle, %school, queued, "Queued posts from a quiet school's club");
-                    for _ in 0..queued {
-                        self.count("quiet_school_post").await;
-                    }
-                    self.wake.notify();
-                }
-            }
+        let read = match post_sweep::read_handle(&self.pool, &due).await {
+            Ok(read) => read,
             Err(error) => {
+                self.post_sweep.lock().await.give_back(due);
                 if let Some(blocked) = is_blocked(&error) {
                     self.pause_fetches(blocked).await;
-                    self.quiet_schools.lock().await.give_back(taken)?;
                     return Ok(false);
                 }
                 return Err(error);
             }
+        };
+        let recorded = post_sweep::record(&self.pool, &due, &read).await;
+        self.post_sweep.lock().await.done(&due.handle);
+        recorded?;
+        match read {
+            SweepRead::Profile { queued, .. } => {
+                self.count("post_sweep_read").await;
+                if queued > 0 {
+                    tracing::info!(handle = %due.handle, school = %due.school, queued, "Post sweep queued posts");
+                    for _ in 0..queued {
+                        self.count("post_sweep_post").await;
+                    }
+                    self.wake.notify();
+                }
+            }
+            SweepRead::NoPublicProfile => self.count("post_sweep_no_public_profile").await,
+            SweepRead::NotRendered => self.count("post_sweep_not_rendered").await,
         }
         // Background work like the club logos: space the reads out behind the post fetches.
         self.stopping
             .sleep(Duration::from_secs_f64(
-                INGESTION.quiet_school_read_delay_seconds,
+                INGESTION.post_sweep_read_delay_seconds,
             ))
             .await;
         Ok(true)
@@ -257,10 +271,20 @@ impl Processor {
         true
     }
 
+    /// Pause every logged-out read; a refusal that starts a new pause counts toward the
+    /// post sweep's lanes (reads already under way when the pause began do not).
     async fn pause_fetches(&self, blocked: &FetchBlocked) {
         tracing::warn!("Instagram refused logged-out fetches ({blocked}); pausing");
-        *self.fetch_paused_until.lock().await =
-            Some(Instant::now() + Duration::from_secs(INGESTION.fetch_block_pause_seconds));
+        let now = Instant::now();
+        let started = {
+            let mut until = self.fetch_paused_until.lock().await;
+            let started = until.is_none_or(|until| until <= now);
+            *until = Some(now + Duration::from_secs(INGESTION.fetch_block_pause_seconds));
+            started
+        };
+        if started && let Err(error) = self.post_sweep_lanes.lock().await.refused(epoch_seconds()) {
+            tracing::warn!("Post sweep lanes could not be saved ({error:#})");
+        }
         self.count("fetch_blocked").await;
     }
 
@@ -441,7 +465,8 @@ pub async fn process_queue(
         agents_paused_until: Mutex::default(),
         agent_failures_in_a_row: AtomicU64::default(),
         club_logos: Mutex::new(ClubLogos::new(directory.join("club_logos.json"))),
-        quiet_schools: Mutex::new(QuietSchools::new(directory.join("quiet_schools.json"))),
+        post_sweep: Mutex::default(),
+        post_sweep_lanes: Mutex::new(Lanes::new(directory.join("post_sweep.json"))),
     });
 
     let lanes = |lane: Lane, count: usize| {
@@ -467,7 +492,10 @@ pub async fn process_queue(
         let mut tasks = lanes(Lane::Fetch, INGESTION.fetch_lanes);
         tasks.extend(lanes(Lane::Process, INGESTION.parallel_agents));
         tasks.extend(lanes(Lane::ClubLogos, 1));
-        tasks.extend(lanes(Lane::QuietSchools, INGESTION.quiet_school_lanes));
+        // Every lane the sweep may grow to; those past its current count wait.
+        tasks.extend(
+            (0..INGESTION.post_sweep_max_lanes).flat_map(|lane| lanes(Lane::PostSweep(lane), 1)),
+        );
         for task in tasks {
             task.await?;
         }

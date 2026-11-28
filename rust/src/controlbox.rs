@@ -168,15 +168,20 @@ pub struct Ingestion {
     pub club_logo_relist_minutes: u64,
     pub profile_renderer: String,
     pub profile_render_timeout_seconds: f64,
-    pub quiet_school_hours: u64,
-    pub quiet_school_digest_hours: u64,
-    pub quiet_school_lanes: usize,
-    pub quiet_school_read_delay_seconds: f64,
-    pub quiet_school_reread_hours: u64,
-    pub quiet_school_relist_minutes: u64,
-    pub quiet_school_post_days: i64,
-    pub quiet_school_active_days: i32,
-    pub quiet_school_new_follow_days: i32,
+    pub post_sweep_start_lanes: usize,
+    pub post_sweep_min_lanes: usize,
+    pub post_sweep_max_lanes: usize,
+    pub post_sweep_spike_refusals: usize,
+    pub post_sweep_spike_hours: f64,
+    pub post_sweep_calm_hours: f64,
+    pub post_sweep_calm_refusals: usize,
+    pub post_sweep_read_delay_seconds: f64,
+    pub post_sweep_relist_minutes: u64,
+    pub post_sweep_schedule: Vec<PostSweepTier>,
+    pub post_sweep_dormant_read_every_hours: u64,
+    pub post_sweep_failed_retry_hours: u64,
+    pub post_sweep_min_post_days: i64,
+    pub post_sweep_max_post_days: i64,
     pub launch_agent_timeout_seconds: f64,
     pub title_svg_lanes: usize,
     pub title_svg_attempts: usize,
@@ -184,6 +189,15 @@ pub struct Ingestion {
     pub title_svg_poll_seconds: u64,
     pub university_event_schools: Vec<String>,
     pub club_directories: Vec<ClubDirectory>,
+}
+
+/// One step of `controlbox/ingestion.json` `post_sweep_schedule`: a handle whose newest
+/// post is under `newest_post_within_days` old is read every `read_every_hours`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PostSweepTier {
+    pub newest_post_within_days: i64,
+    pub read_every_hours: u64,
 }
 
 /// One official club directory in `controlbox/ingestion.json` `club_directories`.
