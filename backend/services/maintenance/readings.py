@@ -112,7 +112,8 @@ def _query(sql: str, context: Context) -> Any:
 
 
 def database(context: Context) -> dict[str, Any]:
-    """Instagram items per hour and per school, today's carousels and the Graph tokens."""
+    """Instagram items per hour and per school, today's carousels, the approved clubs'
+    follows and the Graph tokens."""
     control = context.control
     hours = (control.baseline_days + 1) * 24
     return _query(
@@ -155,6 +156,42 @@ def database(context: Context) -> dict[str, Any]:
              from instagram_publish_batches
              where status = 'failed' and error_message ilike '%access token%'
                and local_date >= (now() at time zone 'America/Toronto')::date - 1) t),
+          'follows', (with clubs as (
+               select c.id, c.club_name, c.school_id, c.created_at,
+                      lower(trim(both '@' from c.ig)) handle,
+                      exists (select 1 from club_members m where m.club_id = c.id) claimed
+               from clubs c
+               where c.status = 'approved' and coalesce(trim(c.ig), '') <> ''
+                 and c.school_id in (select distinct school_id from instagram_follow_candidates)
+             ), joined as (
+               select c.*, s.slug, f.status, f.reason, f.updated_at
+               from clubs c join schools s on s.id = c.school_id
+               left join instagram_follow_candidates f
+                 on f.school_id = c.school_id and f.handle = c.handle
+             )
+             select json_build_object(
+               'unsynced', (select coalesce(json_agg(slug || ' @' || handle), '[]') from (
+                  select slug, handle from joined where status is null
+                    and coalesce(created_at, now() - interval '1 year')
+                        < now() - interval '{control.follow_sync_hours} hours'
+                  order by slug, handle limit 20) x),
+               'unsynced_count', (select count(*) from joined where status is null
+                  and coalesce(created_at, now() - interval '1 year')
+                      < now() - interval '{control.follow_sync_hours} hours'),
+               'gone', (select coalesce(json_agg(slug || ' @' || handle), '[]') from (
+                  select slug, handle from joined
+                  where status = 'rejected' and reason = 'Profile is gone or hidden'
+                  order by updated_at desc nulls last limit 20) x),
+               'gone_count', (select count(*) from joined
+                  where status = 'rejected' and reason = 'Profile is gone or hidden'),
+               'claimed_not_followed', (select coalesce(json_agg(slug || ' @' || handle || ' (' || status || ')'), '[]') from (
+                  select slug, handle, status from joined
+                  where claimed and status in ('rejected', 'unfollow') order by slug, handle limit 20) x),
+               'unfollow_count', (select count(*) from joined where status = 'unfollow'),
+               'backlog_count', (select count(*) from instagram_follow_candidates
+                  where status = 'approved'
+                    and coalesce(decided_at, updated_at) < now() - interval '{control.follow_backlog_days} days')
+             )),
           'stale_snapshots', (select coalesce(json_agg(a.account_key order by a.account_key), '[]')
              from instagram_publishing_accounts a
              where a.enabled and coalesce((select max(captured_on) from instagram_account_snapshots s
@@ -214,6 +251,10 @@ def carousels(rows: dict[str, Any], context: Context) -> dict[str, Any]:
         "music_failed": rows["music_failed"],
         "story_failed": rows["story_failed"],
     }
+
+
+def follows(rows: dict[str, Any], _context: Context) -> dict[str, Any]:
+    return rows["follows"]
 
 
 def graph_tokens(rows: dict[str, Any], _context: Context) -> dict[str, Any]:

@@ -70,5 +70,7 @@
   "retry_log_max_minutes": 30,
   "sittings_check_hour": 13,
   "carousels_check_hour": 12,
-  "snapshot_max_age_days": 1
+  "snapshot_max_age_days": 1,
+  "follow_sync_hours": 3,
+  "follow_backlog_days": 7
 }

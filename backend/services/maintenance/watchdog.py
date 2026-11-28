@@ -54,6 +54,7 @@ def _readers(context: readings.Context) -> dict[str, Callable[[], Any]]:
         "launch_agents": lambda: readings.launch_agents(context),
         "sittings": lambda: readings.sittings(context),
         "carousels": database(readings.carousels),
+        "follows": database(readings.follows),
         "graph_tokens": database(readings.graph_tokens),
         "claude_logins": lambda: readings.claude_logins(context),
     }

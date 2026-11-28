@@ -177,12 +177,17 @@ class FollowingReader:
         self, nodes: list[Node], username: str, control: re.Pattern[str]
     ) -> _Profile | None:
         self._raise_if_blocked(nodes)
-        if self._device.find(_HIDDEN, nodes) is not None:
-            return _Profile(None)
         title = self._device.find(_PROFILE_TITLE, nodes)
         node = self._device.find(control, nodes)
+        # A private account we do not follow says "This account is private" above its Follow
+        # button, which sends a request: the control decides before the notice does.
         if title is not None and title.text.strip().casefold() == username and node is not None:
             return _Profile(node)
+        if self._device.find(_HIDDEN, nodes) is not None:
+            if not self._device.has_network():
+                # Offline, a profile can read as unavailable; that is no reason to give it up.
+                raise EmulatorError("The emulator has no network, so the profile did not load")
+            return _Profile(None)
         return None
 
     def _wait_for_button(

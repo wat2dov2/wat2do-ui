@@ -344,6 +344,36 @@ def carousels(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     return verdict("carousels", red, yellow, summary)
 
 
+def follows(reading: dict[str, Any], control: MaintenanceControl) -> Check:
+    """Every approved club's Instagram account goes into the same follow queue as the
+    crawl's finds (the worker's hourly club sync) and is followed from there."""
+    red: list[str] = []
+    yellow: list[str] = []
+    if reading["unsynced_count"]:
+        red.append(
+            f"{reading['unsynced_count']} approved clubs not in the follow queue after "
+            f"{control.follow_sync_hours} h (club sync stopped?): {', '.join(reading['unsynced'])}"
+        )
+    if reading["claimed_not_followed"]:
+        red.append(
+            "claimed clubs rejected or queued to unfollow: "
+            + ", ".join(reading["claimed_not_followed"])
+        )
+    if reading["gone_count"]:
+        yellow.append(
+            f"{reading['gone_count']} approved clubs' accounts rejected as gone or hidden "
+            f"(check a few on Instagram): {', '.join(reading['gone'])}"
+        )
+    if reading["unfollow_count"]:
+        yellow.append(f"{reading['unfollow_count']} approved clubs' accounts queued to unfollow")
+    if reading["backlog_count"]:
+        yellow.append(
+            f"{reading['backlog_count']} approved accounts still not followed after "
+            f"{control.follow_backlog_days} days"
+        )
+    return verdict("follows", red, yellow, "every approved club is queued and followed")
+
+
 def graph_tokens(reading: dict[str, Any], _control: MaintenanceControl) -> Check:
     """Graph posting tokens: only Tony can make a new one, so this never starts the agent."""
     red = [f"{row['account']}: {row['problem']}" for row in reading["token_problems"]]
@@ -379,6 +409,7 @@ JUDGES = {
     "launch_agents": launch_agents,
     "sittings": sittings,
     "carousels": carousels,
+    "follows": follows,
     "graph_tokens": graph_tokens,
     "claude_logins": claude_logins,
 }

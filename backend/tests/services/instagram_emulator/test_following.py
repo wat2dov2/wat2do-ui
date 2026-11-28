@@ -74,6 +74,19 @@ def _reader(device):
     return FollowingReader(device, 0, profile_wait_seconds=30)
 
 
+def test_a_private_account_we_do_not_follow_is_requested_not_given_up() -> None:
+    private = [_node("This account is private"), *_profile("private.club")]
+    device = _Device([HOME, private, _profile("private.club", button="Requested")])
+    assert _reader(device).follow("private.club") == FollowOutcome("Requested", tapped=True)
+
+
+def test_an_unavailable_profile_while_offline_is_not_called_gone() -> None:
+    device = _Device([HOME, [_node("Sorry, this page isn't available")]])
+    device.has_network = lambda: False
+    with pytest.raises(EmulatorError, match="no network"):
+        _reader(device).follow("club")
+
+
 def test_a_gone_profile_has_nothing_to_follow() -> None:
     device = _Device([HOME, [_node("Sorry, this page isn't available")]])
 

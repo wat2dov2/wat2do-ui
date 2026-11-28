@@ -987,6 +987,10 @@ class MaintenanceControl(_ControlModel):
     sittings_check_hour: int = Field(ge=0, le=23)
     carousels_check_hour: int = Field(ge=0, le=23)
     snapshot_max_age_days: int = Field(ge=0, le=14)
+    # Every approved club's Instagram account should be in the follow queue within the
+    # worker's hourly club sync, and an approved account followed within this many days.
+    follow_sync_hours: int = Field(ge=2, le=72)
+    follow_backlog_days: int = Field(ge=1, le=60)
 
     @model_validator(mode="after")
     def validate_thresholds(self) -> "MaintenanceControl":

@@ -367,6 +367,31 @@ def test_a_carousel_failing_on_its_token_is_left_to_the_token_check():
     assert _carousels(failures=[token]).status == "green"
 
 
+def _follows(**changes):
+    reading = {
+        "unsynced": [],
+        "unsynced_count": 0,
+        "gone": [],
+        "gone_count": 0,
+        "claimed_not_followed": [],
+        "unfollow_count": 0,
+        "backlog_count": 0,
+    }
+    reading.update(changes)
+    return judges.follows(reading, CONTROL)
+
+
+def test_follows():
+    assert _follows().status == "green"
+    unsynced = _follows(unsynced=["carleton @afghanstudents_carleton"], unsynced_count=1)
+    assert unsynced.status == "red"
+    assert "afghanstudents_carleton" in unsynced.summary
+    assert _follows(claimed_not_followed=["uwo @club (rejected)"]).status == "red"
+    assert _follows(gone=["columbia @columbiaubadminton"], gone_count=236).status == "yellow"
+    assert _follows(unfollow_count=14).status == "yellow"
+    assert _follows(backlog_count=3).status == "yellow"
+
+
 def test_token_problems_are_red_but_never_start_the_agent():
     check = judges.graph_tokens(
         {
