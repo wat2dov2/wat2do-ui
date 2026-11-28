@@ -405,6 +405,8 @@ def follows(reading: dict[str, Any], control: MaintenanceControl) -> Check:
             "claimed clubs rejected or queued to unfollow: "
             + ", ".join(reading["claimed_not_followed"])
         )
+    for entry, reason in (reading.get("claimed_waiting") or {}).items():
+        yellow.append(f"claimed club {entry} not followed, waiting: {reason}")
     if reading["gone_count"]:
         yellow.append(
             f"{reading['gone_count']} approved clubs' accounts rejected as gone or hidden "

@@ -546,6 +546,31 @@ def test_follows():
     assert _follows(gone=["columbia @columbiaubadminton"], gone_count=236).status == "yellow"
     assert _follows(unfollow_count=14).status == "yellow"
     assert _follows(backlog_count=3).status == "yellow"
+    waiting = _follows(claimed_waiting={"uwo @club (rejected)": "club blocked wat2do.uwo"})
+    assert waiting.status == "yellow"
+    assert "club blocked wat2do.uwo" in waiting.summary
+
+
+def test_a_claimed_club_in_account_waits_is_waiting_not_red(tmp_path, monkeypatch):
+    import json
+
+    waits = tmp_path / "account_waits.json"
+    waits.write_text(
+        json.dumps(
+            {
+                "uwo @club": {"reason": "blocked", "until": (NOW + timedelta(hours=5)).isoformat()},
+                "uwo @old": {"reason": "old", "until": (NOW - timedelta(hours=1)).isoformat()},
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(readings, "ACCOUNT_WAITS", waits)
+    rows = {"follows": {"claimed_not_followed": ["uwo @club (rejected)", "uwo @old (unfollow)"]}}
+
+    reading = readings.follows(rows, readings.Context(CONTROL, {}, NOW))
+
+    assert reading["claimed_not_followed"] == ["uwo @old (unfollow)"]
+    assert reading["claimed_waiting"] == {"uwo @club (rejected)": "blocked"}
 
 
 def test_token_problems_are_red_but_never_start_the_agent():

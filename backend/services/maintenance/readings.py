@@ -266,8 +266,23 @@ def carousels(rows: dict[str, Any], context: Context) -> dict[str, Any]:
     }
 
 
-def follows(rows: dict[str, Any], _context: Context) -> dict[str, Any]:
-    return rows["follows"]
+def follows(rows: dict[str, Any], context: Context) -> dict[str, Any]:
+    """The follow queue's numbers. A claimed club the agent diagnosed as out of its reach
+    (the club blocked the school account) is in ``ACCOUNT_WAITS`` as "<school> @<handle>":
+    it moves to ``claimed_waiting`` so it stays listed without starting the agent again."""
+    reading = dict(rows["follows"])
+    waits = account_waits(context)
+    claimed: list[str] = []
+    waiting: dict[str, str] = {}
+    for entry in reading.get("claimed_not_followed") or []:
+        key = entry.rsplit(" (", 1)[0]
+        if key in waits:
+            waiting[entry] = waits[key]
+        else:
+            claimed.append(entry)
+    reading["claimed_not_followed"] = claimed
+    reading["claimed_waiting"] = waiting
+    return reading
 
 
 def graph_tokens(rows: dict[str, Any], _context: Context) -> dict[str, Any]:
@@ -428,7 +443,8 @@ def recorder(context: Context) -> dict[str, Any]:
 
 # Accounts the maintenance agent found silent for a reason only Tony can clear (an
 # Instagram challenge), each {"reason", "until"}: until then account_notifications
-# lists them as waiting (yellow) instead of starting the agent again and again.
+# lists them as waiting (yellow) instead of starting the agent again and again. A key
+# "<school> @<handle>" does the same for a claimed club the follows check lists.
 ACCOUNT_WAITS = STATE / "maintenance/account_waits.json"
 
 
