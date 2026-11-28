@@ -454,6 +454,17 @@ class EmulatorDevice:
         self.pause()
         self._press(self.wait_for(pattern, seconds=seconds), hold_ms)
 
+    def tap_found(
+        self, look: Callable[[list[Node]], Node | None], *, seconds: float | None = None
+    ) -> None:
+        """Tap the control ``look`` finds, like ``tap_when``: the screen is read after a
+        person's pause, so a list still settling is tapped where the control ended up."""
+        self.pause()
+        node = self.watch(look, seconds=seconds)
+        if node is None:
+            raise EmulatorError("The control to tap was no longer on screen")
+        self._press(node, 0)
+
     def double_tap(self, node: Node) -> None:
         """Tap a control twice in quick succession at one point, after a person's pause:
         a direct message's quick reaction (a heart)."""

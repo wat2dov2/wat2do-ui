@@ -26,12 +26,18 @@ from core.database import get_sb
 from core.tables import INSTAGRAM_EXCLUDED_CLUBS
 from services import school_service
 from services.instagram_emulator.device import (
+    AccountChallenged,
     EmulatorDevice,
     EmulatorError,
     Node,
     labels,
 )
-from services.instagram_emulator.inbox import accept_request, raise_if_messaging_limited
+from services.instagram_emulator.inbox import (
+    MessagingLimited,
+    ThreadNotFound,
+    accept_request,
+    raise_if_messaging_limited,
+)
 
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
@@ -96,6 +102,8 @@ _REACTION_PILL_MAX = 120
 _REACTION_WAIT_SECONDS = 5
 # Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
 _REVEAL_SCROLLS = 4
+# Times a thread is opened from the inbox before giving up on it showing.
+_OPEN_ATTEMPTS = 2
 
 
 class ReplyWaiting(EmulatorError):
@@ -296,9 +304,29 @@ class ThreadReader:
 
     def open_thread(self) -> list[Node]:
         """Open the thread from its inbox row, every time, and return its screen once its
-        header names it; any other thread on screen raises ``ThreadMismatch``."""
+        header names it; any other thread on screen raises ``ThreadMismatch``.
+
+        A try that leaves no thread, or another thread, on screen is made again from the
+        inbox, at most ``_OPEN_ATTEMPTS`` times in all: the first move after an account
+        switch could land before the inbox had settled (2026-11-28, yorku, ubc, uottawa).
+        A thread in no list, a limited account and a checkpoint are not tried again.
+        """
+        for _ in range(_OPEN_ATTEMPTS - 1):
+            try:
+                return self._opened()
+            except (ThreadNotFound, MessagingLimited, AccountChallenged):
+                raise
+            except EmulatorError:
+                continue
+        return self._opened()
+
+    def _opened(self) -> list[Node]:
         self._opener()
         nodes = self._device.screen()
+        if not _in_thread(nodes):
+            nodes = self._device.watch(lambda shown: shown if _in_thread(shown) else [])
+        if not nodes:
+            raise EmulatorError("The DM thread did not open")
         self._require_thread(nodes)
         return nodes
 

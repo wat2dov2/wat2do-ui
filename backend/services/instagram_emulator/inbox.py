@@ -10,6 +10,7 @@ its age, and whether Instagram marks it unread.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from core.controlbox import controlbox
@@ -30,11 +31,22 @@ _REQUESTS_TITLE = re.compile(r"^Message requests$")
 _REQUEST_LOOKS = 10
 # The heading at the top of the inbox's thread list.
 _MESSAGES_HEADER = re.compile(r"^Messages$")
+# The search box, the "Messages" heading and the Requests tab or link scroll away with
+# the list, so any one of them showing means its top is on screen.
+_INBOX_TOP = re.compile(
+    "|".join(pattern.pattern for pattern in (_INBOX_SEARCH, _MESSAGES_HEADER, _REQUESTS_TAB))
+)
 _NO_REQUESTS = re.compile(r"^No message requests$|^You don't have any message requests")
 # Opening requests can first ask about message privacy; it is put off, never changed.
 _NOT_NOW = re.compile(r"^Not now$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
+# A thread shows its composer once open, or a request its accept prompt instead.
+_THREAD_OPEN = re.compile(f"{_COMPOSER.pattern}|{_REQUEST_PROMPT.pattern}")
+# The app's bottom tab bar (Home, Reels, Messages, Search, Profile), drawn over the inbox.
+_TAB_BAR = re.compile(r"^tab_bar$")
+# Taps on a thread's row before giving up on it opening.
+_ENTER_ATTEMPTS = 2
 # The same banner says when Instagram has limited the account's messages.
 _MESSAGING_LIMITED = re.compile(r"^You can.t send messages")
 _ACCEPT = re.compile(r"^Accept$")
@@ -53,6 +65,10 @@ _ROW_HEIGHT = (150, 260)
 
 class MessagingLimited(EmulatorError):
     """Instagram has limited this account's messages, so no thread can be answered."""
+
+
+class ThreadNotFound(EmulatorError):
+    """No inbox row, request or search result is the thread asked for."""
 
 
 @dataclass(frozen=True)
@@ -103,15 +119,30 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
         if not _open_list(device, user, requests=requests):
             continue
         for _scroll in range(CONTROL.inbox_scrolls + 1):
-            row = next((node for node in _row_nodes(device.screen()) if _name(node) == name), None)
-            if row is not None:
-                _enter(device, row)
+            if _row_named(device.screen(), name) is not None:
+                _enter(device, lambda nodes: _row_named(nodes, name))
                 return
             device.scroll_down()
     if _open_request_titled(device, user, name):
         return
     if not _open_by_search(device, user, name):
-        raise EmulatorError("The DM thread is no longer in the inbox")
+        raise ThreadNotFound("The DM thread is no longer in the inbox")
+
+
+def _row_named(nodes: list[Node], name: str) -> Node | None:
+    """The row of the thread ``name`` that can be tapped: the bottom tab bar is drawn over
+    the list, and a row behind it shows only a sliver above it (a tap there lands on a
+    tab), so such a row counts as not on screen yet and is scrolled up into view
+    (testu 2026-11-28: wat2do.guelph's row, 12 px above the tab bar, never opened)."""
+    tab_bar_top = min((node.bounds[1] for node in nodes if node.labelled(_TAB_BAR)), default=10**6)
+    return next(
+        (
+            node
+            for node in _row_nodes(nodes)
+            if _name(node) == name and node.bounds[3] <= tab_bar_top
+        ),
+        None,
+    )
 
 
 def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
@@ -126,7 +157,7 @@ def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
         if not rows:
             return False
         looked.add(_name(rows[0]))
-        _enter(device, rows[0])
+        _enter(device, lambda nodes, row=_name(rows[0]): _row_named(nodes, row))
         nodes = device.screen()
         title = next((node.label for node in nodes if node.resource_id == "header_title"), "")
         prompt = next(
@@ -139,10 +170,29 @@ def _open_request_titled(device: EmulatorDevice, user: int, name: str) -> bool:
     return False
 
 
-def _enter(device: EmulatorDevice, row: Node) -> None:
-    device.tap(row)
-    device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_REQUEST_PROMPT.pattern}"))
-    device.pause()
+def _enter(device: EmulatorDevice, row: Callable[[list[Node]], Node | None]) -> None:
+    """Tap the row ``row`` finds and wait for its thread to open.
+
+    The row is found again on a screen read after the pause before the tap: a list that
+    is still settling (rows loading or moving under a tray that just appeared) would
+    otherwise be tapped where the row used to be (2026-11-28: the first read after an
+    account switch tapped beside its thread and waited for a composer that never came).
+    A tap that opened nothing, with the list still on screen, is made once more.
+    """
+    for attempt in range(_ENTER_ATTEMPTS):
+        try:
+            device.tap_found(row)
+        except EmulatorError:
+            if attempt:
+                raise
+            # The row went out of sight while settling; it is looked for once more.
+            continue
+        if device.watch(lambda nodes: device.find(_THREAD_OPEN, nodes)):
+            device.pause()
+            return
+        if attempt == _ENTER_ATTEMPTS - 1 or row(device.screen()) is None:
+            break
+    raise EmulatorError(f"Instagram never showed {_THREAD_OPEN.pattern}")
 
 
 def _open_by_search(device: EmulatorDevice, user: int, name: str) -> bool:
@@ -172,10 +222,9 @@ def _open_by_search(device: EmulatorDevice, user: int, name: str) -> bool:
             None,
         )
 
-    row = device.watch(chat)
-    if row is None:
+    if device.watch(chat) is None:
         return False
-    _enter(device, row)
+    _enter(device, chat)
     return True
 
 
@@ -217,6 +266,7 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     """
     device.open_inbox(user)
     device.pause()
+    _settle_inbox(device)
     if not requests:
         return True
     link = _requests_link(device)
@@ -237,6 +287,29 @@ def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
     return True
 
 
+def _settle_inbox(device: EmulatorDevice) -> None:
+    """Bring the inbox back to its top and wait for its rows to stop changing.
+
+    The inbox reopens wherever it was last scrolled, and right after an account switch
+    or a cold start its title shows before its threads: they load, and a notes tray or
+    banner drawn above them a moment later pushes them down. A row read too early is
+    missed (the thread is then taken for gone) or tapped where it no longer is. The
+    rows count as settled once two reads in a row show the same ones in the same
+    places; an inbox with no rows at all is waited for at most ``screen_wait_seconds``.
+    """
+    # No drag when the top already shows: a drag down there only refreshes the list.
+    _scrolled_up_to(device, _INBOX_TOP)
+    seen: list[list[tuple[str, tuple[int, int, int, int]]]] = []
+
+    def settled(nodes: list[Node]) -> bool:
+        rows = [(_name(row), row.bounds) for row in _row_nodes(nodes)]
+        steady = bool(rows) and bool(seen) and rows == seen[-1]
+        seen.append(rows)
+        return steady
+
+    device.watch(settled)
+
+
 def _required_link(device: EmulatorDevice) -> Node:
     link = _requests_link(device)
     if link is None:
@@ -254,9 +327,13 @@ def _scrolled_up_to(
     device: EmulatorDevice, pattern: re.Pattern[str], *, stop: re.Pattern[str] | None = None
 ) -> Node | None:
     """Scroll the inbox up until a control matching ``pattern`` shows; None when ``stop``
-    shows first or scrolling up changes nothing (the top)."""
+    shows first or scrolling up changes nothing (the top).
+
+    A drag up moves the list about a third as far as a scroll down, so the bound covers
+    the bottom of a list read to its end (testu 2026-11-28: nine drags fell one short).
+    """
     seen: list[Node] | None = None
-    for _ in range(2 * (CONTROL.inbox_scrolls + 1) + 1):
+    for _ in range(4 * (CONTROL.inbox_scrolls + 1) + 1):
         nodes = device.screen()
         found = device.find(pattern, nodes)
         if found is not None or (stop is not None and device.find(stop, nodes) is not None):

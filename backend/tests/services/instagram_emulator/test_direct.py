@@ -827,3 +827,49 @@ def test_a_request_is_named_by_its_prompt_and_then_by_its_username() -> None:
         module.ThreadReader(
             object(), SCHOOL, "Wat2Do | Sharing events @ brocku", lambda: None
         )._require_thread(REQUEST[:4])
+
+
+def test_a_thread_that_did_not_open_is_opened_again_from_the_inbox() -> None:
+    # 2026-11-28: the first read after an account switch tapped before the inbox settled.
+    opened = []
+
+    def opener():
+        opened.append(THREAD)
+        if len(opened) == 1:
+            raise module.EmulatorError("Instagram never showed the thread")
+
+    device = _DraftDevice()
+    nodes = THREAD_READER(device, SCHOOL, THREAD, opener).open_thread()
+    assert opened == [THREAD, THREAD] and module._header_title(nodes) == THREAD
+
+
+def test_a_thread_that_never_opens_gives_up_after_two_tries() -> None:
+    opened = []
+
+    def opener():
+        opened.append(THREAD)
+        raise module.EmulatorError("Instagram never showed the thread")
+
+    with pytest.raises(module.EmulatorError, match="never showed"):
+        THREAD_READER(_DraftDevice(), SCHOOL, THREAD, opener).open_thread()
+    assert len(opened) == module._OPEN_ATTEMPTS
+
+
+def test_a_thread_in_no_list_is_not_looked_for_again() -> None:
+    opened = []
+
+    def opener():
+        opened.append(THREAD)
+        raise module.ThreadNotFound("The DM thread is no longer in the inbox")
+
+    with pytest.raises(module.ThreadNotFound):
+        THREAD_READER(_DraftDevice(), SCHOOL, THREAD, opener).open_thread()
+    assert opened == [THREAD]
+
+
+def test_another_thread_on_screen_is_never_read_even_after_a_second_open() -> None:
+    opened = []
+    device = _DraftDevice(header=("Someone Else", "someone.else"))
+    with pytest.raises(module.ThreadMismatch):
+        THREAD_READER(device, SCHOOL, THREAD, lambda: opened.append(THREAD)).read()
+    assert len(opened) == module._OPEN_ATTEMPTS and device.taps == []

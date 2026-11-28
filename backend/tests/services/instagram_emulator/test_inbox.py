@@ -164,8 +164,12 @@ SHORT_INBOX = _row(
 )
 
 
+# The search box at the top of every inbox.
+SEARCH_BOX = _node("", (168, 345, 1038, 395), "ig_text", "Search or ask Meta AI")
+
+
 def test_a_short_inbox_without_tabs_is_read_and_has_no_requests() -> None:
-    device = _InboxDevice(SHORT_INBOX)
+    device = _InboxDevice([SEARCH_BOX, *SHORT_INBOX])
     assert [row.name for row in inbox.read_inbox(device, 0, requests=False)] == ["ESAQ"]
     assert inbox.read_inbox(device, 0, requests=True) == []
     # One look up shows nothing new: the top, with no Requests link.
@@ -223,6 +227,9 @@ class _SearchDevice(_InboxDevice):
 
     def watch(self, look):
         return look(SEARCHED if self.found else SEARCHED[3:4])
+
+    def tap_found(self, look):
+        self.tap(self.watch(look))
 
 
 def test_an_old_thread_opens_from_the_inbox_search_only_among_chats() -> None:
@@ -289,6 +296,15 @@ class _RequestsDevice:
         self.open = node.description.split(", ")[0]
         self.entered.append(self.open)
 
+    def tap_found(self, look):
+        self.tap(look(self.screen()))
+
+    def watch(self, look):
+        return look(self.screen())
+
+    def find(self, pattern, nodes):
+        return next((n for n in nodes if n.labelled(pattern)), None)
+
     def wait_for(self, pattern):
         return _node("", (0, 0, 1, 1))
 
@@ -307,3 +323,107 @@ def test_a_request_is_found_by_the_display_name_its_thread_shows(monkeypatch) ->
     device = _RequestsDevice()
     assert not inbox._open_request_titled(device, 0, "Someone Else")
     assert device.open is None
+
+
+class _SettlingDevice:
+    """The inbox right after an account switch: ``screens`` in turn, one per read (the
+    last one stays), until a tap opens a thread. Records where each tap landed."""
+
+    def __init__(self, screens, *, taps_to_open=1):
+        self.screens = list(screens)
+        self.taps_to_open = taps_to_open
+        self.pressed = []
+        self.scrolls = []
+
+    def open_inbox(self, user):
+        return "wat2do.yorku"
+
+    def pause(self):
+        pass
+
+    def screen(self):
+        if len(self.pressed) >= self.taps_to_open:
+            return [_node("Message…", (158, 2185, 621, 2316), "row_thread_composer_edittext")]
+        return self.screens.pop(0) if len(self.screens) > 1 else self.screens[0]
+
+    def find(self, pattern, nodes=None):
+        shown = self.screen() if nodes is None else nodes
+        return next((n for n in shown if n.labelled(pattern)), None)
+
+    def watch(self, look, seconds=None):
+        for _ in range(5):
+            seen = look(self.screen())
+            if seen:
+                return seen
+        return seen
+
+    def tap_found(self, look):
+        node = self.watch(look)
+        if node is None:
+            raise inbox.EmulatorError("The control to tap was no longer on screen")
+        self.pressed.append((inbox._name(node), node.bounds[1]))
+
+    def scroll_up(self):
+        self.scrolls.append("up")
+
+    def scroll_down(self):
+        self.scrolls.append("down")
+
+
+def _inbox_rows(top):
+    return [
+        *_row(top, "kurdyork, unread, Hello!! ·, 2w", "kurdyork", "Hello!! ·", "2w"),
+        *_row(top + 199, "erica, might be worth a try ·, 3d", "erica", "might be worth a try ·"),
+    ]
+
+
+def test_the_first_open_after_a_switch_taps_the_row_where_it_settled() -> None:
+    # The title and search box show first, then the threads, then a notes tray drawn above
+    # them pushes them 300 px down (wat2do.yorku, 2026-11-28).
+    device = _SettlingDevice(
+        [
+            [SEARCH_BOX],
+            [SEARCH_BOX, *_inbox_rows(984)],
+            [SEARCH_BOX, *_inbox_rows(1284)],
+        ]
+    )
+    inbox.open_row(device, 0, "erica")
+    assert device.pressed == [("erica", 1483)] and device.scrolls == []
+
+
+def test_a_tap_that_opened_nothing_is_made_once_more() -> None:
+    device = _SettlingDevice([[SEARCH_BOX, *_inbox_rows(984)]], taps_to_open=2)
+    inbox.open_row(device, 0, "erica")
+    assert device.pressed == [("erica", 1183), ("erica", 1183)]
+
+
+def test_an_inbox_reopened_scrolled_down_is_brought_back_to_its_top_first() -> None:
+    class _Scrolled(_SettlingDevice):
+        def screen(self):
+            if self.pressed:
+                return super().screen()
+            # Scrolled past its first thread until it is dragged back up.
+            if not self.scrolls:
+                return _inbox_rows(984)[3:]
+            return [SEARCH_BOX, *_inbox_rows(984)]
+
+    device = _Scrolled([[]])
+    inbox.open_row(device, 0, "kurdyork")
+    assert device.scrolls == ["up"] and device.pressed == [("kurdyork", 984)]
+
+
+def test_a_row_behind_the_tab_bar_is_scrolled_into_view_before_it_is_tapped() -> None:
+    # testu's inbox on 2026-11-28: wat2do.guelph's row showed 12 px above the tab bar.
+    tab_bar = _node("", (0, 2148, 1080, 2274), "tab_bar")
+    behind = [SEARCH_BOX, *_row(2136, "wat2do.guelph, Sent 1d ago", "wat2do.guelph"), tab_bar]
+    scrolled = [*_row(1400, "wat2do.guelph, Sent 1d ago", "wat2do.guelph"), tab_bar]
+
+    class _TabBar(_SettlingDevice):
+        def screen(self):
+            if self.pressed:
+                return super().screen()
+            return scrolled if "down" in self.scrolls else behind
+
+    device = _TabBar([[]])
+    inbox.open_row(device, 0, "wat2do.guelph")
+    assert device.scrolls == ["down"] and device.pressed == [("wat2do.guelph", 1400)]
