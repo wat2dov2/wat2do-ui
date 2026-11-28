@@ -299,7 +299,12 @@ impl Lanes {
             INGESTION.post_sweep_min_lanes,
             INGESTION.post_sweep_max_lanes,
         );
-        Self { path, state }
+        let lanes = Self { path, state };
+        // Saved at once, so the watchdog sees the lanes before the first refusal or change.
+        if let Err(error) = lanes.save() {
+            tracing::warn!("Post sweep lanes could not be saved ({error:#})");
+        }
+        lanes
     }
 
     /// How many lanes read now.
@@ -538,6 +543,7 @@ mod tests {
         let _ = std::fs::remove_file(&path);
         let mut first = Lanes::new(path.clone());
         assert_eq!(first.active(), INGESTION.post_sweep_start_lanes);
+        assert!(path.exists(), "a fresh start saves its lanes at once");
         first.refused(epoch_seconds()).unwrap();
         let again = Lanes::new(path.clone());
         assert_eq!(again.state, first.state);
