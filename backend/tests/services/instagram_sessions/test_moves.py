@@ -717,47 +717,13 @@ def test_a_notification_run_never_sends_a_claim(monkeypatch, capsys, reader):
     assert reader.sent == []
 
 
-def test_ig_milestone_story_posts_an_open_milestone_on_the_sitting_account(
-    monkeypatch, tmp_path, capsys
-):
+def test_ig_milestone_story_is_turned_off(monkeypatch, capsys):
     calls = []
-    answer = {"milestone": "followers", "count": 200, "status": "posted to the story"}
-
-    def post_story(device, *, milestone, **kwargs):
-        calls.append((milestone, kwargs))
-        if milestone.kind == "likes":
-            raise moves.milestones.MilestoneError("That post is not open")
-        return answer
-
     monkeypatch.setattr(moves, "EmulatorDevice", _Calm)
-    monkeypatch.setattr(moves.milestones, "post_story", post_story)
-    assert moves.main(["milestone-story", "--followers", "200"]) == 0
-    assert json.loads(capsys.readouterr().out) == answer
-    assert calls[0] == (
-        moves.milestones.Milestone("followers", 200),
-        {
-            "school_id": 7,
-            "user": moves.EMULATOR.android_user_by_school["tmu"],
-            "username": "wat2do.tmu",
-            "language": "en",
-        },
-    )
-    post = "https://www.instagram.com/p/AAA/"
-    assert moves.main(["milestone-story", "--likes", post]) == 1
-    assert json.loads(capsys.readouterr().out) == {"error": "That post is not open"}
-    assert calls[1][0].post.permalink == post
-    entries = [
-        json.loads(line)
-        for line in next((tmp_path / "log").glob("*.jsonl")).read_text().splitlines()
-    ]
-    assert [(entry["move"], entry["ok"]) for entry in entries] == [
-        ("milestone-story", True),
-        ("milestone-story", False),
-    ]
-    assert entries[0]["result"] == answer
-
-
-# --- corrections -------------------------------------------------------------------
+    monkeypatch.setattr(moves.milestones, "post_story", lambda *a, **k: calls.append(k))
+    assert moves.main(["milestone-story", "--followers", "200"]) == 1
+    assert json.loads(capsys.readouterr().out) == {"error": "Milestone stories are turned off"}
+    assert calls == []
 
 
 @pytest.fixture

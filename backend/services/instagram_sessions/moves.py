@@ -228,6 +228,8 @@ def milestone_report(_device: EmulatorDevice, _args: argparse.Namespace) -> dict
 def milestone_story(device: EmulatorDevice, args: argparse.Namespace) -> dict[str, Any]:
     """Post the thank-you story for an open milestone: a hundred followers, or a post's
     like record."""
+    # Tony 2026-11-28: no milestone or like-record stories, ever.
+    raise MoveError("Milestone stories are turned off")
     record = school_service.get_school(school())
     if record is None:
         raise MoveError("This school is not in the database")
