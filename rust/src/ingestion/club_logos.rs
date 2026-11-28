@@ -11,7 +11,7 @@
 //! a handle never waits behind the clubs listed before it.
 //!
 //! A page without a profile is Instagram's login wall, unless a control profile
-//! (`CONTROL_HANDLE`) renders right after it: then only that handle has no public
+//! renders right after it (`fetch::serves_profiles`): then only that handle has no public
 //! profile and it waits its retry days like a gone one. A real refusal pauses these
 //! reads with the post fetches and gives the handle back, due as before, to be read
 //! first once reads resume. Instagram's picture links expire, so each one is copied
@@ -27,7 +27,7 @@ use indexmap::IndexMap;
 use regex::Regex;
 use sqlx::PgPool;
 
-use super::fetch::{FetchBlocked, fetch_profile, profile_renderer};
+use super::fetch::{FetchBlocked, fetch_profile, profile_renderer, serves_profiles};
 use crate::constants::{BUCKET_CLUB_LOGOS, MAX_CLUB_NAME_LENGTH};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
@@ -36,10 +36,6 @@ use crate::storage::store_image;
 
 static HANDLE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[a-z0-9._]{1,30}$").expect("valid regex"));
-
-/// A public profile that always exists, rendered to tell Instagram's login wall
-/// from a handle that alone shows no profile.
-const CONTROL_HANDLE: &str = "instagram";
 
 /// `normalize_handle`: the bare Instagram username, or None when it is not one.
 pub fn normalize_handle(value: &str) -> Option<String> {
@@ -185,13 +181,9 @@ pub async fn read_handle(pool: &PgPool, taken: &Taken) -> Result<Read> {
     let profile = match fetch_profile(&taken.handle).await {
         Ok(Some(profile)) => profile,
         Ok(None) => return Ok(Read::NotRendered),
-        Err(blocked) => {
-            return match fetch_profile(CONTROL_HANDLE).await {
-                // Instagram serves profiles: only this handle has none to show logged out.
-                Ok(Some(_)) => Ok(Read::NoPublicProfile),
-                _ => Err(anyhow::Error::new(blocked)),
-            };
-        }
+        // Instagram serves profiles: only this handle has none to show logged out.
+        Err(_) if serves_profiles().await => return Ok(Read::NoPublicProfile),
+        Err(blocked) => return Err(anyhow::Error::new(blocked)),
     };
     let clubs = &taken.clubs;
     let name = profile.name.as_deref().unwrap_or("").trim().to_owned();

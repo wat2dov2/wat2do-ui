@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use super::agent::ingest;
 use super::club_directories::queue;
+use super::post_sweep::{Read, due_handles, record};
 use super::title_svgs::{Checked, featured_to_draw};
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
@@ -435,4 +436,127 @@ async fn featured_events_to_come_are_drawn_until_a_drawing_spells_their_title_an
             (i(far_featured), false),
         ]
     );
+}
+
+async fn follow(db: &PgPool, school: i32, handle: &str, status: &str, days_ago: i64) {
+    sqlx::query(
+        "INSERT INTO public.instagram_follow_candidates (school_id, handle, source, status, followed_at) \
+         VALUES ($1, $2, 'crawl', $3, now() - make_interval(days => $4::int))",
+    )
+    .bind(school)
+    .bind(handle)
+    .bind(status)
+    .bind(i32::try_from(days_ago).unwrap())
+    .execute(db)
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn the_post_sweep_reads_every_followed_handle_never_read_first_then_the_most_overdue() {
+    let Some(db) = database() else { return };
+    let (first, first_slug) = school(&db).await;
+    let (second, second_slug) = school(&db).await;
+    let (hidden, _) = school(&db).await;
+    sqlx::query("UPDATE public.schools SET hidden = true WHERE id = $1")
+        .bind(hidden)
+        .execute(&db)
+        .await
+        .unwrap();
+    let tag = &Uuid::new_v4().simple().to_string()[..10];
+    let handle = |name: &str| format!("{name}{tag}");
+    // Two never read at the first school, one at the second: the schools take turns.
+    follow(&db, first, &handle("older"), "followed", 9).await;
+    follow(&db, first, &handle("newer"), "followed", 1).await;
+    follow(&db, second, &handle("solo"), "followed", 5).await;
+    // Followed by both schools: read once, for the school that followed it first.
+    follow(&db, second, &handle("shared"), "followed", 30).await;
+    follow(&db, first, &handle("shared"), "followed", 2).await;
+    // Not listed: only pending, or only a hidden school's.
+    follow(&db, first, &handle("pending"), "pending", 0).await;
+    follow(&db, hidden, &handle("hidden"), "followed", 0).await;
+    // Read before: one overdue a day, one overdue an hour, one not due yet.
+    for (name, overdue_hours) in [("hour", 1), ("day", 24), ("later", -5)] {
+        follow(&db, second, &handle(name), "followed", 40).await;
+        sqlx::query(
+            "INSERT INTO public.instagram_post_sweep (handle, read_at, due_at, outcome) \
+             VALUES ($1, now() - interval '2 days', now() - make_interval(hours => $2), 'read')",
+        )
+        .bind(handle(name))
+        .bind(overdue_hours)
+        .execute(&db)
+        .await
+        .unwrap();
+    }
+
+    let mine: Vec<_> = due_handles(&db)
+        .await
+        .unwrap()
+        .into_iter()
+        .filter(|due| due.handle.ends_with(tag))
+        .collect();
+    let order: Vec<(&str, &str)> = mine
+        .iter()
+        .map(|due| (due.handle.trim_end_matches(tag), due.school.as_str()))
+        .collect();
+    let never_read = &order[..4];
+    assert_eq!(
+        &order[4..],
+        [
+            ("day", second_slug.as_str()),
+            ("hour", second_slug.as_str())
+        ]
+    );
+    // Each school's newest follow comes first, the schools taking turns.
+    let first_turns: Vec<_> = never_read
+        .iter()
+        .filter(|(_, school)| *school == first_slug)
+        .collect();
+    assert_eq!(
+        first_turns,
+        [
+            &("newer", first_slug.as_str()),
+            &("older", first_slug.as_str())
+        ]
+    );
+    assert!(never_read.contains(&("shared", second_slug.as_str())));
+    assert!(
+        never_read[..2]
+            .iter()
+            .any(|(_, school)| *school == second_slug)
+    );
+
+    // A read is stored and the handle is not due again until its next read.
+    let newest: DateTime<Utc> = Utc::now() - TimeDelta::days(1);
+    let solo = mine
+        .iter()
+        .find(|due| due.handle == handle("solo"))
+        .unwrap();
+    let read = Read::Profile {
+        newest_post_at: Some(newest),
+        queued: 0,
+    };
+    record(&db, solo, &read).await.unwrap();
+    let (newest_post_at, outcome, due_in_hours): (Option<DateTime<Utc>>, String, f64) =
+        sqlx::query_as(
+            "SELECT newest_post_at, outcome, extract(epoch FROM due_at - now())::float8 / 3600 \
+         FROM public.instagram_post_sweep WHERE handle = $1",
+        )
+        .bind(&solo.handle)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(outcome, "read");
+    assert_eq!(
+        newest_post_at.map(|at| at.timestamp()),
+        Some(newest.timestamp())
+    );
+    assert!((23.0..=24.0).contains(&due_in_hours), "{due_in_hours}");
+    let listed: Vec<String> = due_handles(&db)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|due| due.handle)
+        .collect();
+    assert!(!listed.contains(&solo.handle));
 }

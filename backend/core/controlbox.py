@@ -1018,12 +1018,20 @@ class MaintenanceControl(_ControlModel):
     ingestion_silence_minutes: int = Field(ge=10, le=1440)
     school_dark_min_baseline: int = Field(ge=1)
     school_dark_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
-    # A school with no daily digest for `school_digest_hours` should still be read by the
-    # quiet-school lane: under `school_low_ratio` of its baseline, the lane is not
-    # covering it. Keep it a few hours past the lane's own `quiet_school_digest_hours`,
-    # so the lane has had time to read the school before the watchdog judges it.
+    # A school with no daily digest for `school_digest_hours` is still read by the post
+    # sweep: under `school_low_ratio` of its baseline, the sweep is not covering it.
     school_low_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
     school_digest_hours: int = Field(ge=1, le=96)
+    # The post sweep is red when it read fewer profiles than this in the last hour while at
+    # least as many are due; a handle overdue by the overdue hours (or never read) counts
+    # toward its backlog, yellow and red at those sizes; refused logged-out reads in the
+    # last day turn it yellow and red at those counts.
+    post_sweep_min_reads_per_hour: int = Field(ge=1)
+    post_sweep_overdue_hours: int = Field(ge=1, le=168)
+    post_sweep_backlog_yellow: int = Field(ge=1)
+    post_sweep_backlog_red: int = Field(ge=1)
+    post_sweep_refusals_yellow: int = Field(ge=1)
+    post_sweep_refusals_red: int = Field(ge=1)
     brave_heartbeat_max_seconds: int = Field(ge=30, le=7200)
     brave_window_hours: int = Field(ge=1, le=48)
     brave_job_failure_ratio: float = Field(gt=0, lt=1, allow_inf_nan=False)
@@ -1212,6 +1220,13 @@ class ClubDirectoryControl(_ControlModel):
     notes: str = Field(default="", max_length=1000)
 
 
+class PostSweepTierControl(_ControlModel):
+    """One step of the post sweep's schedule."""
+
+    newest_post_within_days: int = Field(ge=1, le=365)
+    read_every_hours: int = Field(ge=1, le=24 * 30)
+
+
 class IngestionControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     parallel_agents: int = Field(ge=1, le=16)
@@ -1257,25 +1272,32 @@ class IngestionControl(_ControlModel):
     # Lightpanda, relative to the home folder; it renders club profiles logged out.
     profile_renderer: str = Field(min_length=1, max_length=200)
     profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
-    # Instagram does not push every school its posts every day. A school with no post or
-    # digest notification for this long has its active followed clubs' profiles rendered
-    # logged out (this many at a time, spaced out), each again only after the reread hours, and
-    # their posts from the last few days are queued (rust/src/ingestion/quiet_schools.rs).
-    quiet_school_hours: int = Field(ge=1, le=168)
-    # A bell push carries one post and the digest the day's, so a school whose last digest
-    # is older than this is read the same way even while bell pushes keep coming.
-    quiet_school_digest_hours: int = Field(ge=1, le=168)
-    quiet_school_lanes: int = Field(ge=0, le=8)
-    quiet_school_read_delay_seconds: float = Field(ge=0, le=600, allow_inf_nan=False)
-    quiet_school_reread_hours: int = Field(ge=1, le=168)
-    # The list of clubs to read is built again this often, so a school that goes quiet
-    # joins it (and one notified again leaves it) without waiting for the list to run out.
-    quiet_school_relist_minutes: int = Field(ge=1, le=1440)
-    quiet_school_post_days: int = Field(ge=1, le=14)
-    # Only clubs with an event added within the active days, or followed within the new
-    # follow days (too new to have events), are read.
-    quiet_school_active_days: int = Field(ge=1, le=730)
-    quiet_school_new_follow_days: int = Field(ge=1, le=365)
+    # The post sweep (rust/src/ingestion/post_sweep.rs) renders every followed account's
+    # profile logged out on a schedule and queues its posts since the last read. It reads in
+    # `post_sweep_start_lanes` lanes until it has state, then a lane fewer after the spike
+    # refusals within the spike hours, a lane more after the calm hours with at most the calm
+    # refusals, between the minimum and maximum; each lane reads one profile at a time, this
+    # far apart.
+    post_sweep_start_lanes: int = Field(ge=0, le=8)
+    post_sweep_min_lanes: int = Field(ge=0, le=8)
+    post_sweep_max_lanes: int = Field(ge=0, le=8)
+    post_sweep_spike_refusals: int = Field(ge=1, le=100)
+    post_sweep_spike_hours: float = Field(gt=0, le=72, allow_inf_nan=False)
+    post_sweep_calm_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
+    post_sweep_calm_refusals: int = Field(ge=0, le=100)
+    post_sweep_read_delay_seconds: float = Field(ge=0, le=600, allow_inf_nan=False)
+    # The list of handles due is built again this often.
+    post_sweep_relist_minutes: int = Field(ge=1, le=1440)
+    # A handle whose newest post is under a step's days old is read every that many hours;
+    # one with an older post or none, every dormant hours; a page that did not render is
+    # read again after the failed retry hours.
+    post_sweep_schedule: list[PostSweepTierControl] = Field(min_length=1, max_length=10)
+    post_sweep_dormant_read_every_hours: int = Field(ge=1, le=24 * 30)
+    post_sweep_failed_retry_hours: int = Field(ge=1, le=168)
+    # A read queues the posts since the last read, at least the minimum and at most the
+    # maximum days back.
+    post_sweep_min_post_days: int = Field(ge=1, le=14)
+    post_sweep_max_post_days: int = Field(ge=1, le=30)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # The API server draws the title of every featured event to come (title_svgs.rs), this
     # many at a time, up to this many drawings an event until one is kept, then again after
@@ -1300,6 +1322,23 @@ class IngestionControl(_ControlModel):
         names = [directory.name for directory in self.club_directories]
         if len(set(names)) != len(names):
             raise ValueError("Club directory names must be unique")
+        if not (
+            self.post_sweep_min_lanes <= self.post_sweep_start_lanes <= self.post_sweep_max_lanes
+        ):
+            raise ValueError("The post sweep must start between its minimum and maximum lanes")
+        if self.post_sweep_min_post_days > self.post_sweep_max_post_days:
+            raise ValueError("The post sweep's post window minimum must not pass its maximum")
+        schedule = self.post_sweep_schedule
+        steps = list(zip(schedule, schedule[1:], strict=False))
+        if (
+            any(
+                later.newest_post_within_days <= earlier.newest_post_within_days
+                or later.read_every_hours <= earlier.read_every_hours
+                for earlier, later in steps
+            )
+            or schedule[-1].read_every_hours >= self.post_sweep_dormant_read_every_hours
+        ):
+            raise ValueError("The post sweep reads older posters less often, step by step")
         return self
 
 
