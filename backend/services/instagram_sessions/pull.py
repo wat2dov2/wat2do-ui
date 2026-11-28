@@ -146,7 +146,7 @@ def _pull_account(line: dict[str, Any], state: dict[str, Any], moment: datetime)
             "seconds": round(time.monotonic() - started),
         }
     state["pulled"][school] = moment.isoformat()
-    found = _due(school, threads, posts, state, moment)
+    found = _due(school, threads, posts or [], state, moment)
     sent, failed = _send(account, found["dispatch"], state, school, moment)
     _save_state(state, moment)
     return {
@@ -155,7 +155,9 @@ def _pull_account(line: dict[str, Any], state: dict[str, Any], moment: datetime)
         "threads": len(threads),
         "unread": sum(1 for thread in threads if thread.get("unread")),
         "requests": sum(1 for thread in threads if thread.get("request")),
-        "comments": sum(len(post.get("comments") or ()) for post in posts),
+        "comments": None
+        if posts is None
+        else sum(len(post.get("comments") or ()) for post in posts),
         "already_handled": found["already_handled"],
         "dispatched": sent,
         "dispatch_failed": failed,
@@ -164,9 +166,10 @@ def _pull_account(line: dict[str, Any], state: dict[str, Any], moment: datetime)
     }
 
 
-def _read(school: str, account: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """The account's inbox threads and its newest posts' comments, read in one hold of
-    the emulator (the worker stops its follows between profiles for it)."""
+def _read(school: str, account: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]] | None]:
+    """The account's inbox threads and its newest posts' comments (None when they could
+    not be read: a post that will not open never hides the DMs), read in one hold of the
+    emulator (the worker stops its follows between profiles for it)."""
     with notification.waiting_for_emulator(), exclusive():
         device = EmulatorDevice()
         device.wake()
@@ -181,7 +184,13 @@ def _read(school: str, account: str) -> tuple[list[dict[str, Any]], list[dict[st
         # Each move starts its own screen reader; only one may be connected at a time.
         device.release_screen()
         threads = _move(school, "inbox")["threads"]
-        posts = _move(school, "comments")["posts"]
+        posts: list[dict[str, Any]] | None
+        try:
+            posts = _move(school, "comments")["posts"]
+        except MoveFailed:
+            # 2026-11-28: berkeley's newest post would not open, and its DMs went unread.
+            log.warning("Could not read the comments of %s", account)
+            posts = None
         _stop_at_a_challenge(device, school)
     return threads, posts
 

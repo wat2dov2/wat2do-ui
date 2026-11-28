@@ -1,3 +1,4 @@
+import contextlib
 import json
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -294,3 +295,37 @@ def test_a_move_runs_under_this_process_hold_and_its_error_fails_the_read(monkey
     assert calls[0]["env"]["WAT2DO_EMULATOR_HELD"] == "1"
     with pytest.raises(pull.MoveFailed):
         pull._move("mit", "comments")
+
+
+def test_comments_that_cannot_be_read_never_hide_the_dms(monkeypatch, sent):
+    class Device:
+        def __init__(self):
+            pass
+
+        def wake(self):
+            pass
+
+        def use_android_user(self, user):
+            pass
+
+        def use_account(self, user, account):
+            pass
+
+        def release_screen(self):
+            pass
+
+        def challenge(self):
+            return None
+
+    def move(school, name):
+        if name == "comments":
+            raise pull.MoveFailed("ig comments failed (exit 1)")
+        return {"threads": [_thread("Berkeley Chess Club")]}
+
+    monkeypatch.setattr(pull, "EmulatorDevice", Device)
+    monkeypatch.setattr(pull, "exclusive", contextlib.nullcontext)
+    monkeypatch.setattr(pull.notification, "waiting_for_emulator", contextlib.nullcontext)
+    monkeypatch.setattr(pull, "_move", move)
+    [line] = pull.run(schools=["berkeley"], now=NOW)
+    assert line["outcome"] == "read" and line["comments"] is None
+    assert [body["client_payload"]["sender"] for body in sent] == ["Berkeley Chess Club"]
