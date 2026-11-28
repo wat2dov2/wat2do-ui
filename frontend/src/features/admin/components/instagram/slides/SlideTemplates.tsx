@@ -386,29 +386,6 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
       </div>
 
       <CoverPosterFan tiles={model.tiles} secondary={secondary} renderPoster={renderPoster} />
-
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          left: COVER_MARGIN,
-          bottom: COVER_MARGIN,
-          width: COVER_CONTENT_WIDTH,
-          justifyContent: "space-between",
-          fontSize: 30,
-          fontWeight: 700,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {model.swipeLine}
-          {/* Vector hand keeps the pointing cue identical in Satori and browsers. */}
-          <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-            <path d="M5 18h7l5-9c2-3 6-1 5 2l-2 5h15c5 0 5 6 0 6H24v9c0 4-3 6-6 5l-6-3H5Z" fill="#ffcc4d" stroke="#d99e29" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M24 24h-6m6 5h-6m4 5h-4" fill="none" stroke="#d99e29" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </div>
-        <div style={{ display: "flex" }}>{model.siteLine}</div>
-      </div>
     </div>
   );
 }
