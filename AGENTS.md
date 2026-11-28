@@ -221,7 +221,7 @@ Code makes a double or stale story impossible: `public.instagram_account_milesto
 The story is a screenshot taken on the emulator, of the account's own profile (Instagram's "Discover people" suggestions closed) or of the record post once its picture has loaded, on a Wat2Do-blue card under a short lowercase line of thanks in the school's language, with no emoji, shared to the story from the gallery (`story.share_photo`: Android's share to Instagram's story editor).
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
-While `asian_song_override` there lists any songs, those campuses play only those songs instead (since 2026-11-25, only The Weeknd's "Hong Kong"); emptying the list goes back to the songs marked Asian or K-pop.
+While `asian_song_override` there lists any songs, those campuses play only those songs instead (2026-11-25 to 11-27 it held only The Weeknd's "Hong Kong"; empty again since); emptying the list goes back to the songs marked Asian or K-pop.
 The emulator also follows the clubs each school account should follow, and the follow crawl finds them through the browser worker.
 `public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club`, `import` or `directory`), and nothing else follows accounts.
 One row per school and handle is kept whatever its status, so an account an admin rejected is never offered again.
