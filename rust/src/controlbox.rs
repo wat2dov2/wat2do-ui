@@ -506,6 +506,33 @@ pub struct ClubManagement {
     /// Python's cache of a school's clubs for name lookups; the events routes
     /// also reuse school lookups and directory logos this long.
     pub school_lookup_cache_seconds: f64,
+    pub duplicate_names: DuplicateNames,
+}
+
+/// How a submitted club's name is matched against its school's clubs
+/// (`api::routes::clubs::duplicates`).
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DuplicateNames {
+    /// Never tell two clubs apart ("the", "of"): always dropped.
+    pub function_words: Vec<String>,
+    /// Say what kind of group it is ("club", "student"), singular: dropped to
+    /// compare, but names that differ only in these are asked about, not refused.
+    pub club_words: Vec<String>,
+    /// A name of at least this many words, all in a listed club's name, which
+    /// has at most `similar_extra_words` more, is asked about.
+    pub similar_minimum_words: usize,
+    pub similar_extra_words: usize,
+    /// Words this long that are one letter apart read as a typo of each other.
+    pub typo_minimum_letters: usize,
+}
+
+/// The fields of `controlbox/instagram_follow.json` Rust reads (Python's
+/// `InstagramFollowControl` validates it all).
+#[derive(Debug, Deserialize)]
+pub struct InstagramFollow {
+    /// Each school's other names and abbreviations ("uoft", "waterloo"), besides its slug.
+    pub school_names: std::collections::HashMap<String, Vec<String>>,
 }
 
 /// The server-side limits in `controlbox/discovery_queries.json`.
@@ -819,6 +846,12 @@ pub static CLUB_MANAGEMENT: LazyLock<ClubManagement> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/club_management.json"),
     )
 });
+pub static INSTAGRAM_FOLLOW: LazyLock<InstagramFollow> = LazyLock::new(|| {
+    parse(
+        "instagram_follow",
+        include_str!("../../backend/controlbox/instagram_follow.json"),
+    )
+});
 pub static DISCOVERY_QUERIES: LazyLock<DiscoveryQueries> = LazyLock::new(|| {
     parse(
         "discovery_queries",
@@ -1017,6 +1050,8 @@ mod tests {
             INSTAGRAM_PUBLISHING.minimum_event_slides <= INSTAGRAM_PUBLISHING.maximum_event_slides
         );
         assert!(CLUB_MANAGEMENT.invite_expiration_days > 0);
+        assert!(CLUB_MANAGEMENT.duplicate_names.similar_minimum_words > 0);
+        assert!(INSTAGRAM_FOLLOW.school_names.contains_key("uwaterloo"));
         assert!(DISCOVERY_QUERIES.maximum_filters_bytes > 0);
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
         assert!(TICKETING.maximum_tickets_per_order > 0);

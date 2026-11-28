@@ -18,6 +18,7 @@ export {
   updateClubAPI,
   deleteClubAPI,
 } from "./api/clubs.api";
+export type { ClubSaveOptions } from "./api/clubs.api";
 export { normalizeClub } from "./api/clubService";
 
 // Hooks

@@ -16,6 +16,7 @@ use serde_json::{Value, json};
 use super::messages::{
     CLUB_ALREADY_EXISTS, DB_OPERATION_FAILED, INTERNAL_SERVER_ERROR, PG_CODE_TO_HTTP,
 };
+use super::routes::clubs::duplicates::ClubMatch;
 use super::validation::ValidationIssue;
 
 #[derive(Debug)]
@@ -28,9 +29,14 @@ pub enum ApiError {
     Authorization(String),
     /// `ConflictError`: 409.
     Conflict(String),
-    /// 409: the school already has a club with this Instagram handle, which the
-    /// sender can open to claim instead (`ClubExistsResponse`).
-    ClubExists { club_id: i32, club_name: String },
+    /// 409: the school already lists this club (its Instagram handle, its name
+    /// or a name like it), which the sender can open to claim instead
+    /// (`ClubExistsResponse`).
+    ClubExists {
+        club_id: i32,
+        club_name: String,
+        matched: ClubMatch,
+    },
     /// `ValidationError`: 400, with `code` when one is set.
     Validation { detail: String, code: String },
     /// Any other `ServiceError`: 400, logged as a warning.
@@ -203,9 +209,18 @@ impl IntoResponse for ApiError {
                 respond(StatusCode::FORBIDDEN, json!({ "detail": detail }))
             }
             Self::Conflict(detail) => respond(StatusCode::CONFLICT, json!({ "detail": detail })),
-            Self::ClubExists { club_id, club_name } => respond(
+            Self::ClubExists {
+                club_id,
+                club_name,
+                matched,
+            } => respond(
                 StatusCode::CONFLICT,
-                json!({ "detail": CLUB_ALREADY_EXISTS, "club_id": club_id, "club_name": club_name }),
+                json!({
+                    "detail": CLUB_ALREADY_EXISTS,
+                    "club_id": club_id,
+                    "club_name": club_name,
+                    "matched": matched,
+                }),
             ),
             Self::Validation { detail, code } => {
                 respond(StatusCode::BAD_REQUEST, detail_body(&detail, &code))
@@ -294,12 +309,18 @@ mod tests {
         let (status, _, body) = parts(ApiError::ClubExists {
             club_id: 7,
             club_name: "Chess".into(),
+            matched: ClubMatch::SimilarName,
         })
         .await;
         assert_eq!(status, StatusCode::CONFLICT);
         assert_eq!(
             body,
-            json!({"detail": CLUB_ALREADY_EXISTS, "club_id": 7, "club_name": "Chess"})
+            json!({
+                "detail": CLUB_ALREADY_EXISTS,
+                "club_id": 7,
+                "club_name": "Chess",
+                "matched": "similar_name",
+            })
         );
 
         let (status, _, body) = parts(ApiError::validation("bad")).await;

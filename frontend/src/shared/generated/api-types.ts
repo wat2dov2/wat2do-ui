@@ -2562,6 +2562,12 @@ export interface components {
             logo_url?: string | null;
             /** @default uwaterloo */
             school: string;
+            /**
+             * @description The sender says this is a different club from the one a 409 with
+             *     `matched` `similar_name` named; a club with the same name is still refused.
+             * @default false
+             */
+            allow_similar_name: boolean;
         };
         /** @description One event with tickets on a club's dashboard. */
         ClubEventTicketSummary: {
@@ -2581,12 +2587,16 @@ export interface components {
              */
             refund_requests: number;
         };
-        /** @description The 409 answer when the school already lists a club with the sent Instagram handle. */
+        /**
+         * @description The 409 answer when the school already lists the club sent: the club, and
+         *     whether it has the same Instagram account, the same name or a name like it.
+         */
         ClubExistsResponse: {
             detail: string;
             /** Format: int32 */
             club_id: number;
             club_name: string;
+            matched: components["schemas"]["ClubMatch"];
         };
         ClubInvitationCreate: {
             /** @description Email to invite */
@@ -2614,6 +2624,11 @@ export interface components {
             /** Format: date-time */
             expires_at: string;
         };
+        /**
+         * @description What a submitted club shares with the club its school already lists.
+         * @enum {string}
+         */
+        ClubMatch: "instagram" | "name" | "similar_name";
         ClubMemberAdd: {
             email: string;
         };
@@ -7319,7 +7334,7 @@ export interface operations {
                     "application/json": components["schemas"]["ClubResponse"];
                 };
             };
-            /** @description The school already lists this Instagram account's club */
+            /** @description The school already lists this club: its Instagram account, its name or a name like it */
             409: {
                 headers: {
                     [name: string]: unknown;

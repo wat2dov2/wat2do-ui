@@ -58,18 +58,28 @@ type ClubCreateInput = Pick<
   | "school"
 >;
 
+/** How a club is saved: `allowSimilarName` once the sender said it is not the similarly named club a 409 named. */
+export interface ClubSaveOptions {
+  allowSimilarName: boolean;
+}
+
 /** Submits a club as the signed-in account, which hears back when it is reviewed. */
 export async function createClubAPI(
   clubData: ClubCreateInput,
+  { allowSimilarName }: ClubSaveOptions = { allowSimilarName: false },
 ): Promise<Club> {
   const raw = await api.post<ApiClubResponse>("/clubs/", {
     ...clubData,
     submitted_by_email: getSessionEmail(),
+    allow_similar_name: allowSimilarName,
   });
   return normalizeClub(raw);
 }
 
-/** The club a create or edit was refused for: the school already lists a club with that Instagram account. */
+/**
+ * The club a create or edit was refused for: the school already lists it, with that Instagram account,
+ * that name, or (`matched` "similar_name", which the sender may answer is a different club) a name like it.
+ */
 export function existingClubFromError(error: unknown): ApiClubExistsResponse | null {
   if (!isApiError(error) || error.status !== 409) return null;
   const body = error.body as Partial<ApiClubExistsResponse> | null;

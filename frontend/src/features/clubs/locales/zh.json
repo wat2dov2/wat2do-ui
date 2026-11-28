@@ -97,7 +97,11 @@
     "exists": {
       "title": "这个社团已经在 Wat2Do 上了",
       "description": "{{club}} 已经在 Wat2Do 上使用这个 Instagram 账号，所以不能再添加一次。打开它的页面来认领，或加入它的团队。",
-      "open": "打开社团页面"
+      "open": "打开社团页面",
+      "nameDescription": "{{club}} 已经以这个名字在 Wat2Do 上了，所以不能再添加一次。打开它的页面来认领，或加入它的团队。",
+      "similarTitle": "这是你的社团吗？",
+      "similarDescription": "{{club}} 已经在 Wat2Do 上了。如果这就是你要添加的社团，打开它的页面来认领，或加入它的团队。",
+      "differentClub": "这是另一个社团"
     }
   },
   "inviteLanding": {

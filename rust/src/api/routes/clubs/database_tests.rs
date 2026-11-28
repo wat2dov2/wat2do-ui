@@ -303,6 +303,7 @@ async fn a_school_lists_one_club_per_instagram_account() {
     .await;
     assert_eq!(status, StatusCode::CONFLICT, "{body}");
     assert_eq!(body["club_id"], listed, "{body}");
+    assert_eq!(body["matched"], "instagram", "{body}");
     assert!(
         body["club_name"]
             .as_str()
@@ -366,4 +367,72 @@ async fn a_school_lists_one_club_per_instagram_account() {
     .execute(&db)
     .await;
     assert!(duplicate.is_err());
+}
+
+#[tokio::test]
+async fn a_school_lists_one_club_per_name() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let (_, _, token) = user(&db, "user").await;
+    // A word no other club at Waterloo has, so this test's names meet only each other.
+    let word = format!("Zq{}", &Uuid::new_v4().simple().to_string()[..10]);
+    let (listed,): (i32,) = sqlx::query_as(
+        "INSERT INTO public.clubs (club_name, school_id, status) \
+         SELECT $1, id, 'approved' FROM public.schools WHERE slug = 'uwaterloo' RETURNING id",
+    )
+    .bind(format!("Waterloo {word} Students' Association"))
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    let submit = |name: String, allow_similar_name: bool| {
+        let state = state.clone();
+        let token = token.clone();
+        async move {
+            send(
+                &state,
+                "POST",
+                "/clubs/",
+                Some(&token),
+                Some(json!({
+                    "club_name": name,
+                    "categories": ["Arts & Culture"],
+                    "school": "uwaterloo",
+                    "allow_similar_name": allow_similar_name,
+                })),
+            )
+            .await
+        }
+    };
+
+    // The same club without the school's name, in other case and plural, is refused,
+    // even when the sender says it is a different club.
+    for allow_similar_name in [false, true] {
+        let (status, body) = submit(
+            format!("{} student association", word.to_lowercase()),
+            allow_similar_name,
+        )
+        .await;
+        assert_eq!(status, StatusCode::CONFLICT, "{body}");
+        assert_eq!(body["club_id"], listed, "{body}");
+        assert_eq!(body["matched"], "name", "{body}");
+    }
+
+    // A name only like it is asked about, and goes through once they say it is another club.
+    let (status, body) = submit(format!("UW {word} Club"), false).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(body["club_id"], listed, "{body}");
+    assert_eq!(body["matched"], "similar_name", "{body}");
+    let (status, body) = submit(format!("UW {word} Club"), true).await;
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    assert_eq!(body["status"], "pending", "{body}");
+
+    // A rejected club never blocks a name.
+    sqlx::query("UPDATE public.clubs SET status = 'rejected' WHERE id = $1 OR club_name = $2")
+        .bind(listed)
+        .bind(format!("UW {word} Club"))
+        .execute(&db)
+        .await
+        .unwrap();
+    let (status, body) = submit(format!("{word} Students Association"), false).await;
+    assert_eq!(status, StatusCode::CREATED, "{body}");
 }

@@ -97,7 +97,11 @@
     "exists": {
       "title": "呢個學會已經喺 Wat2Do 度",
       "description": "{{club}} 已經喺 Wat2Do 用緊呢個 Instagram 帳號，所以唔可以再加多一次。打開佢嘅頁面嚟認領，或者加入佢嘅團隊。",
-      "open": "打開學會頁面"
+      "open": "打開學會頁面",
+      "nameDescription": "{{club}} 已經用呢個名喺 Wat2Do 度，所以唔可以再加多一次。打開佢嘅頁面嚟認領，或者加入佢嘅團隊。",
+      "similarTitle": "呢個係咪你嘅學會？",
+      "similarDescription": "{{club}} 已經喺 Wat2Do 度。如果呢個就係你想加嘅學會，打開佢嘅頁面嚟認領，或者加入佢嘅團隊。",
+      "differentClub": "呢個係另一個學會"
     }
   },
   "inviteLanding": {

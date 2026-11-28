@@ -8,6 +8,7 @@
 pub mod claim_links;
 pub mod claims;
 pub mod counts;
+pub mod duplicates;
 pub mod emails;
 pub mod invitations;
 pub mod members;
@@ -38,6 +39,7 @@ use crate::api::json;
 use crate::api::messages::{CLUB_NOT_FOUND, CLUB_SELLS_TICKETS, NOT_AUTHORIZED, USER_NOT_FOUND};
 use crate::api::pagination::{Paginated, Pagination};
 use crate::api::rate_limit::RateLimiter;
+use crate::api::routes::clubs::duplicates::{ClubMatch, ensure_handle_free, ensure_name_new};
 use crate::api::routes::positions::OpenWindow;
 use crate::api::routes::users::no_content;
 use crate::api::validation::{Length, Limits, PathParams, QueryParams, Validator};
@@ -800,6 +802,8 @@ pub struct ClubFields {
     pub club_type: Input<String>,
     pub logo_url: Input<String>,
     pub school: Input<String>,
+    /// `ClubCreate.allow_similar_name`.
+    pub allow_similar_name: bool,
 }
 
 /// Read a club body; `create` applies `ClubCreate`'s rules (required name,
@@ -808,6 +812,7 @@ fn parse_club(mut body: Body, create: bool) -> Result<ClubFields, ApiError> {
     let mut fields = ClubFields::default();
     if create {
         fields.submitted_by_email = body.email("submitted_by_email").value();
+        fields.allow_similar_name = body.bool_or("allow_similar_name", false);
     }
     let blank = if create {
         "value cannot be blank"
@@ -933,6 +938,10 @@ pub struct ClubCreate {
     logo_url: Option<String>,
     #[schema(min_length = 1, max_length = 255, default = "uwaterloo")]
     school: String,
+    /// The sender says this is a different club from the one a 409 with
+    /// `matched` `similar_name` named; a club with the same name is still refused.
+    #[schema(default = false, required = false)]
+    allow_similar_name: bool,
 }
 
 #[allow(dead_code)]
@@ -964,46 +973,15 @@ pub struct SubmissionUpdate {
     rejection_reason: Option<String>,
 }
 
-/// The 409 answer when the school already lists a club with the sent Instagram handle.
+/// The 409 answer when the school already lists the club sent: the club, and
+/// whether it has the same Instagram account, the same name or a name like it.
 #[allow(dead_code)]
 #[derive(ToSchema)]
 pub struct ClubExistsResponse {
     detail: String,
     club_id: i32,
     club_name: String,
-}
-
-/// Refuse an Instagram handle another club at the school already has: one club per
-/// account and school (`clubs_school_handle_key`, compared by `club_handle_key`).
-/// The answer names that club, so the sender can open it and claim it instead.
-async fn ensure_handle_free(
-    db: &sqlx::PgPool,
-    school_slug: &str,
-    ig: Option<&str>,
-    except: Option<i64>,
-) -> Result<(), ApiError> {
-    let Some(ig) = ig else {
-        return Ok(());
-    };
-    let existing: Option<(i32, String)> = read_with_retry(|| {
-        sqlx::query_as(
-            "SELECT c.id, c.club_name FROM public.clubs c \
-             JOIN public.schools s ON s.id = c.school_id \
-             WHERE s.slug = $1 AND public.club_handle_key($2) <> '' \
-               AND public.club_handle_key(c.ig) = public.club_handle_key($2) \
-               AND c.id IS DISTINCT FROM $3::bigint \
-             LIMIT 1",
-        )
-        .bind(school_slug)
-        .bind(ig)
-        .bind(except)
-        .fetch_optional(db)
-    })
-    .await?;
-    match existing {
-        Some((club_id, club_name)) => Err(ApiError::ClubExists { club_id, club_name }),
-        None => Ok(()),
-    }
+    matched: ClubMatch,
 }
 
 /// `ClubResponse` columns of the row a write returned (`RETURNING`), for clubs `c`.
@@ -1021,7 +999,7 @@ fn returned_club_sql(school: &str) -> String {
     request_body = ClubCreate,
     responses(
         (status = 201, description = "Successful Response", body = ClubResponse),
-        (status = 409, description = "The school already lists this Instagram account's club", body = ClubExistsResponse),
+        (status = 409, description = "The school already lists this club: its Instagram account, its name or a name like it", body = ClubExistsResponse),
         (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
     )
 )]
@@ -1052,6 +1030,15 @@ pub async fn create_club(
         None,
     )
     .await?;
+    if let Some(club_name) = fields.club_name.clone().value() {
+        ensure_name_new(
+            &state.db,
+            &school_slug,
+            &club_name,
+            fields.allow_similar_name,
+        )
+        .await?;
+    }
     // Insert and read back in one statement; a new club has no events yet.
     let sql = format!(
         "WITH school AS (SELECT id, slug FROM public.schools WHERE slug = $1 AND $1 <> '' LIMIT 1), \

@@ -46,10 +46,12 @@ test("submissions carry the signed-in account's email without inventing ownershi
   }
 });
 
-// A school lists one club per Instagram account: submitting a listed account names that club.
+// A school lists one club per Instagram account and per name: submitting either names that club.
 test("a club the school already lists comes back as that club", async () => {
   const original = api.post;
-  const listed = { detail: "This club is already on Wat2Do", club_id: 42, club_name: "Right to Play UofA" };
+  const listed = {
+    detail: "This club is already on Wat2Do", club_id: 42, club_name: "Right to Play UofA", matched: "instagram",
+  };
   api.post = async () => {
     throw new ApiError(409, listed);
   };
@@ -61,6 +63,35 @@ test("a club the school already lists comes back as that club", async () => {
     expect(existingClubFromError(error)).toEqual(listed);
     expect(existingClubFromError(new ApiError(409, { detail: "Conflict" }))).toBeNull();
     expect(existingClubFromError(new Error("offline"))).toBeNull();
+  } finally {
+    api.post = original;
+  }
+});
+
+// A name only like a listed club's is asked about; the sender's "it's a different club" sends it again with
+// allow_similar_name, and a first submission never claims to be different.
+test("a club sent again as a different club says so", async () => {
+  const original = api.post;
+  const sent: unknown[] = [];
+  api.post = async <T>(_path: string, data?: unknown) => {
+    sent.push(data);
+    if (sent.length === 1) {
+      throw new ApiError(409, {
+        detail: "This club is already on Wat2Do", club_id: 32912,
+        club_name: "Carleton Afghan Students Association", matched: "similar_name",
+      });
+    }
+    return { id: 7, club_name: "Afghan Cultural Club", status: "pending" } as T;
+  };
+  const club = {
+    club_name: "Afghan Cultural Club", school: "carleton", categories: ["Arts & Culture"],
+    club_page: "", ig: null, discord: null, club_type: "independent",
+  };
+  try {
+    const error = await createClubAPI(club).catch((caught: unknown) => caught);
+    expect(existingClubFromError(error)).toMatchObject({ club_id: 32912, matched: "similar_name" });
+    await createClubAPI(club, { allowSimilarName: true });
+    expect(sent).toMatchObject([{ allow_similar_name: false }, { allow_similar_name: true }]);
   } finally {
     api.post = original;
   }

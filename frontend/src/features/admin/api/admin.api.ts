@@ -39,6 +39,7 @@ import {
   updateClubAPI,
   deleteClubAPI,
   normalizeClub,
+  type ClubSaveOptions,
 } from "@/features/clubs";
 import { api, type PaginatedApiResponse } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
@@ -90,7 +91,7 @@ function toEventSubmission(row: ApiSubmissionResponse): EventSubmission {
 
 // ── Club mutations ─────────────────────────────────────────
 
-export async function adminCreateClub(club: Club): Promise<Club> {
+export async function adminCreateClub(club: Club, options: ClubSaveOptions): Promise<Club> {
   return createClubAPI({
     club_name: club.club_name,
     categories: club.categories,
@@ -100,7 +101,7 @@ export async function adminCreateClub(club: Club): Promise<Club> {
     club_type: club.club_type,
     logo_url: club.logo_url,
     school: club.school,
-  });
+  }, options);
 }
 
 export async function adminUpdateClub(club: Club): Promise<Club> {

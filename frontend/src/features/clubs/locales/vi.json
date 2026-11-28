@@ -97,7 +97,11 @@
     "exists": {
       "title": "Câu lạc bộ này đã có trên Wat2Do",
       "description": "{{club}} đã dùng tài khoản Instagram này trên Wat2Do, nên không thể thêm lại. Hãy mở trang của câu lạc bộ để nhận quản lý hoặc tham gia đội ngũ.",
-      "open": "Mở trang câu lạc bộ"
+      "open": "Mở trang câu lạc bộ",
+      "nameDescription": "{{club}} đã có trên Wat2Do với tên này, nên không thể thêm lại. Hãy mở trang của câu lạc bộ để nhận quản lý hoặc tham gia đội ngũ.",
+      "similarTitle": "Đây có phải câu lạc bộ của bạn không?",
+      "similarDescription": "{{club}} đã có trên Wat2Do. Nếu đó là câu lạc bộ bạn muốn thêm, hãy mở trang của câu lạc bộ để nhận quản lý hoặc tham gia đội ngũ.",
+      "differentClub": "Đây là câu lạc bộ khác"
     }
   },
   "inviteLanding": {

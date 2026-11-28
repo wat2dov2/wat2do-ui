@@ -97,7 +97,11 @@
     "exists": {
       "title": "이 클럽은 이미 Wat2Do에 있어요",
       "description": "{{club}}은(는) 이미 이 Instagram 계정으로 Wat2Do에 있어서 다시 추가할 수 없어요. 페이지를 열어 소유권을 신청하거나 팀에 합류하세요.",
-      "open": "클럽 페이지 열기"
+      "open": "클럽 페이지 열기",
+      "nameDescription": "{{club}}은(는) 이미 이 이름으로 Wat2Do에 있어서 다시 추가할 수 없어요. 페이지를 열어 소유권을 신청하거나 팀에 합류하세요.",
+      "similarTitle": "이 클럽이 맞나요?",
+      "similarDescription": "{{club}}은(는) 이미 Wat2Do에 있어요. 추가하려던 클럽이 맞다면 페이지를 열어 소유권을 신청하거나 팀에 합류하세요.",
+      "differentClub": "다른 클럽이에요"
     }
   },
   "inviteLanding": {

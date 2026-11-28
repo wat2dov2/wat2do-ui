@@ -282,6 +282,25 @@ class AuthenticationControl(_ControlModel):
     legacy_frontend_origins: tuple[HttpUrl, ...]
 
 
+class DuplicateClubNamesControl(_ControlModel):
+    """How the API (rust/src/api/routes/clubs/duplicates.rs) tells that a submitted club's
+    name is one its school already lists, after case, accents, punctuation, plurals and the
+    school's own names are set aside."""
+
+    # Words that never tell two clubs apart ("the", "of"), always dropped.
+    function_words: tuple[Annotated[str, Field(pattern=r"^[a-z]+$")], ...]
+    # Words that say what kind of group it is ("club", "society", "student"), in their
+    # singular form: dropped to compare, but two names that differ only in these are
+    # asked about ("Is this your club?") instead of refused.
+    club_words: tuple[Annotated[str, Field(pattern=r"^[a-z]+$")], ...]
+    # A name with at least this many words, all in a listed club's name, which has at
+    # most similar_extra_words more, is asked about.
+    similar_minimum_words: int = Field(ge=1, le=10)
+    similar_extra_words: int = Field(ge=0, le=5)
+    # Words this long or longer that are one letter apart read as a typo of each other.
+    typo_minimum_letters: int = Field(ge=3, le=30)
+
+
 class ClubManagementControl(_ControlModel):
     initial_render_count: int = Field(gt=0, le=100)
     directory_page_size: int = Field(gt=0, le=100)
@@ -289,6 +308,7 @@ class ClubManagementControl(_ControlModel):
     # How long a school's club list for name and handle lookups stays cached
     # in a Python process; the API's club writes (in Rust) cannot clear it.
     school_lookup_cache_seconds: float = Field(gt=0, le=3600)
+    duplicate_names: DuplicateClubNamesControl
 
 
 class MorningEmailControl(_ControlModel):

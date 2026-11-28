@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchProfileAPI } from "@/features/auth/api/auth.api";
 import { ClubForm } from "@/features/clubs/components/AddClubModal";
-import { createClubAPI } from "@/features/clubs/api/clubs.api";
+import { createClubAPI, type ClubSaveOptions } from "@/features/clubs/api/clubs.api";
 import { useEventsStore } from "@/features/events/store/events.store";
 import {
   clubPagePath,
@@ -32,7 +32,7 @@ export function CreateClubPage() {
     getCurrentSchool(),
     loadUserProfile()?.school,
   );
-  const saveClub = async (club: Club): Promise<Club> => {
+  const saveClub = async (club: Club, options: ClubSaveOptions): Promise<Club> => {
     const created = await createClubAPI({
       club_name: club.club_name,
       categories: club.categories,
@@ -42,7 +42,7 @@ export function CreateClubPage() {
       club_type: club.club_type,
       logo_url: club.logo_url,
       school,
-    });
+    }, options);
     await Promise.all([
       // A club the account submits may already be one it manages.
       fetchProfileAPI(),

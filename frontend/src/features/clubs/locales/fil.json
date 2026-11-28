@@ -100,7 +100,11 @@
     "exists": {
       "title": "Nasa Wat2Do na ang club na ito",
       "description": "Nasa Wat2Do na ang {{club}} gamit ang Instagram account na ito, kaya hindi na ito maidadagdag ulit. Buksan ang page nito para i-claim ito o sumali sa team nito.",
-      "open": "Buksan ang page ng club"
+      "open": "Buksan ang page ng club",
+      "nameDescription": "Nasa Wat2Do na ang {{club}} sa pangalang ito, kaya hindi na ito maidadagdag ulit. Buksan ang page nito para i-claim ito o sumali sa team nito.",
+      "similarTitle": "Ito ba ang club mo?",
+      "similarDescription": "Nasa Wat2Do na ang {{club}}. Kung ito ang club na tinutukoy mo, buksan ang page nito para i-claim ito o sumali sa team nito.",
+      "differentClub": "Ibang club ito"
     }
   },
   "inviteLanding": {

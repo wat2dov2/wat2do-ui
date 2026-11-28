@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import type { Club, ClubStatus, SubmissionStatus } from "@/shared/types";
-import { AddClubModal } from "@/features/clubs";
+import { AddClubModal, type ClubSaveOptions } from "@/features/clubs";
 import { useAdminClubsPage } from "@/features/admin/hooks/useAdminClubsPage";
 import {
   adminCreateClub,
@@ -146,18 +146,14 @@ export function AdminClubsPage() {
     }
   };
 
-  const handleSave = async (club: Club) => {
-    try {
-      if (editingClub) {
-        await adminUpdateClub(club);
-      } else {
-        await adminCreateClub(club);
-      }
-      await refreshClubQueries();
-      closeModal();
-    } catch (error) {
-      console.error("Failed to save club:", error);
+  // The form reports a failed save (and a club the school already lists) and closes the modal on success.
+  const handleSave = async (club: Club, options: ClubSaveOptions) => {
+    if (editingClub) {
+      await adminUpdateClub(club);
+    } else {
+      await adminCreateClub(club, options);
     }
+    await refreshClubQueries();
   };
 
   const handleApproveClaim = async (claimId: string) => {

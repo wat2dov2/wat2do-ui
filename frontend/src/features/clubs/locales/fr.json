@@ -103,7 +103,11 @@
     "exists": {
       "title": "Ce club est déjà sur Wat2Do",
       "description": "{{club}} a déjà ce compte Instagram sur Wat2Do, il ne peut donc pas être ajouté à nouveau. Ouvrez sa page pour le revendiquer ou rejoindre son équipe.",
-      "open": "Ouvrir la page du club"
+      "open": "Ouvrir la page du club",
+      "nameDescription": "{{club}} est déjà sur Wat2Do sous ce nom, il ne peut donc pas être ajouté à nouveau. Ouvrez sa page pour le revendiquer ou rejoindre son équipe.",
+      "similarTitle": "Est-ce votre club ?",
+      "similarDescription": "{{club}} est déjà sur Wat2Do. Si c'est le club que vous voulez ajouter, ouvrez sa page pour le revendiquer ou rejoindre son équipe.",
+      "differentClub": "C'est un autre club"
     }
   },
   "inviteLanding": {

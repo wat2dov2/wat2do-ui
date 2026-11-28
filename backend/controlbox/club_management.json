@@ -2,5 +2,48 @@
   "directory_page_size": 20,
   "invite_expiration_days": 7,
   "initial_render_count": 24,
-  "school_lookup_cache_seconds": 60
+  "school_lookup_cache_seconds": 60,
+  "duplicate_names": {
+    "function_words": [
+      "a",
+      "an",
+      "and",
+      "at",
+      "au",
+      "aux",
+      "d",
+      "de",
+      "des",
+      "du",
+      "en",
+      "et",
+      "for",
+      "in",
+      "l",
+      "la",
+      "le",
+      "les",
+      "of",
+      "on",
+      "pour",
+      "the",
+      "with"
+    ],
+    "club_words": [
+      "association",
+      "club",
+      "etudiant",
+      "etudiante",
+      "group",
+      "organisation",
+      "organization",
+      "societe",
+      "society",
+      "student",
+      "team"
+    ],
+    "similar_minimum_words": 2,
+    "similar_extra_words": 1,
+    "typo_minimum_letters": 7
+  }
 }

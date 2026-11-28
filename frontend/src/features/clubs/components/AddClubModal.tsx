@@ -44,7 +44,7 @@ import { translateCategory } from "@/shared/utils/event";
 import { normalizeInstagramHandle } from "@/shared/utils/url";
 import type { Club } from "@/shared/types";
 import type { ApiClubExistsResponse } from "@/shared/generated";
-import { existingClubFromError } from "@/features/clubs/api/clubs.api";
+import { existingClubFromError, type ClubSaveOptions } from "@/features/clubs/api/clubs.api";
 import { ClubExistsDialog } from "@/features/clubs/components/ClubExistsDialog";
 
 interface ClubFormData {
@@ -57,7 +57,7 @@ interface ClubFormData {
   school: string;
 }
 
-type SaveClub = (club: Club) => Club | void | Promise<Club | void>;
+type SaveClub = (club: Club, options: ClubSaveOptions) => Club | void | Promise<Club | void>;
 
 interface ClubFormProps {
   onSave: SaveClub;
@@ -145,7 +145,7 @@ export function ClubForm({
     [form],
   );
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (options: ClubSaveOptions = { allowSimilarName: false }) => {
     Object.keys(form.formData).forEach(form.handleBlur);
     if (!form.isValid) return;
     // Anyone can fill in a club; it is sent by a signed-in account.
@@ -168,7 +168,7 @@ export function ClubForm({
     setIsSubmitting(true);
     try {
       const savedClub =
-        (await Promise.resolve(onSave(club))) || club;
+        (await Promise.resolve(onSave(club, options))) || club;
       toast({
         title: isEditMode
           ? t("clubs.clubUpdated")
@@ -392,7 +392,14 @@ export function ClubForm({
           </LoadingButton>
         </FormActions>
       )}
-      <ClubExistsDialog club={existingClub} onClose={() => setExistingClub(null)} />
+      <ClubExistsDialog
+        club={existingClub}
+        onClose={() => setExistingClub(null)}
+        onAddDifferentClub={() => {
+          setExistingClub(null);
+          void handleSubmit({ allowSimilarName: true });
+        }}
+      />
     </FormLayout>
   );
 }

@@ -3261,7 +3261,7 @@
             }
           },
           "409": {
-            "description": "The school already lists this Instagram account's club",
+            "description": "The school already lists this club: its Instagram account, its name or a name like it",
             "content": {
               "application/json": {
                 "schema": {
@@ -9099,6 +9099,11 @@
             "default": "uwaterloo",
             "maxLength": 255,
             "minLength": 1
+          },
+          "allow_similar_name": {
+            "type": "boolean",
+            "description": "The sender says this is a different club from the one a 409 with\n`matched` `similar_name` named; a club with the same name is still refused.",
+            "default": false
           }
         }
       },
@@ -9149,11 +9154,12 @@
       },
       "ClubExistsResponse": {
         "type": "object",
-        "description": "The 409 answer when the school already lists a club with the sent Instagram handle.",
+        "description": "The 409 answer when the school already lists the club sent: the club, and\nwhether it has the same Instagram account, the same name or a name like it.",
         "required": [
           "detail",
           "club_id",
-          "club_name"
+          "club_name",
+          "matched"
         ],
         "properties": {
           "detail": {
@@ -9165,6 +9171,9 @@
           },
           "club_name": {
             "type": "string"
+          },
+          "matched": {
+            "$ref": "#/components/schemas/ClubMatch"
           }
         }
       },
@@ -9245,6 +9254,15 @@
             "format": "date-time"
           }
         }
+      },
+      "ClubMatch": {
+        "type": "string",
+        "description": "What a submitted club shares with the club its school already lists.",
+        "enum": [
+          "instagram",
+          "name",
+          "similar_name"
+        ]
       },
       "ClubMemberAdd": {
         "type": "object",
