@@ -325,7 +325,7 @@ async fn choices_are_saved_once_a_day_and_checked_first() {
 
     let stranger = selection(
         &slug,
-        json!([{"event_id": 999_999_999, "sticker_labels": ["Free"]}]),
+        json!([{"event_id": 999_999_999, "sticker_labels": ["Free", "Games"]}]),
     );
     let refused = drafts::save_review_draft(&db, &stranger).await.unwrap_err();
     assert_eq!(
@@ -344,7 +344,7 @@ async fn choices_are_saved_once_a_day_and_checked_first() {
         &slug,
         json!([
             {"event_id": games, "sticker_labels": ["Free Pizza", "Board Games"]},
-            {"event_id": film, "sticker_labels": ["Movie Night"]},
+            {"event_id": film, "sticker_labels": ["Movie Night", "Paid Entry"]},
         ]),
     );
     let (outcome, id) = drafts::save_review_draft(&db, &chosen).await.unwrap();
@@ -376,7 +376,7 @@ async fn choices_are_saved_once_a_day_and_checked_first() {
     .unwrap();
     assert_eq!(
         stored,
-        json!({games.to_string(): ["Free Pizza", "Board Games"], film.to_string(): ["Movie Night"]})
+        json!({games.to_string(): ["Free Pizza", "Board Games"], film.to_string(): ["Movie Night", "Paid Entry"]})
     );
 
     // A later run the same day never replaces it.

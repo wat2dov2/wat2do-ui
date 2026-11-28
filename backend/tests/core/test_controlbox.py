@@ -156,6 +156,7 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert not hasattr(controlbox.instagram_publishing, "accounts")
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 8
+    assert controlbox.instagram_publishing.minimum_stickers_per_event == 2
     assert controlbox.instagram_publishing.status_poll_interval_seconds == 3
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.instagram_publishing.stats_media_limit == 25
@@ -915,6 +916,11 @@ def test_the_emulator_worker_acts_only_in_waking_hours() -> None:
             "instagram_emulator",
             {"action_start_hour": 22, "action_end_hour": 9},
             "action_start_hour",
+        ),
+        (
+            "instagram_publishing",
+            {"minimum_stickers_per_event": 4, "maximum_stickers_per_event": 3},
+            "minimum stickers",
         ),
     ],
 )

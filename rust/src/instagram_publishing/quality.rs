@@ -213,7 +213,7 @@ async fn curate_once(packet: &Packet, language: &str) -> Picks {
         let ask =
             async |prompt: &str| run(prompt, workdir.path(), audit::quality_environment()).await;
         let save = async |answer: &Map<String, Value>| {
-            let selection = selection_from_answer(packet, answer)?;
+            let selection = selection_from_answer(packet, Some(language), answer)?;
             *picked.lock().expect("picks") =
                 selection.picks.iter().map(|pick| pick.event_id).collect();
             Ok(Outcome::Saved)
@@ -516,7 +516,10 @@ mod tests {
         let now = Utc::now();
         for event in &fixture.events {
             assert!(["banned", "great", "ok"].contains(&event.expect.as_str()));
-            assert!(event.candidate(now).unwrap().dtstart_utc > now);
+            let candidate = event.candidate(now).unwrap();
+            assert!(candidate.dtstart_utc > now);
+            // Code alone keeps out events still waiting for their place or time.
+            assert_eq!(candidate.pending_detail(), None, "{}", event.title);
         }
         let count = |expect: &str| {
             fixture

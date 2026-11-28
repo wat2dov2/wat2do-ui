@@ -3,8 +3,11 @@
 //! (`promotion_rules.md`, plus no religion or politics). A slide that fails
 //! them leaves the draft through the admin editor's own save
 //! ([`batches::update_batch`]) before a sitting can post it, and its event is
-//! marked not promotable. Every audit is logged to `draft-audits.jsonl` in the
-//! carousel state folder, so what left which draft, and why, can be read back.
+//! marked not promotable. A slide whose place or start time is still to be
+//! announced ([`details::pending_detail`]) leaves too, whatever the agent says,
+//! but its event stays promotable for when the club names them. Every audit is
+//! logged to `draft-audits.jsonl` in the carousel state folder, so what left
+//! which draft, and why, can be read back.
 
 use std::collections::HashMap;
 use std::io::Write as _;
@@ -19,9 +22,11 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::curation::promotion_rules;
+use super::details;
 use super::drafts::Candidate;
 use super::job_error;
 use crate::api::events::model::Event;
+use crate::api::events::store;
 use crate::api::routes::instagram_publishing::batches::{
     self, DraftUpdate, STATUS_READY_FOR_REVIEW,
 };
@@ -57,10 +62,24 @@ pub struct Slide {
     pub description: Option<String>,
     pub location: Option<String>,
     pub price: Value,
+    /// Why its place or start time is still to be announced, if it is: the
+    /// slide leaves the draft whatever the agent says.
+    pub pending: Option<&'static str>,
 }
 
-impl From<&Event> for Slide {
-    fn from(event: &Event) -> Self {
+impl Slide {
+    /// A draft's slide, its start time read in the school's `zone` as the
+    /// slide prints it (the event's first occurrence).
+    fn from_event(event: &Event, zone: &str) -> Self {
+        let pending = event.occurrences.first().and_then(|occurrence| {
+            details::pending_detail(
+                &event.title,
+                event.description.as_deref(),
+                event.location.as_deref(),
+                occurrence.dtstart_utc,
+                zone,
+            )
+        });
         Self {
             id: event.id,
             title: event.title.clone(),
@@ -69,6 +88,7 @@ impl From<&Event> for Slide {
             description: event.description.clone(),
             location: event.location.clone(),
             price: event.price.map_or(Value::Null, Value::from),
+            pending,
         }
     }
 }
@@ -83,6 +103,7 @@ impl From<&Candidate> for Slide {
             description: event.description.clone(),
             location: event.location.clone(),
             price: event.price.clone().unwrap_or(Value::Null),
+            pending: event.pending_detail(),
         }
     }
 }
@@ -97,6 +118,7 @@ impl Slide {
             "description": self.description,
             "location": self.location,
             "price": self.price,
+            "pending_detail": self.pending,
         })
     }
 }
@@ -122,6 +144,21 @@ impl Judgement {
             .iter()
             .filter(|verdict| !verdict.promotable)
             .collect()
+    }
+
+    /// Code has the last word on details still to be announced: such a slide
+    /// fails, with that reason, whatever the agent said.
+    fn fail_pending(&mut self, slides: &[Slide]) {
+        for verdict in &mut self.verdicts {
+            let pending = slides
+                .iter()
+                .find(|slide| slide.id == verdict.event_id)
+                .and_then(|slide| slide.pending);
+            if let Some(pending) = pending {
+                verdict.promotable = false;
+                verdict.reason = pending.to_owned();
+            }
+        }
     }
 }
 
@@ -194,8 +231,9 @@ pub async fn judge(school: &str, cover_body: &str, slides: &[Slide]) -> Result<J
         },
     )
     .await?;
-    let judgement: Judgement = serde_json::from_value(Value::Object(answer))?;
+    let mut judgement: Judgement = serde_json::from_value(Value::Object(answer))?;
     check_verdicts(&judgement, slides)?;
+    judgement.fail_pending(slides);
     Ok(judgement)
 }
 
@@ -229,11 +267,14 @@ pub async fn audit_draft(db: &PgPool, batch_id: Uuid) -> Result<()> {
     if batch.row.status != STATUS_READY_FOR_REVIEW {
         return Ok(());
     }
+    let zone = store::school_timezone(db, Some(&batch.row.school))
+        .await
+        .map_err(job_error)?;
     let slides: Vec<Slide> = batch
         .items
         .iter()
         .filter_map(|item| item.event.as_ref())
-        .map(Slide::from)
+        .map(|event| Slide::from_event(event, &zone))
         .collect();
     if slides.is_empty() {
         return Ok(());
@@ -285,7 +326,16 @@ async fn remove_failing(
     )
     .await
     .map_err(job_error)?;
-    let ids: Vec<i32> = failing_ids.iter().map(|id| *id as i32).collect();
+    // An event that only waits for its place or time is not judged unpromotable.
+    let ids: Vec<i32> = failing
+        .iter()
+        .filter(|verdict| {
+            slides
+                .iter()
+                .any(|slide| slide.id == verdict.event_id && slide.pending.is_none())
+        })
+        .map(|verdict| verdict.event_id as i32)
+        .collect();
     sqlx::query("UPDATE public.events SET promotable = false WHERE id = ANY($1)")
         .bind(&ids)
         .execute(db)
@@ -339,6 +389,7 @@ mod tests {
             description: None,
             location: None,
             price: Value::Null,
+            pending: None,
         }
     }
 
@@ -379,6 +430,20 @@ mod tests {
                 .collect::<Vec<_>>(),
             [2]
         );
+    }
+
+    #[test]
+    fn a_slide_still_waiting_for_its_place_or_time_fails_whatever_the_agent_says() {
+        let mut slides = [slide(1), slide(2)];
+        slides[1].pending = Some("location TBD");
+        let mut judgement = judgement(&[(1, true), (2, true)], "");
+        judgement.fail_pending(&slides);
+        let failing = judgement.failing();
+        assert_eq!(failing.len(), 1);
+        assert_eq!(failing[0].event_id, 2);
+        assert_eq!(failing[0].reason, "location TBD");
+        assert_eq!(slides[1].to_json()["pending_detail"], "location TBD");
+        assert_eq!(slides[0].to_json()["pending_detail"], Value::Null);
     }
 
     #[test]

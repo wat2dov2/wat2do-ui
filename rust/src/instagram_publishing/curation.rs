@@ -67,7 +67,7 @@ pub fn answer_schema() -> Value {
                         "event_id": {"type": "integer"},
                         "sticker_labels": {
                             "type": "array",
-                            "minItems": 1,
+                            "minItems": control.minimum_stickers_per_event,
                             "maxItems": control.maximum_stickers_per_event,
                             "items": {"type": "string"},
                         },
@@ -124,7 +124,10 @@ pub async fn curate_school(db: &PgPool, packet: &Packet) -> Result<Outcome> {
         .open
         .as_ref()
         .context("the school already has a draft today")?;
-    let save = async |answer: &Map<String, Value>| save_answer(db, packet, answer).await;
+    let language = school_language(db, packet).await?;
+    let save = async |answer: &Map<String, Value>| {
+        save_answer(db, packet, language.as_str(), answer).await
+    };
     if open.events.is_empty() {
         let empty = json!({"picks": [], "cover_body": "", "caption_intro": null});
         return save(empty.as_object().expect("an object")).await;
@@ -133,7 +136,7 @@ pub async fn curate_school(db: &PgPool, packet: &Packet) -> Result<Outcome> {
         .prefix(WORKDIR_PREFIX)
         .tempdir()
         .context("could not make the curation folder")?;
-    write_packet(db, workdir.path(), packet).await?;
+    write_packet(workdir.path(), packet, language.clone()).await?;
     let ask = async |prompt: &str| run(prompt, workdir.path(), claude::claude_environment()).await;
     let outcome = answer_with_retries(ask, save).await?;
     if outcome == Outcome::Saved {
@@ -190,8 +193,13 @@ fn refused(error: &anyhow::Error) -> bool {
 }
 
 /// `_save`: the answer as a draft; a blank caption intro keeps the packet's.
-async fn save_answer(db: &PgPool, packet: &Packet, answer: &Map<String, Value>) -> Result<Outcome> {
-    let selection = selection_from_answer(packet, answer)?;
+async fn save_answer(
+    db: &PgPool,
+    packet: &Packet,
+    language: Option<&str>,
+    answer: &Map<String, Value>,
+) -> Result<Outcome> {
+    let selection = selection_from_answer(packet, language, answer)?;
     let (outcome, _) = save_review_draft(db, &selection).await?;
     tracing::info!(
         "Instagram draft {}: {} ({})",
@@ -205,8 +213,12 @@ async fn save_answer(db: &PgPool, packet: &Packet, answer: &Map<String, Value>) 
     Ok(outcome)
 }
 
+/// The answer as a selection, each pick short of `minimum_stickers_per_event`
+/// first topped up from its event's own facts (see [`topped_up`]); `language`
+/// is the school's, whose sticker list the agent was shown.
 pub(super) fn selection_from_answer(
     packet: &Packet,
+    language: Option<&str>,
     answer: &Map<String, Value>,
 ) -> Result<DraftSelection> {
     let open = packet.open.as_ref().context("no candidates")?;
@@ -219,13 +231,17 @@ pub(super) fn selection_from_answer(
         .get("cover_body")
         .and_then(Value::as_str)
         .ok_or_else(|| anyhow!("the answer has no cover_body"))?;
-    let picks = answer.get("picks").unwrap_or(&Value::Null);
+    let picks = topped_up(
+        &open.events,
+        sticker_labels(language),
+        answer.get("picks").unwrap_or(&Value::Null),
+    );
     let selection = DraftSelection::new(
         &packet.account_key,
         packet.window_end,
         python_strip(caption_intro),
         python_strip(cover_body),
-        picks,
+        &picks,
     )?;
     if let Some(post) = overfeatured_post(&open.events, &selection) {
         return Err(Refused(format!(
@@ -253,6 +269,116 @@ fn sticker_labels(language: Option<&str>) -> &'static [String] {
         .and_then(|language| labels.get(language))
         .or_else(|| labels.get("en"))
         .map_or(&[], Vec::as_slice)
+}
+
+/// A sticker label an event's own facts prove, in English and French, with
+/// the labels that already say the same thing.
+struct FactLabel {
+    en: &'static str,
+    fr: &'static str,
+    alike: &'static [&'static str],
+}
+
+impl FactLabel {
+    /// Whether `label` already says this.
+    fn said_by(&self, label: &str) -> bool {
+        label == self.en || label == self.fr || self.alike.contains(&label)
+    }
+}
+
+const FREE_ENTRY: FactLabel = FactLabel {
+    en: "Free Entry",
+    fr: "Entrée Gratuite",
+    alike: &["Paid Entry", "Entrée Payante"],
+};
+const PAID_ENTRY: FactLabel = FactLabel {
+    en: "Paid Entry",
+    fr: "Entrée Payante",
+    alike: &["Free Entry", "Entrée Gratuite"],
+};
+const FREE_PIZZA: FactLabel = FactLabel {
+    en: "Free Pizza",
+    fr: "Pizza Gratuite",
+    alike: &["Free Food", "Nourriture Gratuite"],
+};
+const FREE_FOOD: FactLabel = FactLabel {
+    en: "Free Food",
+    fr: "Nourriture Gratuite",
+    alike: &[
+        "Free Pizza",
+        "Pizza Gratuite",
+        "Free Snacks",
+        "Collations Gratuites",
+    ],
+};
+const REGISTRATION: FactLabel = FactLabel {
+    en: "Reg. Required",
+    fr: "Inscription Requise",
+    alike: &["Limited Spots", "Places Limitées"],
+};
+
+/// The labels `event`'s price, food and registration prove, in that order.
+fn fact_labels(event: &Candidate) -> Vec<&'static FactLabel> {
+    let mut labels = Vec::new();
+    match event.price.as_ref().and_then(Value::as_f64) {
+        Some(price) if price <= 0.0 => labels.push(&FREE_ENTRY),
+        Some(_) => labels.push(&PAID_ENTRY),
+        None => {}
+    }
+    let food: Vec<String> = match &event.food {
+        Some(Value::Array(items)) => items
+            .iter()
+            .filter_map(Value::as_str)
+            .map(crate::text::casefold)
+            .collect(),
+        Some(Value::String(item)) => vec![crate::text::casefold(item)],
+        _ => Vec::new(),
+    };
+    if food.iter().any(|item| item.contains("pizza")) {
+        labels.push(&FREE_PIZZA);
+    } else if !food.is_empty() {
+        labels.push(&FREE_FOOD);
+    }
+    if event.registration {
+        labels.push(&REGISTRATION);
+    }
+    labels
+}
+
+/// The picks, each one short of `minimum_stickers_per_event` topped up with
+/// labels its event's facts prove (from `stickers`, the school's list) that
+/// say something its labels do not; a pick still short is left to be refused.
+fn topped_up(events: &[Candidate], stickers: &[String], picks: &Value) -> Value {
+    let minimum = INSTAGRAM_PUBLISHING.minimum_stickers_per_event;
+    let Value::Array(picks) = picks else {
+        return picks.clone();
+    };
+    let topped = picks.iter().map(|pick| {
+        let mut pick = pick.clone();
+        let event_id = pick.get("event_id").and_then(Value::as_i64);
+        let event = events.iter().find(|event| Some(event.id) == event_id);
+        let (Some(event), Some(Value::Array(labels))) = (event, pick.get_mut("sticker_labels"))
+        else {
+            return pick;
+        };
+        for fact in fact_labels(event) {
+            if labels.len() >= minimum {
+                break;
+            }
+            let said = labels
+                .iter()
+                .filter_map(Value::as_str)
+                .any(|label| fact.said_by(label));
+            let listed = [fact.en, fact.fr]
+                .into_iter()
+                .find(|name| stickers.iter().any(|listed| listed == name));
+            if let (false, Some(label)) = (said, listed) {
+                labels.push(label.into());
+            }
+        }
+        pick
+    });
+    Value::Array(topped.collect())
 }
 
 /// A picked sticker label outside every language's fixed list.
@@ -285,8 +411,22 @@ fn overfeatured_post<'a>(events: &'a [Candidate], selection: &DraftSelection) ->
         .map(|(post, _)| post)
 }
 
+/// The school's language as `packet.json` gives it: its own (null when it has
+/// none), or `en` for a school that is not registered.
+async fn school_language(db: &PgPool, packet: &Packet) -> Result<Value> {
+    let language: Option<Option<String>> =
+        sqlx::query_scalar("SELECT language FROM public.schools WHERE slug = $1 LIMIT 1")
+            .bind(crate::schools::normalize_slug(&packet.account_key))
+            .fetch_optional(db)
+            .await?;
+    Ok(match language {
+        Some(language) => language.map_or(Value::Null, Value::from),
+        None => "en".into(),
+    })
+}
+
 /// `_write_packet`: `packet.json` and the posters, for the agent to read.
-async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()> {
+async fn write_packet(workdir: &Path, packet: &Packet, language: Value) -> Result<()> {
     let open = packet.open.as_ref().context("no candidates")?;
     let posters = workdir.join("posters");
     std::fs::create_dir(&posters)?;
@@ -295,15 +435,6 @@ async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()
         poster_files
             .push(download_poster(event.source_image_url.as_deref(), &posters, event.id).await);
     }
-    let language: Option<Option<String>> =
-        sqlx::query_scalar("SELECT language FROM public.schools WHERE slug = $1 LIMIT 1")
-            .bind(crate::schools::normalize_slug(&packet.account_key))
-            .fetch_optional(db)
-            .await?;
-    let language = match language {
-        Some(language) => language.map_or(Value::Null, Value::from),
-        None => "en".into(),
-    };
     std::fs::write(
         workdir.join("packet.json"),
         packet_document(packet, language, &poster_files)?,
@@ -463,11 +594,13 @@ mod tests {
     #[test]
     fn a_blank_intro_keeps_the_packets_and_copy_is_trimmed() {
         // test_answer_is_saved
-        let selection = selection_from_answer(&packet(), &answer(&["Free Pizza"])).unwrap();
+        let selection =
+            selection_from_answer(&packet(), None, &answer(&["Free Pizza", "Games"])).unwrap();
         assert_eq!(selection.picks[0].event_id, 17);
         assert_eq!(selection.caption_intro, "Fresh events at uwaterloo");
         assert_eq!(selection.cover_body, "Pizza Night with free slices.");
-        let refused = selection_from_answer(&packet(), &answer(&["free pizza"])).unwrap_err();
+        let refused =
+            selection_from_answer(&packet(), None, &answer(&["free pizza", "Games"])).unwrap_err();
         assert!(refused.downcast_ref::<SelectionError>().is_some());
     }
 
@@ -487,7 +620,7 @@ mod tests {
         }
         let answer_for = |ids: Vec<i64>| {
             json!({
-                "picks": ids.iter().map(|id| json!({"event_id": id, "sticker_labels": ["Free Pizza"]})).collect::<Vec<_>>(),
+                "picks": ids.iter().map(|id| json!({"event_id": id, "sticker_labels": ["Free Pizza", "Games"]})).collect::<Vec<_>>(),
                 "cover_body": "A week of rallies",
                 "caption_intro": "",
             })
@@ -496,9 +629,10 @@ mod tests {
             .clone()
         };
         let within: Vec<i64> = (1..=limit as i64).chain([limit as i64 + 2]).collect();
-        assert!(selection_from_answer(&packet, &answer_for(within)).is_ok());
-        let over = selection_from_answer(&packet, &answer_for((1..=limit as i64 + 1).collect()))
-            .unwrap_err();
+        assert!(selection_from_answer(&packet, None, &answer_for(within)).is_ok());
+        let over =
+            selection_from_answer(&packet, None, &answer_for((1..=limit as i64 + 1).collect()))
+                .unwrap_err();
         let refusal = over.downcast_ref::<Refused>().unwrap();
         assert!(refusal.0.contains("https://www.instagram.com/p/WEEK/"));
         // The agent is shown it and asked again.
@@ -507,7 +641,7 @@ mod tests {
 
     /// Saves the way `save_answer` checks an answer, without a database.
     async fn check(answer: &Map<String, Value>) -> Result<Outcome> {
-        selection_from_answer(&packet(), answer)?;
+        selection_from_answer(&packet(), None, answer)?;
         Ok(Outcome::Saved)
     }
 
@@ -515,7 +649,10 @@ mod tests {
     async fn a_refused_answer_is_asked_again_with_the_reason() {
         // test_rejected_answer_is_retried_with_the_reason
         let prompts = Mutex::new(Vec::new());
-        let answers = Mutex::new(vec![answer(&["Free Pizza"]), answer(&["free pizza"])]);
+        let answers = Mutex::new(vec![
+            answer(&["Free Pizza", "Games"]),
+            answer(&["free pizza", "Games"]),
+        ]);
         let ask = async |prompt: &str| {
             prompts.lock().unwrap().push(prompt.to_owned());
             Ok(answers.lock().unwrap().pop().unwrap())
@@ -538,7 +675,7 @@ mod tests {
     async fn repeated_refusals_fail_without_saving() {
         // test_repeated_rejection_fails_without_saving
         let saved = Mutex::new(0);
-        let ask = async |_: &str| Ok(answer(&["free pizza"]));
+        let ask = async |_: &str| Ok(answer(&["free pizza", "Games"]));
         let save = async |answer: &Map<String, Value>| {
             let outcome = check(answer).await?;
             *saved.lock().unwrap() += 1;
@@ -609,10 +746,12 @@ mod tests {
     #[test]
     fn stickers_come_only_from_the_fixed_list() {
         assert!(
-            selection_from_answer(&packet(), &answer(&["Free Pizza", "Reg. Required"])).is_ok()
+            selection_from_answer(&packet(), None, &answer(&["Free Pizza", "Reg. Required"]))
+                .is_ok()
         );
         let refused =
-            selection_from_answer(&packet(), &answer(&["Free Pizza", "Cozy Vibes"])).unwrap_err();
+            selection_from_answer(&packet(), None, &answer(&["Free Pizza", "Cozy Vibes"]))
+                .unwrap_err();
         assert!(refused.to_string().contains("\"Cozy Vibes\" is not in"));
         assert_eq!(sticker_labels(None)[0], "Free Entry");
         for labels in INSTAGRAM_PUBLISHING.sticker_labels.values() {
@@ -621,6 +760,75 @@ mod tests {
                     .as_deref()
                     .ok(),
                 Some(labels.as_slice())
+            );
+        }
+    }
+
+    #[test]
+    fn a_lone_sticker_is_topped_up_from_the_events_facts() {
+        let mut packet = packet();
+        let mut event = candidate(17);
+        event.price = Some(json!(0));
+        event.food = Some(json!(["Pizza", "pop"]));
+        event.registration = true;
+        packet.open.as_mut().unwrap().events = vec![event];
+        // The price says something new; one more label reaches the minimum.
+        let selection = selection_from_answer(&packet, None, &answer(&["Games"])).unwrap();
+        assert_eq!(selection.picks[0].sticker_labels, ["Games", "Free Entry"]);
+        // A label already saying the price or the food is never repeated.
+        let selection = selection_from_answer(&packet, None, &answer(&["Paid Entry"])).unwrap();
+        assert_eq!(
+            selection.picks[0].sticker_labels,
+            ["Paid Entry", "Free Pizza"]
+        );
+        let selection = selection_from_answer(&packet, None, &answer(&["Free Food"])).unwrap();
+        assert_eq!(
+            selection.picks[0].sticker_labels,
+            ["Free Food", "Free Entry"]
+        );
+        // In the school's language.
+        let selection = selection_from_answer(&packet, Some("fr"), &answer(&["Jeux"])).unwrap();
+        assert_eq!(
+            selection.picks[0].sticker_labels,
+            ["Jeux", "Entrée Gratuite"]
+        );
+        // Labels already at the minimum are left as the agent chose them.
+        let selection =
+            selection_from_answer(&packet, None, &answer(&["Games", "Prizes"])).unwrap();
+        assert_eq!(selection.picks[0].sticker_labels, ["Games", "Prizes"]);
+    }
+
+    #[test]
+    fn a_lone_sticker_the_facts_cannot_top_up_is_refused() {
+        let mut packet = packet();
+        packet.open.as_mut().unwrap().events = vec![candidate(17)];
+        let refused = selection_from_answer(&packet, None, &answer(&["Games"])).unwrap_err();
+        assert!(refused.downcast_ref::<SelectionError>().is_some());
+        assert!(
+            refused
+                .to_string()
+                .contains("List should have at least 2 items after validation, not 1")
+        );
+    }
+
+    #[test]
+    fn every_fact_label_is_on_its_languages_list() {
+        for fact in [
+            &FREE_ENTRY,
+            &PAID_ENTRY,
+            &FREE_PIZZA,
+            &FREE_FOOD,
+            &REGISTRATION,
+        ] {
+            assert!(
+                sticker_labels(Some("en"))
+                    .iter()
+                    .any(|label| label == fact.en)
+            );
+            assert!(
+                sticker_labels(Some("fr"))
+                    .iter()
+                    .any(|label| label == fact.fr)
             );
         }
     }
@@ -641,6 +849,10 @@ mod tests {
         assert_eq!(
             schema["properties"]["picks"]["items"]["properties"]["sticker_labels"]["maxItems"],
             4
+        );
+        assert_eq!(
+            schema["properties"]["picks"]["items"]["properties"]["sticker_labels"]["minItems"],
+            2
         );
     }
 

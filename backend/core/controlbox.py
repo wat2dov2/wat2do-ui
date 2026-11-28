@@ -583,6 +583,9 @@ class UploadsControl(_ControlModel):
 
 class InstagramPublishingControl(_ControlModel):
     cover_body_character_limit: int = Field(gt=0, le=280)
+    # A curated slide never carries a single sticker (Tony, 2026-11-27); curation tops a
+    # pick up from its event's price, food and registration before refusing it.
+    minimum_stickers_per_event: int = Field(ge=1, le=4)
     maximum_stickers_per_event: int = Field(ge=1, le=4)
     sticker_line_character_limit: int = Field(ge=8, le=12)
     sticker_maximum_lines: int = Field(ge=1, le=2)
@@ -669,6 +672,8 @@ class InstagramPublishingControl(_ControlModel):
     def validate_token_windows(self) -> "InstagramPublishingControl":
         if self.token_refresh_lead_days >= self.token_lifetime_days:
             raise ValueError("instagram token refresh lead must be shorter than token lifetime")
+        if self.minimum_stickers_per_event > self.maximum_stickers_per_event:
+            raise ValueError("instagram minimum stickers per event must not exceed the maximum")
         return self
 
 

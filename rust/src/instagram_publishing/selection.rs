@@ -248,13 +248,18 @@ fn pick(problems: &mut Problems, index: usize, value: &Value) -> Option<Carousel
                     }
                 })
                 .collect();
+            let minimum = INSTAGRAM_PUBLISHING.minimum_stickers_per_event;
             let maximum = INSTAGRAM_PUBLISHING.maximum_stickers_per_event;
             if labels.len() != items.len() {
                 None
-            } else if labels.is_empty() {
+            } else if labels.len() < minimum {
                 problems.add(
                     &location,
-                    "List should have at least 1 item after validation, not 0",
+                    format!(
+                        "List should have at least {minimum} item{} after validation, not {}",
+                        plural(minimum),
+                        labels.len()
+                    ),
                 );
                 None
             } else if labels.len() > maximum {
@@ -525,13 +530,30 @@ mod tests {
             window_end(),
             "",
             &"x".repeat(121),
-            &json!([{"event_id": 17, "sticker_labels": ["free pizza"]}]),
+            &json!([{"event_id": 17, "sticker_labels": ["free pizza", "Games"]}]),
         )
         .unwrap_err();
         assert_eq!(
             refused.to_string(),
             "2 validation errors for DraftSelection\ncover_body\n  String should have at most 120 characters\n\
              picks.0.sticker_labels\n  Value error, Sticker words must start with capital letters"
+        );
+    }
+
+    #[test]
+    fn a_lone_sticker_is_refused() {
+        let refused = DraftSelection::new(
+            "uwaterloo",
+            window_end(),
+            "",
+            "Campus picks",
+            &json!([{"event_id": 17, "sticker_labels": ["Games"]}]),
+        )
+        .unwrap_err();
+        assert_eq!(
+            refused.to_string(),
+            "1 validation error for DraftSelection\npicks.0.sticker_labels\n  \
+             List should have at least 2 items after validation, not 1"
         );
     }
 
@@ -560,7 +582,7 @@ mod tests {
         let draft = DraftSelection::from_json(
             r#"{"account_key": "uwaterloo", "window_end": "2026-09-28T14:00:00Z",
                 "caption_intro": "Today's plans", "cover_body": "Campus picks",
-                "picks": [{"event_id": 17, "sticker_labels": ["Meet Friends"]}]}"#,
+                "picks": [{"event_id": 17, "sticker_labels": ["Meet Friends", "Games"]}]}"#,
         )
         .unwrap();
         assert_eq!(draft.picks[0].event_id, 17);

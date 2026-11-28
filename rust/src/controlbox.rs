@@ -324,6 +324,8 @@ pub struct InstagramPublishing {
     pub token_lifetime_days: i64,
     pub token_refresh_lead_days: i64,
     pub cover_body_character_limit: usize,
+    /// A curated slide carries at least this many stickers.
+    pub minimum_stickers_per_event: usize,
     pub maximum_stickers_per_event: usize,
     pub sticker_line_character_limit: usize,
     pub sticker_maximum_lines: usize,

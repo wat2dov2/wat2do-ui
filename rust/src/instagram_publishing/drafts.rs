@@ -14,6 +14,7 @@ use serde_json::{Map, Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use super::details;
 use super::selection::{DraftSelection, validate_picks};
 use super::{Refused, error_message, isoformat, job_error, postgres_json_datetime};
 use crate::api::events::store;
@@ -132,6 +133,18 @@ impl Candidate {
             self.source_url.clone().map_or(Value::Null, Value::from),
         )])
         .collect()
+    }
+
+    /// Why its place or start time is still to be announced, if it is: such
+    /// an event is never a candidate, even one its club asked us to feature.
+    pub fn pending_detail(&self) -> Option<&'static str> {
+        details::pending_detail(
+            &self.title,
+            self.description.as_deref(),
+            self.location.as_deref(),
+            self.dtstart_utc,
+            &self.tz,
+        )
     }
 
     /// Whether a slide could show it: a known category and a poster.
@@ -356,7 +369,8 @@ async fn published_ids(db: &PgPool, account_key: &str, ids: &[i64]) -> Result<Ha
 
 /// `_draft_candidates`: the school's events added in the window, or asked for
 /// in our DMs however long ago, that the account never posted and that have
-/// a postable occurrence; soonest first, the newer event first on a tie.
+/// a postable occurrence with a known place and start time; soonest first,
+/// the newer event first on a tie.
 pub async fn draft_candidates(
     db: &PgPool,
     account_key: &str,
@@ -408,6 +422,7 @@ pub async fn draft_candidates(
             let occurrence = first.get(&event.id)?;
             Some(with_occurrence(event, occurrence, &tz))
         })
+        .filter(|event| event.pending_detail().is_none())
         .collect();
     candidates.sort_by_key(|event| (event.dtstart_utc, -event.id));
     Ok(candidates)

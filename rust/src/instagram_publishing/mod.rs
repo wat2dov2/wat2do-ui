@@ -12,6 +12,7 @@
 
 pub mod audit;
 pub mod curation;
+pub mod details;
 pub mod drafts;
 pub mod meta;
 pub mod publishing;

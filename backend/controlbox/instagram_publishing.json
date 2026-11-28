@@ -15,6 +15,7 @@
   "token_lifetime_days": 60,
   "token_refresh_lead_days": 14,
   "cover_body_character_limit": 120,
+  "minimum_stickers_per_event": 2,
   "maximum_stickers_per_event": 4,
   "sticker_line_character_limit": 12,
   "sticker_maximum_lines": 2,
