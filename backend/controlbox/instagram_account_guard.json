@@ -13,6 +13,6 @@
   ],
   "new_account_days": 120,
   "new_account_factor": 0.5,
-  "account_daily_following_reads": {},
+  "account_daily_following_reads": {"wat2do.sfu": 0, "wat2do.uwindsor": 0},
   "size_refresh_hours": 6
 }
