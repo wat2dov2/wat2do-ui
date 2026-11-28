@@ -112,6 +112,15 @@ fn each_account_reads_at_its_own_pace() {
     following(&queue, "club.three", None);
     host.advance(3_600.0 / control().following_requests_per_hour as f64);
     host.advance(control().following_list_delay_max_seconds);
+    // Brave's pace has passed; the account guard's hourly share spaces it further.
+    assert!(queue.claim_lightpanda(MUN, false, true).unwrap().is_none());
+    let (_, hourly) = super::account_guard::allowance(
+        &crate::controlbox::INSTAGRAM_ACCOUNT_GUARD,
+        MUN,
+        None,
+        host_time(&host),
+    );
+    host.advance(3_600.0 / hourly);
     assert!(queue.claim_lightpanda(MUN, false, true).unwrap().is_some());
 }
 
@@ -119,6 +128,7 @@ fn read(account: &str, held: bool) -> LaneRead {
     LaneRead {
         account: account.to_owned(),
         held,
+        guard: None,
     }
 }
 

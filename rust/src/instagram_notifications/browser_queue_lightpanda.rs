@@ -11,12 +11,15 @@
 //! Each account reads at most `following_requests_per_hour` Following pages an hour,
 //! with Brave's pauses before a list's next page and a new list, and a 429 or refusal
 //! on one account's read holds that account alone (`lightpanda_account:<account>`).
+//! The account guard (`browser_queue_guard.rs`) has the last word on top: its hours-long
+//! holds, its day's and hour's shares and its breaker.
 
 use std::collections::HashSet;
 
 use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::{Value, json};
 
+use super::account_guard::{self, Gate, Outcome};
 use super::{
     AVAILABLE_ACCOUNT_SQL, BrowserJob, BrowserJobQueue, FOLLOWING_PAUSED, Finish,
     expire_pending_digests, following_pauses, select_job, select_optional_job, storage,
@@ -160,10 +163,11 @@ fn lane_fresh(db: &Connection, now: f64) -> BrowserResult<bool> {
 /// How a read in the lane ended, recorded with its finish: it leaves the lane's
 /// running jobs, a Following read draws its account's next pauses, and `held` holds
 /// the account, while a read that went well after a quiet recovery window ends the
-/// escalation.
+/// escalation. `guard` is what the account guard takes in.
 pub struct LaneRead {
     pub account: String,
     pub held: bool,
+    pub guard: Option<Outcome>,
 }
 
 impl LaneRead {
@@ -183,7 +187,11 @@ impl LaneRead {
         }) {
             pace.backoff = 0.0;
         }
-        pace.write(db, &self.account)
+        pace.write(db, &self.account)?;
+        match &self.guard {
+            Some(outcome) => account_guard::record(db, &self.account, outcome, now),
+            None => Ok(()),
+        }
     }
 }
 
@@ -258,8 +266,8 @@ impl BrowserJobQueue {
 
     /// Claim the next job `account`'s Lightpanda session may run: its oldest digest
     /// (with `digests`), else the oldest Following read once the account's pace allows
-    /// (with `following`). Never while the account is held; Brave's pause and holds are
-    /// Brave's own and never stop it.
+    /// (with `following`) once its pace and guard allow. Never while the account is held
+    /// or its breaker is open; Brave's pause and holds are Brave's own and never stop it.
     pub fn claim_lightpanda(
         &self,
         account: &str,
@@ -273,7 +281,7 @@ impl BrowserJobQueue {
             let now = self.host.time();
             self.immediate(|db| {
                 let mut pace = AccountPace::read(db, account, now)?;
-                if now < pace.held_until {
+                if now < pace.held_until || account_guard::tripped(db, account)? {
                     return Ok(None);
                 }
                 expire_pending_digests(db, now)?;
@@ -302,6 +310,9 @@ impl BrowserJobQueue {
                         &[],
                     )?
                     .filter(|job| pace.may_read(job, now));
+                    if row.is_some() && account_guard::gate(db, account, now)? != Gate::Open {
+                        row = None;
+                    }
                 }
                 let Some(row) = row else {
                     return Ok(None);
@@ -309,6 +320,7 @@ impl BrowserJobQueue {
                 if row.kind == "following" {
                     pace.reads.push(now);
                     pace.write(db, account)?;
+                    account_guard::count_read(db, account, now)?;
                 }
                 let mut running = match stored_setting(db, LANE_JOBS)? {
                     Value::Array(running) => running,

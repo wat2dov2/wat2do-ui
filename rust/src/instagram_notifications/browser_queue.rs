@@ -32,8 +32,12 @@ use crate::schools::validate_recipient_id;
 
 pub const WORKER_INSTALLATION_PAUSE: &str = "Browser worker installation in progress";
 
+/// A job whose account is neither excluded nor behind an open breaker
+/// (`account_guard:<account>`, see `browser_queue_guard.rs`).
 const AVAILABLE_ACCOUNT_SQL: &str = "account_username NOT IN (SELECT value FROM json_each(COALESCE(\
-(SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))";
+(SELECT value FROM settings WHERE key='excluded_accounts'),'[]'))) \
+AND account_username NOT IN (SELECT substr(key,15) FROM settings WHERE key LIKE 'account_guard:%' \
+AND json_extract(value,'$.tripped_at') IS NOT NULL)";
 
 // Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals,
 // "following" only Following list reads.
@@ -992,9 +996,11 @@ impl BrowserJobQueue {
     }
 
     /// Let `username` log in to Brave again after a person has checked it.
+    /// A person checked it, so its breaker closes too.
     pub fn resume_account_login(&self, username: &str) -> BrowserResult<()> {
         self.set_setting(&account_login_paused_key(username), Value::Null)?;
-        self.set_setting(&account_unfinished_key(username), Value::Null)
+        self.set_setting(&account_unfinished_key(username), Value::Null)?;
+        self.reset_guard(username)
     }
 
     /// After `username`'s password went out and its login failed with `error`, hold it
@@ -1017,6 +1023,8 @@ impl BrowserJobQueue {
             return Ok(false);
         }
         self.pause_account_login(username, &message)?;
+        // Held for a person: no automated traffic for it until then.
+        self.trip_guard(username, &format!("Brave login needs a person: {message}"))?;
         Ok(true)
     }
 
@@ -1057,7 +1065,7 @@ impl BrowserJobQueue {
                 let mut statement = db
                     .prepare(
                         "SELECT key,value FROM settings WHERE key LIKE 'account_login_paused:%' \
-                         OR key LIKE 'account_missing:%' ORDER BY key",
+                         OR key LIKE 'account_missing:%' OR key LIKE 'account_guard:%' ORDER BY key",
                     )
                     .map_err(storage)?;
                 let rows = statement
@@ -1067,7 +1075,14 @@ impl BrowserJobQueue {
             };
             for (key, raw) in rows {
                 let value = serde_json::from_str::<Value>(&raw).unwrap_or(Value::Null);
-                if let Some(account) = key.strip_prefix("account_login_paused:") {
+                if let Some(account) = key.strip_prefix("account_guard:") {
+                    if let Some(reason) = Guard::read(&db, account)?.tripped() {
+                        unavailable.insert(
+                            account.to_owned(),
+                            format!("breaker open until a person checks it: {reason}"),
+                        );
+                    }
+                } else if let Some(account) = key.strip_prefix("account_login_paused:") {
                     if let Value::String(reason) = value {
                         unavailable
                             .insert(account.to_owned(), format!("held for a person: {reason}"));
@@ -1450,6 +1465,9 @@ impl BrowserJobQueue {
                     let mut reads = recent_following_reads(db, now)?;
                     reads.push(json!(now));
                     write_setting(db, "following_reads", &Value::from(reads))?;
+                    if let Some(reader) = brave_reader(db)? {
+                        account_guard::count_read(db, &reader, now)?;
+                    }
                 }
                 if row.kind == "engagement" {
                     db.execute(
@@ -1640,6 +1658,7 @@ impl BrowserJobQueue {
                 delete_collected_following(db, now)?;
                 if lane.is_none() {
                     pace_following(db, now)?;
+                    guard_brave_read(db, result.as_ref(), error.as_deref(), now)?;
                 }
             }
             // The lane's reads pace and hold their own accounts, never Brave's.
@@ -1900,6 +1919,7 @@ impl BrowserJobQueue {
                 "readers": self.following_readers(self.host.time())?,
             },
             "lightpanda": lightpanda,
+            "account_guard": self.guard_status(None)?,
             "source": self.get_setting("source_status")?,
             "profile_queue": self.get_setting("profile_queue_status")?,
         }))
@@ -2235,7 +2255,51 @@ fn select_following(db: &Connection, now: f64) -> BrowserResult<Option<BrowserJo
         "following_next_list_at"
     };
     let ready_at = pyjson::number(&stored_setting(db, pause)?).unwrap_or(0.0);
-    Ok((now >= ready_at).then_some(job))
+    if now < ready_at {
+        return Ok(None);
+    }
+    // Guarded like any reader: the account Brave last read as, until a read shows
+    // another.
+    if let Some(reader) = brave_reader(db)?
+        && account_guard::gate(db, &reader, now)? != Gate::Open
+    {
+        return Ok(None);
+    }
+    Ok(Some(job))
+}
+
+/// The account Brave last read a Following list as.
+fn brave_reader(db: &Connection) -> BrowserResult<Option<String>> {
+    Ok(stored_setting(db, account_guard::BRAVE_READER)?
+        .as_str()
+        .map(str::to_owned))
+}
+
+/// After Brave's Following read: the account it read as (a page names it) takes the
+/// read's outcome in its guard, and is the one Brave's next read is guarded as.
+fn guard_brave_read(
+    db: &Connection,
+    result: Option<&Value>,
+    error: Option<&str>,
+    now: f64,
+) -> BrowserResult<()> {
+    let read_as = result
+        .and_then(|result| result.get("account_username"))
+        .and_then(Value::as_str);
+    if let Some(account) = read_as {
+        write_setting(db, account_guard::BRAVE_READER, &json!(account))?;
+    }
+    let Some(account) = read_as.map(str::to_owned).or(brave_reader(db)?) else {
+        return Ok(());
+    };
+    let outcome = match error {
+        Some(error) => Outcome::of_failure(error, false),
+        None => Some(Outcome::Read),
+    };
+    match outcome {
+        Some(outcome) => account_guard::record(db, &account, &outcome, now),
+        None => Ok(()),
+    }
 }
 
 /// When the Following reads claimed within the hour before `now` were claimed.
@@ -2273,7 +2337,9 @@ fn account_logins_if_allowed(
     username: &str,
     now: f64,
 ) -> BrowserResult<Option<Vec<Value>>> {
-    if stored_setting(db, &account_login_paused_key(username))?.is_string() {
+    if stored_setting(db, &account_login_paused_key(username))?.is_string()
+        || account_guard::tripped(db, username)?
+    {
         return Ok(None);
     }
     let attempts = recent_timestamps(&stored_setting(db, "account_login_attempts")?, now);
@@ -2408,6 +2474,10 @@ fn rows_as_objects(db: &Connection, sql: &str) -> BrowserResult<Vec<Value>> {
         .map_err(storage)?;
     Ok(rows)
 }
+
+#[path = "browser_queue_guard.rs"]
+mod account_guard;
+pub use account_guard::{Gate, Guard, Outcome, Size, allowance};
 
 #[path = "browser_queue_lightpanda.rs"]
 mod lightpanda;

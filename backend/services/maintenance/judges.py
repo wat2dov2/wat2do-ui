@@ -148,6 +148,23 @@ def brave(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     )
 
 
+def following_guard(reading: dict[str, Any], control: MaintenanceControl) -> Check:
+    """No account keeps reading Following lists while Instagram refuses it: refusals per
+    account per hour at the threshold are red. An open breaker waits for a person (to
+    clear the checkpoint, then `wat2do-browser account-guard --account <a> --reset`),
+    so it is yellow and never starts the agent."""
+    red = [
+        f"{account}: {count} refused Following reads in the last hour"
+        for account, count in sorted(reading["refusals_last_hour"].items())
+        if count >= control.following_errors_per_account_hour
+    ]
+    yellow = [
+        f"{account}'s breaker is open (no automated traffic): {reason}"
+        for account, reason in sorted(reading["tripped"].items())
+    ]
+    return verdict("following_guard", red, yellow)
+
+
 def ingestion_processor(reading: dict[str, Any], _control: MaintenanceControl) -> Check:
     """The always-on processor: alive, and not turned away by Claude's usage limit."""
     red: list[str] = []
@@ -399,6 +416,7 @@ def claude_logins(reading: dict[str, str], _control: MaintenanceControl) -> Chec
 JUDGES = {
     "ingestion": ingestion,
     "brave": brave,
+    "following_guard": following_guard,
     "ingestion_processor": ingestion_processor,
     "recorder": recorder,
     "workflow": workflow,

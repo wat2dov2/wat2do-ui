@@ -2,7 +2,9 @@
 //!
 //! The JSON is embedded at compile time, so a binary runs with the settings of
 //! the checkout it was built from; `core.controlbox` in Python validates the
-//! complete files, and these structs read only the fields Rust needs.
+//! complete files, and these structs read only the fields Rust needs. The one
+//! exception is `instagram_account_guard.json`, which the browser worker reads again
+//! whenever the file changes ([`instagram_account_guard`]).
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -442,6 +444,45 @@ pub struct InstagramLightpanda {
     pub shadow_jobs_per_account: usize,
     pub shadow_digest_pause_seconds: f64,
     pub shadow_account_pause_seconds: f64,
+}
+
+/// `controlbox/instagram_account_guard.json`: how much each school account may read
+/// Following lists, how long a refusal holds it and when its breaker opens
+/// (`instagram_notifications::account_guard`).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramAccountGuard {
+    /// A refusal holds the account's Following reads this long, each refusal in a row
+    /// `refusal_backoff_factor` times longer, at most `refusal_max_hold_hours`.
+    pub refusal_hold_hours: f64,
+    pub refusal_backoff_factor: f64,
+    pub refusal_max_hold_hours: f64,
+    /// A read that goes well this long after the last refusal ends the run of refusals.
+    pub refusal_streak_reset_hours: f64,
+    /// This many refusals in a row open the account's breaker.
+    pub breaker_refusal_streak: u32,
+    /// Following reads a day and an hour for a large, established account, scaled down
+    /// by `follower_tiers` and `new_account_factor`, never below the minimum a day.
+    pub daily_following_reads: f64,
+    pub hourly_following_reads: f64,
+    pub minimum_daily_following_reads: f64,
+    /// The first tier whose `below` exceeds the account's followers scales its reads.
+    pub follower_tiers: Vec<FollowerTier>,
+    /// An account first seen less than this long ago reads this share.
+    pub new_account_days: f64,
+    pub new_account_factor: f64,
+    /// A day's Following reads for named accounts, in place of the scaled number.
+    pub account_daily_following_reads: HashMap<String, f64>,
+    /// How often the worker reads the accounts' follower counts again.
+    pub size_refresh_hours: f64,
+}
+
+/// One step of `InstagramAccountGuard::follower_tiers`.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FollowerTier {
+    pub below: u64,
+    pub factor: f64,
 }
 
 /// The campus seasons, map views and map geocoding in `controlbox/event_discovery.json`.
@@ -931,11 +972,91 @@ pub static INTERACTION_INGESTION: LazyLock<InteractionIngestion> = LazyLock::new
     )
 });
 
+/// The guard controls as built, read again from the checkout this binary was built
+/// from whenever that file changes (see [`instagram_account_guard`]).
+pub static INSTAGRAM_ACCOUNT_GUARD: LazyLock<InstagramAccountGuard> = LazyLock::new(|| {
+    parse(
+        "instagram_account_guard",
+        include_str!("../../backend/controlbox/instagram_account_guard.json"),
+    )
+});
+
 /// `controlbox/instagram_browser.json`. A test may replace it for itself and the
 /// threads the code under test starts (see [`InheritedControls`]).
 #[cfg(not(test))]
 pub fn instagram_browser() -> &'static InstagramBrowser {
     &INSTAGRAM_BROWSER
+}
+
+/// `controlbox/instagram_account_guard.json`, the one control the worker reads live:
+/// its values protect the school accounts from Instagram, so they are tuned while the
+/// worker runs (editing the runtime checkout's file is enough). The file beside the
+/// crate this binary was built from is read again at most every
+/// `GUARD_RECHECK_SECONDS` once it changes; a missing or invalid file keeps the last
+/// good values, the built-in ones at first.
+#[cfg(not(test))]
+pub fn instagram_account_guard() -> std::sync::Arc<InstagramAccountGuard> {
+    live_guard::current()
+}
+
+/// Tests always use the built-in values.
+#[cfg(test)]
+pub fn instagram_account_guard() -> std::sync::Arc<InstagramAccountGuard> {
+    std::sync::Arc::new(INSTAGRAM_ACCOUNT_GUARD.clone())
+}
+
+#[cfg(not(test))]
+mod live_guard {
+    use std::path::Path;
+    use std::sync::{Arc, Mutex};
+    use std::time::{Duration, Instant, SystemTime};
+
+    use super::{INSTAGRAM_ACCOUNT_GUARD, InstagramAccountGuard};
+
+    const PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../backend/controlbox/instagram_account_guard.json"
+    );
+    const GUARD_RECHECK_SECONDS: u64 = 10;
+
+    struct Live {
+        checked: Instant,
+        modified: Option<SystemTime>,
+        control: Arc<InstagramAccountGuard>,
+    }
+
+    static LIVE: Mutex<Option<Live>> = Mutex::new(None);
+
+    pub fn current() -> Arc<InstagramAccountGuard> {
+        let mut live = LIVE
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = live.get_or_insert_with(|| Live {
+            checked: Instant::now() - Duration::from_secs(GUARD_RECHECK_SECONDS),
+            modified: None,
+            control: Arc::new(INSTAGRAM_ACCOUNT_GUARD.clone()),
+        });
+        if state.checked.elapsed() >= Duration::from_secs(GUARD_RECHECK_SECONDS) {
+            state.checked = Instant::now();
+            let modified = std::fs::metadata(PATH)
+                .and_then(|meta| meta.modified())
+                .ok();
+            if modified.is_some() && modified != state.modified {
+                state.modified = modified;
+                match read(Path::new(PATH)) {
+                    Ok(control) => state.control = Arc::new(control),
+                    Err(error) => tracing::warn!(
+                        "The account guard keeps its last values: {PATH} could not be read: {error}"
+                    ),
+                }
+            }
+        }
+        state.control.clone()
+    }
+
+    fn read(path: &Path) -> anyhow::Result<InstagramAccountGuard> {
+        Ok(serde_json::from_str(&std::fs::read_to_string(path)?)?)
+    }
 }
 
 /// `controlbox/notification_retry.json`, replaceable like [`instagram_browser`].
@@ -1078,5 +1199,6 @@ mod tests {
         assert!(PUBLIC_ATTENDANCE.maximum_shown_people > 0);
         assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
         assert_eq!(INSTAGRAM_LIGHTPANDA.sha256.len(), 64);
+        assert!(INSTAGRAM_ACCOUNT_GUARD.breaker_refusal_streak > 0);
     }
 }

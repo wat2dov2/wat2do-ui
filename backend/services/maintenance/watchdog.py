@@ -44,6 +44,7 @@ def _readers(context: readings.Context) -> dict[str, Callable[[], Any]]:
     return {
         "ingestion": database(readings.ingestion),
         "brave": lambda: readings.brave(context),
+        "following_guard": lambda: readings.following_guard(context),
         "ingestion_processor": lambda: readings.ingestion_processor(context),
         "recorder": lambda: readings.recorder(context),
         "workflow": lambda: readings.workflow(context),

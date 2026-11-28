@@ -1,0 +1,18 @@
+{
+  "refusal_hold_hours": 2,
+  "refusal_backoff_factor": 2,
+  "refusal_max_hold_hours": 48,
+  "refusal_streak_reset_hours": 24,
+  "breaker_refusal_streak": 4,
+  "daily_following_reads": 400,
+  "hourly_following_reads": 40,
+  "minimum_daily_following_reads": 20,
+  "follower_tiers": [
+    {"below": 50, "factor": 0.25},
+    {"below": 200, "factor": 0.5}
+  ],
+  "new_account_days": 120,
+  "new_account_factor": 0.5,
+  "account_daily_following_reads": {},
+  "size_refresh_hours": 6
+}

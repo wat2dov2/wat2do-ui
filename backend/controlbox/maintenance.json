@@ -28,6 +28,7 @@
   "brave_job_failure_ratio": 0.3,
   "brave_job_min_jobs": 5,
   "brave_error_lines_per_hour": 60,
+  "following_errors_per_account_hour": 4,
   "recorder_silence_minutes": 90,
   "recorder_quiet_until_hour": 8,
   "recorder_user_silence_hours": 14,

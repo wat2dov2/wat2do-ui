@@ -21,6 +21,7 @@ CONTROL = controlbox.maintenance.model_copy(
         "brave_job_failure_ratio": 0.3,
         "brave_job_min_jobs": 5,
         "brave_error_lines_per_hour": 60,
+        "following_errors_per_account_hour": 4,
         "recorder_silence_minutes": 90,
         "recorder_user_silence_hours": 14,
         "digest_silence_hours": 30,
@@ -138,6 +139,72 @@ def _brave(**changes):
 
 def test_a_healthy_brave_worker_is_green():
     assert _brave().status == "green"
+
+
+def test_an_account_refused_again_and_again_in_an_hour_is_red():
+    quiet = judges.following_guard(
+        {"refusals_last_hour": {"wat2do.mun": 1}, "tripped": {}}, CONTROL
+    )
+    assert quiet.status == "green"
+    hammered = judges.following_guard(
+        {"refusals_last_hour": {"wat2do.sfu": 4, "wat2do.mun": 3}, "tripped": {}}, CONTROL
+    )
+    assert hammered.status == "red"
+    assert hammered.problems == ["wat2do.sfu: 4 refused Following reads in the last hour"]
+
+
+def test_an_open_breaker_waits_for_a_person_as_yellow():
+    check = judges.following_guard(
+        {"refusals_last_hour": {}, "tripped": {"wat2do.sfu": "Instagram ended the login"}},
+        CONTROL,
+    )
+    assert check.status == "yellow"
+    assert "wat2do.sfu's breaker is open" in check.summary
+
+
+def test_following_refusals_are_counted_per_account_from_the_log_and_the_guard(
+    tmp_path, monkeypatch
+):
+    import json
+    import sqlite3
+
+    monkeypatch.setattr(readings, "BROWSER_STATE", tmp_path)
+    log = tmp_path / "worker.stderr.log"
+    log.write_text("")
+    with sqlite3.connect(tmp_path / "jobs.sqlite3") as db:
+        db.execute("create table settings (key text primary key, value text)")
+        guard = {
+            "refusal_times": [NOW.timestamp() - 60, NOW.timestamp() - 7200],
+            "tripped_at": None,
+        }
+        tripped = {
+            "refusal_times": [],
+            "tripped_at": 1.0,
+            "tripped_reason": "Instagram ended the login",
+        }
+        db.execute(
+            "insert into settings values (?, ?)", ("account_guard:wat2do.udem", json.dumps(guard))
+        )
+        db.execute(
+            "insert into settings values (?, ?)", ("account_guard:wat2do.sfu", json.dumps(tripped))
+        )
+    context = readings.Context(CONTROL, {}, NOW)
+    readings.following_guard(context)  # the first pass only marks where the log ends
+    line = "WARNING wat2do::lightpanda::lane: Lightpanda job {} failed for wat2do.sfu: {}\n"
+    with log.open("a") as handle:
+        handle.write(line.format("a1", "Instagram Following response was not valid JSON"))
+        handle.write(line.format("a2", "Instagram Following read failed with HTTP 429"))
+        handle.write(line.format("a3", "Lightpanda did not start in time"))
+    later = readings.Context(CONTROL, context.state, NOW + timedelta(minutes=30))
+
+    reading = readings.following_guard(later)
+
+    assert reading == {
+        "refusals_last_hour": {"wat2do.sfu": 2, "wat2do.udem": 1},
+        "tripped": {"wat2do.sfu": "Instagram ended the login"},
+    }
+    # The brave check in the same pass reads the same new lines.
+    assert later.new_log_text(log)[0].count("failed for wat2do.sfu") == 3
 
 
 def test_a_paused_or_silent_brave_worker_is_red():

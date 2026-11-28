@@ -1,8 +1,8 @@
 //! The worker's Lightpanda lane: digests and Following reads in each school account's
 //! own Lightpanda session, beside Brave, in a thread of the `wat2do-browser` worker.
 //!
-//! Every account whose jar holds a login (and is neither paused for a person nor
-//! excluded) is served:
+//! Every account whose jar holds a login (and is neither paused for a person, excluded
+//! nor behind its open breaker, `browser_queue_guard.rs`) is served:
 //! - with `digest_engine` "lightpanda", its digests are read in its own session;
 //! - every served account reads Following lists, each at its own pace, so the crawl's
 //!   reads spread over all of them.
@@ -10,8 +10,10 @@
 //! The lane says which accounts it serves in the queue (`lightpanda_lane`), and Brave
 //! reads everything else (`browser_queue_lightpanda`). An account is dropped from the
 //! lane, handing its digests back to Brave, while it is held after a 429 or refusal,
+//! while the account guard holds its Following reads or its day's share is spent,
 //! after any digest it could not read, and once Instagram ends its login (its jar
-//! then forgets the login until the ramp logs it in again). Brave's own pauses and
+//! then forgets the login and its breaker opens, so neither the ramp nor Brave logs it
+//! in again until a person checks it). Brave's own pauses and
 //! holds never stop the lane, and Brave's recovery leaves the lane's running jobs to
 //! it.
 //!
@@ -44,7 +46,7 @@ use crate::controlbox::{
 };
 use crate::host::Event;
 use crate::instagram_notifications::browser_queue::{
-    BrowserJob, BrowserJobQueue, Finish, LanePending, LaneRead,
+    BrowserJob, BrowserJobQueue, Finish, LanePending, LaneRead, Outcome,
 };
 use crate::instagram_notifications::browser_session::Bridge;
 use crate::instagram_notifications::errors::{BrowserError, BrowserResult, SessionKind};
@@ -235,7 +237,10 @@ impl Lane {
         for account in logged_in {
             let paused = login::paused(&self.queue, &account)
                 .map_err(|error| BrowserError::other("RuntimeError", format!("{error:#}")))?;
-            if paused.is_none() && !self.queue.account_excluded(&account)? {
+            if paused.is_none()
+                && !self.queue.account_excluded(&account)?
+                && self.queue.guard_tripped(&account)?.is_none()
+            {
                 accounts.push(account);
             }
         }
@@ -248,7 +253,9 @@ impl Lane {
         let now = self.bridge.time();
         let mut served = Vec::new();
         for account in &self.accounts {
-            if self.queue.lightpanda_pace(account)?.held_until <= now {
+            if self.queue.lightpanda_pace(account)?.held_until <= now
+                && self.queue.following_gate(account)?.reads()
+            {
                 served.push(account.clone());
             }
         }
@@ -491,6 +498,7 @@ impl Lane {
                 let read = LaneRead {
                     account,
                     held: false,
+                    guard: (job.kind == "following").then_some(Outcome::Read),
                 };
                 let finished = self
                     .queue
@@ -516,6 +524,7 @@ impl Lane {
         let read = LaneRead {
             account,
             held: failed.hold,
+            guard: Outcome::of_failure(&message, logged_out),
         };
         let outcome = Finish {
             result: None,
