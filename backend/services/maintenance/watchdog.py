@@ -47,6 +47,7 @@ def _readers(context: readings.Context) -> dict[str, Callable[[], Any]]:
         "following_guard": lambda: readings.following_guard(context),
         "ingestion_processor": lambda: readings.ingestion_processor(context),
         "recorder": lambda: readings.recorder(context),
+        "account_notifications": lambda: readings.account_notifications(context),
         "workflow": lambda: readings.workflow(context),
         "notification_agent": lambda: readings.notification_agent(context),
         "runners": lambda: readings.runners(context),

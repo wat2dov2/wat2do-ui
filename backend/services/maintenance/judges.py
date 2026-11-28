@@ -211,6 +211,31 @@ def recorder(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     )
 
 
+def account_notifications(reading: dict[str, Any], control: MaintenanceControl) -> Check:
+    """Every school account on the emulator hearing from Instagram: a logged-out account,
+    one whose pushes stopped or one with no post bells gets nothing at all, while the
+    rest of its Android user keeps the recorder check green."""
+    red: list[str] = []
+    yellow: list[str] = []
+    for account, seen in reading["accounts"].items():
+        hours = seen["hours"]
+        if hours is not None and hours <= control.account_silence_hours:
+            continue
+        silence = f"{account} (Android user {seen['android_user']}) recorded nothing" + (
+            " in the recorder's log" if hours is None else f" for {hours:.0f} h"
+        )
+        if account in reading["waiting"]:
+            yellow.append(f"{silence}, waiting: {reading['waiting'][account]}")
+        else:
+            red.append(silence)
+    return verdict(
+        "account_notifications",
+        red,
+        yellow,
+        f"all {len(reading['accounts'])} accounts heard within {control.account_silence_hours} h",
+    )
+
+
 def workflow(reading: dict[str, Any], control: MaintenanceControl) -> Check:
     """The "Handle notification" workflow: few failures, nothing stuck in the queue."""
     red: list[str] = []
@@ -419,6 +444,7 @@ JUDGES = {
     "following_guard": following_guard,
     "ingestion_processor": ingestion_processor,
     "recorder": recorder,
+    "account_notifications": account_notifications,
     "workflow": workflow,
     "notification_agent": notification_agent,
     "runners": runners,

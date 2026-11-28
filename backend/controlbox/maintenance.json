@@ -33,6 +33,8 @@
   "recorder_quiet_until_hour": 8,
   "recorder_user_silence_hours": 14,
   "digest_silence_hours": 30,
+  "account_silence_hours": 24,
+  "account_silence_excluded": [],
   "dispatch_waiting_max": 20,
   "workflow_file": "handle-notification.yml",
   "workflow_window_hours": 6,

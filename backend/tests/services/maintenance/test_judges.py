@@ -1,6 +1,7 @@
 """The watchdog's thresholds: each judge against hand-made readings."""
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 from core.controlbox import controlbox
 from services.maintenance import judges, readings
@@ -25,6 +26,8 @@ CONTROL = controlbox.maintenance.model_copy(
         "recorder_silence_minutes": 90,
         "recorder_user_silence_hours": 14,
         "digest_silence_hours": 30,
+        "account_silence_hours": 24,
+        "account_silence_excluded": (),
         "dispatch_waiting_max": 20,
         "workflow_window_hours": 6,
         "workflow_failure_ratio": 0.25,
@@ -265,6 +268,89 @@ def test_a_silent_recorder_or_android_user_is_red():
 
 def test_a_recorder_silent_only_through_the_night_is_green():
     assert _recorder(last_any_minutes=280, awake_silence_minutes=10).status == "green"
+
+
+def _accounts(**changes):
+    reading = {
+        "accounts": {
+            "wat2do.utsg": {"android_user": 12, "hours": 2.0},
+            "wat2do.mit": {"android_user": 12, "hours": 23.0},
+            "wat2do.yorku": {"android_user": 0, "hours": 0.2},
+        },
+        "waiting": {},
+    }
+    reading.update(changes)
+    return judges.account_notifications(reading, CONTROL)
+
+
+def test_every_account_heard_within_a_day_is_green():
+    assert _accounts().status == "green"
+
+
+def test_one_silent_account_is_red_while_its_android_user_is_not():
+    accounts = {
+        "wat2do.utsg": {"android_user": 12, "hours": 2.0},
+        "wat2do.berkeley": {"android_user": 12, "hours": None},
+        "wat2do.mit": {"android_user": 12, "hours": 37.0},
+    }
+    check = _accounts(accounts=accounts)
+    assert check.status == "red"
+    assert "wat2do.berkeley (Android user 12) recorded nothing in the recorder's log" in (
+        check.problems
+    )
+    assert "wat2do.mit (Android user 12) recorded nothing for 37 h" in check.problems
+    assert not any("utsg" in problem for problem in check.problems)
+
+
+def test_a_silent_account_waiting_on_tony_is_only_yellow():
+    accounts = {"wat2do.sfu": {"android_user": 11, "hours": 60.0}}
+    check = _accounts(accounts=accounts, waiting={"wat2do.sfu": "Instagram challenge"})
+    assert check.status == "yellow"
+    assert "waiting: Instagram challenge" in check.summary
+
+
+def test_account_readings_skip_excluded_and_expired_waits(tmp_path, monkeypatch):
+    import json
+
+    log = tmp_path / "notification-log"
+    log.mkdir()
+    lines = [
+        {"recorded_at": (NOW - timedelta(hours=30)).isoformat(), "account": "wat2do.mit"},
+        {"recorded_at": (NOW - timedelta(hours=1)).isoformat(), "account": "wat2do.utsg"},
+    ]
+    # The newest lines sit in a rotated file: the current one was just started.
+    (log / "notifications.jsonl.1").write_text(
+        "".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8"
+    )
+    (log / "notifications.jsonl").write_text("", encoding="utf-8")
+    waits = tmp_path / "account_waits.json"
+    waits.write_text(
+        json.dumps(
+            {
+                "wat2do.mit": {"reason": "old", "until": (NOW - timedelta(hours=1)).isoformat()},
+                "wat2do.sfu": {
+                    "reason": "challenge",
+                    "until": (NOW + timedelta(hours=5)).isoformat(),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(readings, "NOTIFICATION_LOG", log)
+    monkeypatch.setattr(readings, "ACCOUNT_WAITS", waits)
+    emulator = controlbox.instagram_emulator.model_copy(
+        update={"android_user_by_school": {"mit": 12, "utsg": 12, "sfu": 11, "upenn": 11}}
+    )
+    monkeypatch.setattr(readings, "controlbox", SimpleNamespace(instagram_emulator=emulator))
+    control = CONTROL.model_copy(update={"account_silence_excluded": ("wat2do.upenn",)})
+
+    reading = readings.account_notifications(readings.Context(control, {}, NOW))
+
+    assert reading["accounts"]["wat2do.mit"] == {"android_user": 12, "hours": 30.0}
+    assert reading["accounts"]["wat2do.utsg"]["hours"] == 1.0
+    assert reading["accounts"]["wat2do.sfu"]["hours"] is None
+    assert "wat2do.upenn" not in reading["accounts"]
+    assert reading["waiting"] == {"wat2do.sfu": "challenge"}
 
 
 def test_night_silence_does_not_count():

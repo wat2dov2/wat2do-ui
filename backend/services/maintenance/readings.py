@@ -394,17 +394,32 @@ def _tail_lines(path: Path, size: int) -> list[str]:
     return lines[1:] if path.stat().st_size > size else lines
 
 
+def _recorded_lines() -> list[str]:
+    """The recorder's last `_RECORDER_TAIL_BYTES`, reaching into the newest rotated file
+    when the current one is shorter (right after a rotation it is nearly empty, and every
+    account would look silent)."""
+    current = NOTIFICATION_LOG / "notifications.jsonl"
+    lines = _tail_lines(current, _RECORDER_TAIL_BYTES) if current.exists() else []
+    short = _RECORDER_TAIL_BYTES - (current.stat().st_size if current.exists() else 0)
+    rotated = NOTIFICATION_LOG / "notifications.jsonl.1"
+    if short > 0 and rotated.exists():
+        lines = _tail_lines(rotated, short) + lines
+    return lines
+
+
 class Recorded:
-    """When the recorder last heard each Android user, and each account's last digest."""
+    """When the recorder last heard each Android user and each account, and each
+    account's last digest."""
 
     def __init__(self) -> None:
         self.by_user: dict[str, datetime] = {}
+        self.by_account: dict[str, datetime] = {}
         self.digest_by_account: dict[str, datetime] = {}
 
 
 def _read_recorded() -> Recorded:
     recorded = Recorded()
-    for line in _tail_lines(NOTIFICATION_LOG / "notifications.jsonl", _RECORDER_TAIL_BYTES):
+    for line in _recorded_lines():
         try:
             row = json.loads(line)
             at = datetime.fromisoformat(row["recorded_at"])
@@ -413,6 +428,8 @@ def _read_recorded() -> Recorded:
         user = str(row.get("android_user"))
         recorded.by_user[user] = max(at, recorded.by_user.get(user, at))
         account = row.get("account")
+        if account:
+            recorded.by_account[account] = max(at, recorded.by_account.get(account, at))
         if row.get("category") == "subscription_daily_digest" and account:
             recorded.digest_by_account[account] = max(
                 at, recorded.digest_by_account.get(account, at)
@@ -457,6 +474,49 @@ def recorder(context: Context) -> dict[str, Any]:
         if last_digest is None
         else (context.now - last_digest).total_seconds() / 3600,
         "dispatch_waiting": len(dispatch.get("waiting") or []),
+    }
+
+
+# Accounts the maintenance agent found silent for a reason only Tony can clear (an
+# Instagram challenge), each {"reason", "until"}: until then account_notifications
+# lists them as waiting (yellow) instead of starting the agent again and again.
+ACCOUNT_WAITS = STATE / "maintenance/account_waits.json"
+
+
+def account_notifications(context: Context) -> dict[str, Any]:
+    """How long ago the recorder heard each school account on the emulator, whatever the
+    notification (a post, a digest, a like, a message)."""
+    emulator = controlbox.instagram_emulator
+    excluded = set(context.control.account_silence_excluded)
+    last = context.recorded().by_account
+    accounts = {
+        school_account_username(school): user
+        for school, user in emulator.android_user_by_school.items()
+    }
+    try:
+        waits = json.loads(ACCOUNT_WAITS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        waits = {}
+    waiting: dict[str, str] = {}
+    for account, wait in waits.items() if isinstance(waits, dict) else ():
+        try:
+            until = datetime.fromisoformat(str(wait["until"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if until.tzinfo is not None and until > context.now:
+            waiting[account] = str(wait.get("reason") or "waiting on Tony")[:200]
+    return {
+        "accounts": {
+            account: {
+                "android_user": user,
+                "hours": None
+                if account not in last
+                else (context.now - last[account]).total_seconds() / 3600,
+            }
+            for account, user in sorted(accounts.items())
+            if account not in excluded
+        },
+        "waiting": waiting,
     }
 
 

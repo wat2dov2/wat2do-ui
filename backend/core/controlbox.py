@@ -1038,6 +1038,12 @@ class MaintenanceControl(_ControlModel):
     recorder_quiet_until_hour: int = Field(ge=0, le=12)
     recorder_user_silence_hours: int = Field(ge=1, le=72)
     digest_silence_hours: int = Field(ge=1, le=96)
+    # A school account on the emulator with no Instagram notification of any kind recorded
+    # for this long turns account_notifications red (2026-11-28: wat2do.berkeley went 9
+    # days without one while every Android user, and so the recorder check, stayed green).
+    account_silence_hours: int = Field(ge=1, le=168)
+    # Accounts that check leaves out, by username (none by default).
+    account_silence_excluded: tuple[Annotated[str, Field(pattern=r"^[a-z0-9._]+$")], ...] = ()
     dispatch_waiting_max: int = Field(ge=1)
     workflow_file: str = Field(pattern=r"^[a-z0-9-]+\.ya?ml$")
     workflow_window_hours: int = Field(ge=1, le=48)
