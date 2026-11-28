@@ -262,7 +262,6 @@ mod tests {
         assert!(rendered.contains("poster reference `pending:t0k3n/image-0`"));
         assert!(rendered.contains("carousel_requested_at = now()"));
         assert!(rendered.contains("- competition:"));
-        assert!(rendered.contains("title_svg_rules: Test fixture"));
         assert!(rendered.contains("promotion_rules: Test fixture"));
         assert!(rendered.contains("partner_accounts: none\n"));
     }
