@@ -227,6 +227,8 @@ pub(crate) use promotable_event;
 /// asked to stay out of carousels (Hillel's accounts among them), and one the
 /// ingestion agent judged not promotable (`events.promotable` false: for one
 /// group of students, or of little appeal to a typical one), is never featured.
+/// Nor is a recurring event with more than two dates (a weekly
+/// practice would otherwise stay featured all term; Tony 2026-11-28).
 macro_rules! featured_events {
     ($ids:literal) => {
         concat!(
@@ -237,17 +239,34 @@ macro_rules! featured_events {
             $ids,
             ") AND (i.published_at IS NOT NULL OR b.status = 'published') AND ",
             $crate::api::events::store::promotable_event!("fe"),
+            " AND ",
+            $crate::api::events::store::few_dates!("fe"),
             " UNION SELECT fe.id FROM public.events fe JOIN public.clubs c ON c.id = fe.club_id ",
             "WHERE fe.id = ANY(",
             $ids,
             ") AND ",
             $crate::api::events::store::claimed_club!("c"),
             " AND ",
-            $crate::api::events::store::promotable_event!("fe")
+            $crate::api::events::store::promotable_event!("fe"),
+            " AND ",
+            $crate::api::events::store::few_dates!("fe")
         )
     };
 }
 pub(crate) use featured_events;
+
+/// Whether the event `$event` has at most two dates: only
+/// one-off and two-day events are featured, never a recurring series.
+macro_rules! few_dates {
+    ($event:literal) => {
+        concat!(
+            "(SELECT count(*) FROM public.event_dates fd WHERE fd.event_id = ",
+            $event,
+            ".id) <= 2"
+        )
+    };
+}
+pub(crate) use few_dates;
 
 /// One hydrated event as JSON (`json_build_object` takes at most 100 arguments).
 const EVENT_OBJECT: &str = concat!(
