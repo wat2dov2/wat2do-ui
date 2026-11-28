@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   decisionFor,
   decisionsToSubmit,
+  foundViaLabels,
   groupByDay,
   toggleDecision,
   type StagedDecisions,
@@ -17,7 +18,6 @@ function candidate(id: string, overrides: Partial<ApiFollowCandidateResponse> = 
     found_via: [],
     status: "pending",
     status_changed_at: "2026-11-24T20:00:00Z",
-    recent_posts: [],
     ...overrides,
   };
 }
@@ -68,3 +68,9 @@ test("followed accounts group under the day they were followed, in the admin's t
   expect(groupByDay([late], "UTC")[0].day).toBe("2026-11-25");
 });
 
+test("a crawled account names the followed accounts that led to it and a directory account its directory", () => {
+  expect(foundViaLabels(candidate("utmaclub", { found_via: ["rocsaut", "uoftmsa"] }))).toEqual(["@rocsaut", "@uoftmsa"]);
+  expect(foundViaLabels(candidate("uwcheeseclub", { source: "directory", found_via: ["WUSA Clubs"] }))).toEqual([
+    "WUSA Clubs",
+  ]);
+});

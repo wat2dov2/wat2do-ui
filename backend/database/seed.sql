@@ -880,6 +880,28 @@ CROSS JOIN (VALUES
 WHERE school.slug = 'uwaterloo'
 ON CONFLICT (school_id, handle) DO NOTHING;
 
+-- An account the crawl found and the uwaterloo account followed a few hours ago, with the
+-- posts the scorer read, for the admin Clubs page's Automated follows tab.
+INSERT INTO public.instagram_follow_candidates (
+    school_id, handle, name, source, found_via, status, read_status, followers_count,
+    last_posted_at, score, verdict, reason, scored_at, followed_at, recent_posts
+)
+SELECT school.id, 'uwcubing', 'UW Cubing Club', 'crawl', ARRAY['uwmsa', 'uwboardgames'],
+    'followed', 'ok', 512, now() - interval '2 days', 92, 'approve',
+    'Weekly speedcubing meetups and termly competitions on campus', now() - interval '1 day',
+    now() - interval '3 hours',
+    jsonb_build_array(
+        jsonb_build_object('url', 'https://www.instagram.com/p/uwcubing1/',
+            'posted_at', now() - interval '2 days',
+            'caption', 'Fall cubing open this Saturday in the SLC Great Hall', 'image', null),
+        jsonb_build_object('url', 'https://www.instagram.com/p/uwcubing2/',
+            'posted_at', now() - interval '9 days',
+            'caption', 'Weekly meetup moved to MC 2034', 'image', null)
+    )
+FROM public.schools school
+WHERE school.slug = 'uwaterloo'
+ON CONFLICT (school_id, handle) DO NOTHING;
+
 -- A club the school's official club directory lists, waiting to be scored.
 INSERT INTO public.instagram_follow_candidates (school_id, handle, name, source, found_via, status)
 SELECT school.id, 'uwcheeseclub', 'Cheese Club', 'directory', ARRAY['WUSA Clubs'], 'pending'

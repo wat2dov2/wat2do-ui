@@ -529,6 +529,29 @@
       "emptyTitle": "검토할 항목 없음",
       "emptyDescription": "탐색이 계정을 찾으면 여기에 표시됩니다."
     },
+    "automatedFollows": {
+      "dayLabel": "날짜",
+      "previousDay": "이전 날",
+      "nextDay": "다음 날",
+      "followsTitle": "팔로우함: {{value}}",
+      "followedAt": "{{time}} 팔로우",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI 평가: 100점 중 {{value}}점",
+      "statuses": {
+        "approved": "팔로우가 아직 확인되지 않음",
+        "unfollow": "이후 제외됨, 언팔로우 대기 중",
+        "rejected": "이후 제외되어 언팔로우함"
+      },
+      "noPosts": "이 계정에 저장된 게시물이 아직 없습니다.",
+      "noCaption": "캡션 없음",
+      "emptyTitle": "이날은 자동 팔로우가 없습니다",
+      "emptyDescription": "탐색이나 조직 디렉터리가 찾은 계정은 학교 계정이 팔로우한 날 여기에 표시됩니다.",
+      "eventsTitle": "찾은 계정의 이벤트: {{value}}",
+      "eventsDescription": "탐색이나 디렉터리가 찾은 계정이 주최하며 이날 추가된 이벤트입니다. 팔로우한 시점과는 관계없습니다.",
+      "eventAdded": "{{time}} 추가",
+      "eventsEmptyTitle": "이날은 이벤트가 없습니다",
+      "eventsEmptyDescription": "이날 추가된 이 계정들의 이벤트가 없습니다."
+    },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",
     "noClubSubmissionsDesc": "새로운 동아리 제출이 승인을 위해 여기에 표시됩니다.",
@@ -691,6 +714,7 @@
       "clubId": "동아리 ID: {{id}}",
       "ownerId": "소유자 ID: {{id}}"
     },
-    "followCandidatesTab": "팔로우할 계정"
+    "followCandidatesTab": "팔로우할 계정",
+    "automatedFollowsTab": "자동 팔로우"
   }
 }

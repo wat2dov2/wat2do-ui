@@ -7,6 +7,7 @@
   "recheck_batch_size": 100,
   "profile_read_delay_min_seconds": 3,
   "profile_read_delay_max_seconds": 6,
+  "recent_post_caption_characters": 300,
   "follow_retry_hours": 12,
   "crawl_miss_streak": 20,
   "crawl_mutual_follow_threshold": 3,

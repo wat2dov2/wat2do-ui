@@ -529,6 +529,29 @@
       "emptyTitle": "ਸਮੀਖਿਆ ਲਈ ਕੁਝ ਨਹੀਂ",
       "emptyDescription": "ਖੋਜ ਜਿਵੇਂ ਖਾਤੇ ਲੱਭਦੀ ਹੈ, ਉਹ ਇੱਥੇ ਦਿਸਦੇ ਹਨ।"
     },
+    "automatedFollows": {
+      "dayLabel": "ਦਿਨ",
+      "previousDay": "ਪਿਛਲਾ ਦਿਨ",
+      "nextDay": "ਅਗਲਾ ਦਿਨ",
+      "followsTitle": "ਫਾਲੋ ਕੀਤੇ: {{value}}",
+      "followedAt": "ਫਾਲੋ ਕੀਤਾ {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI ਰੇਟਿੰਗ: 100 ਵਿੱਚੋਂ {{value}}",
+      "statuses": {
+        "approved": "ਫਾਲੋ ਦੀ ਹਾਲੇ ਪੁਸ਼ਟੀ ਨਹੀਂ ਹੋਈ",
+        "unfollow": "ਬਾਅਦ ਵਿੱਚ ਹਟਾਇਆ, ਅਨਫਾਲੋ ਦੀ ਉਡੀਕ",
+        "rejected": "ਬਾਅਦ ਵਿੱਚ ਹਟਾਇਆ ਅਤੇ ਅਨਫਾਲੋ ਕੀਤਾ"
+      },
+      "noPosts": "ਇਸ ਖਾਤੇ ਦੀ ਕੋਈ ਪੋਸਟ ਹਾਲੇ ਸੰਭਾਲੀ ਨਹੀਂ ਗਈ।",
+      "noCaption": "ਕੋਈ ਕੈਪਸ਼ਨ ਨਹੀਂ",
+      "emptyTitle": "ਇਸ ਦਿਨ ਕੋਈ ਆਟੋਮੈਟਿਕ ਫਾਲੋ ਨਹੀਂ ਹੋਇਆ",
+      "emptyDescription": "ਖੋਜ ਜਾਂ ਸੰਸਥਾਵਾਂ ਦੀ ਡਾਇਰੈਕਟਰੀ ਵੱਲੋਂ ਲੱਭੇ ਖਾਤੇ ਉਸ ਦਿਨ ਇੱਥੇ ਦਿਸਦੇ ਹਨ ਜਿਸ ਦਿਨ ਸਕੂਲ ਦਾ ਖਾਤਾ ਉਨ੍ਹਾਂ ਨੂੰ ਫਾਲੋ ਕਰਦਾ ਹੈ।",
+      "eventsTitle": "ਲੱਭੇ ਖਾਤਿਆਂ ਦੇ ਇਵੈਂਟ: {{value}}",
+      "eventsDescription": "ਇਸ ਦਿਨ ਸ਼ਾਮਲ ਕੀਤੇ ਇਵੈਂਟ ਜਿਨ੍ਹਾਂ ਦੇ ਮੇਜ਼ਬਾਨ ਖੋਜ ਜਾਂ ਡਾਇਰੈਕਟਰੀ ਵੱਲੋਂ ਲੱਭੇ ਖਾਤੇ ਹਨ, ਭਾਵੇਂ ਉਨ੍ਹਾਂ ਨੂੰ ਕਦੇ ਵੀ ਫਾਲੋ ਕੀਤਾ ਗਿਆ ਹੋਵੇ।",
+      "eventAdded": "ਸ਼ਾਮਲ ਕੀਤਾ {{time}}",
+      "eventsEmptyTitle": "ਇਸ ਦਿਨ ਕੋਈ ਇਵੈਂਟ ਨਹੀਂ",
+      "eventsEmptyDescription": "ਇਸ ਦਿਨ ਇਨ੍ਹਾਂ ਖਾਤਿਆਂ ਦਾ ਕੋਈ ਇਵੈਂਟ ਸ਼ਾਮਲ ਨਹੀਂ ਹੋਇਆ।"
+    },
     "clubSubmissions": "ਕਲੱਬ ਸਬਮਿਸ਼ਨ",
     "noClubSubmissions": "ਕੋਈ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਨਹੀਂ",
     "noClubSubmissionsDesc": "ਨਵੇਂ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਮਨਜ਼ੂਰੀ ਲਈ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।",
@@ -691,6 +714,7 @@
       "clubId": "ਕਲੱਬ ਆਈਡੀ: {{id}}",
       "ownerId": "ਮਾਲਕ ਦੀ ਆਈਡੀ: {{id}}"
     },
-    "followCandidatesTab": "ਫਾਲੋ ਕਰਨ ਲਈ ਖਾਤੇ"
+    "followCandidatesTab": "ਫਾਲੋ ਕਰਨ ਲਈ ਖਾਤੇ",
+    "automatedFollowsTab": "ਆਟੋਮੈਟਿਕ ਫਾਲੋ"
   }
 }

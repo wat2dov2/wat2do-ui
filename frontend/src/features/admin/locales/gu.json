@@ -529,6 +529,29 @@
       "emptyTitle": "સમીક્ષા માટે કંઈ નથી",
       "emptyDescription": "શોધ એકાઉન્ટ શોધે તેમ તે અહીં દેખાય છે."
     },
+    "automatedFollows": {
+      "dayLabel": "દિવસ",
+      "previousDay": "પાછલો દિવસ",
+      "nextDay": "આગલો દિવસ",
+      "followsTitle": "ફૉલો કર્યા: {{value}}",
+      "followedAt": "ફૉલો કર્યું {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI રેટિંગ: 100 માંથી {{value}}",
+      "statuses": {
+        "approved": "ફૉલોની હજી પુષ્ટિ થઈ નથી",
+        "unfollow": "પછીથી દૂર કર્યું, અનફૉલોની રાહ",
+        "rejected": "પછીથી દૂર કર્યું અને અનફૉલો કર્યું"
+      },
+      "noPosts": "આ એકાઉન્ટની કોઈ પોસ્ટ હજી સાચવી નથી.",
+      "noCaption": "કોઈ કૅપ્શન નથી",
+      "emptyTitle": "આ દિવસે કોઈ ઑટોમૅટિક ફૉલો થયું નથી",
+      "emptyDescription": "શોધ અથવા સંસ્થાઓની ડિરેક્ટરીએ શોધેલા એકાઉન્ટ, શાળાનું એકાઉન્ટ તેમને ફૉલો કરે તે દિવસે અહીં દેખાય છે.",
+      "eventsTitle": "મળેલા એકાઉન્ટની ઇવેન્ટ: {{value}}",
+      "eventsDescription": "આ દિવસે ઉમેરાયેલી ઇવેન્ટ જેના યજમાન શોધ અથવા ડિરેક્ટરીએ શોધેલા એકાઉન્ટ છે, ભલે તેમને ક્યારેય પણ ફૉલો કર્યા હોય.",
+      "eventAdded": "ઉમેર્યું {{time}}",
+      "eventsEmptyTitle": "આ દિવસે કોઈ ઇવેન્ટ નથી",
+      "eventsEmptyDescription": "આ દિવસે આ એકાઉન્ટની કોઈ ઇવેન્ટ ઉમેરાઈ નથી."
+    },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",
     "noClubSubmissionsDesc": "નવા ક્લબ સબમિશન મંજૂરી માટે અહીં દેખાશે.",
@@ -691,6 +714,7 @@
       "clubId": "ક્લબ આઈડી: {{id}}",
       "ownerId": "માલિકનો આઈડી: {{id}}"
     },
-    "followCandidatesTab": "ફોલો કરવા માટેના એકાઉન્ટ"
+    "followCandidatesTab": "ફોલો કરવા માટેના એકાઉન્ટ",
+    "automatedFollowsTab": "ઑટોમૅટિક ફૉલો"
   }
 }

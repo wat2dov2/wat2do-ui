@@ -5206,6 +5206,180 @@
         ]
       }
     },
+    "/instagram-publishing/follows/": {
+      "get": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "List Automated Follows",
+        "description": "Accounts the crawl or a club directory found that school accounts followed between `since` and `until`, newest first, with the scorer's rating and each account's newest posts.",
+        "operationId": "list_automated_follows_instagram_publishing_follows__get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_AutomatedFollowResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instagram-publishing/follows/events": {
+      "get": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "List Followed Account Events",
+        "description": "Events added between `since` and `until` that accounts the crawl or a club directory found host, newest first.",
+        "operationId": "list_followed_account_events_instagram_publishing_follows_events_get",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_FollowedAccountEventResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/notification-preferences": {
       "get": {
         "tags": [
@@ -8560,6 +8734,111 @@
           }
         }
       },
+      "AutomatedFollowResponse": {
+        "type": "object",
+        "description": "An account a school account followed on its own, with the scorer's rating\nand its newest posts.",
+        "required": [
+          "id",
+          "school",
+          "handle",
+          "source",
+          "status",
+          "followed_at",
+          "found_via",
+          "recent_posts"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "school": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "crawl",
+              "directory"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "followed",
+              "unfollow",
+              "rejected"
+            ]
+          },
+          "followed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "score": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The scorer's rating out of 100.",
+            "maximum": 100,
+            "minimum": 0
+          },
+          "verdict": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "approve",
+                  "review",
+                  "reject"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the scorer rated it so."
+          },
+          "found_via": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The followed accounts that follow it, or the directory that lists it."
+          },
+          "followers_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "recent_posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowPostResponse"
+            },
+            "description": "Up to three of its newest posts, newest first."
+          }
+        }
+      },
       "Body_parse_event_image_ai_parse_event_image_post": {
         "properties": {
           "file": {
@@ -11815,6 +12094,80 @@
         "title": "FollowCandidateResponse",
         "description": "An account a school account might follow, with what its newest posts showed."
       },
+      "FollowPostResponse": {
+        "type": "object",
+        "description": "One of an account's newest posts.",
+        "required": [
+          "url",
+          "caption"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "posted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The post's picture, only while Instagram's signed link is still live."
+          }
+        }
+      },
+      "FollowedAccountEventResponse": {
+        "type": "object",
+        "description": "An event added from an account a school account followed on its own.",
+        "required": [
+          "id",
+          "school",
+          "title",
+          "handle",
+          "followed_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "school": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "added_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "image_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "handle": {
+            "type": "string",
+            "description": "The followed account that hosts it, and when it was followed."
+          },
+          "followed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FreeTicketCreate": {
         "type": "object",
         "required": [
@@ -13795,6 +14148,40 @@
           }
         }
       },
+      "PaginatedResponse_AutomatedFollowResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomatedFollowResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "PaginatedResponse_ClubClaimResponse_": {
         "type": "object",
         "required": [
@@ -14070,6 +14457,40 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[FollowCandidateResponse]"
+      },
+      "PaginatedResponse_FollowedAccountEventResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedAccountEventResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       },
       "PaginatedResponse_InstagramPublishBatchSummaryResponse_": {
         "properties": {

@@ -93,6 +93,8 @@ pub const INBOX_KIND_EVENT_CANCELLED: &str = "event_cancelled";
 pub const NOTIFICATION_STATUS_SENT: &str = "sent";
 pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
 
+/// `core.constants.FOLLOW_SOURCE_CRAWL`: a follow candidate the crawl found in Following lists.
+pub const FOLLOW_SOURCE_CRAWL: &str = "crawl";
 /// `core.constants.FOLLOW_SOURCE_DIRECTORY`: a follow candidate a school's official club directory lists.
 pub const FOLLOW_SOURCE_DIRECTORY: &str = "directory";
 

@@ -1357,6 +1357,9 @@ class InstagramFollowControl(_ControlModel):
     # Logged-out profile reads share the Mac's IP with ingestion, so they are spaced out.
     profile_read_delay_min_seconds: float = Field(ge=0, le=60)
     profile_read_delay_max_seconds: float = Field(ge=0, le=120)
+    # The posts the scorer read are kept for the admin's Automated follows tab, each
+    # caption cut to this many characters so the table stays small.
+    recent_post_caption_characters: int = Field(ge=20, le=2200)
 
     # A follow that failed is tried again only after this long.
     follow_retry_hours: int = Field(ge=1, le=168)

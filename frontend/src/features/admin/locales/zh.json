@@ -529,6 +529,29 @@
       "emptyTitle": "没有需要审核的内容",
       "emptyDescription": "搜索找到账号后会显示在这里。"
     },
+    "automatedFollows": {
+      "dayLabel": "日期",
+      "previousDay": "前一天",
+      "nextDay": "后一天",
+      "followsTitle": "已关注：{{value}}",
+      "followedAt": "关注于 {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI 评分：{{value}}（满分 100）",
+      "statuses": {
+        "approved": "关注尚未确认",
+        "unfollow": "后被剔除，等待取消关注",
+        "rejected": "后被剔除，已取消关注"
+      },
+      "noPosts": "暂未保存此账号的帖子。",
+      "noCaption": "无文字说明",
+      "emptyTitle": "这一天没有自动关注",
+      "emptyDescription": "搜索或组织名录找到的账号，会在学校账号关注它们的当天显示在这里。",
+      "eventsTitle": "已发现账号的活动：{{value}}",
+      "eventsDescription": "这一天新增、由搜索或名录找到的账号主办的活动，无论何时关注的。",
+      "eventAdded": "添加于 {{time}}",
+      "eventsEmptyTitle": "这一天没有活动",
+      "eventsEmptyDescription": "这一天没有新增这些账号的活动。"
+    },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",
     "noClubSubmissionsDesc": "新提交的社团将在此显示，等待批准。",
@@ -691,6 +714,7 @@
       "clubId": "社团 ID：{{id}}",
       "ownerId": "所有者 ID：{{id}}"
     },
-    "followCandidatesTab": "待关注账号"
+    "followCandidatesTab": "待关注账号",
+    "automatedFollowsTab": "自动关注"
   }
 }

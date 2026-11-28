@@ -121,6 +121,19 @@ AUTHENTICATED_ENDPOINTS = (
         "/instagram-publishing/follow-candidates/?page=1&page_size=20",
         True,
     ),
+    # One fixed Toronto day, so runs compare the same follows and events.
+    Endpoint(
+        "/instagram-publishing/follows/",
+        "/instagram-publishing/follows/?since=2026-11-22T05:00:00Z&until=2026-11-23T05:00:00Z"
+        "&page=1&page_size=24",
+        True,
+    ),
+    Endpoint(
+        "/instagram-publishing/follows/events",
+        "/instagram-publishing/follows/events?since=2026-11-22T05:00:00Z"
+        "&until=2026-11-23T05:00:00Z&page=1&page_size=50",
+        True,
+    ),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/admin", "/clubs/admin?page=1&page_size=20", True),
     Endpoint("/notifications/", "/notifications/", True),

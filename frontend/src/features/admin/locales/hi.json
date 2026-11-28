@@ -529,6 +529,29 @@
       "emptyTitle": "समीक्षा के लिए कुछ नहीं",
       "emptyDescription": "खोज जैसे-जैसे अकाउंट ढूँढती है, वे यहाँ दिखते हैं।"
     },
+    "automatedFollows": {
+      "dayLabel": "दिन",
+      "previousDay": "पिछला दिन",
+      "nextDay": "अगला दिन",
+      "followsTitle": "फ़ॉलो किए गए: {{value}}",
+      "followedAt": "फ़ॉलो किया {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "एआई रेटिंग: 100 में से {{value}}",
+      "statuses": {
+        "approved": "फ़ॉलो की अभी पुष्टि नहीं हुई",
+        "unfollow": "बाद में हटाया गया, अनफ़ॉलो बाकी",
+        "rejected": "बाद में हटाया गया और अनफ़ॉलो किया गया"
+      },
+      "noPosts": "इस अकाउंट की कोई पोस्ट अभी सहेजी नहीं गई है।",
+      "noCaption": "कोई कैप्शन नहीं",
+      "emptyTitle": "इस दिन कोई स्वचालित फ़ॉलो नहीं हुआ",
+      "emptyDescription": "खोज या संगठन निर्देशिका से मिले अकाउंट उस दिन यहाँ दिखते हैं जिस दिन स्कूल का अकाउंट उन्हें फ़ॉलो करता है।",
+      "eventsTitle": "मिले अकाउंट के इवेंट: {{value}}",
+      "eventsDescription": "इस दिन जोड़े गए वे इवेंट जिनके मेज़बान खोज या निर्देशिका से मिले अकाउंट हैं, चाहे उन्हें कभी भी फ़ॉलो किया गया हो।",
+      "eventAdded": "जोड़ा गया {{time}}",
+      "eventsEmptyTitle": "इस दिन कोई इवेंट नहीं",
+      "eventsEmptyDescription": "इस दिन इन अकाउंट का कोई इवेंट नहीं जोड़ा गया।"
+    },
     "clubSubmissions": "क्लब सबमिशन",
     "noClubSubmissions": "कोई क्लब सबमिशन नहीं",
     "noClubSubmissionsDesc": "नए क्लब सबमिशन स्वीकृति के लिए यहाँ दिखाई देंगे।",
@@ -691,6 +714,7 @@
       "clubId": "क्लब आईडी: {{id}}",
       "ownerId": "मालिक की आईडी: {{id}}"
     },
-    "followCandidatesTab": "फ़ॉलो करने के लिए अकाउंट"
+    "followCandidatesTab": "फ़ॉलो करने के लिए अकाउंट",
+    "automatedFollowsTab": "स्वचालित फ़ॉलो"
   }
 }

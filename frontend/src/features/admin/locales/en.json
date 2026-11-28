@@ -529,6 +529,29 @@
       "emptyTitle": "Nothing to review",
       "emptyDescription": "Accounts appear here as the crawl finds them."
     },
+    "automatedFollows": {
+      "dayLabel": "Day",
+      "previousDay": "Previous day",
+      "nextDay": "Next day",
+      "followsTitle": "Followed: {{value}}",
+      "followedAt": "Followed {{time}}",
+      "score": "{{value}}/100",
+      "scoreLabel": "AI rating: {{value}} out of 100",
+      "statuses": {
+        "approved": "Follow not confirmed yet",
+        "unfollow": "Dropped later, waiting to unfollow",
+        "rejected": "Dropped later and unfollowed"
+      },
+      "noPosts": "No posts stored for this account yet.",
+      "noCaption": "No caption",
+      "emptyTitle": "No automated follows this day",
+      "emptyDescription": "Accounts the crawl or a club directory found show up here on the day a school account follows them.",
+      "eventsTitle": "Events from found accounts: {{value}}",
+      "eventsDescription": "Events added this day that accounts found by the crawl or a club directory host, whenever they were followed.",
+      "eventAdded": "Added {{time}}",
+      "eventsEmptyTitle": "No events this day",
+      "eventsEmptyDescription": "No events from these accounts were added this day."
+    },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",
     "noClubSubmissionsDesc": "New club submissions will appear here for approval.",
@@ -691,6 +714,7 @@
       "clubId": "Club ID: {{id}}",
       "ownerId": "Owner ID: {{id}}"
     },
-    "followCandidatesTab": "Follow candidates"
+    "followCandidatesTab": "Follow candidates",
+    "automatedFollowsTab": "Automated follows"
   }
 }

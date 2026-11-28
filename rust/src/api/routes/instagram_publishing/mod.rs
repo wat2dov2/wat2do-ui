@@ -1,5 +1,5 @@
 //! `/instagram-publishing`: the admin's carousel editor, song list, account
-//! dashboard and follow review (`routers/instagram_publishing.py`).
+//! dashboard, follow review and automated follows (`routers/instagram_publishing.py`).
 //!
 //! Every route is admin-only. Publishing claims the batch here and hands the
 //! rendering and posting to `wat2do-instagram publish-batch`
@@ -11,6 +11,7 @@ pub mod batches;
 pub mod captions;
 pub mod credentials;
 pub mod follow_candidates;
+pub mod follows;
 pub mod songs;
 
 use std::sync::LazyLock;
@@ -19,6 +20,7 @@ use axum::Json;
 use axum::extract::{FromRequestParts, Request, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use chrono::{DateTime, FixedOffset, Utc};
 use regex::Regex;
 
 use crate::api::AppState;
@@ -358,6 +360,83 @@ pub async fn submit_follow_decisions(
     let (admin, decisions) = admin_body(&state, request, parse_decisions).await?;
     let counts = follow_candidates::decide(&state.db, &decisions, admin.id).await?;
     Ok(Json(counts).into_response())
+}
+
+/// `?school=&since=&until=` and a page: what both automated follow routes read.
+fn follow_window(query: &QueryParams) -> Result<(follows::Window, Pagination), ApiError> {
+    let mut check = Validator::default();
+    let pagination = Pagination::read(&mut check, query);
+    let school = check
+        .query(query, "school")
+        .optional_string(Length::default());
+    let since = check.query(query, "since").aware_datetime();
+    let until = check.query(query, "until").aware_datetime();
+    check.finish()?;
+    let utc = |value: Option<DateTime<FixedOffset>>| value.unwrap_or_default().with_timezone(&Utc);
+    let window = follows::Window {
+        school,
+        since: utc(since),
+        until: utc(until),
+    };
+    Ok((window, pagination))
+}
+
+#[utoipa::path(
+    get,
+    path = "/instagram-publishing/follows/",
+    tag = "instagram-publishing",
+    operation_id = "list_automated_follows_instagram_publishing_follows__get",
+    summary = "List Automated Follows",
+    description = "Accounts the crawl or a club directory found that school accounts followed between `since` and `until`, newest first, with the scorer's rating and each account's newest posts.",
+    params(
+        ("school" = Option<String>, Query, nullable),
+        ("since" = String, Query, format = DateTime),
+        ("until" = String, Query, format = DateTime),
+        ("page" = Option<i64>, Query, minimum = 1, maximum = 1000, description = "Page number (1-indexed)"),
+        ("page_size" = Option<i64>, Query, minimum = 1, maximum = 100, description = "Items per page (max 100)"),
+    ),
+    responses(
+        (status = 200, description = "Successful Response", body = follows::PaginatedAutomatedFollows),
+        (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
+    )
+)]
+pub async fn list_automated_follows(
+    State(state): State<AppState>,
+    AdminUser(_): AdminUser,
+    query: QueryParams,
+) -> Result<Json<Paginated<follows::AutomatedFollowResponse>>, ApiError> {
+    let (window, pagination) = follow_window(&query)?;
+    let (items, total) = follows::list(&state.db, &window, pagination).await?;
+    Ok(Json(Paginated::new(items, total, pagination)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/instagram-publishing/follows/events",
+    tag = "instagram-publishing",
+    operation_id = "list_followed_account_events_instagram_publishing_follows_events_get",
+    summary = "List Followed Account Events",
+    description = "Events added between `since` and `until` that accounts the crawl or a club directory found host, newest first.",
+    params(
+        ("school" = Option<String>, Query, nullable),
+        ("since" = String, Query, format = DateTime),
+        ("until" = String, Query, format = DateTime),
+        ("page" = Option<i64>, Query, minimum = 1, maximum = 1000, description = "Page number (1-indexed)"),
+        ("page_size" = Option<i64>, Query, minimum = 1, maximum = 100, description = "Items per page (max 100)"),
+    ),
+    responses(
+        (status = 200, description = "Successful Response", body = follows::PaginatedFollowedAccountEvents),
+        (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
+    )
+)]
+pub async fn list_followed_account_events(
+    State(state): State<AppState>,
+    AdminUser(_): AdminUser,
+    query: QueryParams,
+) -> Result<Json<Paginated<follows::FollowedAccountEventResponse>>, ApiError> {
+    let (window, pagination) = follow_window(&query)?;
+    let (items, total) = follows::events(&state.db, &window, pagination).await?;
+    Ok(Json(Paginated::new(items, total, pagination)))
 }
 
 #[cfg(test)]
