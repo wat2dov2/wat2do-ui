@@ -8,8 +8,9 @@ use crate::host::Host;
 use crate::instagram_notifications::browser_queue::{Finish, LaneRead};
 use crate::instagram_notifications::test_support::{FakeHost, queue};
 
-// Neither account has a share of its own in `account_daily_following_reads`.
-const YORKU: &str = "wat2do.yorku";
+// An account no `account_daily_following_reads` override names (real ones come and
+// go as accounts cool down), so its share follows the defaults.
+const ACCOUNT: &str = "wat2do.guardtest";
 const UDEM: &str = "wat2do.udem";
 const HOURS: f64 = 3_600.0;
 
@@ -134,7 +135,7 @@ fn small_and_new_accounts_get_a_smaller_share() {
     let old = now - 365.0 * 86_400.0;
     let large = allowance(
         &CONTROL,
-        YORKU,
+        ACCOUNT,
         Some(Size {
             followers: 5_000,
             first_seen: old,
@@ -150,7 +151,7 @@ fn small_and_new_accounts_get_a_smaller_share() {
     );
     let small = allowance(
         &CONTROL,
-        YORKU,
+        ACCOUNT,
         Some(Size {
             followers: 21,
             first_seen: old,
@@ -159,14 +160,14 @@ fn small_and_new_accounts_get_a_smaller_share() {
     );
     let small_new = allowance(
         &CONTROL,
-        YORKU,
+        ACCOUNT,
         Some(Size {
             followers: 21,
             first_seen: now,
         }),
         now,
     );
-    let unknown = allowance(&CONTROL, YORKU, None, now);
+    let unknown = allowance(&CONTROL, ACCOUNT, None, now);
     assert!(small.0 < large.0 && small.1 < large.1);
     assert!(small_new.0 <= small.0);
     assert_eq!(unknown, small_new);
@@ -179,32 +180,32 @@ fn a_refusal_holds_the_account_for_hours_across_restarts() {
     let host = FakeHost::idle();
     let first = queue(directory.path(), &host);
     first
-        .set_lightpanda_lane(&[], &[YORKU.to_owned()], 1)
+        .set_lightpanda_lane(&[], &[ACCOUNT.to_owned()], 1)
         .unwrap();
     following(&first, "club.one");
-    lane_read(&first, YORKU, Some(refused()));
+    lane_read(&first, ACCOUNT, Some(refused()));
     following(&first, "club.two");
     host.advance(1_900.0);
 
     // A worker started afresh reads the same hold.
     let restarted = queue(directory.path(), &host);
     restarted
-        .set_lightpanda_lane(&[], &[YORKU.to_owned()], 1)
+        .set_lightpanda_lane(&[], &[ACCOUNT.to_owned()], 1)
         .unwrap();
     assert!(matches!(
-        restarted.following_gate(YORKU).unwrap(),
+        restarted.following_gate(ACCOUNT).unwrap(),
         Gate::Held(_)
     ));
     assert!(
         restarted
-            .claim_lightpanda(YORKU, false, true)
+            .claim_lightpanda(ACCOUNT, false, true)
             .unwrap()
             .is_none()
     );
     host.advance(CONTROL.refusal_hold_hours * HOURS);
     assert!(
         restarted
-            .claim_lightpanda(YORKU, false, true)
+            .claim_lightpanda(ACCOUNT, false, true)
             .unwrap()
             .is_some()
     );
@@ -214,14 +215,14 @@ fn a_refusal_holds_the_account_for_hours_across_restarts() {
 fn an_account_stops_reading_once_its_days_share_is_spent() {
     let (_directory, host, queue) = setup();
     queue
-        .set_lightpanda_lane(&[], &[YORKU.to_owned()], 1)
+        .set_lightpanda_lane(&[], &[ACCOUNT.to_owned()], 1)
         .unwrap();
     queue
-        .set_account_sizes(&[(YORKU.to_owned(), 21, host.time())])
+        .set_account_sizes(&[(ACCOUNT.to_owned(), 21, host.time())])
         .unwrap();
     let (daily, hourly) = allowance(
         &CONTROL,
-        YORKU,
+        ACCOUNT,
         Some(Size {
             followers: 21,
             first_seen: host.time(),
@@ -230,24 +231,24 @@ fn an_account_stops_reading_once_its_days_share_is_spent() {
     );
     for read in 0..daily as usize {
         following(&queue, &format!("club.{read}"));
-        lane_read(&queue, YORKU, Some(Outcome::Read));
+        lane_read(&queue, ACCOUNT, Some(Outcome::Read));
         host.advance(HOURS / hourly + 10.0);
     }
     following(&queue, "club.last");
     assert!(matches!(
-        queue.following_gate(YORKU).unwrap(),
+        queue.following_gate(ACCOUNT).unwrap(),
         Gate::Capped(_)
     ));
     assert!(
         queue
-            .claim_lightpanda(YORKU, false, true)
+            .claim_lightpanda(ACCOUNT, false, true)
             .unwrap()
             .is_none()
     );
     host.advance(86_400.0);
     assert!(
         queue
-            .claim_lightpanda(YORKU, false, true)
+            .claim_lightpanda(ACCOUNT, false, true)
             .unwrap()
             .is_some()
     );
@@ -257,12 +258,15 @@ fn an_account_stops_reading_once_its_days_share_is_spent() {
 fn an_open_breaker_stops_every_automated_request_until_a_person_resets_it() {
     let (_directory, host, queue) = setup();
     queue
-        .set_lightpanda_lane(&[YORKU.to_owned()], &[YORKU.to_owned()], 1)
+        .set_lightpanda_lane(&[ACCOUNT.to_owned()], &[ACCOUNT.to_owned()], 1)
         .unwrap();
     following(&queue, "club.one");
-    let claimed = queue.claim_lightpanda(YORKU, false, true).unwrap().unwrap();
+    let claimed = queue
+        .claim_lightpanda(ACCOUNT, false, true)
+        .unwrap()
+        .unwrap();
     let read = LaneRead {
-        account: YORKU.to_owned(),
+        account: ACCOUNT.to_owned(),
         held: false,
         guard: Some(Outcome::Checkpoint(FOLLOWING_LOGIN_WALL.to_owned())),
     };
@@ -273,16 +277,21 @@ fn an_open_breaker_stops_every_automated_request_until_a_person_resets_it() {
         refund_rate_limit: false,
     };
     queue.finish_lightpanda(&claimed, finish, &read).unwrap();
-    assert!(queue.guard_tripped(YORKU).unwrap().is_some());
+    assert!(queue.guard_tripped(ACCOUNT).unwrap().is_some());
 
     host.advance(30.0 * 86_400.0);
     queue
-        .set_lightpanda_lane(&[YORKU.to_owned()], &[YORKU.to_owned()], 1)
+        .set_lightpanda_lane(&[ACCOUNT.to_owned()], &[ACCOUNT.to_owned()], 1)
         .unwrap();
     following(&queue, "club.two");
-    queue.enqueue_digest("101", YORKU, "cache-sfu").unwrap();
+    queue.enqueue_digest("101", ACCOUNT, "cache-sfu").unwrap();
     // No Following read, no digest in Lightpanda or Brave, no login.
-    assert!(queue.claim_lightpanda(YORKU, true, true).unwrap().is_none());
+    assert!(
+        queue
+            .claim_lightpanda(ACCOUNT, true, true)
+            .unwrap()
+            .is_none()
+    );
     queue.set_lightpanda_lane(&[], &[], 0).unwrap();
     assert!(
         queue
@@ -290,13 +299,13 @@ fn an_open_breaker_stops_every_automated_request_until_a_person_resets_it() {
             .unwrap()
             .is_none_or(|job| job.kind != "digest")
     );
-    assert!(!queue.reserve_account_login(YORKU, host.time()).unwrap());
-    assert!(queue.unavailable_accounts(host.time()).unwrap()[YORKU].contains("breaker open"));
-    assert!(queue.status().unwrap()["account_guard"][YORKU]["tripped"].is_string());
+    assert!(!queue.reserve_account_login(ACCOUNT, host.time()).unwrap());
+    assert!(queue.unavailable_accounts(host.time()).unwrap()[ACCOUNT].contains("breaker open"));
+    assert!(queue.status().unwrap()["account_guard"][ACCOUNT]["tripped"].is_string());
 
-    queue.resume_account_login(YORKU).unwrap();
-    assert!(queue.guard_tripped(YORKU).unwrap().is_none());
-    assert!(queue.reserve_account_login(YORKU, host.time()).unwrap());
+    queue.resume_account_login(ACCOUNT).unwrap();
+    assert!(queue.guard_tripped(ACCOUNT).unwrap().is_none());
+    assert!(queue.reserve_account_login(ACCOUNT, host.time()).unwrap());
 }
 
 #[test]
