@@ -65,6 +65,7 @@
   "scheduled_agents": [
     "io.wat2do.instagram.curate",
     "io.wat2do.notification-retry",
+    "io.wat2do.notification-pull",
     "io.wat2do.ingestion.directories",
     "io.wat2do.prompts-autocommit",
     "io.wat2do.scheduled-emails",

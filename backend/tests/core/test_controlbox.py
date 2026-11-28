@@ -62,6 +62,27 @@ def test_invalid_notification_retry_interval_is_rejected(tmp_path) -> None:
         load_controlbox(directory)
 
 
+def test_notification_pull_control_is_loaded() -> None:
+    control = controlbox.notification_pull
+    # An account is read well before the watchdog's day of silence turns it red.
+    assert control.silence_hours < controlbox.maintenance.account_silence_hours
+    assert control.start_hour <= control.end_hour
+    assert control.thread_repeat_hours <= control.pending_hours
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload.update(start_hour=23, end_hour=9),
+        lambda payload: payload.update(thread_repeat_hours=30, pending_hours=24),
+        lambda payload: payload.update(silence_hours=0),
+    ],
+)
+def test_invalid_notification_pull_control_is_rejected(tmp_path, mutate) -> None:
+    with pytest.raises(ValidationError):
+        load_controlbox(_write_control(tmp_path, "notification_pull", mutate))
+
+
 def test_notification_recording_keeps_direct_messages_redacted() -> None:
     control = controlbox.notification_recording
     assert "direct" in control.direct_message_markers

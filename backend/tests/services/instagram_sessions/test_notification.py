@@ -185,7 +185,7 @@ def test_a_failed_run_keeps_why_on_the_mac_and_fails(monkeypatch, tmp_path):
 
 
 def test_a_waiting_run_is_seen_by_the_worker_until_it_ends():
-    with module._waiting():
+    with module.waiting_for_emulator():
         assert module.waiting()
     assert not module.waiting()
     # A marker a crashed run left behind is cleared.

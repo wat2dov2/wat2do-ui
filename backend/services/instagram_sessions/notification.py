@@ -119,7 +119,7 @@ def handle(notification: Notification, *, now: datetime | None = None) -> dict[s
     if skipped:
         return {"handled": False, "why": skipped}
     school = notification.school
-    with _waiting(), exclusive():
+    with waiting_for_emulator(), exclusive():
         device = EmulatorDevice()
         device.wake()
         user = android_user(school)
@@ -167,19 +167,25 @@ def public(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def _skipped(notification: Notification) -> str:
+    skipped = school_skipped(notification.school)
+    if not skipped and not notification.sender:
+        return "the notification names no sender"
+    return skipped
+
+
+def school_skipped(school: str) -> str:
+    """Why no notification for the school's account is handled now, or "" when they are."""
     if not DMS.agent_enabled:
         return "notification handling is turned off (instagram_dms.json agent_enabled)"
-    if not notification.school:
+    if not school:
         return "no school's emulator account has this name"
-    if DMS.agent_schools and notification.school not in DMS.agent_schools:
+    if DMS.agent_schools and school not in DMS.agent_schools:
         return "this school is not in the rollout yet (instagram_dms.json agent_schools)"
-    if dms_refused(notification.school):
+    if dms_refused(school):
         return "no DMs on French schools (schools.language)"
-    paused = paused_until(notification.school)
+    paused = paused_until(school)
     if paused is not None:
         return f"this account rests until {paused} after an Instagram challenge"
-    if not notification.sender:
-        return "the notification names no sender"
     return ""
 
 
@@ -277,9 +283,9 @@ def _paused() -> dict[str, Any]:
 
 
 @contextmanager
-def _waiting() -> Iterator[None]:
-    """Say a run waits for the emulator, so the worker stops its follows between
-    profiles for it (``waiting``)."""
+def waiting_for_emulator() -> Iterator[None]:
+    """Say a run (or the notification pull) waits for the emulator, so the worker stops
+    its follows between profiles for it (``waiting``)."""
     _WAITING.mkdir(parents=True, exist_ok=True, mode=0o700)
     marker = _WAITING / str(os.getpid())
     marker.touch()
