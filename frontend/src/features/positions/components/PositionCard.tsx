@@ -39,6 +39,8 @@ function PositionCardComponent({
       tabIndex={0}
       aria-label={t("positions.openDetails", { title: position.title })}
       onKeyDown={(event) => {
+        // A key pressed on a control inside the card (the club badge or its menu) is that control's.
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           onPositionClick(position);

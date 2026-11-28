@@ -73,6 +73,7 @@
     "clubLabel_one": "organizacja",
     "clubLabel_few": "organizacje",
     "clubLabel_many": "organizacji",
+    "badgeMenuLabel": "{{club}} i inne organizacje",
     "eventCount_one": "{{count}} wydarzenie",
     "eventCount_few": "{{count}} wydarzenia",
     "eventCount_many": "{{count}} wydarzeń",

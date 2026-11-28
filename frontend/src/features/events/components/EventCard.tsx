@@ -141,6 +141,8 @@ function EventCardComponent({
         onMouseDown: handleCardMouseDown,
         onClick: handleCardClick,
         onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+          // A key pressed on a control inside the card (the club badge or its menu) is that control's.
+          if (e.target !== e.currentTarget) return;
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             handleCardActivate();

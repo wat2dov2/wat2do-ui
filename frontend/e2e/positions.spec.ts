@@ -225,7 +225,7 @@ test.describe("Positions UI", () => {
     expect(filterRequests).toEqual([]);
   });
 
-  test("shared club badges overlap logos, keep the extra-club count visible, and open the host club page", async ({ page }) => {
+  test("shared club badges overlap logos, keep the extra-club count visible, and list every club's page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/positions");
     const card = page.getByRole("button", { name: "View Design Lead position details" });
@@ -236,9 +236,18 @@ test.describe("Positions UI", () => {
     const badgeBox = (await badge.boundingBox())!;
     const countBox = (await count.boundingBox())!;
     expect(countBox.x + countBox.width).toBeLessThanOrEqual(badgeBox.x + badgeBox.width);
-    await expect(badge).toHaveAttribute("href", "/clubs/4");
+    await expect(badge).toHaveAttribute("aria-haspopup", "menu");
     await badge.click();
-    await expect(page).toHaveURL(/\/clubs\/4$/);
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem")).toHaveText([/UW Design Club/, "UW Operations Club"]);
+    // Pressing the badge opens its menu, never the position card behind it.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await expect(badge).toBeFocused();
+    await badge.click();
+    await page.getByRole("menuitem", { name: "UW Operations Club" }).click();
+    await expect(page).toHaveURL(/\/clubs\/7$/);
   });
 
   test("keeps filters click-based and navigates more positions on mouse down", async ({ page }) => {

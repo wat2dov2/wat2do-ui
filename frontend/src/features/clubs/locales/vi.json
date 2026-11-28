@@ -31,6 +31,7 @@
     "clubs": "tổ chức",
     "clubLabel": "tổ chức",
     "clubLabel_other": "tổ chức",
+    "badgeMenuLabel": "{{club}} và các tổ chức khác",
     "noClubsFound": "Không tìm thấy tổ chức nào",
     "noClubsFoundDesc": "Chúng tôi không tìm thấy bất kỳ tổ chức nào phù hợp với bộ lọc hiện tại của bạn. Hãy thử điều chỉnh tìm kiếm hoặc xóa một số bộ lọc.",
     "eventCount": "{{count}} sự kiện",

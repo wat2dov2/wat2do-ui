@@ -31,6 +31,7 @@
     "clubs": "조직",
     "clubLabel": "조직",
     "clubLabel_other": "조직",
+    "badgeMenuLabel": "{{club}} 및 다른 조직",
     "noClubsFound": "조직을 찾을 수 없습니다",
     "noClubsFoundDesc": "현재 필터와 일치하는 조직을 찾을 수 없습니다. 검색을 조정하거나 일부 필터를 지워보세요.",
     "eventCount": "{{count}} 이벤트",

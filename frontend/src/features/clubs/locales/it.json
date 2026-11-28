@@ -72,6 +72,7 @@
     "reviewRejected": "Questa organizzazione non è stata approvata. Contatta il team Wat2Do se pensi che questo sia un errore.",
     "clubLabel_one": "organizzazione",
     "clubLabel_many": "organizzazioni",
+    "badgeMenuLabel": "{{club}} e altre organizzazioni",
     "eventCount_one": "{{count}} evento",
     "eventCount_many": "{{count}} eventi",
     "positionCount_one": "{{count}} posizione",

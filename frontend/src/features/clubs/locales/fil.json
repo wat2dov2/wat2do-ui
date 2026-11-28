@@ -71,6 +71,7 @@
     "awaitingReview": "Ang organisasyong ito ay naghihintay ng pagsusuri ng admin. Hindi pa ito nakalista sa publiko, at ang mga kaganapan ay hindi maaaring ilathala hanggang sa ito ay maaprubahan.",
     "reviewRejected": "Ang organisasyong ito ay hindi aprubado. Makipag-ugnayan sa Wat2Do na koponan kung sa tingin mo ay nagkamali ito.",
     "clubLabel_one": "organisasyon",
+    "badgeMenuLabel": "{{club}} at iba pang organisasyon",
     "eventCount_one": "{{count}} kaganapan",
     "positionCount_one": "{{count}} posisyon",
     "minimumEvents": "Minimum na mga event",

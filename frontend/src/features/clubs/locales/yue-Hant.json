@@ -31,6 +31,7 @@
     "clubs": "組織",
     "clubLabel": "組織",
     "clubLabel_other": "組織",
+    "badgeMenuLabel": "{{club}} 同其他組織",
     "noClubsFound": "未找到組織",
     "noClubsFoundDesc": "我們找不到符合您當前篩選條件的組織。試著調整搜尋或清除部分篩選。",
     "eventCount": "{{count}} 個活動",

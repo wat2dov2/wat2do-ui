@@ -31,6 +31,7 @@
     "clubs": "clubs",
     "clubLabel": "club",
     "clubLabel_other": "clubs",
+    "badgeMenuLabel": "{{club}} and other clubs",
     "noClubsFound": "No clubs found",
     "noClubsFoundDesc": "We couldn't find any clubs matching your current filters. Try adjusting your search or clearing some filters.",
     "eventCount": "{{count}} event",

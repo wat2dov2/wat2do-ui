@@ -71,6 +71,7 @@
     "awaitingReview": "Diese Organisation wartet auf die Überprüfung durch einen Administrator. Sie ist noch nicht öffentlich gelistet und Veranstaltungen können erst nach der Genehmigung veröffentlicht werden.",
     "reviewRejected": "Diese Organisation wurde nicht genehmigt. Kontaktieren Sie das Wat2Do Team, wenn Sie denken, dass dies ein Fehler ist.",
     "clubLabel_one": "Organisation",
+    "badgeMenuLabel": "{{club}} und weitere Organisationen",
     "eventCount_one": "{{count}} Veranstaltung",
     "positionCount_one": "{{count}} Position",
     "minimumEvents": "Mindestanzahl an Veranstaltungen",

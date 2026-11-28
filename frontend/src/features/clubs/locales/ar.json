@@ -81,6 +81,7 @@
     "clubLabel_two": "منظمتان",
     "clubLabel_few": "منظمات",
     "clubLabel_many": "منظمة",
+    "badgeMenuLabel": "{{club}} ومنظمات أخرى",
     "positionCount_zero": "{{count}} مناصب",
     "positionCount_two": "{{count}} منصبان",
     "positionCount_few": "{{count}} مناصب",
