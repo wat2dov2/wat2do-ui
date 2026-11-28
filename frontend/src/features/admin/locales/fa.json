@@ -454,7 +454,7 @@
       "notRead": "هنوز خوانده نشده. اجرای روزانهٔ بعدی آن را پر می‌کند.",
       "summary": {
         "needingAttention": "نیازمند رسیدگی: {{value}}",
-        "quietNotifications": "بدون اعلان در {{hours}} ساعت",
+        "quietNotifications": "بدون اعلان پست در {{hours}} ساعت",
         "followers": "مجموع دنبال‌کنندگان",
         "averageLikes": "میانگین پسند هر پست",
         "followerGains": "دنبال‌کنندگان جدید در روز",

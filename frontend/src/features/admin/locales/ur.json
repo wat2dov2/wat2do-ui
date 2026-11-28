@@ -454,7 +454,7 @@
       "notRead": "ابھی پڑھا نہیں گیا۔ اگلا روزانہ رن اسے بھر دے گا۔",
       "summary": {
         "needingAttention": "توجہ درکار: {{value}}",
-        "quietNotifications": "{{hours}} گھنٹوں سے کوئی اطلاع نہیں",
+        "quietNotifications": "{{hours}} گھنٹوں سے کوئی پوسٹ اطلاع نہیں",
         "followers": "کل فالوورز",
         "averageLikes": "فی پوسٹ اوسط لائکس",
         "followerGains": "روزانہ نئے فالوورز",

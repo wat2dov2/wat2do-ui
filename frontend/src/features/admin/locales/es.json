@@ -454,7 +454,7 @@
       "notRead": "Aún no se ha leído. La próxima ejecución diaria lo completará.",
       "summary": {
         "needingAttention": "Requieren atención: {{value}}",
-        "quietNotifications": "Sin notificaciones en {{hours}} h",
+        "quietNotifications": "Sin avisos de publicaciones en {{hours}} h",
         "followers": "Seguidores en total",
         "averageLikes": "Me gusta promedio por publicación",
         "followerGains": "Seguidores nuevos por día",

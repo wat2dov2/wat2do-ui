@@ -454,7 +454,7 @@
       "notRead": "હજી વાંચ્યું નથી. આગલો દૈનિક રન તેને ભરી દેશે.",
       "summary": {
         "needingAttention": "ધ્યાન જરૂરી: {{value}}",
-        "quietNotifications": "{{hours}} કલાકથી કોઈ સૂચના નહીં",
+        "quietNotifications": "{{hours}} કલાકથી કોઈ પોસ્ટ સૂચના નહીં",
         "followers": "કુલ ફોલોઅર્સ",
         "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ",
         "followerGains": "દરરોજ નવા ફોલોઅર્સ",

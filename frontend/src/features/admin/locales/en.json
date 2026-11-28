@@ -454,7 +454,7 @@
       "notRead": "Not read yet. The next daily run fills this in.",
       "summary": {
         "needingAttention": "Need attention: {{value}}",
-        "quietNotifications": "No notifications in {{hours}} h",
+        "quietNotifications": "No post alerts in {{hours}} h",
         "followers": "Total followers",
         "averageLikes": "Average likes per post",
         "followerGains": "Followers gained per day",

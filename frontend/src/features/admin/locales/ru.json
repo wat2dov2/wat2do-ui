@@ -454,7 +454,7 @@
       "notRead": "Ещё не прочитано. Следующий ежедневный запуск заполнит это.",
       "summary": {
         "needingAttention": "Требуют внимания: {{value}}",
-        "quietNotifications": "Без уведомлений больше {{hours}} ч",
+        "quietNotifications": "Без уведомлений о постах больше {{hours}} ч",
         "followers": "Всего подписчиков",
         "averageLikes": "Среднее число лайков на публикацию",
         "followerGains": "Новые подписчики в день",

@@ -454,7 +454,7 @@
       "notRead": "अभी पढ़ा नहीं गया। अगला दैनिक रन इसे भर देगा।",
       "summary": {
         "needingAttention": "ध्यान चाहिए: {{value}}",
-        "quietNotifications": "{{hours}} घंटे से कोई सूचना नहीं",
+        "quietNotifications": "{{hours}} घंटे से कोई पोस्ट सूचना नहीं",
         "followers": "कुल फ़ॉलोअर",
         "averageLikes": "प्रति पोस्ट औसत लाइक",
         "followerGains": "प्रति दिन नए फ़ॉलोअर",

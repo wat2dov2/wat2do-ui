@@ -454,7 +454,7 @@
       "notRead": "Hindi pa nababasa. Pupunan ito ng susunod na araw-araw na run.",
       "summary": {
         "needingAttention": "Kailangang tingnan: {{value}}",
-        "quietNotifications": "Walang notification sa {{hours}} oras",
+        "quietNotifications": "Walang post alert sa {{hours}} oras",
         "followers": "Kabuuang follower",
         "averageLikes": "Average na like bawat post",
         "followerGains": "Mga bagong follower bawat araw",

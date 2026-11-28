@@ -454,7 +454,7 @@
       "notRead": "仲未讀取。下次每日運行會填好。",
       "summary": {
         "needingAttention": "需要處理：{{value}}",
-        "quietNotifications": "{{hours}} 小時冇通知",
+        "quietNotifications": "{{hours}} 小時冇帖子通知",
         "followers": "追蹤者總數",
         "averageLikes": "每個帖子平均讚好",
         "followerGains": "每日新增追蹤者",

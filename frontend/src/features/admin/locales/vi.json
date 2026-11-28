@@ -454,7 +454,7 @@
       "notRead": "Chưa đọc. Lần chạy hằng ngày tiếp theo sẽ điền vào.",
       "summary": {
         "needingAttention": "Cần chú ý: {{value}}",
-        "quietNotifications": "Không có thông báo trong {{hours}} giờ",
+        "quietNotifications": "Không có thông báo bài đăng trong {{hours}} giờ",
         "followers": "Tổng người theo dõi",
         "averageLikes": "Lượt thích trung bình mỗi bài",
         "followerGains": "Người theo dõi mới mỗi ngày",

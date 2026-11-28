@@ -454,7 +454,7 @@
       "notRead": "Noch nicht gelesen. Der nächste tägliche Lauf füllt das aus.",
       "summary": {
         "needingAttention": "Brauchen Aufmerksamkeit: {{value}}",
-        "quietNotifications": "Seit {{hours}} Std. ohne Benachrichtigung",
+        "quietNotifications": "Seit {{hours}} Std. ohne Beitragshinweis",
         "followers": "Follower gesamt",
         "averageLikes": "Durchschnittliche Likes pro Beitrag",
         "followerGains": "Neue Follower pro Tag",

@@ -454,7 +454,7 @@
       "notRead": "لم يُقرأ بعد. سيملؤه التشغيل اليومي القادم.",
       "summary": {
         "needingAttention": "تحتاج إلى متابعة: {{value}}",
-        "quietNotifications": "بلا إشعارات منذ {{hours}} ساعة",
+        "quietNotifications": "بلا تنبيهات منشورات منذ {{hours}} ساعة",
         "followers": "إجمالي المتابعين",
         "averageLikes": "متوسط الإعجابات لكل منشور",
         "followerGains": "المتابعون الجدد يوميًا",

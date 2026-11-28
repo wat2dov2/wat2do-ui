@@ -454,7 +454,7 @@
       "notRead": "아직 읽지 않았습니다. 다음 일일 실행에서 채워집니다.",
       "summary": {
         "needingAttention": "확인 필요: {{value}}",
-        "quietNotifications": "{{hours}}시간 넘게 알림 없음",
+        "quietNotifications": "{{hours}}시간 넘게 게시물 알림 없음",
         "followers": "총 팔로워",
         "averageLikes": "게시물당 평균 좋아요",
         "followerGains": "일별 신규 팔로워",

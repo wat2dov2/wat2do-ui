@@ -454,7 +454,7 @@
       "notRead": "ਹਾਲੇ ਪੜ੍ਹਿਆ ਨਹੀਂ ਗਿਆ। ਅਗਲਾ ਰੋਜ਼ਾਨਾ ਰਨ ਇਸਨੂੰ ਭਰ ਦੇਵੇਗਾ।",
       "summary": {
         "needingAttention": "ਧਿਆਨ ਲੋੜੀਂਦਾ: {{value}}",
-        "quietNotifications": "{{hours}} ਘੰਟਿਆਂ ਤੋਂ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ",
+        "quietNotifications": "{{hours}} ਘੰਟਿਆਂ ਤੋਂ ਕੋਈ ਪੋਸਟ ਸੂਚਨਾ ਨਹੀਂ",
         "followers": "ਕੁੱਲ ਫਾਲੋਅਰ",
         "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ",
         "followerGains": "ਹਰ ਦਿਨ ਨਵੇਂ ਫਾਲੋਅਰ",
